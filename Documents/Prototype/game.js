@@ -32,13 +32,22 @@ const ui = {
   sellButton: document.getElementById("sellButton"),
   inspector: document.getElementById("inspector"),
   inspectorClose: document.getElementById("inspectorClose"),
+  statusLegend: document.getElementById("statusLegend"),
+  tutorialPointer: document.getElementById("tutorialPointer"),
+  tutorialPointerLabel: document.getElementById("tutorialPointerLabel"),
   tutorialOverlay: document.getElementById("tutorialOverlay"),
   tutorialProgress: document.getElementById("tutorialProgress"),
   tutorialIcon: document.getElementById("tutorialIcon"),
   tutorialKicker: document.getElementById("tutorialKicker"),
   tutorialTitle: document.getElementById("tutorialTitle"),
   tutorialBody: document.getElementById("tutorialBody"),
+  tutorialLevelButton: document.getElementById("tutorialLevelButton"),
   tutorialContinue: document.getElementById("tutorialContinue"),
+  enemyIntroOverlay: document.getElementById("enemyIntroOverlay"),
+  enemyIntroIcon: document.getElementById("enemyIntroIcon"),
+  enemyIntroTitle: document.getElementById("enemyIntroTitle"),
+  enemyIntroBody: document.getElementById("enemyIntroBody"),
+  enemyIntroContinue: document.getElementById("enemyIntroContinue"),
   levelOverlay: document.getElementById("levelOverlay"),
   levelGrid: document.getElementById("levelGrid"),
   levelClose: document.getElementById("levelClose"),
@@ -51,8 +60,17 @@ const ui = {
 
 const MAX_HEALTH = 40;
 const MAX_UPGRADES = 3;
-const STORAGE_KEY = "toadTowerDefenseCampaignV1";
+const ENEMY_HEALTH_SCALE = 0.6;
+const FOX_YIN_ATTACK_SPEED_MULTIPLIER = 5;
+const CRAB_YIN_DISCHARGE_MULTIPLIER = 0.5;
 const TOWER_ORDER = ["bear", "bee", "fox", "crab", "waterTower"];
+
+const ENEMY_TYPES = {
+  ground: { icon: "●", name: "Quái bộ", description: "Đi theo lane và tấn công Đền Mưa khi lọt qua." },
+  flying: { icon: "◆", name: "Quái bay", description: "Bay cao; chỉ Ong và Cua có thể tác động." },
+  elite: { icon: "♛", name: "Tinh anh", description: "Nhiều máu, có giáp và gây 8 damage khi lọt đền." },
+  invisible: { icon: "👻", name: "Quái tàng hình", description: "Không thể bị nhắm mục tiêu cho tới khi đi vào aura của Cua Dương." }
+};
 
 const COLORS = {
   ink: "#f7f0d8",
@@ -82,7 +100,7 @@ const PATH = [
 
 const BUILD_SPOTS = [
   { x: 80, y: 200 }, { x: 220, y: 165 }, { x: 250, y: 330 },
-  { x: 435, y: 180 }, { x: 470, y: 315 }, { x: 675, y: 185 },
+  { x: 500, y: 185 }, { x: 505, y: 300 }, { x: 675, y: 185 },
   { x: 690, y: 455 }, { x: 835, y: 455 }, { x: 875, y: 150 }
 ];
 
@@ -93,14 +111,14 @@ const TOWER_TYPES = {
     color: "#c68b55", projectile: "#ffd38a",
     summary: "Giữ đường cận chiến.",
     yang: "Đánh rộng, làm chậm 35%.",
-    yin: "Đánh đơn; địch trong tầm chạy nhanh 45%."
+    yin: "Đánh đơn; địch +45% tốc độ, giữ buff 2 giây khi rời tầm."
   },
   bee: {
     name: "Ong", icon: "🐝", role: "Phép · Đất/Bay", cost: 90,
     range: 146, fireRate: 0.68, damage: 12, cycle: 500, karmaPerAttack: 15, discharge: 5,
     color: "#e3bd45", projectile: "#fff08c",
-    summary: "Phép diện rộng, trị địch tăng tốc.",
-    yang: "Đánh rộng, độc, tăng sát thương theo tốc chạy.",
+    summary: "Phép diện rộng; độc mạnh theo tốc chạy.",
+    yang: "Đánh rộng; đòn x3 lên quái tăng tốc, độc cũng mạnh hơn.",
     yin: "Tăng giáp vật lý và tạo khiên cho địch."
   },
   fox: {
@@ -109,15 +127,15 @@ const TOWER_TYPES = {
     color: "#e37d4d", projectile: "#ffbc8a",
     summary: "Săn mục tiêu giá trị cao.",
     yang: "Đánh đơn mạnh; +2 Nghiệp mỗi đòn.",
-    yin: "Ưu tiên tinh anh; cắn mạnh nhưng đánh chậm."
+    yin: "Ưu tiên tinh anh; cắn mạnh và tốc đánh x5."
   },
   crab: {
     name: "Cua", icon: "🦀", role: "Hỗ trợ · Hào quang", cost: 110,
     range: 145, fireRate: 1.55, damage: 5, cycle: 300, karmaPerAttack: 12.5, discharge: 10,
     color: "#d35b55", projectile: "#ffaaa0",
     summary: "Điều nhịp cả đội hình.",
-    yang: "Làm chậm; trụ gần +25% xuyên giáp.",
-    yin: "Mất hỗ trợ; trụ gần +75% Nghiệp, -20% tốc đánh."
+    yang: "Làm chậm, soi tàng hình; trụ gần +25% xuyên giáp.",
+    yin: "Mất hỗ trợ; trụ gần xả Âm chậm 50%, tốc đánh -20%."
   },
   waterTower: {
     name: "Trụ Nước", icon: "💧", role: "Hỗ trợ · Kinh tế", cost: 55,
@@ -130,11 +148,11 @@ const TOWER_TYPES = {
 };
 
 const LEVELS = [
-  { name: "Bờ ruộng", icon: "🐻", unlock: "bear", waves: 3, difficulty: 0.7, water: 250 },
-  { name: "Vườn mật", icon: "🐝", unlock: "bee", waves: 6, difficulty: 0.84, water: 280 },
-  { name: "Đồi cáo", icon: "🦊", unlock: "fox", waves: 6, difficulty: 1, water: 320 },
-  { name: "Bãi triều", icon: "🦀", unlock: "crab", waves: 6, difficulty: 1.17, water: 360 },
-  { name: "Mạch nguồn", icon: "💧", unlock: "waterTower", waves: 6, difficulty: 1.34, water: 400 }
+  { name: "Bờ ruộng", icon: "🐻", unlock: "bear", waves: 3, difficulty: 0.7, countBonus: 0, speedBonus: 0, intervalCut: 0, water: 250 },
+  { name: "Vườn mật", icon: "🐝", unlock: "bee", waves: 6, difficulty: 0.9, countBonus: 2, speedBonus: 0.05, intervalCut: 0.04, water: 270 },
+  { name: "Đồi cáo", icon: "🦊", unlock: "fox", waves: 6, difficulty: 1.15, countBonus: 4, speedBonus: 0.1, intervalCut: 0.08, water: 290 },
+  { name: "Bãi triều", icon: "🦀", unlock: "crab", waves: 6, difficulty: 1.45, countBonus: 6, speedBonus: 0.15, intervalCut: 0.12, water: 310 },
+  { name: "Mạch nguồn", icon: "💧", unlock: "waterTower", waves: 6, difficulty: 1.8, countBonus: 8, speedBonus: 0.2, intervalCut: 0.16, water: 330 }
 ];
 
 const BASE_WAVES = [
@@ -148,74 +166,57 @@ const BASE_WAVES = [
 
 const TUTORIALS = {
   0: [
-    { icon: "🐻", title: "Gấu giữ cửa", body: "Gấu là trụ vật lý đầu tiên: đánh địch mặt đất, Dương đánh rộng và làm chậm.", kicker: "Màn 1 · Gấu" },
-    { icon: "🐾", title: "Mua Gấu", body: "Bấm Gấu ở thanh dưới để chuẩn bị xây.", waitFor: "select:bear", target: "shop:bear" },
-    { icon: "◎", title: "Đặt Gấu", body: "Chạm một vòng trống trên chiến trường.", waitFor: "place:bear", target: "canvas" },
-    { icon: "▲", title: "Nâng cấp", body: "Chọn một nâng cấp cho Gấu bằng Nước. Tutorial đề xuất sát thương.", waitFor: "upgrade:bear", target: "upgrade" },
-    { icon: "☀", title: "Pha Dương", body: "Gấu Dương đánh AOE và làm chậm 35%. Đòn đánh cùng hạ địch sẽ tích Nghiệp.", kicker: "Âm Dương" },
-    { icon: "⚔", title: "Mở đợt", body: "Bấm nút Đợt để bắt đầu. Mọi đồng hồ của trụ chỉ chạy trong wave.", waitFor: "wave:start", target: "wave" },
-    { icon: "☯", title: "Nghiệp sắp đầy", body: "Tutorial sẽ nạp gần đầy Nghiệp. Đòn kế tiếp đưa Gấu vào Âm.", waitFor: "phase:bear:Yin", target: "canvas", prepare: "prime_bear_yin" },
-    { icon: "🌑", title: "Pha Âm", body: "Gấu Âm chỉ đánh một mục tiêu và tăng tốc địch trong tầm. Chờ Nghiệp xả hết để trở lại Dương.", kicker: "Âm Dương" },
-    { icon: "◆◆◆", title: "Giữ đủ 3 wave", body: "Tiếp tục mở wave và bảo vệ đền. Tutorial sẽ trở lại sau wave cuối.", waitFor: "level:waves_complete", target: "wave" },
-    { icon: "♻", title: "Bán Gấu", body: "Bấm Bán trụ để thu hồi 60% Nước đã đầu tư.", waitFor: "sell:bear", target: "sell", prepare: "select_bear" },
+    { icon: "🐻", title: "Gấu giữ cửa", body: "Gấu là trụ vật lý đánh địch mặt đất.", kicker: "Màn 1 · Gấu" },
+    { icon: "🐾", title: "Mua Gấu", body: "Bấm Gấu ở thanh dưới.", waitFor: "select:bear", target: "shop:bear", cue: "Chọn Gấu" },
+    { icon: "◎", title: "Đặt Gấu", body: "Chạm vòng đang sáng gần lane.", waitFor: "place:bear", target: "build:4", spotIndex: 4, cue: "Đặt Gấu ở đây" },
+    { icon: "▲", title: "Nâng cấp", body: "Dùng Nước để tăng sát thương.", waitFor: "upgrade:bear", target: "upgrade", cue: "Tăng sát thương" },
+    { icon: "☀", title: "Wave 1 · Dương", body: "Gấu bắt đầu ở Dương: đánh AOE và làm chậm địch 35%.", kicker: "Mặt tốt" },
+    { icon: "⚔", title: "Mở wave 1", body: "Để quái đầu tiên đi vào tầm Gấu.", waitFor: "wave:start", target: "wave", cue: "Mở wave 1" },
+    { icon: "👣", title: "Chờ quái vào tầm", body: "Gấu vẫn đang Dương. Hãy xem đòn đánh đầu tiên.", waitFor: "attack:bear:Yang" },
+    { icon: "☀", title: "Dương phát huy", body: "Đòn Dương vừa đánh nhiều mục tiêu và làm chậm. Giữ hết wave 1.", waitFor: "wave:1_complete", kicker: "Mặt tốt" },
+    { icon: "🌑", title: "Wave 2 · Âm", body: "Từ wave 2 mới giới thiệu mặt xấu: Gấu đánh đơn và tăng tốc địch trong tầm.", kicker: "Mặt xấu" },
+    { icon: "⚔", title: "Mở wave 2", body: "Nghiệp được nạp gần đầy; Gấu vẫn Dương cho tới đòn kế tiếp.", waitFor: "wave:start", target: "wave", cue: "Mở wave 2", prepare: "prime_bear_yin" },
+    { icon: "☯", title: "Chờ chuyển Âm", body: "Đòn kế tiếp trong wave 2 sẽ làm đầy Nghiệp.", waitFor: "phase:bear:Yin" },
+    { icon: "🌑", title: "Âm đã xuất hiện", body: "Gấu đang đánh đơn và làm địch trong tầm chạy nhanh hơn.", waitFor: "wave:2_complete", kicker: "Mặt xấu" },
+    { icon: "⚔", title: "Mở wave cuối", body: "Dùng điều đã học để giữ wave 3.", waitFor: "wave:start", target: "wave", cue: "Mở wave 3" },
+    { icon: "◆◆◆", title: "Giữ wave cuối", body: "Bảo vệ đền tới khi hết quái.", waitFor: "level:waves_complete" },
+    { icon: "♻", title: "Bán Gấu", body: "Thu hồi 60% Nước đã đầu tư.", waitFor: "sell:bear", target: "sell", cue: "Bán trụ", prepare: "select_bear" },
     { icon: "🌧", title: "Hoàn tất bài học", body: "Bạn đã mua, đặt, nâng cấp, bán và quan sát đủ hai pha của Gấu." }
   ],
   1: [
-    { icon: "🐝", title: "Mở khóa Ong", body: "Ong gây sát thương phép lên cả địch đất và bay.", kicker: "Màn 2 · Ong" },
-    { icon: "🐝", title: "Mua Ong", body: "Chọn Ong ở thanh linh thú.", waitFor: "select:bee", target: "shop:bee" },
-    { icon: "◎", title: "Đặt Ong", body: "Đặt Ong gần đường đi để vùng AOE bao phủ nhiều mục tiêu.", waitFor: "place:bee", target: "canvas" },
-    { icon: "🐻", title: "Thêm Gấu", body: "Chọn Gấu để chuẩn bị combo Âm Dương.", waitFor: "select:bear", target: "shop:bear" },
-    { icon: "◎", title: "Đặt Gấu", body: "Đặt Gấu. Tutorial sẽ cho aura Âm phủ mục tiêu của Ong trong lần minh họa này.", waitFor: "place:bear", target: "canvas" },
-    { icon: "☀", title: "Ong Dương", body: "Ong Dương gây độc và tăng sát thương phép theo phần tốc độ địch được cộng thêm." },
-    { icon: "⚔", title: "Mở đợt", body: "Bắt đầu wave để thử combo Ong Dương + Gấu Âm.", waitFor: "wave:start", target: "wave" },
-    { icon: "☯", title: "Kích hoạt combo", body: "Tutorial đưa Gấu vào Âm. Chờ Ong Dương bắn kẻ địch đang được Gấu tăng tốc.", waitFor: "combo:bee_bear", target: "canvas", prepare: "prime_combo" },
-    { icon: "🐝", title: "Combo thành công", body: "Gấu Âm làm địch chạy nhanh hơn; Ong Dương biến phần tốc độ cộng thêm đó thành sát thương phép lớn hơn." }
+    { icon: "🐝", title: "Mở khóa Ong", body: "Ong Dương gây x3 damage lên mọi kẻ địch đang được tăng tốc.", kicker: "Màn 2 · Cơ chế Ong" },
+    { icon: "🐝", title: "Mua Ong", body: "Chọn Ong ở thanh linh thú.", waitFor: "select:bee", target: "shop:bee", cue: "Chọn Ong" },
+    { icon: "◎", title: "Đặt Ong", body: "Đặt Ong gần đường đi.", waitFor: "place:bee", target: "build:5", spotIndex: 5, cue: "Đặt Ong" },
+    { icon: "🐻", title: "Thêm Gấu", body: "Chọn Gấu để tạo trạng thái tăng tốc.", waitFor: "select:bear", target: "shop:bear", cue: "Chọn Gấu" },
+    { icon: "◎", title: "Đặt Gấu", body: "Đặt Gấu vào vòng nằm bên trái Ong.", waitFor: "place:bear", target: "build:3", spotIndex: 3, cue: "Gấu ở bên trái" },
+    { icon: "☀", title: "1 · Ong Dương", body: "Độc gây -5/s. Nếu quái được tăng tốc, đòn Ong gây x3 và độc mạnh hơn." },
+    { icon: "⚔", title: "Mở đợt", body: "Giữ Gấu Dương và chờ quái đi vào vùng giao tầm.", waitFor: "wave:start", target: "wave", cue: "Mở wave" },
+    { icon: "👣", title: "Chờ quái tới", body: "Gấu vẫn Dương. Đợi quái vào tầm của cả Gấu và Ong.", waitFor: "combo:enemy_ready" },
+    { icon: "☯", title: "2 · Gấu Âm", body: "Quái đã tới. Gấu tăng tốc 45%; buff còn 2 giây sau khi quái rời tầm.", waitFor: "combo:bee_bear", prepare: "prime_combo" },
+    { icon: "🐝", title: "Ong x3 damage", body: "Kẻ địch đang tăng tốc: Ong Dương gây x3 damage và độc mạnh hơn." }
   ],
-  2: [{ icon: "🦊", title: "Mở khóa Cáo", body: "Cáo săn mục tiêu giá trị cao. Khi Âm, Cáo ưu tiên tinh anh và cắn mạnh hơn.", kicker: "Màn 3" }],
-  3: [{ icon: "🦀", title: "Mở khóa Cua", body: "Cua điều nhịp đội hình bằng aura buff/debuff; nâng cấp của Cua tăng tầm aura.", kicker: "Màn 4" }],
+  2: [{ icon: "🦊", title: "Mở khóa Cáo", body: "Cáo săn mục tiêu giá trị cao. Khi Âm, Cáo ưu tiên tinh anh, cắn mạnh và đánh nhanh x5.", kicker: "Màn 3" }],
+  3: [{ icon: "🦀", title: "Mở khóa Cua", body: "Cua Âm làm trụ trong aura xả Âm chậm 50% và giảm 20% tốc đánh. Nâng cấp Cua tăng tầm aura.", kicker: "Màn 4" }],
   4: [{ icon: "💧", title: "Mở khóa Trụ Nước", body: "Trụ Nước tạo tài nguyên trong wave. Nâng cấp sẽ tăng lượng Nước mỗi lần sinh.", kicker: "Màn 5" }]
 };
 
 let state;
-let campaign = loadCampaign();
+let campaign = { maxUnlockedLevel: 1, currentLevel: 1, completedTutorials: {}, introducedEnemies: {} };
 let currentLevelIndex = Math.max(0, Math.min(LEVELS.length - 1, campaign.currentLevel - 1));
 let WAVES = buildLevelWaves(currentLevelIndex);
 let lastTime = performance.now();
 let bannerTimer = 0;
-
-function loadCampaign() {
-  const fallback = { maxUnlockedLevel: 1, currentLevel: 1, completedTutorials: {} };
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (!saved) return fallback;
-    const maxUnlockedLevel = Math.max(1, Math.min(LEVELS.length, Number(saved.maxUnlockedLevel) || 1));
-    return {
-      maxUnlockedLevel,
-      currentLevel: Math.max(1, Math.min(maxUnlockedLevel, Number(saved.currentLevel) || 1)),
-      completedTutorials: saved.completedTutorials || {}
-    };
-  } catch {
-    return fallback;
-  }
-}
-
-function saveCampaign() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(campaign));
-  } catch {
-    // The game remains playable when storage is unavailable.
-  }
-}
+let levelMenuSkipsTutorial = false;
 
 function buildLevelWaves(levelIndex) {
   const level = LEVELS[levelIndex];
   return BASE_WAVES.slice(0, level.waves).map((base, waveIndex) => ({
-    count: base.count + levelIndex,
-    hp: Math.round(base.hp * level.difficulty),
-    speed: Math.round(base.speed * (1 + levelIndex * 0.025)),
+    count: base.count + level.countBonus,
+    hp: Math.round(base.hp * level.difficulty * ENEMY_HEALTH_SCALE),
+    speed: Math.round(base.speed * (1 + level.speedBonus)),
     reward: base.reward,
-    interval: Math.max(0.42, base.interval - levelIndex * 0.015),
-    type: levelIndex === 0 ? "ground" : waveIndex === level.waves - 1 ? "elite" : waveIndex >= 2 ? "mixed" : "ground"
+    interval: Math.max(0.3, base.interval - level.intervalCut),
+    type: levelIndex >= 3 && waveIndex === 1 ? "stealth" : levelIndex === 0 ? "ground" : waveIndex === level.waves - 1 ? "elite" : waveIndex >= 2 ? "mixed" : "ground"
   }));
 }
 
@@ -235,6 +236,7 @@ function makeState() {
     paused: false,
     pausedByTutorial: false,
     pausedByMenu: false,
+    pausedByEnemyIntro: false,
     gameOver: false,
     victory: false,
     levelComplete: false,
@@ -262,11 +264,12 @@ function createShop() {
   });
 }
 
-function loadLevel(levelIndex, forceTutorial = false) {
-  if (levelIndex < 0 || levelIndex >= campaign.maxUnlockedLevel) return false;
+function loadLevel(levelIndex, forceTutorial = false, skipTutorial = false) {
+  if (levelIndex < 0 || levelIndex >= LEVELS.length) return false;
+  campaign.maxUnlockedLevel = Math.max(campaign.maxUnlockedLevel, levelIndex + 1);
   currentLevelIndex = levelIndex;
   campaign.currentLevel = levelIndex + 1;
-  saveCampaign();
+  if (skipTutorial) campaign.completedTutorials[levelIndex + 1] = true;
   WAVES = buildLevelWaves(levelIndex);
   state = makeState();
   lastTime = performance.now();
@@ -274,13 +277,14 @@ function loadLevel(levelIndex, forceTutorial = false) {
   clearTutorialFocus();
   ui.levelOverlay.classList.add("hidden");
   ui.levelCompleteOverlay.classList.add("hidden");
+  ui.enemyIntroOverlay.classList.add("hidden");
   ui.inspector.classList.remove("open");
   createShop();
   selectShopTower("bear");
   createLevelMenu();
   updateUI();
   showBanner(`${LEVELS[levelIndex].icon} Màn ${levelIndex + 1} · ${LEVELS[levelIndex].name}`);
-  if (forceTutorial || !campaign.completedTutorials[levelIndex + 1]) beginTutorial(levelIndex);
+  if (forceTutorial || !skipTutorial && !campaign.completedTutorials[levelIndex + 1]) beginTutorial(levelIndex);
   return true;
 }
 
@@ -360,19 +364,29 @@ function updateInspectorMeter(tower) {
 function createLevelMenu() {
   ui.levelGrid.innerHTML = "";
   LEVELS.forEach((level, index) => {
-    const unlocked = index < campaign.maxUnlockedLevel;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `level-option${index === currentLevelIndex ? " current" : ""}`;
-    button.disabled = !unlocked;
-    button.innerHTML = `<span>${unlocked ? level.icon : "🔒"}</span><strong>Màn ${index + 1}</strong><small>${unlocked ? `${level.name} · ${level.waves} wave` : "Chưa mở"}</small>`;
-    button.addEventListener("click", () => loadLevel(index));
+    button.innerHTML = `<span>${level.icon}</span><strong>Màn ${index + 1}</strong><small>${level.name} · ${level.waves} wave<br><b class="difficulty-pips">${"◆".repeat(index + 1)}</b></small>`;
+    button.addEventListener("click", () => selectLevel(index));
     ui.levelGrid.appendChild(button);
   });
 }
 
-function openLevelMenu() {
-  if (state.tutorial?.overlayVisible) return;
+function selectLevel(levelIndex) {
+  const skipTutorial = levelMenuSkipsTutorial;
+  levelMenuSkipsTutorial = false;
+  loadLevel(levelIndex, false, skipTutorial);
+}
+
+function openLevelMenu(skipTutorial = false) {
+  if (state.tutorial?.overlayVisible && !skipTutorial) return;
+  levelMenuSkipsTutorial = skipTutorial;
+  if (skipTutorial) {
+    state.pausedByTutorial = false;
+    ui.tutorialOverlay.classList.add("hidden");
+    clearTutorialFocus();
+  }
   state.pausedByMenu = true;
   createLevelMenu();
   ui.levelOverlay.classList.remove("hidden");
@@ -381,6 +395,11 @@ function openLevelMenu() {
 function closeLevelMenu() {
   state.pausedByMenu = false;
   ui.levelOverlay.classList.add("hidden");
+  if (levelMenuSkipsTutorial && state.tutorial) {
+    state.pausedByTutorial = true;
+    ui.tutorialOverlay.classList.remove("hidden");
+  }
+  levelMenuSkipsTutorial = false;
 }
 
 function beginTutorial(levelIndex) {
@@ -422,7 +441,7 @@ function continueTutorial() {
   if (step.prepare) prepareTutorialStep(step.prepare);
   if (step.waitFor) {
     tutorial.awaiting = step.waitFor;
-    focusTutorialTarget(step.target);
+    focusTutorialTarget(step.target, step.cue);
     return;
   }
   tutorial.stepIndex += 1;
@@ -432,10 +451,6 @@ function continueTutorial() {
 function notifyTutorial(eventName) {
   const tutorial = state.tutorial;
   if (!tutorial || tutorial.awaiting !== eventName) return;
-  if (eventName === "combo:bee_bear") {
-    const bear = state.towers.find(tower => tower.type === "bear");
-    if (bear) bear.tutorialGlobalAura = false;
-  }
   tutorial.awaiting = null;
   tutorial.stepIndex += 1;
   clearTutorialFocus();
@@ -457,7 +472,6 @@ function prepareTutorialStep(action) {
     if (bear) {
       bear.phase = "Yin";
       bear.karma = TOWER_TYPES.bear.cycle;
-      bear.tutorialGlobalAura = true;
     }
     if (bee) {
       bee.phase = "Yang";
@@ -470,7 +484,6 @@ function finishTutorial() {
   if (!state.tutorial) return;
   const levelNumber = state.tutorial.levelIndex + 1;
   campaign.completedTutorials[levelNumber] = true;
-  saveCampaign();
   state.tutorial = null;
   state.pausedByTutorial = false;
   ui.tutorialOverlay.classList.add("hidden");
@@ -478,14 +491,37 @@ function finishTutorial() {
   if (state.pendingLevelCompletion) completeLevel();
 }
 
-function focusTutorialTarget(target) {
+function focusTutorialTarget(target, cue = "Chạm đây") {
   const element = tutorialTargetElement(target);
   if (element) element.classList.add("tutorial-focus");
+  const point = tutorialTargetPoint(target, element);
+  if (!point || !ui.tutorialPointer) return;
+  ui.tutorialPointerLabel.textContent = cue;
+  ui.tutorialPointer.style.left = `${point.x}px`;
+  ui.tutorialPointer.style.top = `${point.y}px`;
+  ui.tutorialPointer.classList.remove("hidden");
 }
 
 function clearTutorialFocus() {
   if (!document.querySelectorAll) return;
   document.querySelectorAll(".tutorial-focus").forEach(element => element.classList.remove("tutorial-focus"));
+  if (ui.tutorialPointer) ui.tutorialPointer.classList.add("hidden");
+}
+
+function tutorialTargetPoint(target, element) {
+  if (target?.startsWith("build:")) {
+    const spotIndex = Number(target.split(":")[1]);
+    const spot = BUILD_SPOTS[spotIndex];
+    if (!spot || !canvas.getBoundingClientRect) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.left + spot.x / canvas.width * rect.width,
+      y: rect.top + spot.y / canvas.height * rect.height
+    };
+  }
+  if (!element?.getBoundingClientRect) return null;
+  const rect = element.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 }
 
 function tutorialTargetElement(target) {
@@ -494,16 +530,30 @@ function tutorialTargetElement(target) {
     const type = target.split(":")[1];
     return Array.from(ui.shop.children).find(button => button.dataset.tower === type) || null;
   }
-  if (target === "canvas") return canvas;
+  if (target.startsWith("build:")) return null;
   if (target === "wave") return ui.waveButton;
-  if (target === "upgrade") return ui.upgradePanel;
+  if (target === "upgrade") return ui.upgradeOptions.querySelector?.('[data-upgrade="damage"]') || ui.upgradePanel;
   if (target === "sell") return ui.sellButton;
   return null;
+}
+
+function refreshTutorialFocus() {
+  const tutorial = state.tutorial;
+  if (!tutorial?.awaiting || tutorial.overlayVisible) return;
+  const step = TUTORIALS[tutorial.levelIndex][tutorial.stepIndex];
+  clearTutorialFocus();
+  focusTutorialTarget(step.target, step.cue);
 }
 
 function placeTower(spotIndex) {
   const typeKey = state.selectedType;
   if (!typeKey || state.gameOver || state.levelComplete) return;
+  const tutorialStep = state.tutorial && TUTORIALS[state.tutorial.levelIndex][state.tutorial.stepIndex];
+  if (tutorialStep?.waitFor === `place:${typeKey}` && tutorialStep.spotIndex !== undefined && spotIndex !== tutorialStep.spotIndex) {
+    showBanner("Hãy đặt vào vòng đang sáng.", "danger");
+    refreshTutorialFocus();
+    return;
+  }
   const type = TOWER_TYPES[typeKey];
   const occupied = state.towers.some(tower => tower.spotIndex === spotIndex);
   if (occupied) {
@@ -622,19 +672,22 @@ function startWave() {
   showBanner(`⚔ Đợt ${state.wave} ${dangerPips(state.wave - 1)}`, "danger");
   updateUI();
   notifyTutorial("wave:start");
+  if (state.tutorial?.awaiting === "level:waves_complete") clearTutorialFocus();
 }
 
 function spawnEnemy() {
   const config = WAVES[state.wave - 1];
   const sequence = config.count - state.spawnQueue;
   const isFlying = config.type === "mixed" && sequence % 4 === 3;
+  const isInvisible = config.type === "stealth" && sequence % 2 === 0;
   const isElite = config.type === "elite" && (sequence % 4 === 0 || sequence === config.count - 1);
-  const hpScale = isElite ? 2.1 : isFlying ? 0.78 : 1;
-  const speedScale = isElite ? 0.72 : isFlying ? 1.2 : 1;
+  const kind = isElite ? "elite" : isFlying ? "flying" : isInvisible ? "invisible" : "ground";
+  const hpScale = isElite ? 2.1 : isFlying ? 0.78 : isInvisible ? 0.88 : 1;
+  const speedScale = isElite ? 0.72 : isFlying ? 1.2 : isInvisible ? 1.08 : 1;
   const hp = Math.round(config.hp * hpScale);
-  state.enemies.push({
+  const enemy = {
     id: state.nextEnemyId++,
-    kind: isElite ? "elite" : isFlying ? "flying" : "ground",
+    kind,
     x: PATH[0].x,
     y: PATH[0].y - (isFlying ? 23 : 0),
     segment: 0,
@@ -651,14 +704,37 @@ function spawnEnemy() {
     armorBuff: 0,
     poison: 0,
     poisonTimer: 0,
+    poisonFeedbackTimer: 0,
+    poisonDamageBuffer: 0,
     bearSlowTimer: 0,
+    bearHasteTimer: 0,
+    revealed: !isInvisible,
+    revealFeedbackShown: false,
     reachedEnd: false,
     dead: false
-  });
+  };
+  state.enemies.push(enemy);
+  introduceEnemy(kind);
+}
+
+function introduceEnemy(kind) {
+  const type = ENEMY_TYPES[kind];
+  if (!type || campaign.introducedEnemies[kind]) return;
+  campaign.introducedEnemies[kind] = true;
+  state.pausedByEnemyIntro = true;
+  ui.enemyIntroIcon.textContent = type.icon;
+  ui.enemyIntroTitle.textContent = type.name;
+  ui.enemyIntroBody.textContent = type.description;
+  ui.enemyIntroOverlay.classList.remove("hidden");
+}
+
+function continueEnemyIntro() {
+  state.pausedByEnemyIntro = false;
+  ui.enemyIntroOverlay.classList.add("hidden");
 }
 
 function updateGame(dt) {
-  if (state.paused || state.pausedByTutorial || state.pausedByMenu || state.gameOver || state.levelComplete) return;
+  if (state.paused || state.pausedByTutorial || state.pausedByMenu || state.pausedByEnemyIntro || state.gameOver || state.levelComplete) return;
   state.elapsed += dt;
 
   if (!state.waveActive) {
@@ -674,9 +750,11 @@ function updateGame(dt) {
       state.spawnTimer = WAVES[state.wave - 1].interval;
     }
   }
+  if (state.pausedByEnemyIntro) return;
 
   resetEnemyModifiers();
   applyTowerAuras();
+  if (pauseForComboEnemy()) return;
   updateTowers(dt);
   updateEnemies(dt);
   updateEffects(dt);
@@ -686,8 +764,9 @@ function updateGame(dt) {
 function resetEnemyModifiers() {
   state.enemies.forEach(enemy => {
     enemy.slow = (enemy.bearSlowTimer || 0) > 0 ? 0.65 : 1;
-    enemy.speedBonus = 0;
+    enemy.speedBonus = (enemy.bearHasteTimer || 0) > 0 ? 0.45 : 0;
     enemy.armorBuff = 0;
+    enemy.revealed = enemy.kind !== "invisible";
   });
 }
 
@@ -695,11 +774,24 @@ function applyTowerAuras() {
   for (const tower of state.towers) {
     const range = towerRange(tower);
     if (tower.type === "bear" && tower.phase === "Yin") {
-      const auraRange = tower.tutorialGlobalAura ? Infinity : range;
-      for (const enemy of enemiesInRange(tower, auraRange, false)) enemy.speedBonus = Math.max(enemy.speedBonus, 0.45);
+      for (const enemy of enemiesInRange(tower, range, false)) {
+        const newlyHasted = (enemy.bearHasteTimer || 0) <= 0;
+        enemy.bearHasteTimer = 2;
+        enemy.speedBonus = Math.max(enemy.speedBonus, 0.45);
+        if (newlyHasted) addEffect(enemy.x, enemy.y - 18, "⚡", "#ffb45e");
+      }
     }
     if (tower.type === "crab" && tower.phase === "Yang") {
-      for (const enemy of enemiesInRange(tower, range, true)) enemy.slow = Math.min(enemy.slow, 0.72);
+      for (const enemy of enemiesInRange(tower, range, true, true)) {
+        enemy.slow = Math.min(enemy.slow, 0.72);
+        if (enemy.kind === "invisible") {
+          enemy.revealed = true;
+          if (!enemy.revealFeedbackShown) {
+            enemy.revealFeedbackShown = true;
+            addEffect(enemy.x, enemy.y - 18, "👁", COLORS.water);
+          }
+        }
+      }
     }
     if (tower.type === "bee" && tower.phase === "Yin") {
       for (const enemy of enemiesInRange(tower, range, true)) {
@@ -714,6 +806,17 @@ function applyTowerAuras() {
   }
 }
 
+function pauseForComboEnemy() {
+  if (state.tutorial?.awaiting !== "combo:enemy_ready") return false;
+  const bear = state.towers.find(tower => tower.type === "bear");
+  const bee = state.towers.find(tower => tower.type === "bee");
+  if (!bear || !bee) return false;
+  const enemyReady = state.enemies.some(enemy => canTowerAffectEnemy(bear, enemy) && canTowerAffectEnemy(bee, enemy));
+  if (!enemyReady) return false;
+  notifyTutorial("combo:enemy_ready");
+  return true;
+}
+
 function updateTowers(dt) {
   for (const tower of state.towers) {
     const type = TOWER_TYPES[tower.type];
@@ -722,6 +825,7 @@ function updateTowers(dt) {
       let discharge = type.discharge;
       if (tower.type === "bee") discharge += 0;
       if (tower.type === "crab" && state.enemies.length > 0) discharge = 20;
+      if (isInsideYinCrabAura(tower)) discharge *= CRAB_YIN_DISCHARGE_MULTIPLIER;
       tower.karma = Math.max(0, tower.karma - discharge * dt);
       if (tower.karma <= 0) {
         tower.phase = "Yang";
@@ -744,7 +848,7 @@ function updateTowers(dt) {
     attack(tower, target);
 
     let attackSpeedMultiplier = 1;
-    if (tower.type === "fox" && tower.phase === "Yin") attackSpeedMultiplier = 0.72;
+    if (tower.type === "fox" && tower.phase === "Yin") attackSpeedMultiplier = FOX_YIN_ATTACK_SPEED_MULTIPLIER;
     if (isInsideYinCrabAura(tower)) attackSpeedMultiplier *= 0.8;
     tower.cooldown = 1 / (towerFireRate(tower) * attackSpeedMultiplier);
   }
@@ -791,9 +895,17 @@ function attack(tower, primaryTarget) {
     let damageType = tower.type === "bee" ? "magic" : "physical";
 
     if (tower.type === "bee" && phaseAtAttack === "Yang") {
-      triggeredBeeBearCombo ||= enemy.speedBonus > 0 && state.towers.some(item => item.type === "bear" && item.phase === "Yin");
-      damage *= 1 + enemy.speedBonus * 1.3;
-      enemy.poison = Math.max(enemy.poison, 4);
+      const isHasted = enemy.speedBonus > 0;
+      triggeredBeeBearCombo ||= isHasted && state.towers.some(item => item.type === "bear" && item.phase === "Yin");
+      if (isHasted) {
+        damage *= 3;
+        addComboEffect(enemy.x, enemy.y);
+      }
+      if ((enemy.poisonTimer || 0) <= 0) {
+        enemy.poisonFeedbackTimer = 1;
+        enemy.poisonDamageBuffer = 0;
+      }
+      enemy.poison = Math.max(enemy.poison || 0, 5);
       enemy.poisonTimer = 4;
     }
     if (tower.type === "bear" && phaseAtAttack === "Yang") {
@@ -818,13 +930,13 @@ function attack(tower, primaryTarget) {
     tower.karma = Math.max(0, tower.karma - 5);
   }
   if (triggeredBeeBearCombo) notifyTutorial("combo:bee_bear");
+  if (tower.type === "bear" && phaseAtAttack === "Yang") notifyTutorial("attack:bear:Yang");
 }
 
 function gainKarma(tower, amount) {
   if (tower.phase !== "Yang") return;
-  const multiplier = isInsideYinCrabAura(tower) ? 1.75 : 1;
   const type = TOWER_TYPES[tower.type];
-  tower.karma = Math.min(type.cycle, tower.karma + amount * multiplier);
+  tower.karma = Math.min(type.cycle, tower.karma + amount);
   if (tower.karma >= type.cycle) {
     tower.phase = "Yin";
     tower.yinLeakCounter = 0;
@@ -855,13 +967,14 @@ function pathScore(enemy) {
   return enemy.segment * 1000 + enemy.progress;
 }
 
-function enemiesInRange(tower, range, canTargetFlying) {
-  return state.enemies.filter(enemy => !enemy.dead && (canTargetFlying || enemy.kind !== "flying") && distance(tower, enemy) <= range);
+function enemiesInRange(tower, range, canTargetFlying, includeInvisible = false) {
+  return state.enemies.filter(enemy => !enemy.dead && (includeInvisible || enemy.kind !== "invisible" || enemy.revealed) && (canTargetFlying || enemy.kind !== "flying") && distance(tower, enemy) <= range);
 }
 
 function canTowerAffectEnemy(tower, enemy) {
   const type = TOWER_TYPES[tower.type];
   if (!type || type.range <= 0 || enemy.dead) return false;
+  if (enemy.kind === "invisible" && !enemy.revealed && tower.type !== "crab") return false;
   const canTargetFlying = tower.type === "bee" || tower.type === "crab";
   return (canTargetFlying || enemy.kind !== "flying") && distance(tower, enemy) <= towerRange(tower);
 }
@@ -888,6 +1001,12 @@ function applyDamage(enemy, amount, damageType, armorPen = 0) {
   return damageDealt;
 }
 
+function poisonDamagePerSecond(enemy) {
+  const movementMultiplier = (enemy.slow ?? 1) * (1 + Math.max(0, enemy.speedBonus || 0));
+  const extraSpeed = Math.max(0, movementMultiplier - 1);
+  return (enemy.poison || 0) * (1 + extraSpeed * 1.3);
+}
+
 function physicalArmor(enemy) {
   return Math.max(0, Math.min(0.75, (enemy.physicalArmor || 0) + (enemy.armorBuff || 0)));
 }
@@ -907,11 +1026,19 @@ function updateEnemies(dt) {
 
     if (enemy.poisonTimer > 0) {
       enemy.poisonTimer -= dt;
-      applyDamage(enemy, enemy.poison * dt, "magic");
+      const poisonDamage = applyDamage(enemy, poisonDamagePerSecond(enemy) * dt, "magic");
+      enemy.poisonDamageBuffer = (enemy.poisonDamageBuffer || 0) + poisonDamage;
+      enemy.poisonFeedbackTimer = (enemy.poisonFeedbackTimer || 0) - dt;
+      if (enemy.poisonFeedbackTimer <= 0 && enemy.poisonDamageBuffer > 0) {
+        addDamageNumber(enemy.x, enemy.y, enemy.poisonDamageBuffer, "poison");
+        enemy.poisonDamageBuffer = 0;
+        enemy.poisonFeedbackTimer = 1;
+      }
       if (enemy.dead) continue;
     }
 
     enemy.bearSlowTimer = Math.max(0, (enemy.bearSlowTimer || 0) - dt);
+    enemy.bearHasteTimer = Math.max(0, (enemy.bearHasteTimer || 0) - dt);
 
     const speed = enemy.baseSpeed * enemy.slow * (1 + enemy.speedBonus);
     moveAlongPath(enemy, speed * dt);
@@ -930,7 +1057,7 @@ function updateEnemies(dt) {
 }
 
 function altarDamage(enemy) {
-  return enemy.kind === "elite" ? 4 : 2;
+  return enemy.kind === "elite" ? 8 : 4;
 }
 
 function moveAlongPath(enemy, distanceToMove) {
@@ -970,12 +1097,14 @@ function finishWaveIfReady() {
   state.waveActive = false;
   const bonus = 24 + state.wave * 4;
   state.water += bonus;
+  notifyTutorial(`wave:${state.wave}_complete`);
   if (state.wave >= WAVES.length) {
     state.pendingLevelCompletion = true;
     notifyTutorial("level:waves_complete");
     if (!state.tutorial) completeLevel();
   } else {
     showBanner(`Qua đợt ${state.wave} · +${bonus} 💧`, "success");
+    refreshTutorialFocus();
   }
   updateUI();
 }
@@ -993,7 +1122,6 @@ function completeLevel() {
   } else {
     campaign.currentLevel = LEVELS.length;
   }
-  saveCampaign();
   createLevelMenu();
 
   ui.levelCompleteTitle.textContent = isFinalLevel ? "🌧 Gọi mưa thành công" : `Qua màn ${currentLevelIndex + 1}`;
@@ -1043,9 +1171,21 @@ function addDamageNumber(x, y, amount, damageType) {
     text: `-${Math.max(0, Math.round(amount))}`,
     x,
     y,
-    color: damageType === "magic" ? "#d2adff" : "#ffb083",
+    color: damageType === "poison" ? COLORS.poison : damageType === "magic" ? "#d2adff" : "#ffb083",
     life: 0.72,
     maxLife: 0.72
+  });
+}
+
+function addComboEffect(x, y) {
+  state.effects.push({
+    kind: "combo",
+    text: "ONG DƯƠNG · x3",
+    x,
+    y,
+    color: COLORS.yang,
+    life: 0.95,
+    maxLife: 0.95
   });
 }
 
@@ -1072,9 +1212,26 @@ function updateUI() {
   ui.pauseButton.setAttribute("aria-label", state.paused ? "Tiếp tục" : "Tạm dừng");
   ui.sellButton.disabled = state.waveActive;
 
+  updateStatusLegend();
   updateShop();
   const selected = state.towers.find(tower => tower.id === state.selectedTowerId);
   if (selected) inspectTower(selected);
+}
+
+function updateStatusLegend() {
+  if (!ui.statusLegend) return;
+  const active = {
+    slow: state.enemies.some(enemy => enemy.slow < 0.99 || (enemy.bearSlowTimer || 0) > 0),
+    haste: state.enemies.some(enemy => enemy.speedBonus > 0.01),
+    poison: state.enemies.some(enemy => enemy.poisonTimer > 0),
+    armor: state.enemies.some(enemy => physicalArmor(enemy) > 0),
+    resist: state.enemies.some(enemy => (enemy.magicResist || 0) > 0),
+    shield: state.enemies.some(enemy => enemy.shield > 0),
+    invisible: state.enemies.some(enemy => enemy.kind === "invisible")
+  };
+  ui.statusLegend.querySelectorAll("[data-status]").forEach(icon => {
+    icon.classList.toggle("active", Boolean(active[icon.dataset.status]));
+  });
 }
 
 function updateShop() {
@@ -1231,7 +1388,9 @@ function drawEnemies() {
   state.enemies.forEach(enemy => {
     ctx.save();
     ctx.translate(enemy.x, enemy.y);
+    if (enemy.kind === "invisible" && !enemy.revealed) ctx.globalAlpha = 0.3;
     const radius = enemy.kind === "elite" ? 16 : enemy.kind === "flying" ? 11 : 12;
+    if (enemy.kind === "flying") drawFlyingWings(enemy);
 
     if (enemy.shield > 0) {
       ctx.beginPath();
@@ -1243,7 +1402,7 @@ function drawEnemies() {
 
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
-    ctx.fillStyle = enemy.kind === "elite" ? "#9f4b61" : enemy.kind === "flying" ? "#7b75aa" : "#475161";
+    ctx.fillStyle = enemy.kind === "elite" ? "#9f4b61" : enemy.kind === "flying" ? "#7b75aa" : enemy.kind === "invisible" ? "#75659d" : "#475161";
     ctx.fill();
     ctx.strokeStyle = physicalArmor(enemy) > 0 ? "#d5d9dc" : "rgba(255,255,255,0.35)";
     ctx.lineWidth = physicalArmor(enemy) > 0 ? 3 : 1.5;
@@ -1253,7 +1412,7 @@ function drawEnemies() {
     ctx.font = enemy.kind === "elite" ? "bold 16px system-ui" : "bold 13px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(enemy.kind === "elite" ? "♛" : enemy.kind === "flying" ? "◆" : "●", 0, 0);
+    ctx.fillText(enemy.kind === "elite" ? "♛" : enemy.kind === "flying" ? "◆" : enemy.kind === "invisible" ? "◌" : "●", 0, 0);
 
     const width = enemy.kind === "elite" ? 38 : 30;
     ctx.fillStyle = "rgba(0,0,0,0.58)";
@@ -1265,6 +1424,25 @@ function drawEnemies() {
   });
 }
 
+function drawFlyingWings(enemy) {
+  const flap = (Math.sin(state.elapsed * 12 + enemy.id * 0.8) + 1) / 2;
+  const tipX = 20 + flap * 4;
+  const tipY = -4 - flap * 11;
+  ctx.fillStyle = "rgba(183,224,255,0.82)";
+  ctx.strokeStyle = "rgba(232,247,255,0.95)";
+  ctx.lineWidth = 1.5;
+
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(side * 7, -3);
+    ctx.quadraticCurveTo(side * (15 + flap * 3), -7 - flap * 5, side * tipX, tipY);
+    ctx.quadraticCurveTo(side * (15 + flap * 2), 5 + flap * 2, side * 7, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
 function enemyStatusBadges(enemy) {
   const badges = [];
   if (enemy.slow < 0.99 || (enemy.bearSlowTimer || 0) > 0) badges.push({ icon: "🐌", color: "#8fd7ff" });
@@ -1273,6 +1451,7 @@ function enemyStatusBadges(enemy) {
   if (physicalArmor(enemy) > 0) badges.push({ icon: "⬡", color: "#e1e5e9" });
   if ((enemy.magicResist || 0) > 0) badges.push({ icon: "✦", color: "#d6b4ff" });
   if (enemy.shield > 0) badges.push({ icon: "🛡", color: "#c7b8f4" });
+  if (enemy.kind === "invisible") badges.push({ icon: enemy.revealed ? "👁" : "👻", color: enemy.revealed ? COLORS.water : "#c4a9ff" });
   return badges;
 }
 
@@ -1343,16 +1522,17 @@ function drawEffects() {
       ctx.strokeStyle = effect.color;
       ctx.lineWidth = 3;
       ctx.stroke();
-    } else if (effect.kind === "damage") {
+    } else if (effect.kind === "damage" || effect.kind === "combo") {
       const rise = (1 - alpha) * 28;
-      ctx.font = "900 18px system-ui";
+      ctx.font = effect.kind === "combo" ? "900 16px system-ui" : "900 18px system-ui";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.lineWidth = 4;
       ctx.strokeStyle = "rgba(7,12,22,0.9)";
-      ctx.strokeText(effect.text, effect.x, effect.y - 24 - rise);
+      const verticalOffset = effect.kind === "combo" ? 48 : 24;
+      ctx.strokeText(effect.text, effect.x, effect.y - verticalOffset - rise);
       ctx.fillStyle = effect.color;
-      ctx.fillText(effect.text, effect.x, effect.y - 24 - rise);
+      ctx.fillText(effect.text, effect.x, effect.y - verticalOffset - rise);
     } else {
       ctx.fillStyle = effect.color;
       ctx.font = "bold 15px system-ui";
@@ -1423,7 +1603,7 @@ function pointerPosition(event) {
 
 canvas.addEventListener("pointerdown", event => {
   event.preventDefault();
-  if (state.gameOver || state.levelComplete || state.pausedByTutorial || state.pausedByMenu) return;
+  if (state.gameOver || state.levelComplete || state.pausedByTutorial || state.pausedByMenu || state.pausedByEnemyIntro) return;
   const point = pointerPosition(event);
   const tower = state.towers.find(item => distance(item, point) <= 30);
   if (tower) {
@@ -1440,15 +1620,17 @@ canvas.addEventListener("pointerdown", event => {
 
 ui.waveButton.addEventListener("click", startWave);
 ui.pauseButton.addEventListener("click", () => {
-  if (state.gameOver || state.levelComplete || state.pausedByTutorial || state.pausedByMenu) return;
+  if (state.gameOver || state.levelComplete || state.pausedByTutorial || state.pausedByMenu || state.pausedByEnemyIntro) return;
   state.paused = !state.paused;
   updateUI();
 });
 ui.restartButton.addEventListener("click", resetGame);
-ui.levelButton.addEventListener("click", openLevelMenu);
+ui.levelButton.addEventListener("click", () => openLevelMenu(false));
 ui.levelClose.addEventListener("click", closeLevelMenu);
 ui.tutorialButton.addEventListener("click", () => loadLevel(currentLevelIndex, true));
+ui.tutorialLevelButton.addEventListener("click", () => openLevelMenu(true));
 ui.tutorialContinue.addEventListener("click", continueTutorial);
+ui.enemyIntroContinue.addEventListener("click", continueEnemyIntro);
 ui.inspectorClose.addEventListener("click", clearTowerSelection);
 ui.replayLevelButton.addEventListener("click", () => loadLevel(currentLevelIndex));
 ui.nextLevelButton.addEventListener("click", () => {
@@ -1460,6 +1642,9 @@ ui.upgradeOptions.addEventListener("click", event => {
   const button = event.target.closest("button[data-upgrade]");
   if (button) upgradeTower(button.dataset.upgrade);
 });
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", refreshTutorialFocus);
+}
 
 function frame(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);

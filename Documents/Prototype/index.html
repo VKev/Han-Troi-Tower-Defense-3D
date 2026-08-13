@@ -32,6 +32,10 @@
 
     <div class="battle-banner" id="battleBanner" role="status" aria-live="polite"></div>
 
+    <div class="tutorial-pointer hidden" id="tutorialPointer" aria-hidden="true">
+      <div class="tutorial-pointer-cue"><span>👇</span><small id="tutorialPointerLabel">Chạm đây</small></div>
+    </div>
+
     <section class="shop-dock" aria-label="Mua linh thú">
       <p class="placement-hint" id="placementHint">Chọn thú → chạm vòng trống.</p>
       <div class="tower-shop" id="towerShop"></div>
@@ -58,8 +62,14 @@
       <button class="sell-button hidden" id="sellButton" type="button">♻ Bán trụ</button>
     </aside>
 
-    <div class="status-legend" aria-label="Hiệu ứng trên địch">
-      <span>🐌</span><span>⚡</span><span>☠</span><span>⬡</span><span>✦</span><span>🛡</span>
+    <div class="status-legend" id="statusLegend" aria-label="Hiệu ứng trên địch">
+      <button class="status-icon" type="button" data-status="slow" data-tooltip="Chậm: giảm tốc độ di chuyển" aria-label="Chậm: giảm tốc độ di chuyển">🐌</button>
+      <button class="status-icon" type="button" data-status="haste" data-tooltip="Tăng tốc: +45%; giữ 2 giây sau khi rời tầm Gấu" aria-label="Tăng tốc: +45%; giữ 2 giây sau khi rời tầm Gấu">⚡</button>
+        <button class="status-icon" type="button" data-status="poison" data-tooltip="Độc: quái chạy càng nhanh, damage càng mạnh" aria-label="Độc: quái chạy càng nhanh, damage càng mạnh">☠</button>
+      <button class="status-icon" type="button" data-status="armor" data-tooltip="Giáp: giảm damage vật lý" aria-label="Giáp: giảm damage vật lý">⬡</button>
+      <button class="status-icon" type="button" data-status="resist" data-tooltip="Kháng phép: giảm damage phép" aria-label="Kháng phép: giảm damage phép">✦</button>
+      <button class="status-icon" type="button" data-status="shield" data-tooltip="Khiên: hấp thụ damage trước máu" aria-label="Khiên: hấp thụ damage trước máu">🛡</button>
+      <button class="status-icon" type="button" data-status="invisible" data-tooltip="Tàng hình: cần Cua Dương soi lộ" aria-label="Tàng hình: cần Cua Dương soi lộ">👻</button>
     </div>
 
     <section class="modal-layer hidden" id="tutorialOverlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
@@ -69,7 +79,20 @@
         <p class="eyebrow" id="tutorialKicker">Hướng dẫn</p>
         <h2 id="tutorialTitle">Chào người gọi mưa</h2>
         <p id="tutorialBody"></p>
-        <button class="continue-button" id="tutorialContinue" type="button">Tiếp tục →</button>
+        <div class="tutorial-actions">
+          <button id="tutorialLevelButton" type="button">Bỏ qua · Chọn màn</button>
+          <button class="continue-button" id="tutorialContinue" type="button">Tiếp tục →</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="modal-layer hidden" id="enemyIntroOverlay" role="dialog" aria-modal="true" aria-labelledby="enemyIntroTitle">
+      <div class="tutorial-card enemy-intro-card">
+        <div class="tutorial-icon" id="enemyIntroIcon">●</div>
+        <p class="eyebrow">Kẻ địch mới</p>
+        <h2 id="enemyIntroTitle">Quái bộ</h2>
+        <p id="enemyIntroBody"></p>
+        <button class="continue-button" id="enemyIntroContinue" type="button">Đã hiểu →</button>
       </div>
     </section>
 
