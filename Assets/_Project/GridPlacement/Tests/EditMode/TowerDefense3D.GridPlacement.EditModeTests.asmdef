@@ -3,6 +3,7 @@
     "rootNamespace": "TowerDefense3D.GridPlacement.Tests.EditMode",
     "references": [
         "GUID:6fb291d48ca5409b840b801244fe31d9",
+        "GUID:10700f77b7258b84e9f86ed0d2b55182",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
