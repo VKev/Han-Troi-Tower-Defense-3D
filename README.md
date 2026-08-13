@@ -129,6 +129,29 @@ Every entry must include:
 
 Each log must also record the responsible chat/session ID. When several sessions contribute, identify the responsible session for each entry.
 
+## Better Context summaries and agent handoff
+
+Use Better Context as the first navigation layer for project work. The current generated maps are intentionally bounded, so a single broad root summary is not sufficient context for an agent that is spawned to work inside a feature.
+
+- Prefer several concise, path-scoped summaries over one large project summary. At minimum, summarize the durable responsibility of the relevant feature folder and any important runtime, Editor, test, data, or integration boundary that is not already clear from generated evidence.
+- Before reading or writing within a feature, follow the managed `AGENTS.md` chain from the repository root to the target and read every relevant stored summary along that path. A map or summary omission is not evidence that a file, asset, or behavior does not exist.
+- Before spawning a worker, the parent agent or technical lead must identify the relevant Better Context map and summary paths in the worker brief. The worker must read that context before implementation so it does not begin with only the immediate filename or Bead description.
+- Keep each summary factual, stable, and at most 240 characters. Describe durable responsibility or ownership; do not store temporary task status, guesses, secrets, full method inventories, or raw chat content.
+- Add summaries only where they materially improve future navigation. Do not summarize every file, and do not use summaries as a substitute for inspecting current source, serialized assets, live Unity state, compilation, or tests.
+- Audit existing summaries before changing them. Preserve unrelated entries, update a summary when its responsibility changes, remove obsolete paths after a verified deletion or rename, and never hand-edit `.ctx-summaries.json` or the managed blocks in `AGENTS.md`.
+
+Write several related summaries in one batched refresh and then verify the generated maps:
+
+```powershell
+better-context-unity --root <repository-root> agents `
+  --summary 'Assets/_Project/GridPlacement=Owns authored board data and mobile grid placement.' `
+  --summary 'Assets/_Project/GridPlacement/Runtime=Runtime mapping, validation, occupancy, input, and presentation.' `
+  --summary 'Assets/_Project/GridPlacement/Editor/BoardAuthoring=Editor-only visual Board authoring and scene synchronization.'
+better-context-unity --root <repository-root> verify -v --json
+```
+
+Never run Better Context refresh, verification, generation, or Editor snapshot work while Unity is entering Play Mode or is already in Play Mode. Wait until Unity has returned to Edit Mode and is idle, then perform one batched refresh after the task's changes.
+
 ## Security and traceability
 
 - Redact API keys, credentials, personal data, and other secrets.

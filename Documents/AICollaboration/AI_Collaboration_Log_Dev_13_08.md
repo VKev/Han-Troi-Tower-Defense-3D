@@ -6,7 +6,7 @@
 - **Responsible Codex sessions:**
   - `019ff86e-fd4b-7f03-adae-89a3908ac6f5` — Set up and verify the portable Unity/Codex toolchain, resolve user-controlled setup decisions, validate the installed AI tools, and establish the first AI collaboration record.
   - `019ff9b2-7ed8-7aa2-b3c3-253151a6c459` — Design, implement, verify, and version the Android-first grid placement feature and its prototype while removing the deferred Feel dependency.
-- **Tracking issues:** `TowerDefense3D-769`, `TowerDefense3D-zl2`
+- **Tracking issues:** `TowerDefense3D-769`, `TowerDefense3D-zl2`, `TowerDefense3D-do0`, `TowerDefense3D-xrk`, `TowerDefense3D-azy`, `TowerDefense3D-3xt`, `TowerDefense3D-49k`
 - **Security note:** A Voyage API key was pasted into the earlier session. Its value is intentionally omitted; the exposed key was rejected and rotation was required.
 
 This file summarizes consequential decisions from the responsible sessions. It is not a verbatim transcript.
@@ -344,3 +344,128 @@ The three boundaries allow reviewers to inspect the base project independently f
 ### Implementation or verification result
 
 Commits `0a47592`, `8649c31`, and `8c7445e` were created in order with the configured author. The prototype smoke test passed, the final Git worktree was clean, Feel was absent from the committed tree, and no remote push occurred.
+
+## Entry 12 — Design and implement visual BoardDefinition authoring
+
+**Responsible session:** `019ff9b2-7ed8-7aa2-b3c3-253151a6c459`
+
+### Problem being addressed
+
+The serialized `BoardDefinition` cell list was difficult for a Game Designer to understand and edit because it did not expose the board as visible cells arranged by horizontal coordinates and vertical level.
+
+### Prompt used
+
+The user requested a visual matrix whose Width and Depth are designer-controlled, where painting a cell assigns its gameplay type and semantic color, with a selector for the active Y level. The user approved the proposed plan and requested implementation through the technical-lead workflow.
+
+### Important AI response
+
+The AI proposed an Editor-only Board Painter that presents one Width-by-Depth XZ matrix for the selected Y level while preserving the existing sparse runtime `BoardCellDefinition[]` schema. A separate document/model would handle deterministic serialization, validation, resize preservation, crop confirmation, and Undo-aware stroke commits, while a thin `EditorWindow` and custom `BoardDefinition` Inspector would coordinate the UI.
+
+### Option selected, revised, or rejected
+
+- **Selected:** five fixed semantic paint presets: Empty, Buildable, No-Build, Blocked Surface, and Volume Blocker.
+- **Selected:** click-drag painting, erasing, a Y-level selector, intersection-preserving resize, destructive-crop confirmation, Undo/Redo reload, and deterministic Y-Z-X sparse output.
+- **Selected:** return an existing `DemoBoard.asset` before any seed assignment so authored cells cannot be overwritten by the demo builder.
+- **Rejected:** changing the runtime board schema, adding runtime grid rendering, introducing a color picker, or deriving authoring data from terrain and colliders.
+
+### Rationale
+
+Keeping the tool in an Editor-only assembly gives designers a direct visual workflow without increasing player-build size or coupling runtime placement logic to Unity Editor APIs. Preserving the sparse runtime format avoids a migration, while fixed presets make cell meaning consistent and testable across levels.
+
+### Implementation or verification result
+
+The Board Painter window, custom Inspector entry point, preset mapping, document/model, Editor assembly, demo-builder preservation guard, and nine Edit Mode regression tests were added and accepted through static source review. Final Unity Test Runner execution, live painter interaction, save/reopen and Undo verification, `DemoBoard.asset` checksum confirmation, and the final Better Context refresh remain tracked by `TowerDefense3D-3xt`.
+
+## Entry 13 — Prevent Better Context from exporting during Play Mode
+
+**Responsible session:** `019ff9b2-7ed8-7aa2-b3c3-253151a6c459`
+
+### Problem being addressed
+
+Entering or leaving Unity Play Mode caused Better Context to export a large Editor snapshot again, interrupting gameplay and adding unnecessary Editor work.
+
+### Prompt used
+
+The user requested that Better Context stop starting automatically when Unity enters Play Mode.
+
+### Important AI response
+
+The AI traced the behavior to the Editor bridge polling a persistent `editor-request.json` while remembering the processed nonce only in a static field. Domain reload reset that field, so the old request appeared new. The pinned package and its current official `main` source exposed no setting for this behavior.
+
+### Option selected, revised, or rejected
+
+- **Selected:** embed the approved pinned Better Context Editor package through Unity Package Manager.
+- **Selected:** suspend request polling while Unity is playing or about to enter Play Mode.
+- **Selected:** preserve the last processed nonce with `UnityEditor.SessionState` and delete the default request after a successful response.
+- **Rejected:** editing the transient `Library/PackageCache` copy, disabling Better Context completely, or running a refresh during gameplay.
+
+### Rationale
+
+An embedded package makes the local compatibility fix durable and reviewable. The Play Mode guard prevents expensive asset scans during gameplay, while nonce persistence and one-shot request cleanup prevent the same request from being replayed after domain reload.
+
+### Implementation or verification result
+
+The package was embedded from the approved `1.6.0` source and patched. Unity recompiled successfully with zero Console errors or warnings. A live enter-and-exit Play Mode test left `editor-request.json` absent and preserved the exact Editor snapshot timestamp and SHA-256 both during and after gameplay, with no Better Context export log. The root agent instructions now prohibit Better Context refreshes while Unity is entering or running Play Mode.
+
+## Entry 14 — Synchronize Board-authored geometry into the scene
+
+**Responsible session:** `019ff9b2-7ed8-7aa2-b3c3-253151a6c459`
+
+### Problem being addressed
+
+Changing the renamed `Board.asset` did not update the visual and collider geometry under `Board Origin`, and the old one-shot demo rebuild tool could overwrite or drift from designer-authored board data.
+
+### Prompt used
+
+The user requested that every Board update synchronize the children of `Board Origin` to the current dimensions, cells, and vertical levels. The user also requested a `Visualize In Scene` toggle that controls renderers while retaining colliders for placement, and removal of the legacy grid demo rebuild tool.
+
+### Important AI response
+
+The AI proposed an Editor-only delayed synchronizer backed by a pure deterministic geometry planner. The planner merges authored cells into rectangles per Y level and geometry kind, while a small runtime presenter owns the Board reference and renderer visibility. The synchronizer owns only a dedicated generated child root, preserves manual siblings, remains idempotent through a content signature, and defers work during Play Mode or compilation.
+
+### Option selected, revised, or rejected
+
+- **Selected:** use `Board.asset` as the source of truth and `Board Origin` only as the coordinate anchor.
+- **Selected:** generate merged placement surfaces and blocker volumes with persistent project materials, enabled colliders, and renderer state driven by `Visualize In Scene`.
+- **Selected:** synchronize after Board Painter commits, Inspector edits, Undo/Redo, and Board asset imports through a coalesced delayed callback.
+- **Rejected:** per-cell GameObjects, runtime `Update` polling, disabling colliders when visualization is off, replacing manual scene children, or retaining the legacy rebuild menu.
+
+### Rationale
+
+Deterministic rectangle merging keeps the authored scene readable and reduces GameObject, renderer, and collider counts for the Android-first target. Separating pure planning, Editor synchronization, and runtime visibility keeps player builds free of Editor code and prevents scene serialization work during gameplay.
+
+### Implementation or verification result
+
+`BoardScenePresenter`, the geometry planner, scene synchronizer, delayed change scheduler, Inspector and Board Painter hooks, and focused regression tests were implemented. `SampleScene` now contains one generated Board geometry root under `Board Origin`, wired to the existing `Board.asset` GUID, with five merged geometry objects for the current 20-by-8 board and authored Y levels. Live Unity checks confirmed that disabling visualization leaves colliders enabled and raycastable, repeated synchronization reuses existing geometry, and the legacy rebuild menu is absent. The focused suites passed with 15 Edit Mode tests and 3 Play Mode tests, with zero failures.
+
+## Entry 15 — Improve delegated context and Board visualization clarity
+
+**Responsible session:** `019ff9b2-7ed8-7aa2-b3c3-253151a6c459`
+
+### Problem being addressed
+
+Spawned agents were receiving too little durable project context, and the generated Board surfaces and blockers still appeared opaque even though they were intended as optional scene visualization. The completed implementation also needed an auditable, atomic Git history without restoring the removed Feel package.
+
+### Prompt used
+
+The user requested a README policy requiring several Better Context summaries for both reading and writing, slightly transparent Board visualization materials, an updated AI collaboration record, and commits following the repository convention. The user also confirmed that Feel must remain removed.
+
+### Important AI response
+
+The AI established a path-scoped summary policy and stored seven summaries through the Better Context CLI for the GridPlacement feature, its runtime, Editor tooling, BoardAuthoring, data, tests, and scene integration. It identified that changing color alpha alone was insufficient because `Ground.mat` and `Blocker.mat` still used URP Opaque rendering, and it audited the dirty Git state before defining atomic commit boundaries.
+
+### Option selected, revised, or rejected
+
+- **Selected:** require parent agents and technical leads to include relevant Better Context map and summary paths in spawned-worker briefs.
+- **Selected:** convert only `Ground.mat` and `Blocker.mat` to URP Transparent Alpha blending at opacity `0.7`, render queue `3000`, and `ZWrite` disabled.
+- **Selected:** preserve `PreviewTransparent.mat`, the legacy height materials, collider behavior, and shared-material usage.
+- **Selected:** remove the stale `MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED` define and keep the deleted Feel package absent.
+- **Rejected:** hand-editing generated Better Context maps, changing alpha without changing the URP surface mode, restoring Feel-related configuration, or creating one monolithic commit.
+
+### Rationale
+
+Several concise summaries give delegated agents durable feature, ownership, and integration context without copying source code into prompts. Correct URP transparent state makes the designer-only geometry readable while retaining collision behavior. Separate fix, feature, visualization, and documentation commits keep review and rollback boundaries clear.
+
+### Implementation or verification result
+
+The README now documents the summary and handoff policy, and Better Context stored seven path-scoped summaries with a final `is_stale: false` verification. Live Unity inspection confirmed five generated renderers using the shared translucent materials while all Board colliders remained enabled; Scene View showed background and overlap blending, and the Console remained at zero errors and warnings. Feel and its scripting define were absent. The implementation was recorded in commits `488393a` (`fix: Ngăn Better Context chạy trong Play Mode`), `5376cc4` (`feat: Thêm Board authoring và đồng bộ scene`), and `90da521` (`feat: Làm trong suốt Board visualization`); this entry and the README policy are recorded in the following atomic documentation commit.
