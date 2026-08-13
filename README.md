@@ -91,6 +91,21 @@ All human-authored project documentation must be written in English. This requir
 
 Non-English names, source phrases, or direct quotations may be retained only when they are necessary for cultural or technical accuracy, and they must include a nearby English explanation.
 
+## Commit message convention
+
+- Use Conventional Commit prefixes such as `feat:`, `fix:`, `docs:`, `test:`, or `chore:`.
+- Write the subject in Vietnamese and capitalize only its first letter. Do not use Title Case.
+- Keep established technical keywords, feature names, API names, and product terminology in English when translating them would reduce clarity.
+- Keep the subject concise, imperative, and without a trailing period.
+
+Examples:
+
+```text
+feat: Thêm tutorial cho prototype
+fix: Sửa grid placement trên mobile
+docs: Cập nhật AI collaboration log
+```
+
 ## AI collaboration records
 
 `Documents/AICollaboration/` stores concise records of consequential collaboration with AI assistants. These records preserve decisions and validation evidence without copying an entire raw transcript.

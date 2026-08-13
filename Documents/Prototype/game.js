@@ -10,6 +10,8 @@ const ui = {
   wave: document.getElementById("waveValue"),
   enemies: document.getElementById("enemyValue"),
   waveButton: document.getElementById("waveButton"),
+  levelButton: document.getElementById("levelButton"),
+  tutorialButton: document.getElementById("tutorialButton"),
   pauseButton: document.getElementById("pauseButton"),
   restartButton: document.getElementById("restartButton"),
   shop: document.getElementById("towerShop"),
@@ -27,11 +29,30 @@ const ui = {
   upgradePanel: document.getElementById("upgradePanel"),
   upgradeLimit: document.getElementById("upgradeLimit"),
   upgradeOptions: document.getElementById("upgradeOptions"),
-  sellButton: document.getElementById("sellButton")
+  sellButton: document.getElementById("sellButton"),
+  inspector: document.getElementById("inspector"),
+  inspectorClose: document.getElementById("inspectorClose"),
+  tutorialOverlay: document.getElementById("tutorialOverlay"),
+  tutorialProgress: document.getElementById("tutorialProgress"),
+  tutorialIcon: document.getElementById("tutorialIcon"),
+  tutorialKicker: document.getElementById("tutorialKicker"),
+  tutorialTitle: document.getElementById("tutorialTitle"),
+  tutorialBody: document.getElementById("tutorialBody"),
+  tutorialContinue: document.getElementById("tutorialContinue"),
+  levelOverlay: document.getElementById("levelOverlay"),
+  levelGrid: document.getElementById("levelGrid"),
+  levelClose: document.getElementById("levelClose"),
+  levelCompleteOverlay: document.getElementById("levelCompleteOverlay"),
+  levelCompleteTitle: document.getElementById("levelCompleteTitle"),
+  levelCompleteBody: document.getElementById("levelCompleteBody"),
+  replayLevelButton: document.getElementById("replayLevelButton"),
+  nextLevelButton: document.getElementById("nextLevelButton")
 };
 
 const MAX_HEALTH = 40;
 const MAX_UPGRADES = 3;
+const STORAGE_KEY = "toadTowerDefenseCampaignV1";
+const TOWER_ORDER = ["bear", "bee", "fox", "crab", "waterTower"];
 
 const COLORS = {
   ink: "#f7f0d8",
@@ -108,22 +129,99 @@ const TOWER_TYPES = {
   }
 };
 
-const WAVES = [
-  { count: 8, hp: 50, speed: 48, reward: 5, interval: 0.82, type: "ground" },
-  { count: 10, hp: 65, speed: 52, reward: 5, interval: 0.74, type: "ground" },
-  { count: 12, hp: 82, speed: 56, reward: 6, interval: 0.68, type: "mixed" },
-  { count: 14, hp: 103, speed: 60, reward: 6, interval: 0.62, type: "mixed" },
-  { count: 16, hp: 127, speed: 64, reward: 7, interval: 0.57, type: "mixed" },
-  { count: 17, hp: 140, speed: 66, reward: 8, interval: 0.52, type: "elite" }
+const LEVELS = [
+  { name: "Bờ ruộng", icon: "🐻", unlock: "bear", waves: 3, difficulty: 0.7, water: 250 },
+  { name: "Vườn mật", icon: "🐝", unlock: "bee", waves: 6, difficulty: 0.84, water: 280 },
+  { name: "Đồi cáo", icon: "🦊", unlock: "fox", waves: 6, difficulty: 1, water: 320 },
+  { name: "Bãi triều", icon: "🦀", unlock: "crab", waves: 6, difficulty: 1.17, water: 360 },
+  { name: "Mạch nguồn", icon: "💧", unlock: "waterTower", waves: 6, difficulty: 1.34, water: 400 }
 ];
 
+const BASE_WAVES = [
+  { count: 6, hp: 45, speed: 46, reward: 5, interval: 0.9 },
+  { count: 8, hp: 60, speed: 50, reward: 5, interval: 0.8 },
+  { count: 10, hp: 78, speed: 54, reward: 6, interval: 0.7 },
+  { count: 12, hp: 98, speed: 58, reward: 6, interval: 0.63 },
+  { count: 14, hp: 122, speed: 62, reward: 7, interval: 0.57 },
+  { count: 16, hp: 145, speed: 66, reward: 8, interval: 0.52 }
+];
+
+const TUTORIALS = {
+  0: [
+    { icon: "🐻", title: "Gấu giữ cửa", body: "Gấu là trụ vật lý đầu tiên: đánh địch mặt đất, Dương đánh rộng và làm chậm.", kicker: "Màn 1 · Gấu" },
+    { icon: "🐾", title: "Mua Gấu", body: "Bấm Gấu ở thanh dưới để chuẩn bị xây.", waitFor: "select:bear", target: "shop:bear" },
+    { icon: "◎", title: "Đặt Gấu", body: "Chạm một vòng trống trên chiến trường.", waitFor: "place:bear", target: "canvas" },
+    { icon: "▲", title: "Nâng cấp", body: "Chọn một nâng cấp cho Gấu bằng Nước. Tutorial đề xuất sát thương.", waitFor: "upgrade:bear", target: "upgrade" },
+    { icon: "☀", title: "Pha Dương", body: "Gấu Dương đánh AOE và làm chậm 35%. Đòn đánh cùng hạ địch sẽ tích Nghiệp.", kicker: "Âm Dương" },
+    { icon: "⚔", title: "Mở đợt", body: "Bấm nút Đợt để bắt đầu. Mọi đồng hồ của trụ chỉ chạy trong wave.", waitFor: "wave:start", target: "wave" },
+    { icon: "☯", title: "Nghiệp sắp đầy", body: "Tutorial sẽ nạp gần đầy Nghiệp. Đòn kế tiếp đưa Gấu vào Âm.", waitFor: "phase:bear:Yin", target: "canvas", prepare: "prime_bear_yin" },
+    { icon: "🌑", title: "Pha Âm", body: "Gấu Âm chỉ đánh một mục tiêu và tăng tốc địch trong tầm. Chờ Nghiệp xả hết để trở lại Dương.", kicker: "Âm Dương" },
+    { icon: "◆◆◆", title: "Giữ đủ 3 wave", body: "Tiếp tục mở wave và bảo vệ đền. Tutorial sẽ trở lại sau wave cuối.", waitFor: "level:waves_complete", target: "wave" },
+    { icon: "♻", title: "Bán Gấu", body: "Bấm Bán trụ để thu hồi 60% Nước đã đầu tư.", waitFor: "sell:bear", target: "sell", prepare: "select_bear" },
+    { icon: "🌧", title: "Hoàn tất bài học", body: "Bạn đã mua, đặt, nâng cấp, bán và quan sát đủ hai pha của Gấu." }
+  ],
+  1: [
+    { icon: "🐝", title: "Mở khóa Ong", body: "Ong gây sát thương phép lên cả địch đất và bay.", kicker: "Màn 2 · Ong" },
+    { icon: "🐝", title: "Mua Ong", body: "Chọn Ong ở thanh linh thú.", waitFor: "select:bee", target: "shop:bee" },
+    { icon: "◎", title: "Đặt Ong", body: "Đặt Ong gần đường đi để vùng AOE bao phủ nhiều mục tiêu.", waitFor: "place:bee", target: "canvas" },
+    { icon: "🐻", title: "Thêm Gấu", body: "Chọn Gấu để chuẩn bị combo Âm Dương.", waitFor: "select:bear", target: "shop:bear" },
+    { icon: "◎", title: "Đặt Gấu", body: "Đặt Gấu. Tutorial sẽ cho aura Âm phủ mục tiêu của Ong trong lần minh họa này.", waitFor: "place:bear", target: "canvas" },
+    { icon: "☀", title: "Ong Dương", body: "Ong Dương gây độc và tăng sát thương phép theo phần tốc độ địch được cộng thêm." },
+    { icon: "⚔", title: "Mở đợt", body: "Bắt đầu wave để thử combo Ong Dương + Gấu Âm.", waitFor: "wave:start", target: "wave" },
+    { icon: "☯", title: "Kích hoạt combo", body: "Tutorial đưa Gấu vào Âm. Chờ Ong Dương bắn kẻ địch đang được Gấu tăng tốc.", waitFor: "combo:bee_bear", target: "canvas", prepare: "prime_combo" },
+    { icon: "🐝", title: "Combo thành công", body: "Gấu Âm làm địch chạy nhanh hơn; Ong Dương biến phần tốc độ cộng thêm đó thành sát thương phép lớn hơn." }
+  ],
+  2: [{ icon: "🦊", title: "Mở khóa Cáo", body: "Cáo săn mục tiêu giá trị cao. Khi Âm, Cáo ưu tiên tinh anh và cắn mạnh hơn.", kicker: "Màn 3" }],
+  3: [{ icon: "🦀", title: "Mở khóa Cua", body: "Cua điều nhịp đội hình bằng aura buff/debuff; nâng cấp của Cua tăng tầm aura.", kicker: "Màn 4" }],
+  4: [{ icon: "💧", title: "Mở khóa Trụ Nước", body: "Trụ Nước tạo tài nguyên trong wave. Nâng cấp sẽ tăng lượng Nước mỗi lần sinh.", kicker: "Màn 5" }]
+};
+
 let state;
+let campaign = loadCampaign();
+let currentLevelIndex = Math.max(0, Math.min(LEVELS.length - 1, campaign.currentLevel - 1));
+let WAVES = buildLevelWaves(currentLevelIndex);
 let lastTime = performance.now();
 let bannerTimer = 0;
 
+function loadCampaign() {
+  const fallback = { maxUnlockedLevel: 1, currentLevel: 1, completedTutorials: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if (!saved) return fallback;
+    const maxUnlockedLevel = Math.max(1, Math.min(LEVELS.length, Number(saved.maxUnlockedLevel) || 1));
+    return {
+      maxUnlockedLevel,
+      currentLevel: Math.max(1, Math.min(maxUnlockedLevel, Number(saved.currentLevel) || 1)),
+      completedTutorials: saved.completedTutorials || {}
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveCampaign() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(campaign));
+  } catch {
+    // The game remains playable when storage is unavailable.
+  }
+}
+
+function buildLevelWaves(levelIndex) {
+  const level = LEVELS[levelIndex];
+  return BASE_WAVES.slice(0, level.waves).map((base, waveIndex) => ({
+    count: base.count + levelIndex,
+    hp: Math.round(base.hp * level.difficulty),
+    speed: Math.round(base.speed * (1 + levelIndex * 0.025)),
+    reward: base.reward,
+    interval: Math.max(0.42, base.interval - levelIndex * 0.015),
+    type: levelIndex === 0 ? "ground" : waveIndex === level.waves - 1 ? "elite" : waveIndex >= 2 ? "mixed" : "ground"
+  }));
+}
+
 function makeState() {
   return {
-    water: 220,
+    water: LEVELS[currentLevelIndex].water,
     health: MAX_HEALTH,
     wave: 0,
     waveActive: false,
@@ -135,8 +233,13 @@ function makeState() {
     selectedType: null,
     selectedTowerId: null,
     paused: false,
+    pausedByTutorial: false,
+    pausedByMenu: false,
     gameOver: false,
     victory: false,
+    levelComplete: false,
+    pendingLevelCompletion: false,
+    tutorial: null,
     nextEnemyId: 1,
     nextTowerId: 1,
     elapsed: 0
@@ -145,33 +248,55 @@ function makeState() {
 
 function createShop() {
   ui.shop.innerHTML = "";
-  Object.entries(TOWER_TYPES).forEach(([key, type]) => {
+  TOWER_ORDER.forEach((key, index) => {
+    const type = TOWER_TYPES[key];
+    const unlocked = index < campaign.maxUnlockedLevel;
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "tower-card";
+    button.className = `tower-card${unlocked ? "" : " locked"}`;
     button.dataset.tower = key;
-    button.innerHTML = `<span class="animal">${type.icon}</span><span><strong>${type.name}</strong><small>${type.role}</small></span><span class="price">💧 ${type.cost}</span>`;
+    button.disabled = !unlocked;
+    button.innerHTML = `<span class="animal">${type.icon}</span><strong>${type.name}</strong><span class="price">💧 ${type.cost}</span>${unlocked ? "" : '<span class="lock">🔒</span>'}`;
     button.addEventListener("click", () => selectShopTower(key));
     ui.shop.appendChild(button);
   });
 }
 
-function resetGame() {
+function loadLevel(levelIndex, forceTutorial = false) {
+  if (levelIndex < 0 || levelIndex >= campaign.maxUnlockedLevel) return false;
+  currentLevelIndex = levelIndex;
+  campaign.currentLevel = levelIndex + 1;
+  saveCampaign();
+  WAVES = buildLevelWaves(levelIndex);
   state = makeState();
   lastTime = performance.now();
   bannerTimer = 0;
+  clearTutorialFocus();
+  ui.levelOverlay.classList.add("hidden");
+  ui.levelCompleteOverlay.classList.add("hidden");
+  ui.inspector.classList.remove("open");
+  createShop();
   selectShopTower("bear");
+  createLevelMenu();
   updateUI();
-  showBanner("Linh thú đang chờ lệnh.");
+  showBanner(`${LEVELS[levelIndex].icon} Màn ${levelIndex + 1} · ${LEVELS[levelIndex].name}`);
+  if (forceTutorial || !campaign.completedTutorials[levelIndex + 1]) beginTutorial(levelIndex);
+  return true;
+}
+
+function resetGame() {
+  loadLevel(currentLevelIndex);
 }
 
 function selectShopTower(typeKey) {
+  if (TOWER_ORDER.indexOf(typeKey) >= campaign.maxUnlockedLevel) return;
   state.selectedType = typeKey;
   state.selectedTowerId = null;
   const type = TOWER_TYPES[typeKey];
   ui.hint.textContent = `${type.icon} ${type.name} · Chạm vòng trống · 💧 ${type.cost}`;
   inspectType(type);
   updateShop();
+  notifyTutorial(`select:${typeKey}`);
 }
 
 function selectPlacedTower(tower) {
@@ -191,6 +316,7 @@ function clearTowerSelection() {
   ui.karmaReadout.classList.add("hidden");
   ui.upgradePanel.classList.add("hidden");
   ui.sellButton.classList.add("hidden");
+  ui.inspector.classList.remove("open");
   updateShop();
 }
 
@@ -203,6 +329,7 @@ function inspectType(type) {
   ui.karmaReadout.classList.add("hidden");
   ui.upgradePanel.classList.add("hidden");
   ui.sellButton.classList.add("hidden");
+  ui.inspector.classList.add("open");
 }
 
 function inspectTower(tower) {
@@ -215,6 +342,7 @@ function inspectTower(tower) {
   ui.karmaReadout.classList.remove("hidden");
   ui.upgradePanel.classList.remove("hidden");
   ui.sellButton.classList.remove("hidden");
+  ui.inspector.classList.add("open");
   updateInspectorMeter(tower);
   renderUpgradeOptions(tower);
 }
@@ -229,9 +357,153 @@ function updateInspectorMeter(tower) {
   ui.karmaFill.classList.toggle("yin", tower.phase === "Yin");
 }
 
+function createLevelMenu() {
+  ui.levelGrid.innerHTML = "";
+  LEVELS.forEach((level, index) => {
+    const unlocked = index < campaign.maxUnlockedLevel;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `level-option${index === currentLevelIndex ? " current" : ""}`;
+    button.disabled = !unlocked;
+    button.innerHTML = `<span>${unlocked ? level.icon : "🔒"}</span><strong>Màn ${index + 1}</strong><small>${unlocked ? `${level.name} · ${level.waves} wave` : "Chưa mở"}</small>`;
+    button.addEventListener("click", () => loadLevel(index));
+    ui.levelGrid.appendChild(button);
+  });
+}
+
+function openLevelMenu() {
+  if (state.tutorial?.overlayVisible) return;
+  state.pausedByMenu = true;
+  createLevelMenu();
+  ui.levelOverlay.classList.remove("hidden");
+}
+
+function closeLevelMenu() {
+  state.pausedByMenu = false;
+  ui.levelOverlay.classList.add("hidden");
+}
+
+function beginTutorial(levelIndex) {
+  const steps = TUTORIALS[levelIndex];
+  if (!steps?.length) return;
+  state.tutorial = { levelIndex, stepIndex: 0, awaiting: null, overlayVisible: false };
+  showTutorialStep();
+}
+
+function showTutorialStep() {
+  const tutorial = state.tutorial;
+  if (!tutorial) return;
+  const steps = TUTORIALS[tutorial.levelIndex];
+  if (tutorial.stepIndex >= steps.length) {
+    finishTutorial();
+    return;
+  }
+  const step = steps[tutorial.stepIndex];
+  tutorial.overlayVisible = true;
+  state.pausedByTutorial = true;
+  clearTutorialFocus();
+  ui.tutorialProgress.textContent = `${tutorial.stepIndex + 1} / ${steps.length}`;
+  ui.tutorialIcon.textContent = step.icon;
+  ui.tutorialKicker.textContent = step.kicker || "Hướng dẫn";
+  ui.tutorialTitle.textContent = step.title;
+  ui.tutorialBody.textContent = step.body;
+  ui.tutorialContinue.textContent = tutorial.stepIndex === steps.length - 1 ? "Hoàn tất →" : "Tiếp tục →";
+  ui.tutorialOverlay.classList.remove("hidden");
+}
+
+function continueTutorial() {
+  const tutorial = state.tutorial;
+  if (!tutorial) return;
+  const steps = TUTORIALS[tutorial.levelIndex];
+  const step = steps[tutorial.stepIndex];
+  tutorial.overlayVisible = false;
+  state.pausedByTutorial = false;
+  ui.tutorialOverlay.classList.add("hidden");
+  if (step.prepare) prepareTutorialStep(step.prepare);
+  if (step.waitFor) {
+    tutorial.awaiting = step.waitFor;
+    focusTutorialTarget(step.target);
+    return;
+  }
+  tutorial.stepIndex += 1;
+  showTutorialStep();
+}
+
+function notifyTutorial(eventName) {
+  const tutorial = state.tutorial;
+  if (!tutorial || tutorial.awaiting !== eventName) return;
+  if (eventName === "combo:bee_bear") {
+    const bear = state.towers.find(tower => tower.type === "bear");
+    if (bear) bear.tutorialGlobalAura = false;
+  }
+  tutorial.awaiting = null;
+  tutorial.stepIndex += 1;
+  clearTutorialFocus();
+  showTutorialStep();
+}
+
+function prepareTutorialStep(action) {
+  if (action === "select_bear") {
+    const bear = state.towers.find(tower => tower.type === "bear");
+    if (bear) selectPlacedTower(bear);
+  }
+  if (action === "prime_bear_yin") {
+    const bear = state.towers.find(tower => tower.type === "bear");
+    if (bear) bear.karma = Math.max(0, TOWER_TYPES.bear.cycle - TOWER_TYPES.bear.karmaPerAttack);
+  }
+  if (action === "prime_combo") {
+    const bear = state.towers.find(tower => tower.type === "bear");
+    const bee = state.towers.find(tower => tower.type === "bee");
+    if (bear) {
+      bear.phase = "Yin";
+      bear.karma = TOWER_TYPES.bear.cycle;
+      bear.tutorialGlobalAura = true;
+    }
+    if (bee) {
+      bee.phase = "Yang";
+      bee.karma = 0;
+    }
+  }
+}
+
+function finishTutorial() {
+  if (!state.tutorial) return;
+  const levelNumber = state.tutorial.levelIndex + 1;
+  campaign.completedTutorials[levelNumber] = true;
+  saveCampaign();
+  state.tutorial = null;
+  state.pausedByTutorial = false;
+  ui.tutorialOverlay.classList.add("hidden");
+  clearTutorialFocus();
+  if (state.pendingLevelCompletion) completeLevel();
+}
+
+function focusTutorialTarget(target) {
+  const element = tutorialTargetElement(target);
+  if (element) element.classList.add("tutorial-focus");
+}
+
+function clearTutorialFocus() {
+  if (!document.querySelectorAll) return;
+  document.querySelectorAll(".tutorial-focus").forEach(element => element.classList.remove("tutorial-focus"));
+}
+
+function tutorialTargetElement(target) {
+  if (!target) return null;
+  if (target.startsWith("shop:")) {
+    const type = target.split(":")[1];
+    return Array.from(ui.shop.children).find(button => button.dataset.tower === type) || null;
+  }
+  if (target === "canvas") return canvas;
+  if (target === "wave") return ui.waveButton;
+  if (target === "upgrade") return ui.upgradePanel;
+  if (target === "sell") return ui.sellButton;
+  return null;
+}
+
 function placeTower(spotIndex) {
   const typeKey = state.selectedType;
-  if (!typeKey || state.gameOver || state.victory) return;
+  if (!typeKey || state.gameOver || state.levelComplete) return;
   const type = TOWER_TYPES[typeKey];
   const occupied = state.towers.some(tower => tower.spotIndex === spotIndex);
   if (occupied) {
@@ -245,14 +517,17 @@ function placeTower(spotIndex) {
 
   const spot = BUILD_SPOTS[spotIndex];
   state.water -= type.cost;
-  state.towers.push({
+  const tower = {
     id: state.nextTowerId++, type: typeKey, spotIndex, x: spot.x, y: spot.y,
     karma: 0, phase: "Yang", cooldown: Math.random() * 0.25, productionTimer: 0,
     yinLeakCounter: 0, shieldApplied: new Set(), upgradeCount: 0, upgradeSpent: 0,
     upgrades: { damage: 0, speed: 0, range: 0, production: 0 }
-  });
+  };
+  state.towers.push(tower);
+  selectPlacedTower(tower);
   showBanner(`${type.icon} ${type.name} đã vào trận.`);
   updateUI();
+  notifyTutorial(`place:${typeKey}`);
 }
 
 function dismissSelectedTower() {
@@ -266,6 +541,7 @@ function dismissSelectedTower() {
   inspectType(TOWER_TYPES[tower.type]);
   updateUI();
   showBanner(`${TOWER_TYPES[tower.type].icon} Đã bán · +${refund} 💧`);
+  notifyTutorial(`sell:${tower.type}`);
 }
 
 function upgradeChoices(tower) {
@@ -299,6 +575,7 @@ function upgradeTower(kind) {
   addEffect(tower.x, tower.y - 18, "▲", COLORS.water);
   showBanner(`${TOWER_TYPES[tower.type].icon} Nâng cấp ${tower.upgradeCount}/${MAX_UPGRADES}`);
   updateUI();
+  notifyTutorial(`upgrade:${tower.type}`);
   return true;
 }
 
@@ -336,7 +613,7 @@ function waterYield(tower) {
 }
 
 function startWave() {
-  if (state.waveActive || state.gameOver || state.victory || state.wave >= WAVES.length) return;
+  if (state.waveActive || state.gameOver || state.levelComplete || state.wave >= WAVES.length) return;
   const config = WAVES[state.wave];
   state.wave += 1;
   state.waveActive = true;
@@ -344,6 +621,7 @@ function startWave() {
   state.spawnTimer = 0;
   showBanner(`⚔ Đợt ${state.wave} ${dangerPips(state.wave - 1)}`, "danger");
   updateUI();
+  notifyTutorial("wave:start");
 }
 
 function spawnEnemy() {
@@ -380,7 +658,7 @@ function spawnEnemy() {
 }
 
 function updateGame(dt) {
-  if (state.paused || state.gameOver || state.victory) return;
+  if (state.paused || state.pausedByTutorial || state.pausedByMenu || state.gameOver || state.levelComplete) return;
   state.elapsed += dt;
 
   if (!state.waveActive) {
@@ -417,7 +695,8 @@ function applyTowerAuras() {
   for (const tower of state.towers) {
     const range = towerRange(tower);
     if (tower.type === "bear" && tower.phase === "Yin") {
-      for (const enemy of enemiesInRange(tower, range, false)) enemy.speedBonus = Math.max(enemy.speedBonus, 0.45);
+      const auraRange = tower.tutorialGlobalAura ? Infinity : range;
+      for (const enemy of enemiesInRange(tower, auraRange, false)) enemy.speedBonus = Math.max(enemy.speedBonus, 0.45);
     }
     if (tower.type === "crab" && tower.phase === "Yang") {
       for (const enemy of enemiesInRange(tower, range, true)) enemy.slow = Math.min(enemy.slow, 0.72);
@@ -498,6 +777,7 @@ function attack(tower, primaryTarget) {
   const type = TOWER_TYPES[tower.type];
   const phaseAtAttack = tower.phase;
   let targets = [primaryTarget];
+  let triggeredBeeBearCombo = false;
 
   if (tower.type === "bear" && phaseAtAttack === "Yang") {
     targets = state.enemies.filter(enemy => !enemy.dead && enemy.kind !== "flying" && distance(enemy, primaryTarget) <= 45);
@@ -511,6 +791,7 @@ function attack(tower, primaryTarget) {
     let damageType = tower.type === "bee" ? "magic" : "physical";
 
     if (tower.type === "bee" && phaseAtAttack === "Yang") {
+      triggeredBeeBearCombo ||= enemy.speedBonus > 0 && state.towers.some(item => item.type === "bear" && item.phase === "Yin");
       damage *= 1 + enemy.speedBonus * 1.3;
       enemy.poison = Math.max(enemy.poison, 4);
       enemy.poisonTimer = 4;
@@ -536,6 +817,7 @@ function attack(tower, primaryTarget) {
   } else if (tower.type === "bee") {
     tower.karma = Math.max(0, tower.karma - 5);
   }
+  if (triggeredBeeBearCombo) notifyTutorial("combo:bee_bear");
 }
 
 function gainKarma(tower, amount) {
@@ -549,6 +831,7 @@ function gainKarma(tower, amount) {
     tower.shieldApplied.clear();
     addEffect(tower.x, tower.y, "phase", COLORS.yin);
     showBanner(`${type.icon} ${type.name} vào Âm!`, "danger");
+    notifyTutorial(`phase:${tower.type}:Yin`);
   }
 }
 
@@ -688,18 +971,56 @@ function finishWaveIfReady() {
   const bonus = 24 + state.wave * 4;
   state.water += bonus;
   if (state.wave >= WAVES.length) {
-    endGame(true);
+    state.pendingLevelCompletion = true;
+    notifyTutorial("level:waves_complete");
+    if (!state.tutorial) completeLevel();
   } else {
     showBanner(`Qua đợt ${state.wave} · +${bonus} 💧`, "success");
   }
   updateUI();
 }
 
-function endGame(victory) {
+function completeLevel() {
+  if (state.levelComplete) return;
   state.waveActive = false;
-  state.victory = victory;
-  state.gameOver = !victory;
-  showBanner(victory ? "Mưa đã về. Trời chịu thua!" : "Đền mưa thất thủ!", victory ? "success" : "danger", 8);
+  state.levelComplete = true;
+  state.pendingLevelCompletion = false;
+
+  const isFinalLevel = currentLevelIndex === LEVELS.length - 1;
+  if (!isFinalLevel) {
+    campaign.maxUnlockedLevel = Math.max(campaign.maxUnlockedLevel, currentLevelIndex + 2);
+    campaign.currentLevel = currentLevelIndex + 2;
+  } else {
+    campaign.currentLevel = LEVELS.length;
+  }
+  saveCampaign();
+  createLevelMenu();
+
+  ui.levelCompleteTitle.textContent = isFinalLevel ? "🌧 Gọi mưa thành công" : `Qua màn ${currentLevelIndex + 1}`;
+  if (isFinalLevel) {
+    ui.levelCompleteBody.textContent = "Con Cóc đã tập hợp đủ năm linh thú và gọi được mưa.";
+    ui.nextLevelButton.textContent = "Về màn 1 →";
+    ui.nextLevelButton.dataset.nextLevel = "0";
+  } else {
+    const nextLevel = LEVELS[currentLevelIndex + 1];
+    const unlockedTower = TOWER_TYPES[nextLevel.unlock];
+    ui.levelCompleteBody.textContent = `Mở khóa ${unlockedTower.icon} ${unlockedTower.name} · ${nextLevel.waves} wave mới.`;
+    ui.nextLevelButton.textContent = `Màn ${currentLevelIndex + 2} →`;
+    ui.nextLevelButton.dataset.nextLevel = String(currentLevelIndex + 1);
+  }
+  ui.levelCompleteOverlay.classList.remove("hidden");
+  showBanner(isFinalLevel ? "Mưa đã về!" : `Mở khóa màn ${currentLevelIndex + 2}!`, "success", 8);
+  updateUI();
+}
+
+function endGame(victory) {
+  if (victory) {
+    completeLevel();
+    return;
+  }
+  state.waveActive = false;
+  state.gameOver = true;
+  showBanner("Đền mưa thất thủ!", "danger", 8);
   updateUI();
 }
 
@@ -742,11 +1063,13 @@ function updateUI() {
   ui.healthBar.classList.toggle("danger", healthRatio <= 0.25);
   ui.wave.textContent = `${state.wave} / ${WAVES.length}`;
   ui.enemies.textContent = state.enemies.length + state.spawnQueue;
+  ui.levelButton.textContent = `🗺 Màn ${currentLevelIndex + 1}`;
 
-  ui.waveButton.disabled = state.waveActive || state.gameOver || state.victory;
+  ui.waveButton.disabled = state.waveActive || state.gameOver || state.levelComplete;
   const shownWave = state.waveActive ? state.wave : Math.min(state.wave + 1, WAVES.length);
-  ui.waveButton.textContent = state.victory ? "🌧 Đã gọi mưa" : state.gameOver ? "Đền thất thủ" : state.wave >= WAVES.length ? "Đã qua 6 đợt" : `⚔ Đợt ${shownWave} ${dangerPips(shownWave - 1)}`;
-  ui.pauseButton.textContent = state.paused ? "▶ Tiếp" : "⏸ Dừng";
+  ui.waveButton.textContent = state.levelComplete ? "✓ Hoàn tất" : state.gameOver ? "Đền thất thủ" : state.wave >= WAVES.length ? `Đã qua ${WAVES.length} đợt` : `⚔ Đợt ${shownWave} ${dangerPips(shownWave - 1)}`;
+  ui.pauseButton.textContent = state.paused ? "▶" : "⏸";
+  ui.pauseButton.setAttribute("aria-label", state.paused ? "Tiếp tục" : "Tạm dừng");
   ui.sellButton.disabled = state.waveActive;
 
   updateShop();
@@ -776,8 +1099,7 @@ function draw() {
   drawAltar();
 
   if (state.paused) drawOverlay("Tạm dừng", "Nghiệp đang chờ.");
-  if (state.gameOver) drawOverlay("Đền mưa thất thủ", "Chạm “Lại” để chơi tiếp.");
-  if (state.victory) drawOverlay("Trời chịu thua", "Mưa đã về.");
+  if (state.gameOver) drawOverlay("Đền mưa thất thủ", "Chạm nút ↻ để chơi lại.");
 }
 
 function drawBackground() {
@@ -1101,7 +1423,7 @@ function pointerPosition(event) {
 
 canvas.addEventListener("pointerdown", event => {
   event.preventDefault();
-  if (state.gameOver || state.victory) return;
+  if (state.gameOver || state.levelComplete || state.pausedByTutorial || state.pausedByMenu) return;
   const point = pointerPosition(event);
   const tower = state.towers.find(item => distance(item, point) <= 30);
   if (tower) {
@@ -1118,11 +1440,21 @@ canvas.addEventListener("pointerdown", event => {
 
 ui.waveButton.addEventListener("click", startWave);
 ui.pauseButton.addEventListener("click", () => {
-  if (state.gameOver || state.victory) return;
+  if (state.gameOver || state.levelComplete || state.pausedByTutorial || state.pausedByMenu) return;
   state.paused = !state.paused;
   updateUI();
 });
 ui.restartButton.addEventListener("click", resetGame);
+ui.levelButton.addEventListener("click", openLevelMenu);
+ui.levelClose.addEventListener("click", closeLevelMenu);
+ui.tutorialButton.addEventListener("click", () => loadLevel(currentLevelIndex, true));
+ui.tutorialContinue.addEventListener("click", continueTutorial);
+ui.inspectorClose.addEventListener("click", clearTowerSelection);
+ui.replayLevelButton.addEventListener("click", () => loadLevel(currentLevelIndex));
+ui.nextLevelButton.addEventListener("click", () => {
+  const nextLevel = Number(ui.nextLevelButton.dataset.nextLevel);
+  loadLevel(Number.isFinite(nextLevel) ? nextLevel : currentLevelIndex);
+});
 ui.sellButton.addEventListener("click", dismissSelectedTower);
 ui.upgradeOptions.addEventListener("click", event => {
   const button = event.target.closest("button[data-upgrade]");
@@ -1138,6 +1470,5 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-createShop();
-resetGame();
+loadLevel(currentLevelIndex);
 requestAnimationFrame(frame);
