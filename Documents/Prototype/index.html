@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a2f">
+  <title>Con Cóc Là Cậu Ông Trời — Bản Chơi Thử</title>
+  <meta name="description" content="Bản chơi thử thủ thành Âm Dương và vòng Nghiệp của các linh thú.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Bản chơi thử</p>
+        <h1>Con Cóc Là Cậu Ông Trời</h1>
+        <p class="hero-copy">Xếp thú. Canh Nghiệp. Giữ đền mưa.</p>
+      </div>
+      <div class="yin-yang-mark" aria-hidden="true"><span>☯</span></div>
+    </header>
+
+    <main class="game-layout">
+      <section class="battle-panel" aria-label="Chiến trường">
+        <div class="status-bar" aria-label="Trạng thái trận đấu">
+          <div class="status-card water-stat"><span>💧 Nước</span><strong id="waterValue">0</strong></div>
+          <div class="status-card frog-health">
+            <span>🐸 Đền</span>
+            <div class="health-track" id="healthBar" role="progressbar" aria-label="Máu của Cóc" aria-valuemin="0" aria-valuemax="40" aria-valuenow="40"><i id="healthFill"></i></div>
+          </div>
+          <div class="status-card"><span>⚔ Đợt</span><strong id="waveValue">0 / 0</strong></div>
+          <div class="status-card"><span>👹 Địch</span><strong id="enemyValue">0</strong></div>
+        </div>
+
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="gameCanvas" width="960" height="560" aria-label="Chiến trường thủ thành"></canvas>
+          <div class="battle-banner" id="battleBanner" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="battle-actions">
+          <button class="primary-action" id="waveButton" type="button">⚔ Đợt 1</button>
+          <button class="secondary-action" id="pauseButton" type="button">⏸ Dừng</button>
+          <button class="secondary-action" id="restartButton" type="button">↻ Lại</button>
+        </div>
+
+        <p class="placement-hint" id="placementHint">Chọn thú → chạm vòng trống.</p>
+        <div class="status-legend" aria-label="Hiệu ứng trên địch">
+          <span>🐌 Chậm</span><span>⚡ Nhanh</span><span>☠ Độc</span><span>⬡ Giáp</span><span>✦ Kháng phép</span><span>🛡 Khiên</span>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <section>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Đội hình</p>
+              <h2>Linh thú</h2>
+            </div>
+            <span class="phase-key"><i></i> Dương <b></b> Âm</span>
+          </div>
+          <div class="tower-shop" id="towerShop" aria-label="Chọn trụ"></div>
+        </section>
+
+        <section class="inspector" id="inspector" aria-live="polite">
+          <p class="eyebrow">Chi tiết</p>
+          <h2 id="inspectorTitle">Chưa chọn trụ</h2>
+          <p id="inspectorDescription">Chạm trụ để xem tầm và Nghiệp.</p>
+          <div class="karma-readout hidden" id="karmaReadout">
+            <div class="karma-label"><span id="phaseLabel">Dương</span><span id="karmaText">0 / 0</span></div>
+            <div class="karma-track"><div id="karmaFill"></div></div>
+          </div>
+          <div class="effect-grid hidden" id="effectGrid">
+            <div><span>Dương</span><p id="yangEffect"></p></div>
+            <div><span>Âm</span><p id="yinEffect"></p></div>
+          </div>
+          <div class="upgrade-panel hidden" id="upgradePanel">
+            <div class="upgrade-heading"><span>▲ Nâng cấp</span><small id="upgradeLimit">0 / 3</small></div>
+            <div class="upgrade-options" id="upgradeOptions"></div>
+          </div>
+          <button class="sell-button hidden" id="sellButton" type="button">Bán trụ</button>
+        </section>
+
+        <section class="how-to-play">
+          <p class="eyebrow">Luật nhanh</p>
+          <h2>4 bước</h2>
+          <ol>
+            <li>🐾 Chọn → đặt</li>
+            <li>⚔ Mở đợt</li>
+            <li>☯ Canh Nghiệp</li>
+            <li>🌧 Qua 6 đợt</li>
+          </ol>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
