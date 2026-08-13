@@ -8,8 +8,11 @@ namespace TowerDefense3D.GridPlacement.Editor
 {
     internal static class BoardSceneSynchronizer
     {
-        internal const string GeneratedRootName = "__Generated Board Geometry";
-        private const string SignaturePrefix = "__Signature_";
+        internal const string GeneratedRootName = "Board Visualization";
+        internal const string PlaceableAreaName = "Placeable Area";
+        internal const string BlockedAreaName = "Blocked Area";
+        private const string LegacyGeneratedRootName = "__Generated Board Geometry";
+        private const string GeneratedSignaturePropertyName = "generatedSignature";
         private const string GroundMaterialPath =
             "Assets/_Project/GridPlacement/Materials/Ground.mat";
         private const string BlockerMaterialPath =
@@ -70,11 +73,13 @@ namespace TowerDefense3D.GridPlacement.Editor
             BoardDefinition board,
             BoardGeometryPlan plan)
         {
-            Transform root = FindOwnedRoot(presenter.transform);
-            if (root != null && HasMatchingGeometry(root, plan))
+            Transform root = FindOwnedRoot(presenter);
+            bool rootRenamed = RenameOwnedRoot(root);
+            if (root != null && HasMatchingGeometry(presenter, root, plan))
             {
-                bool changed = ApplyComponentState(root, board.VisualizeInScene);
-                changed |= AssignGeneratedRoot(presenter, root);
+                bool changed = rootRenamed;
+                changed |= ApplyComponentState(root, board.VisualizeInScene);
+                changed |= AssignGeneratedState(presenter, root, plan.Signature);
                 if (changed)
                 {
                     EditorSceneManager.MarkSceneDirty(presenter.gameObject.scene);
@@ -109,19 +114,22 @@ namespace TowerDefense3D.GridPlacement.Editor
                     blockerMaterial);
             }
 
-            var marker = new GameObject(SignaturePrefix + plan.Signature);
-            Undo.RegisterCreatedObjectUndo(marker, "Create Board Geometry Signature");
-            marker.transform.SetParent(root, false);
             ApplyComponentState(root, board.VisualizeInScene);
-            AssignGeneratedRoot(presenter, root);
+            AssignGeneratedState(presenter, root, plan.Signature);
             EditorSceneManager.MarkSceneDirty(presenter.gameObject.scene);
         }
 
         private static bool HasMatchingGeometry(
+            BoardScenePresenter presenter,
             Transform root,
             BoardGeometryPlan plan)
         {
-            if (root.childCount != plan.Rectangles.Count + 1)
+            if (ReadGeneratedSignature(presenter) != plan.Signature)
+            {
+                return false;
+            }
+
+            if (root.childCount != plan.Rectangles.Count)
             {
                 return false;
             }
@@ -137,23 +145,41 @@ namespace TowerDefense3D.GridPlacement.Editor
                 }
             }
 
-            Transform marker = root.GetChild(plan.Rectangles.Count);
-            return marker.name == SignaturePrefix + plan.Signature
-                && marker.GetComponents<Component>().Length == 1;
+            return true;
         }
 
-        private static Transform FindOwnedRoot(Transform presenterTransform)
+        private static Transform FindOwnedRoot(BoardScenePresenter presenter)
         {
+            Transform presenterTransform = presenter.transform;
+            Transform assignedRoot = presenter.GeneratedRoot;
+            if (assignedRoot != null && assignedRoot.parent == presenterTransform)
+            {
+                return assignedRoot;
+            }
+
             for (int index = 0; index < presenterTransform.childCount; index++)
             {
                 Transform child = presenterTransform.GetChild(index);
-                if (child.name == GeneratedRootName)
+                if (child.name == GeneratedRootName
+                    || child.name == LegacyGeneratedRootName)
                 {
                     return child;
                 }
             }
 
             return null;
+        }
+
+        private static bool RenameOwnedRoot(Transform root)
+        {
+            if (root == null || root.name == GeneratedRootName)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(root.gameObject, "Rename Board Visualization");
+            root.name = GeneratedRootName;
+            return true;
         }
 
         private static void CreateRectangle(
@@ -199,11 +225,9 @@ namespace TowerDefense3D.GridPlacement.Editor
 
         private static string GetRectangleName(BoardGeometryRectangle rectangle)
         {
-            string kind = rectangle.Kind == BoardGeometryKind.PlacementSurface
-                ? "Surface"
-                : "Blocker";
-            return $"{kind} Y{rectangle.Y} X{rectangle.X} Z{rectangle.Z} "
-                + $"{rectangle.Width}x{rectangle.Depth}";
+            return rectangle.Kind == BoardGeometryKind.PlacementSurface
+                ? PlaceableAreaName
+                : BlockedAreaName;
         }
 
         private static bool ApplyComponentState(Transform root, bool visualize)
@@ -234,27 +258,47 @@ namespace TowerDefense3D.GridPlacement.Editor
             return changed;
         }
 
-        private static bool AssignGeneratedRoot(
-            BoardScenePresenter presenter,
-            Transform root)
+        private static string ReadGeneratedSignature(BoardScenePresenter presenter)
         {
-            if (presenter.GeneratedRoot == root)
+            var serializedPresenter = new SerializedObject(presenter);
+            serializedPresenter.Update();
+            SerializedProperty property = serializedPresenter.FindProperty(
+                GeneratedSignaturePropertyName);
+            return property != null ? property.stringValue : string.Empty;
+        }
+
+        private static bool AssignGeneratedState(
+            BoardScenePresenter presenter,
+            Transform root,
+            string signature)
+        {
+            var serializedPresenter = new SerializedObject(presenter);
+            serializedPresenter.Update();
+            SerializedProperty rootProperty = serializedPresenter.FindProperty("generatedRoot");
+            SerializedProperty signatureProperty = serializedPresenter.FindProperty(
+                GeneratedSignaturePropertyName);
+            bool rootChanged = rootProperty != null
+                && rootProperty.objectReferenceValue != root;
+            bool signatureChanged = signatureProperty != null
+                && signatureProperty.stringValue != signature;
+            if (!rootChanged && !signatureChanged)
             {
                 return false;
             }
 
-            var serializedPresenter = new SerializedObject(presenter);
-            serializedPresenter.Update();
-            SerializedProperty property = serializedPresenter.FindProperty("generatedRoot");
-            if (property != null)
+            Undo.RecordObject(presenter, "Update Board Visualization State");
+            if (rootChanged)
             {
-                Undo.RecordObject(presenter, "Assign Generated Board Root");
-                property.objectReferenceValue = root;
-                serializedPresenter.ApplyModifiedPropertiesWithoutUndo();
-                return true;
+                rootProperty.objectReferenceValue = root;
             }
 
-            return false;
+            if (signatureChanged)
+            {
+                signatureProperty.stringValue = signature;
+            }
+
+            serializedPresenter.ApplyModifiedPropertiesWithoutUndo();
+            return true;
         }
     }
 }

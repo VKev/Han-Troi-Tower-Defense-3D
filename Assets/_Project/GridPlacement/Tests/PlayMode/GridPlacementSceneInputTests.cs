@@ -19,16 +19,20 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             GridPlacementController controller =
                 Object.FindFirstObjectByType<GridPlacementController>();
             GameObject placedRoot = GameObject.Find("Grid Placement Demo/Placed Towers");
+            GameObject boardOrigin = GameObject.Find("Grid Placement Demo/Board Origin");
             Camera camera = Camera.main;
 
             Assert.That(controller, Is.Not.Null);
             Assert.That(controller.Occupancy, Is.Not.Null);
             Assert.That(controller.SelectedTower, Is.Not.Null);
             Assert.That(placedRoot, Is.Not.Null);
+            Assert.That(boardOrigin, Is.Not.Null);
             Assert.That(placedRoot.transform.childCount, Is.Zero);
 
             Mouse mouse = InputSystem.AddDevice<Mouse>();
-            Vector3 screenPoint = camera.WorldToScreenPoint(new Vector3(5.25f, 0f, 1.25f));
+            Vector3 placementPoint = boardOrigin.transform.TransformPoint(
+                new Vector3(5.25f, 0f, 1.25f));
+            Vector3 screenPoint = camera.WorldToScreenPoint(placementPoint);
             Assert.That(screenPoint.z, Is.GreaterThan(0f));
 
             Set(mouse.position, new Vector2(screenPoint.x, screenPoint.y));

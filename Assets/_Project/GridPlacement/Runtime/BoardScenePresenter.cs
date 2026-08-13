@@ -6,6 +6,7 @@ namespace TowerDefense3D.GridPlacement
     {
         [SerializeField] private BoardDefinition board;
         [SerializeField] private Transform generatedRoot;
+        [SerializeField, HideInInspector] private string generatedSignature;
 
         public BoardDefinition Board => board;
         public Transform GeneratedRoot => generatedRoot;

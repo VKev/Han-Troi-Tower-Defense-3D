@@ -82,10 +82,14 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             Assert.That(root, Is.Not.Null);
             Assert.That(presenter.GeneratedRoot, Is.SameAs(root));
             Assert.That(manual.transform.parent, Is.SameAs(presenterObject.transform));
-            Transform surface = root.Find("Surface Y1 X0 Z0 1x1");
-            Transform blocker = root.Find("Blocker Y1 X1 Z0 1x1");
+            Transform surface = root.Find(
+                BoardSceneSynchronizer.PlaceableAreaName);
+            Transform blocker = root.Find(
+                BoardSceneSynchronizer.BlockedAreaName);
             Assert.That(surface, Is.Not.Null);
             Assert.That(blocker, Is.Not.Null);
+            AssertGeneratedNamesAreReadable(root);
+            Assert.That(GetField<string>(presenter, "generatedSignature"), Is.Not.Empty);
             Assert.That(surface.GetComponent<MeshRenderer>().enabled, Is.False);
             Assert.That(blocker.GetComponent<MeshRenderer>().enabled, Is.False);
             Assert.That(surface.GetComponent<BoxCollider>().enabled, Is.True);
@@ -111,10 +115,28 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 });
             BoardSceneSynchronizer.Synchronize(board);
 
-            Assert.That(root.Find("Surface Y1 X0 Z0 1x1"), Is.Null);
-            Assert.That(root.Find("Blocker Y1 X1 Z0 1x1"), Is.Null);
-            Assert.That(root.Find("Surface Y0 X1 Z1 1x1"), Is.Not.Null);
+            Assert.That(surface == null, Is.True);
+            Assert.That(blocker == null, Is.True);
+            Assert.That(root.Find(BoardSceneSynchronizer.BlockedAreaName), Is.Null);
+            Transform replacement = root.Find(
+                BoardSceneSynchronizer.PlaceableAreaName);
+            Assert.That(replacement, Is.Not.Null);
+            Assert.That(replacement.localPosition.x, Is.EqualTo(1.5f).Within(0.0001f));
+            Assert.That(replacement.localPosition.z, Is.EqualTo(1.5f).Within(0.0001f));
+            AssertGeneratedNamesAreReadable(root);
             Assert.That(manual.transform.parent, Is.SameAs(presenterObject.transform));
+        }
+
+        private static void AssertGeneratedNamesAreReadable(Transform root)
+        {
+            Transform[] generated = root.GetComponentsInChildren<Transform>(true);
+            for (int index = 0; index < generated.Length; index++)
+            {
+                string objectName = generated[index].name;
+                Assert.That(objectName, Does.Not.Match(@"\d"));
+                Assert.That(objectName, Does.Not.Contain("__"));
+                Assert.That(objectName, Does.Not.Contain("Signature"));
+            }
         }
 
         private BoardDefinition CreateBoard(
@@ -145,6 +167,15 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, $"Expected serialized field '{fieldName}'.");
             field.SetValue(target, value);
+        }
+
+        private static T GetField<T>(UnityEngine.Object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Expected serialized field '{fieldName}'.");
+            return (T)field.GetValue(target);
         }
 
         private static void AssertRectangle(
