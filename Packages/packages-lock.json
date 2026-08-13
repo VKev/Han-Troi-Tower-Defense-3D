@@ -297,11 +297,10 @@
       "url": "https://packages.unity.com"
     },
     "com.vkev.better-context.editor": {
-      "version": "https://github.com/VKev/Better-Context.git?path=/unity-package/com.vkev.better-context.editor#b81b4ea595ecc8053f8bdefb9482b7b8227d05c8",
+      "version": "file:com.vkev.better-context.editor",
       "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "b81b4ea595ecc8053f8bdefb9482b7b8227d05c8"
+      "source": "embedded",
+      "dependencies": {}
     },
     "jp.hadashikick.vcontainer": {
       "version": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.19.0",
