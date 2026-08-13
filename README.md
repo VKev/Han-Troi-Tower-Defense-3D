@@ -54,6 +54,21 @@ Status: **Approved for implementation**
 - Show only one combined translucent candidate footprint/ghost: green when valid and red when invalid. Never render the full grid or create one renderer object per cell.
 - `Assets/Scenes/SampleScene.unity` is the integration scene. `Assets/Plugins` and Unity-generated `.csproj`, `.sln`, and `.slnx` files are read-only.
 
+## Current third-party asset boundary
+
+The project intentionally keeps only **DOTween Pro** under `Assets/Plugins`, at `Assets/Plugins/Demigiant`. Its `DOTWEEN*` scripting defines and setup assets must be preserved unless the project owner explicitly approves removing DOTween.
+
+The following imported asset packages are intentionally absent and must not be restored, referenced, or added to scripting defines without new explicit approval:
+
+- More Mountains Feel.
+- FImpossible Creations packages, including Legs Animator, Optimizers, Spine Animator, and Tail Animator.
+- KINEMATION Retarget Pro.
+- RootMotion Final IK.
+- Sirenix Odin Inspector and Serializer.
+- Technie Collider Creator.
+
+This boundary applies to imported asset packages under `Assets/Plugins`; it does not authorize removing Unity Package Manager dependencies from `Packages/manifest.json`. Future agents must audit current project references and obtain approval before adding or restoring any third-party package.
+
 ### Approved implementation graph
 
 The durable Beads graph uses these dependency-safe work packages:
