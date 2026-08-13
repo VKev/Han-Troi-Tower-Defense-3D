@@ -1,0 +1,22 @@
+{
+    "name": "TowerDefense3D.GridPlacement.EditModeTests",
+    "rootNamespace": "TowerDefense3D.GridPlacement.Tests.EditMode",
+    "references": [
+        "GUID:6fb291d48ca5409b840b801244fe31d9",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
