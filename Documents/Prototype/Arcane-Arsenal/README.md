@@ -13,8 +13,9 @@ A playable 3D projectile-network tower-defense prototype based only on `RawConce
 - Free grid building during waves, tower footprints, upgrades, paid movement, selling, continuous aiming, and two Amplifier branches.
 - Fixed enemy paths, side-by-side movement, piercing physical projectiles, economy, Nexus lives, nine waves across two stages, stage transition, win/fail/restart, pause, and 1×/2× speed.
 - Level 2 starts with `160` Arcana, grants `1.5×` kill rewards, introduces Amplifier before Wave 3 and Nexus Lance before Wave 4, and uses two practical Layer 1 plateaus beside the lane.
-- Continuous-looking terrain over a logical placement grid, visibly rotating tower aim, a temporary selected-tower shot line, stronger enemy body hues for active elemental states, grouped build categories, elemental infusion rings/icons, responsive touch UI, and Web Audio SFX. No external assets or API keys are required.
-- All player-facing copy is Vietnamese. Before each wave, a compact top-center roster previews the exact enemies; hover reveals temporary details on desktop, while click/tap pins or closes the detail popover on every device.
+- Continuous-looking terrain over a logical placement grid, visibly rotating tower aim, a temporary selected-tower shot line, stronger enemy body hues for active elemental states, grouped build categories, elemental infusion rings/icons, responsive touch UI, and Web Audio SFX. Every build card has an independent eye control that opens price, footprint, range, storage, role, unlock state, and upgrade details without placing or buying the tower. No external assets or API keys are required.
+- All player-facing copy is Vietnamese. Before each wave, a compact top-center roster previews the exact enemies with explicit `MẶT ĐẤT` or `BAY · TẦNG 1` movement labels; hover reveals temporary details on desktop, while click/tap pins or closes the redesigned detail popover on every device.
+- The mandatory Level 2 Amplifier and Nexus Lance lessons remain completable when the player's current Arcana is below their listed price: that one required purchase consumes the remaining balance down to exactly zero. All optional purchases retain normal affordability rules.
 
 This is a two-stage vertical slice, not the full campaign/progression and final balance described by the wider concept.
 
@@ -39,6 +40,7 @@ Desktop controls:
 Mobile controls:
 
 - Tap UI and grid cells; one-finger drag pans and two-finger gesture zooms/orbits.
+- Tap the eye row beneath a tower icon to inspect it without entering placement mode or spending Arcana.
 - The portrait layout uses a focused tower inspector. **Cancel** returns attention to the battlefield.
 
 ## Static HTML build
@@ -59,7 +61,7 @@ npm run inspect:canvas -- --url http://127.0.0.1:4188 --state active-play
 npm run inspect:canvas -- --url http://127.0.0.1:4188 --mobile --state active-play
 ```
 
-The Playwright suite covers the text-free three-wave ground tutorial, the live enemy-range Fire lesson, physical projectile-to-tower interception, selected-tower shot preview, head-on terminal aim, Stage 1 → Stage 2 transition, Vietnamese localization, stage-specific rewards, exact upcoming-wave rosters, hover/click enemy inspection, gameplay bot, desktop/mobile canvas and UI checks, stronger elemental enemy hues, pause/resume, fail/restart, and deterministic visual baselines.
+The Playwright suite covers the text-free three-wave ground tutorial, the live enemy-range Fire lesson, physical projectile-to-tower interception, selected-tower shot preview, head-on terminal aim, Stage 1 → Stage 2 transition, Vietnamese localization, stage-specific rewards, exact upcoming-wave rosters, ground/flying movement labels, hover/click enemy inspection, independent tower-detail controls, mandatory lesson affordability fallback, gameplay bot, desktop/mobile canvas and UI checks, stronger elemental enemy hues, pause/resume, fail/restart, and deterministic visual baselines.
 
 Measured production-preview evidence on Google Chrome with a real Intel D3D11 GPU:
 

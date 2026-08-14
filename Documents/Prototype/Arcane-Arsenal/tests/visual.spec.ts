@@ -256,7 +256,9 @@ test('Vietnamese UI and the Level 2 kill reward bonus remain deterministic', asy
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
   await expect(page.locator('#build-dock')).toContainText('LẮP TRỤ');
-  await expect(page.locator('#wave-panel')).toContainText('ĐỢT ĐỊCH SẮP TỚI');
+  await expect(page.locator('#wave-panel .wave-copy')).toHaveCount(0);
+  await expect(page.locator('#wave-title')).toHaveCount(0);
+  await expect(page.locator('#wave-hint')).toHaveCount(0);
   await expect(page.locator('#start-wave')).toContainText('Bắt đầu đợt');
   await expect(page.locator('[data-tower-type="foundry"]')).toHaveAttribute('aria-label', /Lò Đúc Đạn, giá 80/);
 
@@ -273,6 +275,32 @@ test('Vietnamese UI and the Level 2 kill reward bonus remain deterministic', asy
   expect(tutorialReward).toEqual({ money: 11, multiplier: 1 });
   expect(levelTwoReward).toEqual({ money: 17, multiplier: 1.5 });
   expect(levelTwoReward.money).toBeGreaterThan(tutorialReward.money ?? 0);
+  expect(errors.consoleErrors).toEqual([]);
+  expect(errors.pageErrors).toEqual([]);
+});
+
+test('tower eye controls reveal details without selecting or purchasing a tower', async ({ page }) => {
+  const errors = await watchErrors(page);
+  await page.goto('/');
+  await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
+  const startingMoney = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.money);
+
+  await expect(page.locator('[data-tower-info]')).toHaveCount(7);
+  await page.locator('[data-tower-info="fire"]').click();
+  await expect(page.locator('#tower-inspector')).toBeVisible();
+  await expect(page.locator('#tower-inspector')).toHaveClass(/catalog-view/);
+  await expect(page.locator('#inspector-name')).toHaveText('Trụ Truyền Hỏa');
+  await expect(page.locator('#inspector-role')).toContainText('Chưa mở');
+  await expect(page.locator('#tower-detail-stats dd')).toHaveText(['70', '1×1', '8.0', '5 ô']);
+  await expect(page.locator('#inspector-detail')).toContainText('Nâng cấp:');
+  await expect(page.locator('.build-button.selected')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.money)).toBe(startingMoney);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towers)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.inspectedBuildType)).toBe('fire');
+
+  await page.locator('#inspector-close-detail').click();
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.inspectedBuildType)).toBeNull();
+  await expect(page.locator('#tower-inspector')).toBeHidden();
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
 });
@@ -297,6 +325,7 @@ test('ready waves preview exact enemy rosters and reveal inline enemy details', 
     expect(Math.abs(wavePanelBox.x + wavePanelBox.width / 2 - initialViewport.width / 2)).toBeLessThan(90);
   }
   await expect(page.locator('[data-enemy-kind="riftling"]')).toContainText('×5');
+  await expect(page.locator('[data-enemy-kind="riftling"]')).toContainText('MẶT ĐẤT');
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.upcomingEnemyCount)).toBe(5);
   expect(await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.upcomingEnemyKinds)).toEqual(['riftling']);
 
@@ -307,7 +336,7 @@ test('ready waves preview exact enemy rosters and reveal inline enemy details', 
   if (!testInfo.project.name.includes('mobile')) {
     await page.locator('[data-enemy-kind="runner"]').hover();
     await expect(page.locator('#wave-enemy-detail')).toBeVisible();
-    await page.mouse.move(10, 400);
+    await page.locator('#wave-panel').dispatchEvent('pointerleave', { pointerType: 'mouse' });
     await expect(page.locator('#wave-enemy-detail')).toBeHidden();
   }
   await page.locator('[data-enemy-kind="runner"]').click();
@@ -326,9 +355,12 @@ test('ready waves preview exact enemy rosters and reveal inline enemy details', 
   await expect(page.locator('[data-enemy-kind="riftling"]')).toContainText('×14');
   await expect(page.locator('[data-enemy-kind="runner"]')).toContainText('×8');
   await expect(page.locator('[data-enemy-kind="wisp"]')).toContainText('×6');
+  await expect(page.locator('[data-enemy-kind="wisp"]')).toContainText('BAY · TẦNG 1');
   await page.locator('[data-enemy-kind="wisp"]').click();
   const wispDetail = page.locator('#wave-enemy-detail');
   await expect(wispDetail).toContainText('Linh Hỏa');
+  await expect(wispDetail).toContainText('BAY TRÊN KHÔNG');
+  await expect(wispDetail).toContainText('Tầng bay 1');
   await expect(wispDetail.locator('.enemy-detail-stats dd')).toContainText(['92', '2.25', '−2', '+30']);
   await expect(wispDetail.locator('[data-tone="immune"]')).toContainText('Lửa');
   await expect(wispDetail.locator('[data-tone="weak"]')).toContainText('Băng');
@@ -374,6 +406,7 @@ test('Level 2 visually introduces Amplifier before Wave 3 and Lance before Wave 
   await expect(page.locator('#start-wave')).toBeDisabled();
   const amplifierLesson = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
   expect(amplifierLesson?.wave).toBe(3);
+  expect(amplifierLesson?.money).toBe(35);
   expect(amplifierLesson?.unlockedTowers).toBe(6);
   expect(amplifierLesson?.lessonCell).not.toBeNull();
   const amplifierLessonPath = testInfo.outputPath('level-2-wave-3-amplifier-cue.png');
@@ -393,6 +426,7 @@ test('Level 2 visually introduces Amplifier before Wave 3 and Lance before Wave 
   await expect(page.locator('#start-wave')).toBeEnabled();
   await expect(page.locator('#start-wave')).toHaveClass(/tutorial-focus/);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialHandMode)).toBe('tap');
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.money)).toBe(0);
 
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('stage-two-wave-four'));
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.requiredTutorialTower)).toBe('lance');
@@ -402,6 +436,7 @@ test('Level 2 visually introduces Amplifier before Wave 3 and Lance before Wave 
   await expect(page.locator('#start-wave')).toBeDisabled();
   const lanceLesson = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
   expect(lanceLesson?.wave).toBe(4);
+  expect(lanceLesson?.money).toBe(45);
   expect(lanceLesson?.unlockedTowers).toBe(7);
   expect(lanceLesson?.lessonCell).not.toBeNull();
   const lanceLessonPath = testInfo.outputPath('level-2-wave-4-lance-cue.png');
@@ -420,6 +455,7 @@ test('Level 2 visually introduces Amplifier before Wave 3 and Lance before Wave 
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.requiredTutorialTower)).toBeNull();
   await expect(page.locator('#start-wave')).toBeEnabled();
   await expect(page.locator('#start-wave')).toHaveClass(/tutorial-focus/);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.money)).toBe(0);
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
 });
@@ -695,6 +731,12 @@ test('mobile HUD respects safe layout and touch target size', async ({ page }, t
   const buttons = await page.locator('#build-list .build-button').all();
   expect(buttons).toHaveLength(7);
   for (const button of buttons) {
+    const box = await button.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  }
+  const infoButtons = await page.locator('#build-list .tower-info-button').all();
+  expect(infoButtons).toHaveLength(7);
+  for (const button of infoButtons) {
     const box = await button.boundingBox();
     expect(box?.height).toBeGreaterThanOrEqual(44);
   }

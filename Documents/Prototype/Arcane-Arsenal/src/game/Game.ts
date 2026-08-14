@@ -218,6 +218,7 @@ export class Game {
   private interactionMode: InteractionMode = 'inspect';
   private selectedBuildType: TowerType | null = null;
   private selectedTowerId: number | null = null;
+  private inspectedBuildType: TowerType | null = null;
   private selectedWaveEnemyKind: EnemyKind | null = null;
   private hoveredWaveEnemyKind: EnemyKind | null = null;
   private stageIndex = 0;
@@ -756,14 +757,26 @@ export class Game {
       section.append(heading);
       for (const type of buildGroup.types) {
         const definition = TOWER_DEFINITIONS[type];
+        const item = document.createElement('div');
+        item.className = 'build-item';
+        item.dataset.towerItem = type;
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'build-button';
         button.dataset.towerType = type;
         button.title = `${buildGroup.label}: ${definition.name}`;
         button.setAttribute('aria-label', `${buildGroup.label}: ${definition.name}, giá ${definition.cost}`);
-        button.innerHTML = `<span class="tower-glyph" style="--tower-color:#${definition.color.toString(16).padStart(6, '0')}">${definition.icon}</span><span class="build-copy"><strong>${definition.shortName}</strong></span><b>${definition.cost}</b>`;
-        section.append(button);
+        button.innerHTML = `<span class="tower-glyph" style="--tower-color:#${definition.color.toString(16).padStart(6, '0')}">${definition.icon}</span><span class="build-copy"><strong>${definition.shortName}</strong><b>${definition.cost}</b></span>`;
+        const detailButton = document.createElement('button');
+        detailButton.type = 'button';
+        detailButton.className = 'tower-info-button';
+        detailButton.dataset.towerInfo = type;
+        detailButton.title = `Xem chi tiết ${definition.name}`;
+        detailButton.setAttribute('aria-label', `Xem chi tiết ${definition.name}`);
+        detailButton.setAttribute('aria-pressed', 'false');
+        detailButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="3.1"/></svg>';
+        item.append(button, detailButton);
+        section.append(item);
       }
       this.buildList.append(section);
     }
@@ -771,6 +784,13 @@ export class Game {
 
   private installUiEvents(): void {
     this.buildList.addEventListener('click', (event) => {
+      const detailTarget = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-tower-info]');
+      if (detailTarget) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.showTowerDefinition(detailTarget.dataset.towerInfo as TowerType);
+        return;
+      }
       if (performance.now() < this.suppressBuildClickUntil) {
         event.preventDefault();
         return;
@@ -797,8 +817,7 @@ export class Game {
       this.hoveredWaveEnemyKind = button.dataset.enemyKind as EnemyKind;
       this.renderWaveIntel(true);
     });
-    this.getElement('#wave-panel').addEventListener('pointerleave', (event) => {
-      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches || event.pointerType !== 'mouse') return;
+    this.getElement('#wave-panel').addEventListener('pointerleave', () => {
       this.hoveredWaveEnemyKind = null;
       this.renderWaveIntel(true);
     });
@@ -824,6 +843,11 @@ export class Game {
       else this.resetRun();
     });
     this.getElement('#cancel-action').addEventListener('click', () => this.cancelInteraction());
+    this.getElement('#inspector-close-detail').addEventListener('click', () => {
+      this.inspectedBuildType = null;
+      this.updateUi(true);
+      this.audio.ui('select');
+    });
     this.getElement('#action-upgrade').addEventListener('click', () => this.upgradeSelected());
     this.getElement('#action-move').addEventListener('click', () => this.beginMove());
     this.getElement('#action-sell').addEventListener('click', () => this.sellSelected());
@@ -906,7 +930,7 @@ export class Game {
     if (!drag.dragging) {
       const distance = drag.origin.distanceTo(new THREE.Vector2(event.clientX, event.clientY));
       if (distance < 6) return;
-      if (!this.isTowerUnlocked(drag.type) || this.money < TOWER_DEFINITIONS[drag.type].cost) {
+      if (!this.isTowerUnlocked(drag.type) || !this.canPurchaseTower(drag.type)) {
         this.cancelBuildDrag(false);
         return;
       }
@@ -1024,6 +1048,14 @@ export class Game {
     return this.stageIndex === 1 && this.phase === 'ready' && (this.waveIndex === 2 || this.waveIndex === 3);
   }
 
+  private isMandatoryLessonPurchase(type: TowerType): boolean {
+    return this.stageTwoRequiredTower() === type;
+  }
+
+  private canPurchaseTower(type: TowerType): boolean {
+    return this.money >= TOWER_DEFINITIONS[type].cost || this.isMandatoryLessonPurchase(type);
+  }
+
   private refreshTutorialProgress(): void {
     if (!this.activeStage().tutorial || this.tutorialStep >= TUTORIAL_STEP_COUNT) return;
     let advanced = false;
@@ -1093,6 +1125,7 @@ export class Game {
   private handleTowerTap(towerId: number): void {
     this.stopHeldRotation();
     this.selectedBuildType = null;
+    this.inspectedBuildType = null;
     this.interactionMode = 'inspect';
     this.selectedTowerId = towerId;
     this.audio.ui('select');
@@ -1110,7 +1143,21 @@ export class Game {
       return;
     }
     this.selectedTowerId = null;
+    this.inspectedBuildType = null;
     this.interactionMode = 'inspect';
+    this.refreshSelectionVisual();
+    this.updateUi(true);
+  }
+
+  private showTowerDefinition(type: TowerType): void {
+    this.stopHeldRotation();
+    this.cancelBuildDrag(false);
+    this.selectedBuildType = null;
+    this.selectedTowerId = null;
+    this.inspectedBuildType = type;
+    this.interactionMode = 'inspect';
+    this.clearToast();
+    this.audio.ui('select');
     this.refreshSelectionVisual();
     this.updateUi(true);
   }
@@ -1122,12 +1169,13 @@ export class Game {
       this.audio.ui('error');
       return;
     }
-    if (this.money < definition.cost) {
+    if (!this.canPurchaseTower(type)) {
       this.showToast(`Cần thêm ${definition.cost - this.money} Arcana để mua ${definition.shortName}.`, 'bad');
       this.audio.ui('error');
       return;
     }
     this.stopHeldRotation();
+    this.inspectedBuildType = null;
     this.selectedBuildType = type;
     this.selectedTowerId = null;
     this.interactionMode = 'build';
@@ -1139,7 +1187,8 @@ export class Game {
 
   private tryPlaceTower(type: TowerType, gx: number, gz: number): boolean {
     const definition = TOWER_DEFINITIONS[type];
-    if (this.money < definition.cost) return false;
+    if (!this.canPurchaseTower(type)) return false;
+    const paidCost = Math.min(this.money, definition.cost);
     const placement = this.validateFootprint(type, gx, gz, null);
     if (!placement.valid || placement.layer === null) {
       if (!this.activeStage().tutorial) this.showToast(placement.reason, 'bad');
@@ -1165,7 +1214,7 @@ export class Game {
       layer: placement.layer,
       cells,
       level: 1,
-      totalInvested: definition.cost,
+      totalInvested: paidCost,
       buffer: [],
       aimAngle: 0,
       produceTimer: 0.28,
@@ -1185,11 +1234,12 @@ export class Game {
     });
     this.towers.push(tower);
     this.scene.add(group);
-    this.money -= definition.cost;
+    this.money -= paidCost;
     if (this.stageIndex === 1 && type === 'amplifier') this.stageTwoAmplifierIntroduced = true;
     if (this.stageIndex === 1 && type === 'lance') this.stageTwoLanceIntroduced = true;
     this.selectedTowerId = tower.id;
     this.selectedBuildType = null;
+    this.inspectedBuildType = null;
     this.interactionMode = 'inspect';
     this.spawnBurst(center.clone().add(new THREE.Vector3(0, 0.5, 0)), definition.color, 0.42);
     this.audio.build();
@@ -1474,6 +1524,7 @@ export class Game {
   private cancelInteraction(): void {
     this.stopHeldRotation();
     this.selectedBuildType = null;
+    this.inspectedBuildType = null;
     this.interactionMode = 'inspect';
     this.showToast(this.selectedTowerId === null ? 'Chọn một trụ hoặc xây trụ mới.' : 'Đã hủy thao tác.', 'info');
     this.refreshSelectionVisual();
@@ -2294,6 +2345,7 @@ export class Game {
     this.stageCleared = false;
     this.selectedTowerId = null;
     this.selectedBuildType = null;
+    this.inspectedBuildType = null;
     this.selectedWaveEnemyKind = null;
     this.hoveredWaveEnemyKind = null;
     this.interactionMode = 'inspect';
@@ -2704,10 +2756,16 @@ export class Game {
     for (const button of this.buildList.querySelectorAll<HTMLButtonElement>('[data-tower-type]')) {
       const type = button.dataset.towerType as TowerType;
       const unlocked = this.isTowerUnlocked(type);
-      button.disabled = !unlocked || this.money < TOWER_DEFINITIONS[type].cost;
+      button.disabled = !unlocked || !this.canPurchaseTower(type);
       button.classList.toggle('locked', !unlocked);
       button.dataset.locked = unlocked ? 'false' : 'true';
       button.classList.toggle('selected', this.interactionMode === 'build' && this.selectedBuildType === type);
+    }
+    for (const button of this.buildList.querySelectorAll<HTMLButtonElement>('[data-tower-info]')) {
+      const type = button.dataset.towerInfo as TowerType;
+      const active = this.inspectedBuildType === type;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
     }
     this.renderInspector();
     this.renderWaveIntel();
@@ -2716,8 +2774,27 @@ export class Game {
 
   private renderInspector(): void {
     const tower = this.selectedTower();
+    const catalogDefinition = tower || this.inspectedBuildType === null ? null : TOWER_DEFINITIONS[this.inspectedBuildType];
+    const detailStats = this.getElement('#tower-detail-stats');
+    const closeDetail = this.getButton('#inspector-close-detail');
+    const catalogView = catalogDefinition !== null;
     this.inspectorElement.classList.toggle('tutorial-stage', this.activeStage().tutorial);
-    this.inspectorElement.classList.toggle('empty', !tower);
+    this.inspectorElement.classList.toggle('catalog-view', catalogView);
+    this.inspectorElement.classList.toggle('empty', !tower && !catalogView);
+    this.getElement('#inspector-heading').textContent = catalogView ? 'CHI TIẾT TRỤ' : 'NÚT ĐẠN';
+    detailStats.classList.toggle('hidden', !catalogView);
+    closeDetail.classList.toggle('hidden', !catalogView);
+    if (catalogDefinition && this.inspectedBuildType) {
+      const unlocked = this.isTowerUnlocked(this.inspectedBuildType);
+      const range = this.inspectedBuildType === 'lance' ? 21 : catalogDefinition.connectionRange;
+      const capacity = this.inspectedBuildType === 'amplifier' ? 'Hào quang' : `${catalogDefinition.capacity} ô`;
+      this.getElement('#inspector-name').textContent = catalogDefinition.name;
+      this.getElement('#inspector-role').textContent = `${catalogDefinition.role} · ${unlocked ? 'Đã mở' : 'Chưa mở'}`;
+      detailStats.innerHTML = `<div><dt>GIÁ</dt><dd>${catalogDefinition.cost}</dd></div><div><dt>VÙNG ĐẶT</dt><dd>${catalogDefinition.footprint[0]}×${catalogDefinition.footprint[1]}</dd></div><div><dt>TẦM</dt><dd>${range.toFixed(1)}</dd></div><div><dt>KHO</dt><dd>${capacity}</dd></div>`;
+      this.getElement('#inspector-detail').textContent = `${catalogDefinition.description}\n\nNâng cấp: ${this.towerUpgradeSummary(this.inspectedBuildType)}`;
+      this.getElement('#branch-controls').classList.add('hidden');
+      return;
+    }
     if (!tower) {
       this.getElement('#inspector-name').textContent = 'Chưa chọn trụ';
       this.getElement('#inspector-role').textContent = 'Chạm vào trụ để xem đường bắn.';
@@ -2766,11 +2843,16 @@ export class Game {
     this.getButton('#action-sell').disabled = this.activeStage().tutorial;
   }
 
+  private towerUpgradeSummary(type: TowerType): string {
+    if (type === 'foundry') return 'tăng sát thương, tốc độ sinh đạn, tầm bắn và sức chứa; cấp 3 sinh hai viên mỗi nhịp.';
+    if (type === 'amplifier') return 'mở rộng hào quang và tăng hiệu lực của nhánh Sức Mạnh hoặc Tốc Độ.';
+    if (type === 'lance') return 'tăng sát thương và tầm kỹ năng, đồng thời giảm số đạn cần để kích hoạt.';
+    return 'tăng tầm bắn, nhịp truyền, sức chứa và lực nguyên tố cộng vào viên đạn.';
+  }
+
   private renderWaveIntel(preserveRoster = false): void {
     const waves = this.activeStage().waves;
     const wave = waves[Math.min(this.waveIndex, waves.length - 1)];
-    this.getElement('#wave-title').textContent = wave.title;
-    this.getElement('#wave-hint').textContent = wave.hint;
     const intel = this.getElement('#wave-intel');
     const detail = this.getElement('#wave-enemy-detail');
     const visible = this.phase === 'ready';
@@ -2794,7 +2876,9 @@ export class Game {
         const definition = ENEMY_DEFINITIONS[kind];
         const selected = detailKind === kind;
         const count = counts.get(kind) ?? 0;
-        return `<button class="wave-enemy-chip${selected ? ' active' : ''}" type="button" data-enemy-kind="${kind}" aria-expanded="${selected}" aria-controls="wave-enemy-detail" aria-label="Xem ${definition.name}, ${count} kẻ sắp tới, tầng ${definition.layer}"><i style="--enemy-color:#${definition.color.toString(16).padStart(6, '0')}">${ENEMY_GLYPHS[kind]}</i><span>${definition.name}</span><b>×${count}</b><em>T${definition.layer}</em></button>`;
+        const movement = definition.layer === 0 ? 'MẶT ĐẤT' : `BAY · TẦNG ${definition.layer}`;
+        const movementLabel = definition.layer === 0 ? 'mặt đất' : `bay ở tầng ${definition.layer}`;
+        return `<button class="wave-enemy-chip${selected ? ' active' : ''}" type="button" data-enemy-kind="${kind}" aria-expanded="${selected}" aria-controls="wave-enemy-detail" aria-label="Xem ${definition.name}, ${count} kẻ sắp tới, ${movementLabel}"><i style="--enemy-color:#${definition.color.toString(16).padStart(6, '0')}">${ENEMY_GLYPHS[kind]}</i><span>${definition.name}</span><b>×${count}</b><em data-flight="${definition.layer === 0 ? 'ground' : 'flying'}">${movement}</em></button>`;
       }).join('');
     } else {
       for (const button of roster.querySelectorAll<HTMLButtonElement>('[data-enemy-kind]')) {
@@ -2821,7 +2905,9 @@ export class Game {
     if (definition.reactionBarrier) profiles.push(`<span data-tone="barrier">Phá bằng · ${definition.reactionBarrier}</span>`);
     if (profiles.length === 0) profiles.push('<span data-tone="neutral">Không có kháng tính nguyên tố</span>');
     const reward = Math.round(definition.reward * this.activeStage().killRewardMultiplier);
-    detail.innerHTML = `<div class="enemy-detail-title"><i style="--enemy-color:${color}">${ENEMY_GLYPHS[definition.kind]}</i><div><small>${definition.layer === 0 ? 'KẺ ĐỊCH MẶT ĐẤT' : `KẺ ĐỊCH BAY · TẦNG ${definition.layer}`}</small><strong>${definition.name}</strong></div></div><dl class="enemy-detail-stats"><div><dt>MÁU</dt><dd>${definition.hp}</dd></div><div><dt>TỐC ĐỘ</dt><dd>${definition.speed.toFixed(2)}</dd></div><div><dt>NEXUS</dt><dd>−${definition.nexusDamage}</dd></div><div><dt>ARCANA</dt><dd>+${reward}</dd></div></dl><div class="enemy-detail-profile">${profiles.join('')}</div><button class="enemy-detail-close" type="button" data-close-wave-intel aria-label="Đóng chi tiết kẻ địch">×</button>`;
+    const movementBadge = definition.layer === 0 ? 'MẶT ĐẤT' : 'BAY TRÊN KHÔNG';
+    const movementDetail = definition.layer === 0 ? 'Di chuyển trên đường bộ' : `Tầng bay ${definition.layer}`;
+    detail.innerHTML = `<div class="enemy-detail-title"><i style="--enemy-color:${color}">${ENEMY_GLYPHS[definition.kind]}</i><div><span class="enemy-movement-badge" data-flight="${definition.layer === 0 ? 'ground' : 'flying'}">${movementBadge}</span><strong>${definition.name}</strong><small>${movementDetail}</small></div></div><dl class="enemy-detail-stats"><div><dt>MÁU</dt><dd>${definition.hp}</dd></div><div><dt>TỐC</dt><dd>${definition.speed.toFixed(2)}</dd></div><div><dt>MẠNG</dt><dd>−${definition.nexusDamage}</dd></div><div><dt>THƯỞNG</dt><dd>+${reward}</dd></div></dl><div class="enemy-detail-profile">${profiles.join('')}</div><button class="enemy-detail-close" type="button" data-close-wave-intel aria-label="Đóng chi tiết kẻ địch">×</button>`;
     detail.classList.remove('hidden');
   }
 
@@ -3366,7 +3452,7 @@ export class Game {
     if (fire && ice) this.aimTowerAt(fire, ice);
     if (waveIndex === 3) this.tryPlaceTower('amplifier', 6, 1);
     this.waveIndex = waveIndex;
-    this.money = 420;
+    this.money = waveIndex === 2 ? 35 : 45;
     this.selectedTowerId = null;
     this.interactionMode = 'inspect';
     this.refreshNetworkVisuals();
@@ -3435,6 +3521,7 @@ export class Game {
       upcomingEnemyCount: this.phase === 'ready' ? this.activeStage().waves[Math.min(this.waveIndex, this.activeStage().waves.length - 1)].orders.length : 0,
       upcomingEnemyKinds: this.phase === 'ready' ? [...new Set(this.activeStage().waves[Math.min(this.waveIndex, this.activeStage().waves.length - 1)].orders.map((order) => order.kind))] : [],
       selectedWaveEnemyKind: this.selectedWaveEnemyKind,
+      inspectedBuildType: this.inspectedBuildType,
       unlockedTowers: BUILD_ORDER.filter((type) => this.isTowerUnlocked(type)).length,
       connections,
       linkGuideObjects: this.networkGroup.children.filter((child) => child.name.startsWith('tower-link-')).length,

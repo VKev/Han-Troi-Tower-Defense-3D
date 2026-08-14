@@ -36,6 +36,7 @@ interface ThreeGameDiagnostics {
   upcomingEnemyCount: number;
   upcomingEnemyKinds: Array<'riftling' | 'runner' | 'brute' | 'wisp' | 'frostRay' | 'warder'>;
   selectedWaveEnemyKind: 'riftling' | 'runner' | 'brute' | 'wisp' | 'frostRay' | 'warder' | null;
+  inspectedBuildType: 'foundry' | 'fire' | 'ice' | 'wind' | 'earth' | 'amplifier' | 'lance' | null;
   unlockedTowers: number;
   connections: number;
   linkGuideObjects: number;

@@ -410,3 +410,39 @@ The player needs enough information to make a purchase decision without sacrific
 ### Implementation or verification result
 
 The localized interface, exact roster preview, hover/click detail behavior, and Level 2 reward multiplier were implemented in the Arcane Arsenal prototype. Deterministic tests confirm that a Riftling reward is `11` Arcana in Stage 1 and rounds to `17` Arcana in Level 2. The production build passed, and the final Playwright run passed `26` tests with `8` intentional platform skips, including the gameplay bot, tutorial victory, reward/localization checks, desktop and mobile wave inspection, elemental reactions, and eight refreshed visual baselines. No console or page errors were reported; the only browser output was a non-failing WebGL shader precision warning from Three.js.
+
+## Entry 13 — Simplify combat planning UI and protect mandatory Level 2 lessons
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-6do`
+
+### Problem being addressed
+
+The wave panel repeated a title and explanatory text that consumed battlefield space. Tower cards exposed purchase actions but no safe way to inspect a tower before spending. Level 2 enemy chips used ambiguous `T0` and `T1` labels, the enemy popover was visually cramped and could extend outside the portrait viewport, and the mandatory Amplifier and Nexus Lance tutorials could become impossible when the player had less Arcana than the listed price.
+
+### Prompt used
+
+The user requested less unnecessary UI text, an eye icon on every tower to reveal its details, clearer Level 2 information about whether an enemy flies and at which height, a visual redesign of the enemy detail UI, and special handling so the required Amplifier and Lance tutorial purchases remain possible with insufficient money and leave the balance at zero. The user also requested production deployment, AI collaboration logging, and a Git commit.
+
+### Important AI response
+
+The AI separated tower inspection from tower purchase instead of making locked cards clickable as build actions. It reused the existing right-side inspector for catalog details, kept the eye control available for locked towers, replaced numeric layer shorthand with movement-language badges, and gave the enemy popover its own responsive stat-card layout. The affordability exception was restricted to the currently required lesson tower, while recorded investment uses only the Arcana actually paid.
+
+### Option selected, revised, or rejected
+
+- **Selected:** remove the redundant pre-wave label, wave title, and hint while retaining the exact enemy roster and the start-wave button.
+- **Selected:** add one independent eye button to each of the seven tower cards; viewing details does not select placement mode, place a tower, or spend Arcana.
+- **Selected:** show tower price, footprint, range, storage behavior, role, unlock state, description, and upgrade summary in the existing inspector instead of a new modal.
+- **Selected:** replace `T0` and `T1` with `MẶT ĐẤT` and `BAY · TẦNG 1`, plus `BAY TRÊN KHÔNG` and `Tầng bay 1` inside the detailed profile.
+- **Revised:** turn the enemy profile into a darker bounded popover with a movement badge, compact stat cards, resistance chips, and a portrait-specific fixed inset so no content clips beyond the viewport.
+- **Selected:** allow only the currently mandatory Amplifier or Nexus Lance lesson purchase to use the player's remaining Arcana and reduce it to exactly zero; normal purchases still require the full price.
+- **Selected:** record the discounted tutorial tower's `totalInvested` from the amount actually paid so the fallback cannot create a later sell-profit exploit.
+- **Rejected:** restoring explanatory wave copy, using another modal, enabling every unaffordable purchase, or continuing to represent flight with bare numeric layer codes.
+
+### Rationale
+
+Planning information should be available on demand without competing with the battlefield or changing game state. Movement-language labels explain the tactical rule directly, while restricting the affordability exception to the active forced lesson preserves normal economy decisions. Tracking actual payment keeps the tutorial safeguard economically neutral.
+
+### Implementation or verification result
+
+The final production build passed TypeScript and Vite compilation, `npm audit` reported zero vulnerabilities, and the full Playwright suite passed `30` tests with `8` intentional cross-viewport skips. Ten deterministic desktop/mobile visual baselines now include tower-detail and redesigned wave-intel states. The tower eye controls, locked-tower details, no-spend behavior, explicit ground/flying labels, portrait bounds, and `35 → 0` Amplifier plus `45 → 0` Lance lesson cases are covered by browser assertions. Vercel deployment `dpl_22NYUfazxiuTKW5mAW3sLRm1QGTB` reached `READY` and was aliased to `https://arcane-arsenal-tower-defense.vercel.app`; the page and its final hashed JS/CSS bundles returned HTTP 200. Direct production canvas inspection passed on desktop and mobile with real Intel D3D11 rendering, within all documented budgets, and with no console or page errors.

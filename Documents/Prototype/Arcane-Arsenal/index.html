@@ -33,15 +33,17 @@
       </header>
 
       <aside id="build-dock" class="glass-panel" aria-label="Xây trụ">
-        <div class="panel-heading"><span>LẮP TRỤ</span><small>phím 1—7</small></div>
+        <div class="panel-heading"><span>LẮP TRỤ</span></div>
         <div id="build-list"></div>
       </aside>
 
       <aside id="tower-inspector" class="glass-panel empty" aria-label="Trụ đã chọn">
-        <div class="panel-heading"><span>NÚT ĐẠN</span><small>chạm để xem</small></div>
+        <div class="panel-heading"><span id="inspector-heading">NÚT ĐẠN</span></div>
         <div class="inspector-title">
           <div><strong id="inspector-name">Chưa chọn trụ</strong><small id="inspector-role">Chạm vào trụ để xem đường bắn.</small></div>
+          <button id="inspector-close-detail" class="inspector-close-detail hidden" type="button" aria-label="Đóng chi tiết trụ">×</button>
         </div>
+        <dl id="tower-detail-stats" class="tower-detail-stats hidden"></dl>
         <div class="magazine">
           <div class="magazine-label"><span>KHO ĐẠN</span><b id="buffer-text">0 / 0</b></div>
           <div class="magazine-track"><i id="buffer-fill"></i></div>
@@ -63,11 +65,6 @@
       </aside>
 
       <section id="wave-panel" class="glass-panel" aria-label="Đợt địch sắp tới">
-        <div class="wave-copy">
-          <small>ĐỢT ĐỊCH SẮP TỚI</small>
-          <strong id="wave-title">Trinh Sát Dị Linh</strong>
-          <p id="wave-hint">Bầy địch tầng 0. Dẫn đạn qua trụ Lửa và Băng.</p>
-        </div>
         <div id="wave-intel" class="wave-intel">
           <div id="wave-enemies" class="wave-enemies" aria-label="Đội hình địch sắp tới"></div>
           <article id="wave-enemy-detail" class="wave-enemy-detail hidden" aria-live="polite"></article>

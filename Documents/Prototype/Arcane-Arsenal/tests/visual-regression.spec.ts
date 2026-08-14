@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-type BaselineState = 'active-play' | 'wave-intel' | 'fail' | 'win';
+type BaselineState = 'active-play' | 'wave-intel' | 'tower-detail' | 'fail' | 'win';
 
 async function prepare(page: Page, state: BaselineState): Promise<void> {
   await page.goto('/');
@@ -11,7 +11,7 @@ async function prepare(page: Page, state: BaselineState): Promise<void> {
     hooks.seed(20260814);
     hooks.setReducedMotion(true);
     hooks.hideDebugUi(true);
-    hooks.setState(stateName === 'wave-intel' ? 'tutorial-ready' : stateName);
+    hooks.setState(stateName === 'wave-intel' || stateName === 'tower-detail' ? 'tutorial-ready' : stateName);
   }, state);
   if (state === 'active-play') {
     await page.waitForFunction(() => {
@@ -23,6 +23,9 @@ async function prepare(page: Page, state: BaselineState): Promise<void> {
     await expect(page.locator('[data-enemy-kind="runner"]')).toContainText('×2');
     await page.locator('[data-enemy-kind="runner"]').click();
     await expect(page.locator('#wave-enemy-detail')).toBeVisible();
+  } else if (state === 'tower-detail') {
+    await page.locator('[data-tower-info="fire"]').click();
+    await expect(page.locator('#tower-inspector.catalog-view')).toBeVisible();
   } else {
     await expect(page.locator('#result-overlay')).toBeVisible();
   }
@@ -30,12 +33,12 @@ async function prepare(page: Page, state: BaselineState): Promise<void> {
   await page.waitForTimeout(100);
 }
 
-for (const state of ['active-play', 'wave-intel', 'fail', 'win'] as const) {
+for (const state of ['active-play', 'wave-intel', 'tower-detail', 'fail', 'win'] as const) {
   test(`${state} visual baseline`, async ({ page }, testInfo) => {
     await prepare(page, state);
     await expect(page).toHaveScreenshot(`${state}-${testInfo.project.name}.png`, {
       fullPage: true,
-      maxDiffPixelRatio: state === 'active-play' ? 0.025 : state === 'wave-intel' ? 0.02 : 0.01,
+      maxDiffPixelRatio: state === 'active-play' ? 0.025 : state === 'wave-intel' || state === 'tower-detail' ? 0.02 : 0.01,
     });
   });
 }
