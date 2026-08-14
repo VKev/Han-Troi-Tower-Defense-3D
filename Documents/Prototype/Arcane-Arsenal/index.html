@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#172438" />
+    <meta name="description" content="Arcane Arsenal — bản thử nghiệm thủ thành 3D với mạng lưới đường đạn." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23182b43'/%3E%3Cpath d='M32 9 52 20v24L32 55 12 44V20Zm0 8-13 7v16l13 7 13-7V24Z' fill='%23ffd66e'/%3E%3C/svg%3E" />
+    <title>Arcane Arsenal — Thủ Thành Mạng Đạn</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="game-canvas" aria-label="Chiến trường 3D Arcane Arsenal"></canvas>
+
+      <header id="top-bar" class="glass-panel">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">⌬</span>
+          <div><strong>ARCANE ARSENAL</strong><small>MẠNG ĐẠN · BẢN THỬ</small></div>
+        </div>
+        <div class="metrics" aria-live="polite">
+          <div class="metric lives"><span>NEXUS</span><strong id="lives-value">20</strong></div>
+          <div class="metric money"><span>ARCANA</span><strong id="money-value">0920</strong></div>
+          <div class="metric"><span>ĐỢT</span><strong id="wave-value">1 / 3</strong></div>
+          <div class="metric"><span>KẺ ĐỊCH</span><strong id="enemy-value">00</strong></div>
+          <div class="metric optional-metric"><span>TẦNG ĐÃ CHỌN</span><strong id="layer-value">—</strong></div>
+        </div>
+        <nav class="utility-actions" aria-label="Điều khiển game">
+          <button id="speed-button" class="icon-button" type="button" title="Tốc độ game">×1</button>
+          <button id="pause-button" class="icon-button" type="button" title="Tạm dừng">Ⅱ</button>
+          <button id="sound-button" class="icon-button" type="button" title="Tắt âm thanh">◖))</button>
+          <button id="restart-button" class="icon-button danger" type="button" title="Chơi lại màn">↻</button>
+        </nav>
+      </header>
+
+      <aside id="build-dock" class="glass-panel" aria-label="Xây trụ">
+        <div class="panel-heading"><span>LẮP TRỤ</span><small>phím 1—7</small></div>
+        <div id="build-list"></div>
+      </aside>
+
+      <aside id="tower-inspector" class="glass-panel empty" aria-label="Trụ đã chọn">
+        <div class="panel-heading"><span>NÚT ĐẠN</span><small>chạm để xem</small></div>
+        <div class="inspector-title">
+          <div><strong id="inspector-name">Chưa chọn trụ</strong><small id="inspector-role">Chạm vào trụ để xem đường bắn.</small></div>
+        </div>
+        <div class="magazine">
+          <div class="magazine-label"><span>KHO ĐẠN</span><b id="buffer-text">0 / 0</b></div>
+          <div class="magazine-track"><i id="buffer-fill"></i></div>
+        </div>
+        <p id="inspector-detail" class="inspector-detail">Có thể xây khi đợt đang diễn ra. Nhấn 1–7 để chọn nhanh trụ.</p>
+        <div id="branch-controls" class="branch-controls hidden">
+          <span>NHÁNH KHUẾCH ĐẠI</span>
+          <button id="branch-power" type="button">Sức mạnh</button>
+          <button id="branch-throughput" type="button">Tốc độ</button>
+        </div>
+        <div class="node-actions">
+          <button id="action-left" type="button" title="Xoay trái"><span>↶</span>Trái</button>
+          <button id="action-right" type="button" title="Xoay phải"><span>↷</span>Phải</button>
+          <button id="action-upgrade" type="button"><span>⇧</span>Nâng cấp</button>
+          <button id="action-move" type="button"><span>✥</span>Di chuyển</button>
+          <button id="action-sell" type="button" class="danger"><span>¤</span>Bán</button>
+          <button id="cancel-action" type="button"><span>×</span>Hủy</button>
+        </div>
+      </aside>
+
+      <section id="wave-panel" class="glass-panel" aria-label="Đợt địch sắp tới">
+        <div class="wave-copy">
+          <small>ĐỢT ĐỊCH SẮP TỚI</small>
+          <strong id="wave-title">Trinh Sát Dị Linh</strong>
+          <p id="wave-hint">Bầy địch tầng 0. Dẫn đạn qua trụ Lửa và Băng.</p>
+        </div>
+        <div id="wave-intel" class="wave-intel">
+          <div id="wave-enemies" class="wave-enemies" aria-label="Đội hình địch sắp tới"></div>
+          <article id="wave-enemy-detail" class="wave-enemy-detail hidden" aria-live="polite"></article>
+        </div>
+        <button id="start-wave" class="primary-button" type="button">Bắt đầu đợt 1</button>
+      </section>
+
+      <div id="tutorial-hand" class="tutorial-hand hidden" aria-hidden="true">
+        <span>☝</span>
+      </div>
+
+      <div id="toast" class="toast hidden" data-tone="info" role="status"></div>
+
+      <section id="result-overlay" class="modal-layer hidden">
+        <div class="result-card">
+          <div class="result-sigil">⌬</div>
+          <div id="result-kicker" class="eyebrow">MẠNG LƯỚI ỔN ĐỊNH</div>
+          <h2 id="result-title">Arcane Arsenal trụ vững</h2>
+          <p id="result-copy">Khe nứt đã bị phong ấn. Mạng đạn của bạn sống sót qua cả ba đợt.</p>
+          <button id="result-restart" class="primary-button large" type="button">Chơi lại màn</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
