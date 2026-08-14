@@ -100,6 +100,23 @@ There is deliberately no B11 in this run. Android physical-device build, profili
 
 Do not use `Documents/` for generated caches, temporary agent output, Unity-generated files, credentials, or raw chat transcripts. A document should clearly state its status when relevant, such as `Draft`, `Under Review`, `Approved`, or `Superseded`.
 
+## Technical specification workflow
+
+`Documents/TechnicalSpec/` is the canonical location for feature-level technical specifications. Use one English Markdown file per feature with the filename format `<FeatureName>_Technical_Specification.md`.
+
+The initial implemented specification is [`GridPlacement_Technical_Specification.md`](Documents/TechnicalSpec/GridPlacement_Technical_Specification.md).
+
+When the project owner explicitly approves an implementation plan, the responsible agent must:
+
+1. Create or update that feature's technical specification before changing implementation files. If an approved plan is resumed and no specification exists, reconstruct it from the approved plan and current repository evidence first.
+2. Mark the specification `Approved` only when the project owner explicitly approved the plan. Otherwise keep it `Draft` or `Under Review`.
+3. Record the approved scope, non-goals, architecture and ownership, data and runtime-state contracts, interaction flow, folder and assembly boundaries, serialized integration, compatibility or migration constraints, verification plan, risks, and deferred work.
+4. Implement against the specification. Do not silently expand scope or replace an approved decision; obtain approval for material changes and update the specification before continuing.
+5. After implementation, update the same file with the actual status, validation evidence, known limitations, and any approved deviation from the original plan.
+6. Record consequential AI-assisted decisions in `Documents/AICollaboration/` and keep execution tasks and dependencies in Beads rather than turning the specification into a task list.
+
+Technical specifications are version-controlled project records. If a broad ignore rule excludes a new Markdown file, add only the intended specification explicitly instead of committing unrelated ignored documents.
+
 ## Documentation language
 
 All human-authored project documentation must be written in English. This requirement applies to filenames, titles, headings, body text, field labels, tables, captions, and review notes in `Documents/`, as well as documentation files at the repository root.
