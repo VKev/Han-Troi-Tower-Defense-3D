@@ -138,6 +138,8 @@ InitTestScene*.unity*
 # Agent instructions and all Markdown documentation
 *.md
 *.md.meta
+!Documents/TechnicalSpec/BoardCameraFraming_Technical_Specification.md
+!Documents/TechnicalSpec/BoardCameraFramingLimits_Technical_Specification.md
 
 # Beads / Dolt files (added by bd init)
 .dolt/
