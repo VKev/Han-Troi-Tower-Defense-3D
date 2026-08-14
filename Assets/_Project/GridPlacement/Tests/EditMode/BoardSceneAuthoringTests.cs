@@ -127,6 +127,176 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             Assert.That(manual.transform.parent, Is.SameAs(presenterObject.transform));
         }
 
+        [Test]
+        public void Synchronizer_ReframesOnlyCameraAssignedToMatchingPresenter()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(4, 3, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(3, 2, 0),
+                        BoardCellFlags.StaticBlocker),
+                });
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            presenterObject.transform.SetPositionAndRotation(
+                new Vector3(3f, 2f, -4f),
+                Quaternion.Euler(0f, 20f, 0f));
+            BoardScenePresenter presenter =
+                presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            GameObject cameraObject = Track(new GameObject("Matching Camera"));
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 43f;
+            camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 0.1f;
+            camera.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
+            Vector3 originalPosition = new Vector3(50f, 50f, 50f);
+            camera.transform.position = originalPosition;
+            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            SetField(framer, "targetCamera", camera);
+            SetField(framer, "boardPresenter", presenter);
+
+            BoardDefinition otherBoard = CreateBoard(
+                new GridDimensions(1, 1, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+            GameObject otherPresenterObject = Track(new GameObject("Other Presenter"));
+            BoardScenePresenter otherPresenter =
+                otherPresenterObject.AddComponent<BoardScenePresenter>();
+            SetField(otherPresenter, "board", otherBoard);
+            GameObject otherCameraObject = Track(new GameObject("Other Camera"));
+            Camera otherCamera = otherCameraObject.AddComponent<Camera>();
+            otherCamera.transform.position = originalPosition;
+            BoardCameraFramer otherFramer =
+                otherCameraObject.AddComponent<BoardCameraFramer>();
+            SetField(otherFramer, "targetCamera", otherCamera);
+            SetField(otherFramer, "boardPresenter", otherPresenter);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Assert.That(camera.transform.position, Is.Not.EqualTo(originalPosition));
+            Assert.That(otherCamera.transform.position, Is.EqualTo(originalPosition));
+            Assert.That(
+                BoardCameraFramingPlane.TryCreate(
+                    board,
+                    presenter.transform,
+                    1f,
+                    out BoardCameraFramingPlane plane),
+                Is.True);
+            var expectedRect = new Rect(0.05f, 0.08f, 0.9f, 0.84f);
+            for (int index = 0; index < 4; index++)
+            {
+                Vector3 viewportPoint = camera.WorldToViewportPoint(
+                    plane.GetCorner(index));
+                Assert.That(viewportPoint.z, Is.GreaterThanOrEqualTo(camera.nearClipPlane));
+                Assert.That(viewportPoint.x, Is.InRange(
+                    expectedRect.xMin - 0.0001f,
+                    expectedRect.xMax + 0.0001f));
+                Assert.That(viewportPoint.y, Is.InRange(
+                    expectedRect.yMin - 0.0001f,
+                    expectedRect.yMax + 0.0001f));
+            }
+        }
+
+        [Test]
+        public void Synchronizer_PreservesOverflowGeometryWhileCameraUsesCappedWindow()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(80, 40, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(39, 19, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+            SetField(board, "maxCameraGridXSpan", 40);
+            SetField(board, "maxCameraGridYSpan", 20);
+
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            BoardScenePresenter presenter =
+                presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            GameObject cameraObject = Track(new GameObject("Board Camera"));
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 43f;
+            camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 0.1f;
+            camera.transform.SetPositionAndRotation(
+                new Vector3(100f, 100f, 100f),
+                Quaternion.Euler(60f, 0f, 0f));
+            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            SetField(framer, "targetCamera", camera);
+            SetField(framer, "boardPresenter", presenter);
+
+            BoardSceneSynchronizer.Synchronize(board);
+            Vector3 initialPosition = camera.transform.position;
+
+            SetField(
+                board,
+                "cells",
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(79, 39, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+            Assert.That(
+                BoardCameraFramingPlane.TryCreate(
+                    board,
+                    presenter.transform,
+                    1f,
+                    out BoardCameraFramingPlane plane),
+                Is.True);
+            Assert.That(plane.Center.x, Is.EqualTo(40f).Within(0.0001f));
+            Assert.That(plane.Center.z, Is.EqualTo(20f).Within(0.0001f));
+            Assert.That(framer.TryCalculatePosition(out Vector3 expectedPosition), Is.True);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Transform root = presenterObject.transform.Find(
+                BoardSceneSynchronizer.GeneratedRootName);
+            Assert.That(root, Is.Not.Null);
+            Physics.SyncTransforms();
+            BoxCollider[] colliders = root.GetComponentsInChildren<BoxCollider>(true);
+            bool foundOverflowCell = false;
+            for (int index = 0; index < colliders.Length; index++)
+            {
+                Bounds bounds = colliders[index].bounds;
+                if (bounds.max.x >= 79.999f && bounds.max.z >= 39.999f)
+                {
+                    foundOverflowCell = true;
+                    break;
+                }
+            }
+
+            Assert.That(foundOverflowCell, Is.True);
+            Assert.That(
+                Vector3.Distance(camera.transform.position, initialPosition),
+                Is.GreaterThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(camera.transform.position, expectedPosition),
+                Is.LessThan(0.0001f));
+        }
+
         private static void AssertGeneratedNamesAreReadable(Transform root)
         {
             Transform[] generated = root.GetComponentsInChildren<Transform>(true);

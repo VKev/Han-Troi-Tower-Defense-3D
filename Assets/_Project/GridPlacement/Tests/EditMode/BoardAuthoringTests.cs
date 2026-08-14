@@ -108,6 +108,51 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         }
 
         [Test]
+        public void PaintBrush_UsesCenteredOddSizesAndClipsAtBoardEdges()
+        {
+            var dimensions = new GridDimensions(7, 7, 3);
+            BoardDefinition definition = CreateTransientBoard(
+                dimensions,
+                Array.Empty<BoardCellDefinition>());
+            var document = new BoardAuthoringDocument(definition);
+
+            Assert.That(
+                BoardPainterWindow.PaintBrush(
+                    document,
+                    new GridCell(3, 3, 0),
+                    1,
+                    BoardPaintPreset.Buildable),
+                Is.True);
+            Assert.That(
+                BoardPainterWindow.PaintBrush(
+                    document,
+                    new GridCell(3, 3, 1),
+                    3,
+                    BoardPaintPreset.NoBuild),
+                Is.True);
+            Assert.That(
+                BoardPainterWindow.PaintBrush(
+                    document,
+                    new GridCell(0, 0, 2),
+                    5,
+                    BoardPaintPreset.VolumeBlocker),
+                Is.True);
+
+            Assert.That(CountActiveCells(document, dimensions, 0), Is.EqualTo(1));
+            Assert.That(CountActiveCells(document, dimensions, 1), Is.EqualTo(9));
+            Assert.That(CountActiveCells(document, dimensions, 2), Is.EqualTo(9));
+
+            Assert.That(
+                BoardPainterWindow.PaintBrush(
+                    document,
+                    new GridCell(0, 0, 2),
+                    3,
+                    BoardPaintPreset.Empty),
+                Is.True);
+            Assert.That(CountActiveCells(document, dimensions, 2), Is.EqualTo(5));
+        }
+
+        [Test]
         public void Resize_PreservesIntersectionAndCountsRemovedCells()
         {
             BoardDefinition definition = CreateTransientBoard(
@@ -176,6 +221,74 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             Assert.That(
                 document.GetFlags(coordinate),
                 Is.EqualTo(BoardCellFlags.SupportsPlacement | BoardCellFlags.Buildable));
+        }
+
+        [Test]
+        public void SetCameraGridSpans_ClampsAndCommitsSerializedValues()
+        {
+            BoardDefinition definition = CreateTransientBoard(
+                new GridDimensions(3, 3, 2),
+                Array.Empty<BoardCellDefinition>());
+            var document = new BoardAuthoringDocument(definition);
+
+            document.SetCameraGridSpans(-4, 6);
+            document.Commit("Apply camera limits");
+
+            Assert.That(document.MaxCameraGridXSpan, Is.Zero);
+            Assert.That(document.MaxCameraGridYSpan, Is.EqualTo(6));
+            Assert.That(definition.MaxCameraGridXSpan, Is.Zero);
+            Assert.That(definition.MaxCameraGridYSpan, Is.EqualTo(6));
+
+            var serialized = new SerializedObject(definition);
+            serialized.UpdateIfRequiredOrScript();
+            Assert.That(serialized.FindProperty("maxCameraGridXSpan").intValue, Is.Zero);
+            Assert.That(serialized.FindProperty("maxCameraGridYSpan").intValue, Is.EqualTo(6));
+        }
+
+        [Test]
+        public void CameraGridSpans_CommitSupportsUndoRedo()
+        {
+            BoardDefinition definition = CreateTemporaryAsset(
+                new GridDimensions(3, 3, 2),
+                Array.Empty<BoardCellDefinition>());
+            var document = new BoardAuthoringDocument(definition);
+
+            document.SetCameraGridSpans(4, 5);
+            document.Commit("Apply camera limits");
+            Assert.That(document.MaxCameraGridXSpan, Is.EqualTo(4));
+            Assert.That(document.MaxCameraGridYSpan, Is.EqualTo(5));
+
+            Undo.PerformUndo();
+            document.Reload();
+            Assert.That(document.MaxCameraGridXSpan, Is.Zero);
+            Assert.That(document.MaxCameraGridYSpan, Is.Zero);
+
+            Undo.PerformRedo();
+            document.Reload();
+            Assert.That(document.MaxCameraGridXSpan, Is.EqualTo(4));
+            Assert.That(document.MaxCameraGridYSpan, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void TemporaryAsset_SaveAndReloadPreservesCameraGridSpans()
+        {
+            BoardDefinition definition = CreateTemporaryAsset(
+                new GridDimensions(3, 3, 2),
+                Array.Empty<BoardCellDefinition>());
+            string path = AssetDatabase.GetAssetPath(definition);
+            var document = new BoardAuthoringDocument(definition);
+
+            document.SetCameraGridSpans(7, 8);
+            document.Commit("Save camera limits");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+
+            BoardDefinition reloaded = AssetDatabase.LoadAssetAtPath<BoardDefinition>(path);
+            var reloadedDocument = new BoardAuthoringDocument(reloaded);
+            Assert.That(reloadedDocument.MaxCameraGridXSpan, Is.EqualTo(7));
+            Assert.That(reloadedDocument.MaxCameraGridYSpan, Is.EqualTo(8));
+            Assert.That(reloaded.MaxCameraGridXSpan, Is.EqualTo(7));
+            Assert.That(reloaded.MaxCameraGridYSpan, Is.EqualTo(8));
         }
 
         [Test]
@@ -258,6 +371,27 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
 
         private static BoardCellDefinition[] GetCells(BoardDefinition definition) =>
             (BoardCellDefinition[])GetField("cells").GetValue(definition);
+
+        private static int CountActiveCells(
+            BoardAuthoringDocument document,
+            GridDimensions dimensions,
+            int level)
+        {
+            int count = 0;
+            for (int z = 0; z < dimensions.Depth; z++)
+            {
+                for (int x = 0; x < dimensions.Width; x++)
+                {
+                    if (document.GetFlags(new GridCell(x, z, level))
+                        != BoardCellFlags.None)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
 
         private static void SetField<T>(UnityEngine.Object target, string name, T value)
         {

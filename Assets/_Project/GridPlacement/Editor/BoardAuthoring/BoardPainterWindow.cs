@@ -10,10 +10,14 @@ namespace TowerDefense3D.GridPlacement.Editor
         private const float HeaderSize = 28f;
         private const float MinimumCellSize = 18f;
         private const float MaximumCellSize = 56f;
+        private static readonly string[] BrushSizeLabels =
+            { "1 x 1", "3 x 3", "5 x 5" };
+        private static readonly int[] BrushSizes = { 1, 3, 5 };
 
         private BoardDefinition boardAsset;
         private BoardAuthoringDocument document;
         private BoardPaintPreset selectedPreset = BoardPaintPreset.Buildable;
+        private int brushSize = 1;
         private Vector2 scrollPosition;
         private int selectedLevel;
         private int pendingWidth = 1;
@@ -21,6 +25,8 @@ namespace TowerDefense3D.GridPlacement.Editor
         private int pendingHeight = 1;
         private float pendingCellSize = 1f;
         private float pendingHeightUnit = 1f;
+        private int pendingMaxCameraGridXSpan;
+        private int pendingMaxCameraGridYSpan;
         private float visualCellSize = 32f;
         private bool strokeActive;
         private bool strokeChanged;
@@ -124,6 +130,34 @@ namespace TowerDefense3D.GridPlacement.Editor
                     document.Commit("Change Board Metrics");
                 }
             }
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Camera Framing Limits", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                pendingMaxCameraGridXSpan = Mathf.Max(
+                    0,
+                    EditorGUILayout.IntField(
+                        "Max Width (Grid X)",
+                        pendingMaxCameraGridXSpan));
+                pendingMaxCameraGridYSpan = Mathf.Max(
+                    0,
+                    EditorGUILayout.IntField(
+                        "Max Height (Grid Y)",
+                        pendingMaxCameraGridYSpan));
+                if (GUILayout.Button("Apply Camera Limits", GUILayout.Width(140f)))
+                {
+                    document.SetCameraGridSpans(
+                        pendingMaxCameraGridXSpan,
+                        pendingMaxCameraGridYSpan);
+                    document.Commit("Change Camera Limits");
+                    SyncPendingValues();
+                }
+            }
+
+            EditorGUILayout.LabelField(
+                "0 = Unlimited. Grid Y maps to world Z.",
+                EditorStyles.miniLabel);
         }
 
         private void DrawLayerSelector()
@@ -185,9 +219,15 @@ namespace TowerDefense3D.GridPlacement.Editor
                 }
             }
 
+            brushSize = EditorGUILayout.IntPopup(
+                "Brush Size",
+                brushSize,
+                BrushSizeLabels,
+                BrushSizes,
+                GUILayout.MaxWidth(240f));
             EditorGUILayout.LabelField(
                 "Left-click/drag paints the selected preset. Right-click/drag erases. "
-                + "Z=0 is the bottom row.",
+                + "The brush is centered and clipped at Board edges. Z=0 is the bottom row.",
                 EditorStyles.miniLabel);
         }
 
@@ -327,12 +367,37 @@ namespace TowerDefense3D.GridPlacement.Editor
                 return;
             }
 
-            BoardCellFlags before = document.GetFlags(coordinate);
-            document.Paint(coordinate, preset);
-            BoardCellFlags after = document.GetFlags(coordinate);
             lastPaintedCell = coordinate;
-            strokeChanged |= before != after;
+            strokeChanged |= PaintBrush(document, coordinate, brushSize, preset);
             Repaint();
+        }
+
+        internal static bool PaintBrush(
+            BoardAuthoringDocument targetDocument,
+            GridCell center,
+            int size,
+            BoardPaintPreset preset)
+        {
+            GridDimensions dimensions = targetDocument.Dimensions;
+            int radius = size / 2;
+            int minX = Mathf.Max(0, center.X - radius);
+            int maxX = Mathf.Min(dimensions.Width - 1, center.X + radius);
+            int minZ = Mathf.Max(0, center.Z - radius);
+            int maxZ = Mathf.Min(dimensions.Depth - 1, center.Z + radius);
+            bool changed = false;
+
+            for (int z = minZ; z <= maxZ; z++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    var coordinate = new GridCell(x, z, center.Y);
+                    BoardCellFlags before = targetDocument.GetFlags(coordinate);
+                    targetDocument.Paint(coordinate, preset);
+                    changed |= before != targetDocument.GetFlags(coordinate);
+                }
+            }
+
+            return changed;
         }
 
         private void CommitStroke()
@@ -414,6 +479,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             pendingHeight = document.Dimensions.Height;
             pendingCellSize = document.CellSize;
             pendingHeightUnit = document.HeightUnit;
+            pendingMaxCameraGridXSpan = document.MaxCameraGridXSpan;
+            pendingMaxCameraGridYSpan = document.MaxCameraGridYSpan;
         }
 
         private void HandleUndoRedo()
