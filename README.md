@@ -46,7 +46,7 @@ Status: **Approved for implementation**
 
 ### Architecture and feedback contract
 
-- Use a feature-oriented module under `Assets/_Project/GridPlacement`, with mobile runtime policy under `Assets/_Project/Mobile/Runtime`.
+- Use feature-oriented modules under `Assets/_Project`; when a module is organized or reorganized, place its player-build source under a `Scripts/` root.
 - Keep Unity lifecycle, input, scene references, and GameObject ownership in thin `MonoBehaviour` shells; keep deterministic mapping, validation, and occupancy rules in plain C#.
 - Use immutable `ScriptableObject` definitions for authored tower and board data, direct serialized references for local collaboration, a small enum for placement state, and managed flat arrays for board storage.
 - Use intentional runtime and test assembly definitions with a one-way acyclic dependency graph.
@@ -106,6 +106,30 @@ All human-authored project documentation must be written in English. This requir
 
 Non-English names, source phrases, or direct quotations may be retained only when they are necessary for cultural or technical accuracy, and they must include a nearby English explanation.
 
+## Feature source layout
+
+Organize project-owned features around a reusable module shape. `<FeatureName>` is a placeholder for the feature's stable name; it is not a literal folder name.
+
+```text
+Assets/_Project/<FeatureName>/
+├── Scripts/
+│   ├── Definitions/        # Authored data types, including ScriptableObject definitions
+│   ├── Domain/             # Deterministic feature rules and value types
+│   ├── Application/        # Use cases and feature orchestration
+│   ├── Interaction/        # Input and external interaction adapters
+│   ├── Presentation/       # Runtime views and presentation components
+│   └── <Product>.<FeatureName>.Runtime.asmdef
+├── Data/                   # Authored asset instances, such as .asset files
+├── Editor/                 # Editor-only tooling
+└── Tests/                  # Edit Mode and Play Mode tests
+```
+
+- Use `Scripts/` instead of `Runtime/` as the player-build source root.
+- Adapt or omit responsibility folders when a feature does not need them; do not create empty layers only to match the example.
+- Keep ScriptableObject class definitions in `Scripts/Definitions/` and their authored `.asset` instances in `Data/`.
+- A responsibility folder does not require its own assembly. Keep one feature runtime assembly unless a measured dependency or platform boundary justifies another assembly definition.
+- Preserve stable namespaces and assembly names during folder-only reorganizations unless a separate approved change explicitly alters those contracts.
+
 ## Commit message convention
 
 - Use Conventional Commit prefixes such as `feat:`, `fix:`, `docs:`, `test:`, or `chore:`.
@@ -159,9 +183,10 @@ Write several related summaries in one batched refresh and then verify the gener
 
 ```powershell
 better-context-unity --root <repository-root> agents `
-  --summary 'Assets/_Project/GridPlacement=Owns authored board data and mobile grid placement.' `
-  --summary 'Assets/_Project/GridPlacement/Runtime=Runtime mapping, validation, occupancy, input, and presentation.' `
-  --summary 'Assets/_Project/GridPlacement/Editor/BoardAuthoring=Editor-only visual Board authoring and scene synchronization.'
+  --summary 'Assets/_Project/<FeatureName>=Owns one durable gameplay feature and its supporting assets.' `
+  --summary 'Assets/_Project/<FeatureName>/Scripts=Player-build feature code grouped by stable responsibility.' `
+  --summary 'Assets/_Project/<FeatureName>/Scripts/Definitions=Authored data definition types for the feature.' `
+  --summary 'Assets/_Project/<FeatureName>/Editor=Editor-only tooling for the feature.'
 better-context-unity --root <repository-root> verify -v --json
 ```
 
