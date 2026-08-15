@@ -1,0 +1,19 @@
+{
+    "name": "TowerDefense3D.GameFlow.Editor",
+    "rootNamespace": "TowerDefense3D.GameFlow.Editor",
+    "references": [
+        "TowerDefense3D.GameFlow.Runtime",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

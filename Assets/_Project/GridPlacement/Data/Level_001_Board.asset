@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ea488fa2cdb4e398bc406820371b97d, type: 3}
-  m_Name: Board
+  m_Name: Level_001_Board
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.BoardDefinition
   dimensions:
     width: 80
@@ -19,7 +19,7 @@ MonoBehaviour:
   cellSize: 1
   heightUnit: 1
   visualizeInScene: 1
-  maxCameraGridXSpan: 40
+  maxCameraGridXSpan: 20
   maxCameraGridYSpan: 20
   cells:
   - coordinate:
@@ -22017,48 +22017,3 @@ MonoBehaviour:
       z: 57
       y: 0
     flags: 3
-  - coordinate:
-      x: 6
-      z: 4
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 7
-      z: 4
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 8
-      z: 4
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 6
-      z: 5
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 7
-      z: 5
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 8
-      z: 5
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 6
-      z: 6
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 7
-      z: 6
-      y: 2
-    flags: 3
-  - coordinate:
-      x: 8
-      z: 6
-      y: 2
-    flags: 7
