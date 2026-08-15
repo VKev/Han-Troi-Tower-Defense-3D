@@ -140,6 +140,7 @@ InitTestScene*.unity*
 *.md.meta
 !Documents/TechnicalSpec/BoardCameraFraming_Technical_Specification.md
 !Documents/TechnicalSpec/BoardCameraFramingLimits_Technical_Specification.md
+!Documents/TechnicalSpec/GameFlow_Technical_Specification.md
 
 # Beads / Dolt files (added by bd init)
 .dolt/
