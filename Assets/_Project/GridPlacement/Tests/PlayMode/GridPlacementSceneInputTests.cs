@@ -12,14 +12,16 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         [UnityTest]
         public IEnumerator EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate()
         {
-            yield return SceneManager.LoadSceneAsync("SampleScene", LoadSceneMode.Single);
+            yield return SceneManager.LoadSceneAsync(
+                "Assets/Scenes/Levels/Level_001.unity",
+                LoadSceneMode.Single);
             yield return null;
             yield return null;
 
             GridPlacementController controller =
                 Object.FindFirstObjectByType<GridPlacementController>();
-            GameObject placedRoot = GameObject.Find("Grid Placement Demo/Placed Towers");
-            GameObject boardOrigin = GameObject.Find("Grid Placement Demo/Board Origin");
+            GameObject placedRoot = GameObject.Find("Grid Placement/Placed Towers");
+            GameObject boardOrigin = GameObject.Find("Grid Placement/Board Origin");
             Camera camera = Camera.main;
 
             Assert.That(controller, Is.Not.Null);

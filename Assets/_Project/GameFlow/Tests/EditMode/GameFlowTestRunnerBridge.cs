@@ -3,45 +3,76 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-namespace TowerDefense3D.GridPlacement.Tests.EditMode
+namespace TowerDefense3D.GameFlow.Tests.EditMode
 {
     /// <summary>
-    /// Persists focused Test Runner evidence across PlayMode domain reloads.
+    /// Runs Game Flow tests from a save-safe empty host scene and restores the prior clean scene.
     /// </summary>
     [InitializeOnLoad]
-    public static class GridPlacementTestRunnerBridge
+    public static class GameFlowTestRunnerBridge
     {
-        private const string StatusKey = "TowerDefense3D.GridPlacement.Tests.Status";
-        private const string ResultKey = "TowerDefense3D.GridPlacement.Tests.Result";
-        private const string OwnedTestNamespace = "TowerDefense3D.GridPlacement.Tests.";
+        private const string TestHostPath =
+            "Assets/_Project/GameFlow/Tests/PlayMode/GameFlowPlayModeTestHost.unity";
+        private const string StatusKey = "TowerDefense3D.GameFlow.Tests.Status";
+        private const string ResultKey = "TowerDefense3D.GameFlow.Tests.Result";
+        private const string RestoreSceneKey = "TowerDefense3D.GameFlow.Tests.RestoreScene";
+        private const string RestorePendingKey = "TowerDefense3D.GameFlow.Tests.RestorePending";
+        private const string OwnedTestNamespace = "TowerDefense3D.GameFlow.Tests.";
 
-        static GridPlacementTestRunnerBridge()
+        static GameFlowTestRunnerBridge()
         {
             TestRunnerApi.RegisterTestCallback(new ResultCallbacks(), 100);
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+            EditorApplication.delayCall += TryRestoreScene;
         }
 
-        [MenuItem("Tools/Tower Defense/Tests/Run Grid Placement EditMode")]
+        [MenuItem("Tools/Tower Defense/Tests/Run Game Flow EditMode")]
         public static void RunEditMode()
         {
-            Start(
-                TestMode.EditMode,
-                "TowerDefense3D.GridPlacement.EditModeTests",
-                runSynchronously: true);
+            Start(TestMode.EditMode, "TowerDefense3D.GameFlow.EditModeTests", true);
         }
 
-        [MenuItem("Tools/Tower Defense/Tests/Run Grid Placement PlayMode")]
+        [MenuItem("Tools/Tower Defense/Tests/Run Game Flow PlayMode")]
         public static void RunPlayMode()
         {
-            Start(
-                TestMode.PlayMode,
-                "TowerDefense3D.GridPlacement.PlayModeTests",
-                runSynchronously: false);
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogError("Game Flow PlayMode tests require idle Edit Mode.");
+                return;
+            }
+
+            for (int index = 0; index < SceneManager.sceneCount; index++)
+            {
+                Scene scene = SceneManager.GetSceneAt(index);
+                if (scene.isDirty)
+                {
+                    Debug.LogError(
+                        "Save or discard dirty scene changes before Game Flow PlayMode tests: "
+                        + scene.path);
+                    return;
+                }
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(TestHostPath) == null)
+            {
+                Debug.LogError("Game Flow PlayMode test host is missing at " + TestHostPath);
+                return;
+            }
+
+            string restorePath = SceneManager.GetActiveScene().path;
+            SessionState.SetString(RestoreSceneKey, restorePath);
+            SessionState.SetBool(RestorePendingKey, true);
+            EditorSceneManager.OpenScene(TestHostPath, OpenSceneMode.Single);
+            Start(TestMode.PlayMode, "TowerDefense3D.GameFlow.PlayModeTests", false);
         }
 
-        [MenuItem("Tools/Tower Defense/Tests/Log Last Grid Placement Result")]
+        [MenuItem("Tools/Tower Defense/Tests/Log Last Game Flow Result")]
         public static void LogLastResult()
         {
             Debug.Log(GetStatus());
@@ -59,16 +90,42 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             SessionState.SetString(StatusKey, "STARTING " + mode);
             SessionState.SetString(ResultKey, "Awaiting Test Runner callback.");
             var api = ScriptableObject.CreateInstance<TestRunnerApi>();
-            var filter = new Filter
-            {
-                testMode = mode,
-                assemblyNames = new[] { assemblyName }
-            };
-            var settings = new ExecutionSettings(filter)
+            var settings = new ExecutionSettings(
+                new Filter
+                {
+                    testMode = mode,
+                    assemblyNames = new[] { assemblyName }
+                })
             {
                 runSynchronously = runSynchronously
             };
             api.Execute(settings);
+        }
+
+        private static void HandlePlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.EnteredEditMode)
+            {
+                EditorApplication.delayCall += TryRestoreScene;
+            }
+        }
+
+        private static void TryRestoreScene()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode
+                || !SessionState.GetBool(RestorePendingKey, false))
+            {
+                return;
+            }
+
+            string restorePath = SessionState.GetString(RestoreSceneKey, string.Empty);
+            SessionState.SetBool(RestorePendingKey, false);
+            SessionState.EraseString(RestoreSceneKey);
+            if (!string.IsNullOrWhiteSpace(restorePath)
+                && AssetDatabase.LoadAssetAtPath<SceneAsset>(restorePath) != null)
+            {
+                EditorSceneManager.OpenScene(restorePath, OpenSceneMode.Single);
+            }
         }
 
         [Serializable]
@@ -106,7 +163,8 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     StatusKey,
                     result.FailCount == 0 ? "PASSED" : "FAILED");
                 SessionState.SetString(ResultKey, summary.ToString());
-                Debug.Log("Grid Placement tests: " + GetStatus());
+                Debug.Log("Game Flow tests: " + GetStatus());
+                EditorApplication.delayCall += TryRestoreScene;
             }
 
             public void TestStarted(ITestAdaptor test)

@@ -1,0 +1,21 @@
+{
+    "name": "TowerDefense3D.GameFlow.PlayModeTests",
+    "rootNamespace": "TowerDefense3D.GameFlow.Tests.PlayMode",
+    "references": [
+        "GUID:07fa1750ea15409eb0e89d7e45165d40",
+        "GUID:6fb291d48ca5409b840b801244fe31d9",
+        "UnityEngine.TestRunner",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
