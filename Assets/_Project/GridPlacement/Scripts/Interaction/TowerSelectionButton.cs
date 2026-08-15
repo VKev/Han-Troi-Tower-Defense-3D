@@ -1,17 +1,22 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace TowerDefense3D.GridPlacement
 {
     /// <summary>
-    /// Small scene adapter that keeps tower selection wiring Inspector-friendly.
+    /// Focused view that publishes one authored tower-selection request.
+    /// GameplayUIManager owns the controller binding.
     /// </summary>
     [RequireComponent(typeof(Button))]
     public sealed class TowerSelectionButton : MonoBehaviour
     {
         [SerializeField] private Button button;
-        [SerializeField] private GridPlacementController controller;
         [SerializeField] private TowerDefinition towerDefinition;
+
+        public event Action<TowerDefinition> TowerRequested;
+
+        public TowerDefinition Definition => towerDefinition;
 
         private void Awake()
         {
@@ -33,7 +38,7 @@ namespace TowerDefense3D.GridPlacement
 
         public void SelectTower()
         {
-            controller?.SelectTower(towerDefinition);
+            TowerRequested?.Invoke(towerDefinition);
         }
     }
 }
