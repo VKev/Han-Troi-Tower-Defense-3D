@@ -1,0 +1,17 @@
+{
+    "name": "TowerDefense3D.GameFlow.Runtime",
+    "rootNamespace": "TowerDefense3D.GameFlow",
+    "references": [
+        "TowerDefense3D.GridPlacement.Runtime",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
