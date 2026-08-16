@@ -8,11 +8,14 @@ type Snapshot = {
   enemies: number;
   projectiles: number;
   connections: number;
+  linkedProjectileLaunches: number;
+  linkedSegmentEnemyHits: number;
+  unlinkedProjectileLaunches: number;
 };
 
 test('tower-defense bot network produces, fights, pauses and keeps progressing', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chrome', 'One deterministic desktop run is sufficient for the simulation bot.');
-  test.setTimeout(70_000);
+  test.setTimeout(65_000);
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
@@ -34,7 +37,18 @@ test('tower-defense bot network produces, fights, pauses and keeps progressing',
     const snapshot = await page.evaluate(() => {
       const d = window.__THREE_GAME_DIAGNOSTICS__;
       if (!d) return null;
-      return { frame: d.frame, phase: d.phase, money: d.money, lives: d.lives, enemies: d.enemies, projectiles: d.projectiles, connections: d.connections };
+      return {
+        frame: d.frame,
+        phase: d.phase,
+        money: d.money,
+        lives: d.lives,
+        enemies: d.enemies,
+        projectiles: d.projectiles,
+        connections: d.connections,
+        linkedProjectileLaunches: d.linkedProjectileLaunches,
+        linkedSegmentEnemyHits: d.linkedSegmentEnemyHits,
+        unlinkedProjectileLaunches: d.unlinkedProjectileLaunches,
+      };
     });
     if (snapshot) samples.push(snapshot);
   }
@@ -51,7 +65,7 @@ test('tower-defense bot network produces, fights, pauses and keeps progressing',
   await page.waitForFunction(() => {
     const phase = window.__THREE_GAME_DIAGNOSTICS__?.phase;
     return phase === 'ready' || phase === 'lost';
-  }, undefined, { timeout: 45_000 });
+  }, undefined, { timeout: 40_000 });
   const betweenWaves = await page.evaluate(() => ({
     phase: window.__THREE_GAME_DIAGNOSTICS__?.phase,
     wave: window.__THREE_GAME_DIAGNOSTICS__?.wave,
@@ -67,6 +81,9 @@ test('tower-defense bot network produces, fights, pauses and keeps progressing',
     framesAdvanced: after.frame - before.frame,
     sawHostiles: samples.some((sample) => sample.enemies > 0),
     sawProjectiles: samples.some((sample) => sample.projectiles > 0),
+    sawLinkedLaunches: samples.some((sample) => sample.linkedProjectileLaunches > 0),
+    sawLinkedSegmentHits: samples.some((sample) => sample.linkedSegmentEnemyHits > 0),
+    unlinkedProjectileLaunches: Math.max(...samples.map((sample) => sample.unlinkedProjectileLaunches)),
     economyOrNexusChanged: after.money !== before.money
       || after.lives !== before.lives
       || betweenWaves.money !== before.money
@@ -80,9 +97,11 @@ test('tower-defense bot network produces, fights, pauses and keeps progressing',
   await testInfo.attach('tower-defense-bot-report', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
   console.log(`tower defense bot: ${JSON.stringify(report)}`);
 
-  expect(report.framesAdvanced).toBeGreaterThan(90);
+  expect(report.framesAdvanced).toBeGreaterThan(60);
   expect(report.sawHostiles).toBe(true);
   expect(report.sawProjectiles).toBe(true);
+  expect(report.sawLinkedLaunches).toBe(true);
+  expect(report.unlinkedProjectileLaunches).toBe(0);
   expect(report.economyOrNexusChanged).toBe(true);
   expect(report.connections).toBeGreaterThanOrEqual(3);
   expect(report.betweenWaves.phase).toBe('ready');

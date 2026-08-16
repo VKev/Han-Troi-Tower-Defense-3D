@@ -69,7 +69,7 @@ export class ArtFactory {
     if (type === 'foundry') this.decorateFoundry(root);
     else if (definition.element) this.decorateElement(root, definition.element);
     else if (type === 'amplifier') this.decorateAmplifier(root);
-    else this.decorateLance(root);
+    else this.decorateExplosion(root);
 
     enableShadows(root);
     return root;
@@ -237,25 +237,32 @@ export class ArtFactory {
     }
   }
 
-  private decorateLance(root: THREE.Group): void {
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.72, 0.96), this.materials.bodyPrimary);
-    chassis.position.y = 0.86;
+  private decorateExplosion(root: THREE.Group): void {
+    const chassis = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.96, 0.62, 10), this.materials.bodyPrimary);
+    chassis.position.y = 0.72;
     root.add(chassis);
-    const chamber = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.84, 8, 12), this.materials.glass);
+    const reactorRing = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.12, 7, 24), this.materials.trim);
+    reactorRing.name = 'spinner';
+    reactorRing.rotation.x = Math.PI / 2;
+    reactorRing.position.y = 1.08;
+    root.add(reactorRing);
+    const chamber = new THREE.Mesh(new THREE.OctahedronGeometry(0.48, 1), this.materials.glass);
     chamber.name = 'bufferCore';
-    chamber.rotation.z = Math.PI / 2;
-    chamber.position.set(0.05, 1.38, 0);
+    chamber.position.y = 1.36;
     root.add(chamber);
-    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, 1.5, 10), this.materials.trim);
-    barrel.name = 'aimNozzle';
-    barrel.rotation.z = Math.PI / 2;
-    barrel.position.set(1.05, 1.28, 0);
-    root.add(barrel);
-    const forkGeometry = new THREE.BoxGeometry(0.8, 0.16, 0.18);
-    for (const z of [-0.42, 0.42]) {
-      const fork = new THREE.Mesh(forkGeometry, this.materials.reward);
-      fork.position.set(1.32, 1.28, z);
-      root.add(fork);
+    const pressureCrown = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.07, 6, 20), this.materials.reward);
+    pressureCrown.name = 'blastCore';
+    pressureCrown.rotation.x = Math.PI / 2;
+    pressureCrown.position.y = 1.66;
+    root.add(pressureCrown);
+    for (let index = 0; index < 8; index += 1) {
+      const angle = index / 8 * Math.PI * 2;
+      const vent = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.52, 5), index % 2 === 0 ? this.materials.reward : this.materials.trim);
+      vent.name = 'blastVent';
+      vent.position.set(Math.cos(angle) * 0.82, 0.92, Math.sin(angle) * 0.82);
+      vent.rotation.z = Math.PI / 2;
+      vent.rotation.y = -angle;
+      root.add(vent);
     }
   }
 

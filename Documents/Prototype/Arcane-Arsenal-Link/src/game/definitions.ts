@@ -169,7 +169,7 @@ export const BOARD_DEPTH = 9;
 export const CELL_SIZE = 2;
 export const BOARD_ORIGIN_X = -11;
 export const BOARD_ORIGIN_Z = -8;
-export const STARTING_MONEY = 160;
+export const STARTING_MONEY = 220;
 export const STARTING_LIVES = 20;
 export const MAX_TOWER_LEVEL = 3;
 export const SELL_REFUND = 0.6;
@@ -229,10 +229,10 @@ export const TOWER_DEFINITIONS: Record<TowerType, TowerDefinition> = {
     connectionRange: 8.1, cadence: 0, color: 0xb886ff,
   },
   lance: {
-    type: 'lance', name: 'Thương Nexus', shortName: 'Thương', icon: '⟿',
-    role: 'Trụ đặc biệt', description: 'Tiêu thụ kho đạn đầy để tự động phóng một đòn nguyên tố diện rộng.',
+    type: 'lance', name: 'Nổ Arcana', shortName: 'Nổ', icon: '✹',
+    role: 'Trụ đặc biệt', description: 'Tích đạn rồi tự động nổ trong bán kính một ô khi kẻ địch cùng tầng tiến vào.',
     cost: 180, upgradeCost: 110, moveCost: 58, footprint: [2, 1], capacity: 8,
-    connectionRange: 0, cadence: 0, color: 0xffe69b,
+    connectionRange: 0, cadence: 0, color: 0xff9f43,
   },
 };
 
@@ -382,8 +382,8 @@ const PRISMATIC_WAVES: readonly WaveDefinition[] = [
     clearBonus: 100,
   },
   {
-    title: 'Đội Hình Thương',
-    hint: 'Đội hình dày ở hai tầng là mục tiêu lý tưởng cho Thương Nexus đã tích đầy.',
+    title: 'Vòng Nổ Arcana',
+    hint: 'Đặt Nổ cạnh đường đi, nạp đầy bằng một Lò Đạn riêng rồi chờ đội hình cùng tầng tiến vào bán kính một ô.',
     orders: [
       ...sequence('riftling', 0.15, 16, 0.34),
       ...sequence('runner', 0.4, 10, 0.44),
@@ -494,7 +494,7 @@ const CONVERGENCE_WAVES: readonly WaveDefinition[] = [
   },
   {
     title: 'Thiên Lăng Hợp Đội',
-    hint: 'Nhiều Hộ Vệ tầng 1 che một đoàn bay dày, thử thách chuỗi Gió–Đất và khả năng tích Thương.',
+    hint: 'Nhiều Hộ Vệ tầng 1 che một đoàn bay dày, thử thách chuỗi Gió–Đất và khả năng tích Nổ.',
     orders: [
       ...sequence('brute', 0.16, 26, 0.28),
       ...sequence('wisp', 0.06, 46, 0.15),

@@ -6,9 +6,10 @@
 - **Area:** `Documents/Prototype`
 - **Responsible Codex sessions:** `019ffa0d-09cb-7df2-b2e2-cd1e72bd2a74`, `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
 - **Responsible ChatGPT chats:** `6a7e858a-80fc-8322-9e39-ebfb4fcaa7db`, `6a7c3d0c-d31c-8323-9f15-4baea55ecb54`
-- **Tracking issues:** `TowerDefense3D-z67`, `TowerDefense3D-ga7`, `TowerDefense3D-2eg`, `TowerDefense3D-4pm`, `TowerDefense3D-0o5`, `TowerDefense3D-11i`, `TowerDefense3D-aj8`, `TowerDefense3D-ayz`, `TowerDefense3D-ar3`, `TowerDefense3D-29j`, `TowerDefense3D-r2g`, `TowerDefense3D-985`, `TowerDefense3D-01t`, `TowerDefense3D-7f3`, `TowerDefense3D-5d9`, `TowerDefense3D-7zd`, `TowerDefense3D-yya`, `TowerDefense3D-b69`, `TowerDefense3D-ndx`, `TowerDefense3D-clw`, `TowerDefense3D-cri`, `TowerDefense3D-0x5`, `TowerDefense3D-9en`
+- **Tracking issues represented in these entries:** `TowerDefense3D-ndx`, `TowerDefense3D-aj8`, `TowerDefense3D-ayz`, `TowerDefense3D-ar3`, `TowerDefense3D-29j`, `TowerDefense3D-r2g`, `TowerDefense3D-985`, `TowerDefense3D-01t`, `TowerDefense3D-7f3`, `TowerDefense3D-5d9`, `TowerDefense3D-7zd`, `TowerDefense3D-yya`, `TowerDefense3D-b69`, `TowerDefense3D-clw`, `TowerDefense3D-cri`, `TowerDefense3D-9en`, `TowerDefense3D-6do`
 - **Legacy Toad production prototype:** [tower-defense-am-duong.vercel.app](https://tower-defense-am-duong.vercel.app)
-- **Current Concept 2 prototype:** [`Documents/Prototype/Arcane-Arsenal/`](../Prototype/Arcane-Arsenal/)
+- **Rotation prototype:** [`Documents/Prototype/Arcane-Arsenal/`](../Prototype/Arcane-Arsenal/) — [production](https://arcane-arsenal-tower-defense.vercel.app)
+- **Explicit-link prototype:** [`Documents/Prototype/Arcane-Arsenal-Link/`](../Prototype/Arcane-Arsenal-Link/) — [production](https://arcane-arsenal-link-network.vercel.app)
 
 This file records consequential prototype decisions from the responsible sessions and chats. It summarizes decisions and verification evidence rather than reproducing raw transcripts.
 

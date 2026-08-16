@@ -361,26 +361,6 @@ button.danger { color: #ffc5b9; }
 .node-actions button span { display: block; margin-bottom: 2px; color: #ffe080; font-size: 1rem; line-height: 1; }
 .node-actions button.pressed { color: #fff6c7; border-color: #ffe17a; background: #554d45; box-shadow: 0 0 0 2px rgba(255, 225, 122, 0.2), 0 0 18px rgba(255, 225, 122, 0.24); }
 .node-actions button.danger span { color: #ff9b86; }
-#action-link {
-  grid-column: span 2;
-  min-height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  color: #dcfff2;
-  border-color: rgba(114, 237, 196, 0.42);
-  background: linear-gradient(#2e5260, #1d3e4c);
-  touch-action: manipulation;
-}
-#action-link span { margin: 0; color: var(--mint); font-size: 1.12rem; }
-#action-link.active,
-#action-link[aria-pressed="true"] {
-  color: #fff8d9;
-  border-color: #9effdc;
-  background: linear-gradient(#3e6f68, #28544f);
-  box-shadow: 0 0 0 2px rgba(114, 237, 196, 0.22), 0 0 20px rgba(114, 237, 196, 0.3);
-}
 #action-left,
 #action-right {
   grid-column: span 2;
@@ -571,11 +551,6 @@ button.danger { color: #ffc5b9; }
   animation: discovery-card-pulse 1.05s ease-in-out infinite;
 }
 
-.discovery-cue[data-placement="below"] .discovery-card {
-  transform: translate(-50%, 42px);
-  animation-name: discovery-card-pulse-below;
-}
-
 .discovery-card i {
   display: inline-grid;
   min-width: 31px;
@@ -614,11 +589,6 @@ button.danger { color: #ffc5b9; }
 @keyframes discovery-card-pulse {
   0%, 100% { filter: brightness(1); transform: translate(-50%, -118%) scale(0.96); }
   50% { filter: brightness(1.16); transform: translate(-50%, -118%) scale(1.04); }
-}
-
-@keyframes discovery-card-pulse-below {
-  0%, 100% { filter: brightness(1); transform: translate(-50%, 42px) scale(0.96); }
-  50% { filter: brightness(1.16); transform: translate(-50%, 42px) scale(1.04); }
 }
 
 @keyframes discovery-pointer-tap {
@@ -773,7 +743,8 @@ button.danger { color: #ffc5b9; }
   .build-button { display: flex; min-width: 0; min-height: 48px; justify-content: center; padding: 5px; }
   .build-copy { display: none; }
   .tower-info-button { position: static; width: 100%; min-height: 44px; transform: none; }
-  #tower-inspector { top: calc(max(7px, env(safe-area-inset-top)) + 62px); right: max(7px, env(safe-area-inset-right)); width: min(248px, 67vw); max-height: 48vh; overflow-y: auto; }
+  #tower-inspector { top: calc(max(7px, env(safe-area-inset-top)) + 62px); right: max(7px, env(safe-area-inset-right)); width: min(184px, 47vw); max-height: 48vh; overflow-y: auto; }
+  .inspector-dock-left #tower-inspector { right: auto; left: max(7px, env(safe-area-inset-left)); }
   .link-mode-active #tower-inspector { display: none; }
   #tower-inspector.empty { display: none; }
   #wave-panel { top: calc(max(7px, env(safe-area-inset-top)) + 62px); right: max(7px, env(safe-area-inset-right)); bottom: auto; left: max(7px, env(safe-area-inset-left)); width: auto; grid-template-columns: minmax(0, 1fr) auto; align-items: center; transform: none; }

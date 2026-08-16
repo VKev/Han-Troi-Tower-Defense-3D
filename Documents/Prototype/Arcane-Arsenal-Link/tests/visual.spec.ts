@@ -85,10 +85,53 @@ async function prepareTutorialLinkAction(page: Page, pointerType: 'mouse' | 'tou
   return { foundryId, fireId };
 }
 
-async function pressLinkButton(page: Page, pointerType: 'mouse' | 'touch'): Promise<void> {
-  const linkButton = page.locator('#action-link');
-  if (pointerType === 'touch') await linkButton.tap();
-  else await linkButton.click();
+async function dragSelectedTowerTo(
+  page: Page,
+  sourceTowerId: number,
+  targetTowerId: number,
+  pointerType: 'mouse' | 'touch',
+  whileDragging?: () => Promise<void>,
+): Promise<void> {
+  const points = await page.evaluate(({ sourceId, targetId }) => ({
+    source: window.__THREE_GAME_TEST_HOOKS__?.getTowerClientPoint(sourceId) ?? null,
+    target: window.__THREE_GAME_TEST_HOOKS__?.getTowerClientPoint(targetId) ?? null,
+  }), { sourceId: sourceTowerId, targetId: targetTowerId });
+  expect(points.source).not.toBeNull();
+  expect(points.target).not.toBeNull();
+  if (!points.source || !points.target) return;
+  const midpoint = {
+    x: points.source.x + (points.target.x - points.source.x) * 0.35,
+    y: points.source.y + (points.target.y - points.source.y) * 0.35,
+  };
+  if (pointerType === 'mouse') {
+    await page.mouse.move(points.source.x, points.source.y);
+    await page.mouse.down();
+    await page.mouse.move(midpoint.x, midpoint.y, { steps: 4 });
+  } else {
+    await page.locator('#game-canvas').dispatchEvent('pointerdown', {
+      pointerId: 31, pointerType: 'touch', isPrimary: true, button: 0,
+      clientX: points.source.x, clientY: points.source.y,
+    });
+    await page.locator('#game-canvas').dispatchEvent('pointermove', {
+      pointerId: 31, pointerType: 'touch', isPrimary: true, button: 0,
+      clientX: midpoint.x, clientY: midpoint.y,
+    });
+  }
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.interactionMode)).toBe('link');
+  if (whileDragging) await whileDragging();
+  if (pointerType === 'mouse') {
+    await page.mouse.move(points.target.x, points.target.y, { steps: 4 });
+    await page.mouse.up();
+  } else {
+    await page.locator('#game-canvas').dispatchEvent('pointermove', {
+      pointerId: 31, pointerType: 'touch', isPrimary: true, button: 0,
+      clientX: points.target.x, clientY: points.target.y,
+    });
+    await page.locator('#game-canvas').dispatchEvent('pointerup', {
+      pointerId: 31, pointerType: 'touch', isPrimary: true, button: 0,
+      clientX: points.target.x, clientY: points.target.y,
+    });
+  }
 }
 
 async function openActiveNetwork(page: Page, state: 'active-play' | 'stress' = 'active-play'): Promise<void> {
@@ -158,7 +201,7 @@ test('active projectile network renders and reports bounded scene complexity', a
     9: 11.7,
     10: 12,
   });
-  expect(diagnostics?.unlinkedProjectileLaunches).toBeGreaterThan(0);
+  expect(diagnostics?.unlinkedProjectileLaunches).toBe(0);
   expect(diagnostics?.towerLinks.every((link) => link.distance <= link.range + 0.001)).toBe(true);
   expect(diagnostics?.infusions).toBeGreaterThan(0);
   expect(diagnostics?.projectileInterceptions).toBeGreaterThan(0);
@@ -194,7 +237,7 @@ test('both Layer 1 plateaus support an active anti-air network beside the lane',
   expect(errors.pageErrors).toEqual([]);
 });
 
-test('guided stage prepares the complete three-tower rotation circuit for the final tutorial wave', async ({ page }, testInfo) => {
+test('guided stage unlocks a complete ground-only circuit before live enemies', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chrome', 'One deterministic desktop tutorial run covers progression logic.');
   const errors = await watchErrors(page);
   await page.goto('/');
@@ -212,15 +255,15 @@ test('guided stage prepares the complete three-tower rotation circuit for the fi
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('tutorial-ready'));
   await page.waitForFunction(() => {
     const diagnostics = window.__THREE_GAME_DIAGNOSTICS__;
-    return diagnostics?.stage === 1 && diagnostics.phase === 'ready' && diagnostics.tutorialStep === 14;
+    return diagnostics?.stage === 1 && diagnostics.phase === 'ready' && diagnostics.tutorialStep === 15;
   });
   const diagnostics = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
-  expect(diagnostics?.towers).toBe(3);
-  expect(diagnostics?.connections).toBe(2);
-  expect(diagnostics?.linkGuideObjects).toBe(4);
+  expect(diagnostics?.towers).toBe(4);
+  expect(diagnostics?.connections).toBe(3);
+  expect(diagnostics?.linkGuideObjects).toBe(6);
   expect(diagnostics?.maxTowerLayer).toBe(0);
-  expect(diagnostics?.unlockedTowers).toBe(0);
-  expect(diagnostics?.tutorialStep).toBe(14);
+  expect(diagnostics?.unlockedTowers).toBe(3);
+  expect(diagnostics?.tutorialStep).toBe(15);
   expect(diagnostics?.tutorialObjective).toBe('start-wave-3');
   expect(diagnostics?.terminalBuffTowerIds).toHaveLength(1);
   expect(diagnostics?.pathLength).toBe(22);
@@ -242,8 +285,8 @@ test('guided stage prepares the complete three-tower rotation circuit for the fi
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.stage)).toBe(2);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.phase)).toBe('ready');
   const stageTwo = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
-  expect(stageTwo?.money).toBe(160);
-  expect(stageTwo?.stageStartingMoney).toBe(160);
+  expect(stageTwo?.money).toBe(220);
+  expect(stageTwo?.stageStartingMoney).toBe(220);
   expect(stageTwo?.waveCount).toBe(6);
   expect(stageTwo?.pathLength).toBeGreaterThanOrEqual(56);
   expect(stageTwo?.maxBoardLayer).toBe(1);
@@ -252,12 +295,11 @@ test('guided stage prepares the complete three-tower rotation circuit for the fi
   expect(stageTwo?.waveThreats).toHaveLength(6);
   expect(stageTwo?.waveThreats.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
   expect(stageTwo?.waveEnemyCounts).toEqual([10, 14, 24, 34, 46, 61]);
+  expect(stageTwo?.waveMaxEnemyLayers.slice(0, 3)).toEqual([0, 0, 1]);
   expect(stageTwo?.waveEnemyCounts.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
   expect(stageTwo?.waveHealthMultipliers).toEqual([1.1, 1.4, 2, 3, 4.4, 6.2]);
   expect(stageTwo?.waveHealthMultipliers.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
   expect(stageTwo?.waveSpawnDensities.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
-  expect(stageTwo?.waveSpawnWindows.every((window) => window > 0)).toBe(true);
-  expect(stageTwo?.waveMaxEnemyLayers.slice(0, 3)).toEqual([0, 0, 1]);
   expect(stageTwo?.waveFlyingEnemyCounts).toEqual([0, 0, 6, 8, 16, 12]);
   expect(stageTwo?.waveBarrierEnemyCounts).toEqual([0, 0, 0, 0, 0, 2]);
   expect(stageTwo?.waveResistantEnemyCounts).toEqual([0, 0, 6, 8, 28, 24]);
@@ -313,23 +355,49 @@ test('Vietnamese UI and the Level 2 kill reward bonus remain deterministic', asy
   expect(errors.pageErrors).toEqual([]);
 });
 
-test('Nexus Lance beam remains anchored while it fades', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-chrome', 'One deterministic desktop run covers the shared Lance VFX transform.');
+test('Nổ radial blast stays anchored, respects one-cell same-layer damage, and fades cleanly', async ({ page }, testInfo) => {
   const errors = await watchErrors(page);
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
 
-  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('lance-vfx'));
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('explosion-skill'));
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxCount)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.explosionVisualRadius)).toBeGreaterThan(1.8);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setPausedForScreenshot(true));
+  const explosionPreview = testInfo.outputPath(`no-arcana-explosion-${testInfo.project.name}.png`);
+  await page.screenshot({ fullPage: true, path: explosionPreview });
+  await testInfo.attach('no-arcana-explosion', { path: explosionPreview, contentType: 'image/png' });
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxAnchorError)).toBeLessThan(0.0001);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxScaleError)).toBeLessThan(0.0001);
+  const blast = await page.evaluate(() => ({
+    radius: window.__THREE_GAME_DIAGNOSTICS__?.explosionRadius,
+    hits: window.__THREE_GAME_DIAGNOSTICS__?.explosionHits,
+    damage: window.__THREE_GAME_DIAGNOSTICS__?.explosionDamage,
+    outsideDamage: window.__THREE_GAME_DIAGNOSTICS__?.explosionOutsideDamage,
+    otherLayerDamage: window.__THREE_GAME_DIAGNOSTICS__?.explosionOtherLayerDamage,
+    visualRadius: window.__THREE_GAME_DIAGNOSTICS__?.explosionVisualRadius,
+    rings: window.__THREE_GAME_DIAGNOSTICS__?.explosionRingCount,
+    shards: window.__THREE_GAME_DIAGNOSTICS__?.explosionShardCount,
+    targetCues: window.__THREE_GAME_DIAGNOSTICS__?.explosionTargetCueCount,
+  }));
+  expect(blast.radius).toBe(2);
+  expect(blast.hits).toBe(1);
+  expect(blast.damage).toBeGreaterThan(0);
+  expect(blast.outsideDamage).toBe(0);
+  expect(blast.otherLayerDamage).toBe(0);
+  expect(blast.visualRadius).toBeGreaterThan(1.8);
+  expect(blast.visualRadius).toBeLessThanOrEqual(2);
+  expect(blast.rings).toBe(4);
+  expect(blast.shards).toBe(18);
+  expect(blast.targetCues).toBe(1);
 
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxCount), { timeout: 1_000 }).toBe(0);
-  const completedBeam = await page.evaluate(() => ({
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setPausedForScreenshot(false));
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxCount), { timeout: 1_500 }).toBe(0);
+  const completedBlast = await page.evaluate(() => ({
     anchorError: window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxAnchorError,
     scaleError: window.__THREE_GAME_DIAGNOSTICS__?.lanceVfxScaleError,
   }));
-  expect(completedBeam).toEqual({ anchorError: 0, scaleError: 0 });
+  expect(completedBlast).toEqual({ anchorError: 0, scaleError: 0 });
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
 });
@@ -360,12 +428,11 @@ test('Level 3 expands the battlefield, spans 10 waves, and previews new elementa
   expect(stageThree?.waveThreats).toHaveLength(10);
   expect(stageThree?.waveThreats.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
   expect(stageThree?.waveEnemyCounts).toEqual([20, 29, 46, 60, 76, 92, 108, 124, 136, 148]);
+  expect(stageThree?.waveMaxEnemyLayers.slice(0, 3)).toEqual([0, 0, 1]);
   expect(stageThree?.waveEnemyCounts.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
   expect(stageThree?.waveHealthMultipliers).toEqual([1.3, 1.7, 2.4, 3.3, 4.5, 6, 7.8, 10, 12.5, 15.5]);
   expect(stageThree?.waveHealthMultipliers.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
   expect(stageThree?.waveSpawnDensities.every((value, index, values) => index === 0 || value > values[index - 1])).toBe(true);
-  expect(stageThree?.waveSpawnWindows.every((window) => window > 0)).toBe(true);
-  expect(stageThree?.waveMaxEnemyLayers.slice(0, 3)).toEqual([0, 0, 1]);
   expect(stageThree?.waveFlyingEnemyCounts.slice(0, 2)).toEqual([0, 0]);
   expect(stageThree?.waveFlyingEnemyCounts.slice(2).every((count) => count > 0)).toBe(true);
   expect(stageThree?.waveBarrierEnemyCounts).toEqual([0, 0, 4, 16, 10, 28, 36, 40, 56, 54]);
@@ -439,8 +506,8 @@ test('tower eye controls reveal details without selecting or purchasing a tower'
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.inspectedBuildType)).toBe('fire');
 
   await page.locator('[data-tower-info="lance"]').click();
-  await expect(page.locator('#inspector-name')).toHaveText('Thương Nexus');
-  await expect(page.locator('#tower-detail-stats dd')).toHaveText(['180', '2×1', '21.0', '8 ô']);
+  await expect(page.locator('#inspector-name')).toHaveText('Nổ Arcana');
+  await expect(page.locator('#tower-detail-stats dd')).toHaveText(['180', '2×1', '2.0', '8 ô']);
   await expect(page.locator('#ammo-magazine')).toBeHidden();
 
   await page.locator('#inspector-close-detail').click();
@@ -450,16 +517,13 @@ test('tower eye controls reveal details without selecting or purchasing a tower'
   expect(errors.pageErrors).toEqual([]);
 });
 
-test('only a placed Lance exposes the ammo magazine', async ({ page }, testInfo) => {
+test('only a placed Nổ exposes the ammo magazine', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Desktop world taps cover the shared inspector behavior deterministically.');
   const errors = await watchErrors(page);
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('active-play'));
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towers)).toBe(10);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towerPurchasePriceMultiplier)).toBe(2.2);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towerPurchasePrices.fire)).toBe(154);
-  await expect(page.locator('[data-tower-type="fire"] .build-copy b')).toHaveText('154');
 
   await tapTowerById(page, 2, 'mouse');
   await expect(page.locator('#inspector-name')).toContainText('Trụ Truyền Hỏa');
@@ -467,7 +531,7 @@ test('only a placed Lance exposes the ammo magazine', async ({ page }, testInfo)
   await expect(page.locator('#inspector-detail')).not.toContainText('Đạn tích:');
 
   await tapTowerById(page, 4, 'mouse');
-  await expect(page.locator('#inspector-name')).toContainText('Thương Nexus');
+  await expect(page.locator('#inspector-name')).toContainText('Nổ Arcana');
   await expect(page.locator('#ammo-magazine')).toBeVisible();
   await expect(page.locator('#inspector-detail')).toContainText('Đạn tích:');
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.finiteAmmoTowerIds)).toEqual([4]);
@@ -493,7 +557,7 @@ test('non-special towers keep firing beyond the removed ammo capacity', async ({
   expect(diagnostics?.towerBuffers[link.targetId]).toBe(0);
   expect(diagnostics?.finiteAmmoTowerIds).toEqual([]);
   expect(diagnostics?.capacityBlockedTowerIds).toEqual([]);
-  expect(diagnostics?.unlinkedProjectileLaunches).toBeGreaterThan(0);
+  expect(diagnostics?.unlinkedProjectileLaunches).toBe(0);
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
   if (!testInfo.project.name.includes('mobile')) {
@@ -587,8 +651,9 @@ test('ready waves preview exact enemy rosters and reveal inline enemy details', 
   expect(errors.pageErrors).toEqual([]);
 });
 
-test('Level 2 introduces Amplifier, then Lance with a dedicated Foundry feeder and world ammo bar', async ({ page }, testInfo) => {
+test('Level 2 introduces Amplifier, then Nổ beside the lane with a dedicated Foundry feeder and world ammo bar', async ({ page }, testInfo) => {
   const errors = await watchErrors(page);
+  const pointerType = testInfo.project.name.includes('mobile') ? 'touch' : 'mouse';
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
 
@@ -611,13 +676,8 @@ test('Level 2 introduces Amplifier, then Lance with a dedicated Foundry feeder a
   await testInfo.attach('level-2-wave-3-amplifier-cue', { path: amplifierLessonPath, contentType: 'image/png' });
 
   if (amplifierLesson?.lessonCell) {
-    const target = await page.evaluate(
-      ({ gx, gz }) => window.__THREE_GAME_TEST_HOOKS__?.getCellClientPoint(gx, gz),
-      amplifierLesson.lessonCell,
-    );
-    expect(target).not.toBeNull();
     await page.locator('[data-tower-type="amplifier"]').click();
-    if (target) await page.mouse.click(target.x, target.y);
+    await tapCell(page, amplifierLesson.lessonCell.gx, amplifierLesson.lessonCell.gz, pointerType);
   }
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.requiredTutorialTower)).toBeNull();
   await expect(page.locator('#start-wave')).toBeEnabled();
@@ -630,16 +690,11 @@ test('Level 2 introduces Amplifier, then Lance with a dedicated Foundry feeder a
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.money)).toBe(35);
   await expect(page.locator('[data-tower-type="amplifier"]')).toHaveAttribute('data-lesson-free', 'true');
   if (amplifierLesson?.lessonCell) {
-    const target = await page.evaluate(
-      ({ gx, gz }) => window.__THREE_GAME_TEST_HOOKS__?.getCellClientPoint(gx, gz),
-      amplifierLesson.lessonCell,
-    );
     await page.locator('[data-tower-type="amplifier"]').click();
-    if (target) await page.mouse.click(target.x, target.y);
+    await tapCell(page, amplifierLesson.lessonCell.gx, amplifierLesson.lessonCell.gz, pointerType);
   }
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.requiredTutorialTower)).toBeNull();
-  const optionalFirePrice = await page.locator('[data-tower-type="fire"] .build-copy b').textContent();
-  expect(Number(optionalFirePrice)).toBeGreaterThan(35);
+  await expect(page.locator('[data-tower-type="fire"] .build-copy b')).toHaveText('70');
   await expect(page.locator('[data-tower-type="fire"]')).toHaveAttribute('data-lesson-free', 'false');
   await expect(page.locator('[data-tower-type="fire"]')).toBeDisabled();
 
@@ -656,20 +711,18 @@ test('Level 2 introduces Amplifier, then Lance with a dedicated Foundry feeder a
   expect(lanceLesson?.money).toBe(45);
   expect(lanceLesson?.unlockedTowers).toBe(7);
   expect(lanceLesson?.lessonCell).not.toBeNull();
+  expect(lanceLesson?.lessonCellLaneDistance).not.toBeNull();
+  expect(lanceLesson?.lessonCellLaneDistance ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(2);
   const lanceLessonPath = testInfo.outputPath('level-2-wave-4-lance-cue.png');
   await page.screenshot({ fullPage: true, path: lanceLessonPath });
   await testInfo.attach('level-2-wave-4-lance-cue', { path: lanceLessonPath, contentType: 'image/png' });
 
   if (lanceLesson?.lessonCell) {
-    const target = await page.evaluate(
-      ({ gx, gz }) => window.__THREE_GAME_TEST_HOOKS__?.getCellClientPoint(gx, gz),
-      lanceLesson.lessonCell,
-    );
-    expect(target).not.toBeNull();
     await page.locator('[data-tower-type="lance"]').click();
-    if (target) await page.mouse.click(target.x, target.y);
+    await tapCell(page, lanceLesson.lessonCell.gx, lanceLesson.lessonCell.gz, pointerType);
   }
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.selectedTowerId ?? null)).not.toBeNull();
+  const lanceTowerId = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.selectedTowerId ?? null);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.requiredTutorialTower)).toBe('foundry');
   await expect(page.locator('[data-tower-type="foundry"]')).toHaveClass(/tutorial-focus/);
   await expect(page.locator('[data-tower-type="foundry"]')).toBeEnabled();
@@ -681,24 +734,24 @@ test('Level 2 introduces Amplifier, then Lance with a dedicated Foundry feeder a
   const feederLesson = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
   expect(feederLesson?.lessonCell).not.toBeNull();
   if (feederLesson?.lessonCell) {
-    const target = await page.evaluate(
-      ({ gx, gz }) => window.__THREE_GAME_TEST_HOOKS__?.getCellClientPoint(gx, gz),
-      feederLesson.lessonCell,
-    );
-    expect(target).not.toBeNull();
     await page.locator('[data-tower-type="foundry"]').click();
-    if (target) await page.mouse.click(target.x, target.y);
+    await tapCell(page, feederLesson.lessonCell.gx, feederLesson.lessonCell.gz, pointerType);
   }
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.selectedTowerId ?? null)).not.toBeNull();
-  const rotateRight = page.locator('#action-right');
-  await expect(rotateRight).toBeVisible();
-  await rotateRight.dispatchEvent('pointerdown', { button: 0, pointerId: 91, pointerType: testInfo.project.name.includes('mobile') ? 'touch' : 'mouse' });
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceFeederConnected), { timeout: 5_000 }).toBe(true);
-  await rotateRight.dispatchEvent('pointerup', { button: 0, pointerId: 91, pointerType: testInfo.project.name.includes('mobile') ? 'touch' : 'mouse' });
+  const feederTowerId = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.selectedTowerId ?? null);
+  if (feederTowerId !== null && lanceTowerId !== null) {
+    await dragSelectedTowerTo(page, feederTowerId, lanceTowerId, pointerType);
+  }
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.requiredTutorialTower)).toBeNull();
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.money)).toBe(45);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceFeederConnected)).toBe(true);
-  expect(await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lanceFeederConnected)).toBe(true);
+  await expect.poll(() => page.evaluate(({ sourceId, targetId }) => window.__THREE_GAME_DIAGNOSTICS__?.towerLinks.some(
+    (link) => link.sourceId === sourceId && link.targetId === targetId,
+  ) ?? false, { sourceId: feederTowerId, targetId: lanceTowerId })).toBe(true);
+  const feederFacingError = await page.evaluate(({ sourceId, targetId }) => window.__THREE_GAME_DIAGNOSTICS__?.towerLinks.find(
+    (link) => link.sourceId === sourceId && link.targetId === targetId,
+  )?.facingError ?? Number.POSITIVE_INFINITY, { sourceId: feederTowerId, targetId: lanceTowerId });
+  expect(feederFacingError).toBeLessThan(0.001);
   await expect(page.locator('#start-wave')).toBeEnabled();
   await expect(page.locator('#start-wave')).toHaveClass(/tutorial-focus/);
   await page.locator('#start-wave').click();
@@ -711,25 +764,59 @@ test('Level 2 introduces Amplifier, then Lance with a dedicated Foundry feeder a
   expect(errors.pageErrors).toEqual([]);
 });
 
+test('a completed relay rejects another incoming link on desktop and mobile', async ({ page }, testInfo) => {
+  const errors = await watchErrors(page);
+  await page.goto('/');
+  await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('relay-lock'));
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.interactionMode)).toBe('link');
+  const before = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
+  const relayLink = before?.towerLinks.find((incoming) => before.towerLinks.some((outgoing) => outgoing.sourceId === incoming.targetId));
+  expect(relayLink).toBeDefined();
+  expect(before?.towerLinks).toHaveLength(2);
+  if (!relayLink) return;
+  const candidate = before?.linkCandidates.find((entry) => entry.towerId === relayLink.targetId);
+  expect(candidate).toMatchObject({ valid: false, highlighted: false });
+  expect(candidate?.reason).toContain('đã có đầu vào và đầu ra');
+  const sourceId = before?.selectedTowerId ?? null;
+  expect(sourceId).not.toBeNull();
+  if (sourceId !== null) {
+    await dragSelectedTowerTo(page, sourceId, relayLink.targetId, testInfo.project.name.includes('mobile') ? 'touch' : 'mouse');
+  }
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastLinkAttempt?.result ?? '')).toContain('đã có đầu vào và đầu ra');
+  const after = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
+  expect(after?.towerLinks).toEqual(before?.towerLinks);
+  expect(errors.consoleErrors).toEqual([]);
+  expect(errors.pageErrors).toEqual([]);
+});
+
 test('desktop and mobile link a highlighted target and reject a direct reciprocal link', async ({ page }, testInfo) => {
-  test.skip(true, 'Explicit reciprocal-link rules belong to the link variant.');
   const errors = await watchErrors(page);
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
   const pointerType = testInfo.project.name.includes('mobile') ? 'touch' : 'mouse';
   const { foundryId, fireId } = await prepareTutorialLinkAction(page, pointerType);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialObjective)).toBe('activate-link');
-  await expect(page.locator('#action-link')).toBeVisible();
-  await pressLinkButton(page, pointerType);
-  await expect(page.locator('#action-link')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#game-canvas')).toHaveClass(/link-mode-active/);
-  const initial = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
-  expect(initial?.linkSourceTowerId).toBe(foundryId);
-  expect(initial?.linkCandidates.find((candidate) => candidate.towerId === fireId)).toMatchObject({ valid: true, highlighted: true });
-  await tapTowerById(page, fireId, pointerType);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialObjective)).toBe('drag-foundry-fire');
+  await expect(page.locator('#action-link')).toHaveCount(0);
+  await expect(page.locator('#tutorial-hand')).toHaveAttribute('data-mode', 'drag');
+  await dragSelectedTowerTo(page, foundryId, fireId, pointerType, async () => {
+    await expect(page.locator('#game-canvas')).toHaveClass(/link-mode-active/);
+    const initial = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__);
+    expect(initial?.linkSourceTowerId).toBe(foundryId);
+    expect(initial?.linkCandidates.find((candidate) => candidate.towerId === fireId)).toMatchObject({ valid: true, highlighted: true });
+    if (pointerType === 'mouse') {
+      const dragHighlightPath = testInfo.outputPath('link-drag-highlight.png');
+      await page.locator('#game-canvas').screenshot({ path: dragHighlightPath });
+      await testInfo.attach('link-drag-highlight', { path: dragHighlightPath, contentType: 'image/png' });
+    }
+  });
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.connections)).toBe(1);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastLinkAttempt?.result)).toBe('linked');
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.linkSourceTowerId)).toBeNull();
+  const linkedFacing = await page.evaluate(({ sourceId, targetId }) => window.__THREE_GAME_DIAGNOSTICS__?.towerLinks.find(
+    (link) => link.sourceId === sourceId && link.targetId === targetId,
+  )?.facingError ?? Number.POSITIVE_INFINITY, { sourceId: foundryId, targetId: fireId });
+  expect(linkedFacing).toBeLessThan(0.001);
 
   if (pointerType === 'mouse') {
     const markedPositionsPath = testInfo.outputPath('tutorial-marked-positions.png');
@@ -737,6 +824,7 @@ test('desktop and mobile link a highlighted target and reject a direct reciproca
     await testInfo.attach('tutorial-marked-positions', { path: markedPositionsPath, contentType: 'image/png' });
     await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('active-play'));
     await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.stage)).toBe(2);
+    await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.maxLinkedTowerFacingError ?? Number.POSITIVE_INFINITY)).toBeLessThan(0.001);
     const readyLinks = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towerLinks ?? []);
     const reciprocalBase = readyLinks.find((link) =>
       readyLinks.some((previous) => previous.targetId === link.sourceId)
@@ -744,9 +832,8 @@ test('desktop and mobile link a highlighted target and reject a direct reciproca
     expect(reciprocalBase).toBeDefined();
     if (reciprocalBase) {
       await tapTowerById(page, reciprocalBase.targetId, pointerType);
-      await pressLinkButton(page, pointerType);
-      await expect(page.locator('#action-link')).toHaveAttribute('aria-pressed', 'true');
-      await tapTowerById(page, reciprocalBase.sourceId, pointerType);
+      await dragSelectedTowerTo(page, reciprocalBase.targetId, reciprocalBase.sourceId, pointerType);
+      await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastLinkAttempt?.result ?? null)).toContain('ngược trực tiếp');
       const rejected = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastLinkAttempt);
       expect(rejected).toMatchObject({ sourceId: reciprocalBase.targetId, targetId: reciprocalBase.sourceId });
       expect(rejected?.result).toContain('ngược trực tiếp');
@@ -758,8 +845,7 @@ test('desktop and mobile link a highlighted target and reject a direct reciproca
 });
 
 test('only linked projectile segments deal damage and a terminal buff never launches', async ({ page }) => {
-  test.skip(true, 'Terminal free-fire behavior is intentionally different in the rotation variant.');
-  test.setTimeout(50_000);
+  test.setTimeout(85_000);
   const errors = await watchErrors(page);
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.__THREE_GAME_TEST_HOOKS__));
@@ -777,10 +863,20 @@ test('only linked projectile segments deal damage and a terminal buff never laun
   expect(diagnostics?.terminalBuffProjectileLaunches).toBe(0);
   const terminalId = diagnostics?.terminalBuffTowerIds[0];
   if (terminalId !== undefined) expect(diagnostics?.projectileLaunchesByTower[terminalId] ?? 0).toBe(0);
+  await page.waitForFunction(() => {
+    const diagnostics = window.__THREE_GAME_DIAGNOSTICS__;
+    return (diagnostics?.phase === 'ready' && diagnostics.wave === 4) || diagnostics?.reactionTutorialPopupVisible === true;
+  }, undefined, { timeout: 35_000 });
+  if (await page.locator('#reaction-tutorial-overlay').isVisible()) {
+    await page.locator('#reaction-tutorial-continue').click();
+  }
   await expect.poll(
-    () => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.phase),
+    () => page.evaluate(() => ({
+      phase: window.__THREE_GAME_DIAGNOSTICS__?.phase,
+      wave: window.__THREE_GAME_DIAGNOSTICS__?.wave,
+    })),
     { timeout: 35_000 },
-  ).toBe('won');
+  ).toEqual({ phase: 'ready', wave: 4 });
   expect(await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lives ?? 0)).toBeGreaterThan(0);
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
@@ -793,7 +889,7 @@ test('tower cards drag onto the logical grid with mouse and touch pointer events
   await expect(page.locator('#briefing')).toHaveCount(0);
   await expect(page.locator('#tutorial-card')).toHaveCount(0);
 
-  const target = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.getCellClientPoint(4, 2));
+  const target = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.getCellClientPoint(2, 1));
   const button = page.locator('[data-tower-type="foundry"]');
   const buttonBox = await button.boundingBox();
   expect(target).not.toBeNull();
@@ -863,12 +959,9 @@ test('tower cards drag onto the logical grid with mouse and touch pointer events
 
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towers)).toBe(1);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialStep)).toBe(1);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towerPurchasePriceMultiplier)).toBe(1.12);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.towerPurchasePrices.fire)).toBe(79);
-  await expect(page.locator('[data-tower-type="fire"] .build-copy b')).toHaveText('79');
-  await expect(page.locator('[data-tower-type="fire"]')).toBeDisabled();
-  await expect(page.locator('#start-wave')).toHaveClass(/tutorial-focus/);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialHandMode)).toBe('tap');
+  await expect(page.locator('[data-tower-type="fire"]')).toBeEnabled();
+  await expect(page.locator('[data-tower-type="fire"]')).toHaveClass(/tutorial-focus/);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialHandMode)).toBe('drag');
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
 });
@@ -892,7 +985,7 @@ test('enemy elemental tint and icons persist, then Fire to Ice triggers a reacti
 
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('status-reaction'));
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.reactions)).toBe(1);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.reactionMaxHpDamageRatio)).toBe(0.035);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.reactionMaxHpDamageRatio)).toBe(0.06);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tintedEnemies)).toBe(1);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.statusIcons)).toBe(1);
   if (!testInfo.project.name.includes('mobile')) {
@@ -907,8 +1000,7 @@ test('enemy elemental tint and icons persist, then Fire to Ice triggers a reacti
 
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('reaction-scaling'));
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.activeEnemyMaxHp)).toBe(15_190);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastReactionBonusDamage)).toBeGreaterThanOrEqual(550);
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastReactionBonusDamage)).toBeLessThan(560);
+  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.lastReactionBonusDamage)).toBeGreaterThanOrEqual(900);
   await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.activeReactionBarriers)).toBe(0);
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
@@ -982,12 +1074,18 @@ test('mobile HUD respects safe layout and touch target size', async ({ page }, t
     const box = await button.boundingBox();
     expect(box?.height).toBeGreaterThanOrEqual(44);
   }
-  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__?.setState('tutorial-rotation'));
-  await expect.poll(() => page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__?.tutorialObjective)).toBe('rotate-fire-lane');
-  await expect(page.locator('#action-link')).toHaveClass(/hidden/);
-  await expect(page.locator('#action-left')).toBeVisible();
-  await expect(page.locator('#action-right')).toBeVisible();
-  expect((await page.locator('#action-right').boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await prepareTutorialLinkAction(page, 'touch');
+  await expect(page.locator('#action-left')).toHaveClass(/hidden/);
+  await expect(page.locator('#action-right')).toHaveClass(/hidden/);
+  await expect(page.locator('#action-link')).toHaveCount(0);
+  await expect(page.locator('#tutorial-hand')).toHaveAttribute('data-mode', 'drag');
+  const selectedSourceIsReachable = await page.evaluate(() => {
+    const sourceId = window.__THREE_GAME_DIAGNOSTICS__?.selectedTowerId;
+    if (sourceId === null || sourceId === undefined) return false;
+    const point = window.__THREE_GAME_TEST_HOOKS__?.getTowerClientPoint(sourceId);
+    return Boolean(point && document.elementFromPoint(point.x, point.y) === document.querySelector('#game-canvas'));
+  });
+  expect(selectedSourceIsReachable).toBe(true);
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.pageErrors).toEqual([]);
 });

@@ -93,7 +93,6 @@ interface DiscoveryCueRequest {
   readonly html: string;
   readonly targetSelector?: string;
   readonly worldPosition?: THREE.Vector3;
-  readonly placement: 'above' | 'below';
   readonly highlightOnly: boolean;
   readonly duration: number;
 }
@@ -129,24 +128,16 @@ const BUILD_GROUPS: readonly { label: string; types: readonly TowerType[] }[] = 
   { label: 'Hỗ trợ trụ', types: ['amplifier'] },
   { label: 'Trụ đặc biệt', types: ['lance'] },
 ];
-const TUTORIAL_STEP_COUNT = 17;
-const TUTORIAL_TOWER_CELLS = ROUTING_MODE === 'rotation'
-  ? {
-      foundry: { gx: 4, gz: 2 },
-      fire: { gx: 3, gz: 5 },
-      ice: { gx: 2, gz: 4 },
-      terminalFire: { gx: 2, gz: 3 },
-    } as const
-  : {
-      foundry: { gx: 2, gz: 1 },
-      fire: { gx: 4, gz: 5 },
-      ice: { gx: 2, gz: 0 },
-      terminalFire: { gx: 2, gz: 3 },
-    } as const;
+const TUTORIAL_STEP_COUNT = 16;
+const TUTORIAL_TOWER_CELLS = {
+  foundry: { gx: 2, gz: 1 },
+  fire: { gx: 4, gz: 5 },
+  ice: { gx: 2, gz: 0 },
+  terminalFire: { gx: 2, gz: 3 },
+} as const;
 const TUTORIAL_WAVE_START_STEPS = [5, 10, 15] as const;
-const ROTATION_TUTORIAL_WAVE_START_STEPS = [1, 6, 14] as const;
-const ROTATION_TUTORIAL_FIRE_IDLE_DELAY = 1.6;
-const ROTATION_TUTORIAL_REACTION_POPUP_DELAY = 0.9;
+const ROTATION_TUTORIAL_WAVE_START_STEPS = [4, 8, 14] as const;
+const TUTORIAL_REACTION_POPUP_DELAY = 0.9;
 const MAX_ENEMY_LANE_OFFSET = 0.55;
 const GAME_SPEEDS = [1, 2] as const;
 const ELEMENT_STATUS_TINT = 0.94;
@@ -157,13 +148,12 @@ const TOWER_FIRE_RATE_MULTIPLIER = 1.5;
 const PROJECTILE_COLLISION_RADIUS = 0.84;
 const PROJECTILE_VISUAL_SCALE = 2;
 const ENEMY_SPEED_MULTIPLIER = 0.6;
-const REACTION_MAX_HP_DAMAGE_RATIO = 0.035;
-const TOWER_PURCHASE_PRICE_GROWTH_PER_TOWER = 0.12;
-const TOWER_PURCHASE_PRICE_GROWTH_CAP = 1.2;
+const REACTION_MAX_HP_DAMAGE_RATIO = 0.06;
 const ROTATION_SPEED = THREE.MathUtils.degToRad(105);
 const SELECTED_AIM_GUIDE_RADIUS = 0.13;
 const SELECTED_AIM_GUIDE_OPACITY = 0.38;
 const LANCE_AMMO_BAR_WIDTH = 1.62;
+const EXPLOSION_RADIUS = CELL_SIZE;
 const ENEMY_GLYPHS: Readonly<Record<EnemyKind, string>> = {
   riftling: '◆',
   runner: '➤',
@@ -285,12 +275,11 @@ export class Game {
   private pathSegmentLengths = this.pathXZ.slice(1).map((point, index) => point.distanceTo(this.pathXZ[index]));
   private pathTotalLength = this.pathSegmentLengths.reduce((sum, length) => sum + length, 0);
   private tutorialStep = 0;
-  private tutorialNeutralKillObserved = false;
-  private tutorialFireIdleElapsed = 0;
-  private tutorialFireIdleObserved = false;
   private reactionTutorialPopupDelay = -1;
   private reactionTutorialPopupVisible = false;
   private linkSourceTowerId: number | null = null;
+  private linkDragPointerId: number | null = null;
+  private linkDragSourceTowerId: number | null = null;
   private rotationPointerId: number | null = null;
   private rotationPointerDirection: -1 | 0 | 1 = 0;
   private readonly heldRotationKeys = new Set<'q' | 'e'>();
@@ -328,6 +317,11 @@ export class Game {
   private impactParticleBursts = 0;
   private lanceVfxMaxAnchorError = 0;
   private lanceVfxMaxScaleError = 0;
+  private lastExplosionHitCount = 0;
+  private lastExplosionDamage = 0;
+  private lastExplosionOutsideDamage = 0;
+  private lastExplosionOtherLayerDamage = 0;
+  private lastExplosionTargetCueCount = 0;
   private speedIndex = 0;
   private rng = createSeededRandom(20260814);
   private pausedForScreenshot = false;
@@ -938,7 +932,6 @@ export class Game {
       section.append(heading);
       for (const type of buildGroup.types) {
         const definition = TOWER_DEFINITIONS[type];
-        const price = this.currentTowerPrice(type);
         const item = document.createElement('div');
         item.className = 'build-item';
         item.dataset.towerItem = type;
@@ -947,8 +940,8 @@ export class Game {
         button.className = 'build-button';
         button.dataset.towerType = type;
         button.title = `${buildGroup.label}: ${definition.name}`;
-        button.setAttribute('aria-label', `${buildGroup.label}: ${definition.name}, giá ${price}`);
-        button.innerHTML = `<span class="tower-glyph" style="--tower-color:#${definition.color.toString(16).padStart(6, '0')}">${definition.icon}</span><span class="build-copy"><strong>${definition.shortName}</strong><b>${price}</b></span>`;
+        button.setAttribute('aria-label', `${buildGroup.label}: ${definition.name}, giá ${definition.cost}`);
+        button.innerHTML = `<span class="tower-glyph" style="--tower-color:#${definition.color.toString(16).padStart(6, '0')}">${definition.icon}</span><span class="build-copy"><strong>${definition.shortName}</strong><b>${definition.cost}</b></span>`;
         const detailButton = document.createElement('button');
         detailButton.type = 'button';
         detailButton.className = 'tower-info-button';
@@ -1034,9 +1027,6 @@ export class Game {
     });
     this.getElement('#action-upgrade').addEventListener('click', () => this.upgradeSelected());
     this.getElement('#action-move').addEventListener('click', () => this.beginMove());
-    this.getElement('#action-link').addEventListener('click', () => {
-      if (ROUTING_MODE === 'link') this.beginLink();
-    });
     this.getElement('#action-sell').addEventListener('click', () => this.sellSelected());
     this.getElement('#branch-power').addEventListener('click', () => this.setAmplifierBranch('power'));
     this.getElement('#branch-throughput').addEventListener('click', () => this.setAmplifierBranch('throughput'));
@@ -1051,15 +1041,51 @@ export class Game {
     this.canvas.addEventListener('pointerdown', (event) => {
       this.pointerStart.set(event.clientX, event.clientY);
       this.pointerMoved = false;
-    });
+      if (ROUTING_MODE !== 'link' || event.button !== 0) return;
+      const source = this.selectedTower();
+      const pressedTowerId = this.findTowerAt(event.clientX, event.clientY);
+      if (!source || !isAmmoEmitter(source.type)
+        || (pressedTowerId !== source.id && !this.isClientNearTower(source, event.clientX, event.clientY))) return;
+      this.linkDragPointerId = event.pointerId;
+      this.linkDragSourceTowerId = source.id;
+      this.controls.enabled = false;
+      event.preventDefault();
+      try { this.canvas.setPointerCapture(event.pointerId); } catch { /* Synthetic input need not own capture. */ }
+    }, { capture: true });
     this.canvas.addEventListener('pointermove', (event) => {
-      if (this.pointerStart.distanceTo(new THREE.Vector2(event.clientX, event.clientY)) > 7) this.pointerMoved = true;
-    });
+      const moved = this.pointerStart.distanceTo(new THREE.Vector2(event.clientX, event.clientY)) > 7;
+      if (moved) this.pointerMoved = true;
+      if (this.linkDragPointerId !== event.pointerId || !moved) return;
+      if (this.interactionMode !== 'link') this.beginLink();
+      this.updateLinkDragHover(event.clientX, event.clientY);
+      event.preventDefault();
+    }, { capture: true });
     this.canvas.addEventListener('pointerup', (event) => {
       if (this.buildDrag?.dragging) return;
+      if (this.linkDragPointerId === event.pointerId) {
+        const sourceId = this.linkDragSourceTowerId;
+        const wasDragging = this.interactionMode === 'link' && sourceId !== null;
+        const targetId = wasDragging ? this.findTowerAt(event.clientX, event.clientY) : null;
+        this.finishLinkDrag(event.pointerId);
+        if (wasDragging && targetId !== null && targetId !== sourceId) this.tryLinkTowers(sourceId, targetId);
+        if (this.interactionMode === 'link') {
+          this.clearLinkMode();
+          this.refreshSelectionVisual();
+          this.updateUi(true);
+        }
+        event.preventDefault();
+        if (wasDragging || this.pointerMoved) return;
+      }
       if (this.pointerMoved) return;
       this.handleCanvasTap(event.clientX, event.clientY);
-    });
+    }, { capture: true });
+    this.canvas.addEventListener('pointercancel', (event) => {
+      if (this.linkDragPointerId !== event.pointerId) return;
+      this.finishLinkDrag(event.pointerId);
+      this.clearLinkMode();
+      this.refreshSelectionVisual();
+      this.updateUi(true);
+    }, { capture: true });
     this.canvas.addEventListener('contextmenu', (event) => event.preventDefault());
     this.installRotationHold('#action-left', -1);
     this.installRotationHold('#action-right', 1);
@@ -1183,7 +1209,6 @@ export class Game {
     }
     if (event.key === 'Escape') this.cancelInteraction();
     else if (event.key.toLowerCase() === 'm') this.beginMove();
-    else if (key === 'l' && ROUTING_MODE === 'link') this.beginLink();
     else if (event.key.toLowerCase() === 'u') this.upgradeSelected();
     else if (event.key === 'Delete' || event.key === 'Backspace') this.sellSelected();
     else if (event.code === 'Space') {
@@ -1212,12 +1237,6 @@ export class Game {
       return true;
     }
     if (!this.activeStage().tutorial) return true;
-    if (ROUTING_MODE === 'rotation') {
-      if (type === 'foundry') return this.tutorialStep === 0;
-      if (type === 'fire') return this.tutorialStep === 3;
-      if (type === 'ice') return this.tutorialStep === 11;
-      return false;
-    }
     if (type === 'foundry') return true;
     if (type === 'fire') return this.tutorialStep >= 1;
     if (type === 'ice') return this.tutorialStep >= 6;
@@ -1243,19 +1262,8 @@ export class Game {
     return this.stageTwoRequiredTower() === type;
   }
 
-  private towerPurchasePriceMultiplier(): number {
-    return 1 + Math.min(
-      TOWER_PURCHASE_PRICE_GROWTH_CAP,
-      this.towers.length * TOWER_PURCHASE_PRICE_GROWTH_PER_TOWER,
-    );
-  }
-
-  private currentTowerPrice(type: TowerType): number {
-    return Math.ceil(TOWER_DEFINITIONS[type].cost * this.towerPurchasePriceMultiplier());
-  }
-
   private towerPurchaseCost(type: TowerType): number {
-    return this.isMandatoryLessonPurchase(type) ? 0 : this.currentTowerPrice(type);
+    return this.isMandatoryLessonPurchase(type) ? 0 : TOWER_DEFINITIONS[type].cost;
   }
 
   private isMandatoryLessonPlacement(type: TowerType, gx: number, gz: number): boolean {
@@ -1292,16 +1300,18 @@ export class Game {
                                 : this.tutorialStep === 14 ? ice?.outputTargetId === terminalFire?.id
                                   : false
         : this.tutorialStep === 0 ? Boolean(foundry)
-          : this.tutorialStep === 3 ? Boolean(fire)
-            : this.tutorialStep === 4 ? this.selectedTowerId === fire?.id
-              : this.tutorialStep === 5 ? Boolean(fire && this.isTowerAimedAtTutorialLane(fire))
-                : this.tutorialStep === 7 ? this.tutorialFireIdleObserved
-                  : this.tutorialStep === 8 ? this.selectedTowerId === foundry?.id
-                    : this.tutorialStep === 9 ? Boolean(foundry && fire && this.isTowerAimedAt(foundry, fire))
-                      : this.tutorialStep === 11 ? Boolean(ice)
-                        : this.tutorialStep === 12 ? this.selectedTowerId === fire?.id
-                          : this.tutorialStep === 13 ? Boolean(fire && ice && this.isTowerAimedAt(fire, ice))
-                            : false;
+          : this.tutorialStep === 1 ? Boolean(fire)
+            : this.tutorialStep === 2 ? this.selectedTowerId === foundry?.id
+              : this.tutorialStep === 3 ? Boolean(foundry && fire && this.isTowerAimedAt(foundry, fire))
+                : this.tutorialStep === 5 ? Boolean(ice)
+                  : this.tutorialStep === 6 ? this.selectedTowerId === fire?.id
+                    : this.tutorialStep === 7 ? Boolean(fire && ice && this.isTowerAimedAt(fire, ice))
+                      : this.tutorialStep === 9 ? Boolean(terminalFire)
+                        : this.tutorialStep === 10 ? this.selectedTowerId === ice?.id
+                          : this.tutorialStep === 11 ? Boolean(ice && terminalFire && this.isTowerAimedAt(ice, terminalFire))
+                            : this.tutorialStep === 12 ? this.selectedTowerId === terminalFire?.id
+                              : this.tutorialStep === 13 ? Boolean(terminalFire && this.isAngleAligned(terminalFire.aimAngle, 0))
+                                : false;
       if (!complete) break;
       this.tutorialStep += 1;
       advanced = true;
@@ -1312,22 +1322,11 @@ export class Game {
   }
 
   private handleCanvasTap(clientX: number, clientY: number): void {
-    this.setRayFromClient(clientX, clientY);
-
-    const towerHit = this.raycaster.intersectObjects(this.towerPickables, true)[0];
-    if (towerHit) {
-      const towerId = this.findTowerId(towerHit.object);
-      if (towerId !== null) {
-        this.handleTowerTap(towerId);
-        return;
-      }
-    }
-    if (this.interactionMode === 'inspect' || this.interactionMode === 'link') {
-      const nearbyTowerId = this.findNearbyTowerAt(clientX, clientY);
-      if (nearbyTowerId !== null) {
-        this.handleTowerTap(nearbyTowerId);
-        return;
-      }
+    const allowNearbyTower = this.interactionMode === 'inspect' || this.interactionMode === 'link';
+    const towerId = this.findTowerAt(clientX, clientY, allowNearbyTower);
+    if (towerId !== null) {
+      this.handleTowerTap(towerId);
+      return;
     }
 
     const cellHit = this.findCellAt(clientX, clientY);
@@ -1336,6 +1335,16 @@ export class Game {
       return;
     }
     this.cancelInteraction();
+  }
+
+  private findTowerAt(clientX: number, clientY: number, allowNearby = true): number | null {
+    this.setRayFromClient(clientX, clientY);
+    const towerHit = this.raycaster.intersectObjects(this.towerPickables, true)[0];
+    if (towerHit) {
+      const towerId = this.findTowerId(towerHit.object);
+      if (towerId !== null) return towerId;
+    }
+    return allowNearby ? this.findNearbyTowerAt(clientX, clientY) : null;
   }
 
   private findNearbyTowerAt(clientX: number, clientY: number): number | null {
@@ -1350,6 +1359,13 @@ export class Game {
       nearest = { id: tower.id, distance };
     }
     return nearest?.id ?? null;
+  }
+
+  private isClientNearTower(tower: TowerState, clientX: number, clientY: number): boolean {
+    const point = this.worldToClient(tower.group.position.clone().add(new THREE.Vector3(0, 0.7, 0)));
+    if (!point) return false;
+    const radius = window.matchMedia('(pointer: coarse)').matches ? 38 : 24;
+    return Math.hypot(point.x - clientX, point.y - clientY) <= radius;
   }
 
   private setRayFromClient(clientX: number, clientY: number): void {
@@ -1376,10 +1392,6 @@ export class Game {
   }
 
   private handleTowerTap(towerId: number): void {
-    if (this.interactionMode === 'link' && this.linkSourceTowerId !== null) {
-      this.tryLinkTowers(this.linkSourceTowerId, towerId);
-      return;
-    }
     this.clearLinkMode();
     this.selectedBuildType = null;
     this.inspectedBuildType = null;
@@ -1426,14 +1438,14 @@ export class Game {
 
   private selectBuild(type: TowerType): void {
     const definition = TOWER_DEFINITIONS[type];
-    const price = this.towerPurchaseCost(type);
+    const purchaseCost = this.towerPurchaseCost(type);
     if (!this.isTowerUnlocked(type)) {
       if (!this.activeStage().tutorial) this.showToast('Hoàn thành hướng dẫn hiện tại để mở khóa trụ này.', 'bad');
       this.audio.ui('error');
       return;
     }
     if (!this.canPurchaseTower(type)) {
-      this.showToast(`Cần thêm ${price - this.money} Arcana để mua ${definition.shortName}.`, 'bad');
+      this.showToast(`Cần thêm ${purchaseCost - this.money} Arcana để mua ${definition.shortName}.`, 'bad');
       this.audio.ui('error');
       return;
     }
@@ -1458,7 +1470,7 @@ export class Game {
       this.audio.ui('error');
       return false;
     }
-    const paidCost = lessonGrant ? 0 : this.currentTowerPrice(type);
+    const paidCost = lessonGrant ? 0 : definition.cost;
     if (this.money < paidCost) return false;
     const placement = this.validateFootprint(type, gx, gz, null);
     if (!placement.valid || placement.layer === null) {
@@ -1475,7 +1487,7 @@ export class Game {
     const center = worldPositions.reduce((sum, value) => sum.add(value), new THREE.Vector3()).multiplyScalar(1 / worldPositions.length);
     const group = this.art.createTower(type);
     group.userData.lessonGrant = lessonGrant;
-    group.userData.lessonGrantValue = lessonGrant ? this.currentTowerPrice(type) : 0;
+    group.userData.lessonGrantValue = lessonGrant ? definition.cost : 0;
     if (type === 'lance') group.add(this.createLanceAmmoBar());
     group.position.copy(center);
     group.scale.setScalar(0.9);
@@ -1502,10 +1514,10 @@ export class Game {
     if (
       ROUTING_MODE === 'rotation'
       && this.isGuidedTutorialActive()
-      && type === 'foundry'
-      && gx === TUTORIAL_TOWER_CELLS.foundry.gx
-      && gz === TUTORIAL_TOWER_CELLS.foundry.gz
-    ) tower.aimAngle = Math.PI;
+      && type === 'fire'
+      && gx === TUTORIAL_TOWER_CELLS.terminalFire.gx
+      && gz === TUTORIAL_TOWER_CELLS.terminalFire.gz
+    ) tower.aimAngle = Math.PI / 2;
     this.applyTowerAimVisual(tower);
     this.nextTowerId += 1;
     for (const key of cells) this.occupied.set(key, tower.id);
@@ -1535,9 +1547,6 @@ export class Game {
     if (!this.isGuidedTutorialActive()) this.showToast(`Đã đặt ${definition.name} ở tầng ${tower.layer}.`, 'good');
     else this.clearToast();
     this.refreshTutorialProgress();
-    if (ROUTING_MODE === 'rotation' && this.isGuidedTutorialActive() && (this.tutorialStep === 4 || this.tutorialStep === 12)) {
-      this.selectedTowerId = null;
-    }
     this.refreshNetworkVisuals();
     this.refreshSelectionVisual();
     this.updateUi(true);
@@ -1616,18 +1625,13 @@ export class Game {
       this.audio.ui('error');
       return;
     }
-    if (this.interactionMode === 'link' && this.linkSourceTowerId === source.id) {
-      this.clearLinkMode();
-      this.refreshSelectionVisual();
-      this.updateUi(true);
-      return;
-    }
+    if (this.interactionMode === 'link' && this.linkSourceTowerId === source.id) return;
     this.selectedBuildType = null;
     this.inspectedBuildType = null;
     this.interactionMode = 'link';
     this.linkSourceTowerId = source.id;
     this.canvas.classList.add('link-mode-active');
-    if (!this.isGuidedTutorialActive()) this.showToast('Chạm vào một trụ phát sáng để nối đầu ra.', 'info');
+    if (!this.isGuidedTutorialActive()) this.showToast('Kéo đến một trụ phát sáng rồi thả để nối đầu ra.', 'info');
     this.audio.ui('select');
     this.refreshTutorialProgress();
     this.refreshSelectionVisual();
@@ -1641,10 +1645,33 @@ export class Game {
     this.canvas.classList.remove('link-mode-active', 'link-target-valid', 'link-target-invalid');
   }
 
+  private updateLinkDragHover(clientX: number, clientY: number): void {
+    this.canvas.classList.remove('link-target-valid', 'link-target-invalid');
+    const source = this.linkDragSourceTowerId === null ? null : this.findTower(this.linkDragSourceTowerId);
+    const targetId = this.findTowerAt(clientX, clientY);
+    const target = targetId === null ? null : this.findTower(targetId);
+    if (!source || !target || target.id === source.id) return;
+    this.canvas.classList.add(this.validateLink(source, target).valid ? 'link-target-valid' : 'link-target-invalid');
+  }
+
+  private finishLinkDrag(pointerId: number): void {
+    this.linkDragPointerId = null;
+    this.linkDragSourceTowerId = null;
+    this.controls.enabled = true;
+    try { this.canvas.releasePointerCapture(pointerId); } catch { /* Synthetic input need not own capture. */ }
+  }
+
   private linkedReceiver(source: TowerState): TowerState | null {
     if (ROUTING_MODE === 'rotation') return this.findAimedReceiver(source)?.tower ?? null;
     if (source.outputTargetId === null) return null;
     return this.findTower(source.outputTargetId) ?? null;
+  }
+
+  private setLinkedReceiver(source: TowerState, target: TowerState | null): void {
+    source.outputTargetId = target?.id ?? null;
+    if (ROUTING_MODE !== 'link') return;
+    source.aimAngle = target ? this.angleToTower(source, target) : 0;
+    this.applyTowerAimVisual(source);
   }
 
   private validateLink(source: TowerState, target: TowerState): { valid: boolean; reason: string } {
@@ -1653,6 +1680,11 @@ export class Game {
     if (!isAmmoReceiver(target.type)) return { valid: false, reason: 'Trụ đích không nhận đạn.' };
     if (source.layer !== target.layer) return { valid: false, reason: 'Hai trụ phải ở cùng tầng bắn.' };
     if (target.outputTargetId === source.id) return { valid: false, reason: 'Không thể tạo liên kết ngược trực tiếp.' };
+    const alreadyLinked = source.outputTargetId === target.id;
+    const targetHasInput = this.towers.some((candidate) => candidate.outputTargetId === target.id);
+    if (!alreadyLinked && targetHasInput && target.outputTargetId !== null) {
+      return { valid: false, reason: 'Trụ đích đã có đầu vào và đầu ra; không thể nhận thêm liên kết.' };
+    }
     const start = this.towerPort(source);
     const end = this.towerPort(target);
     const distance = start.distanceTo(end);
@@ -1680,7 +1712,7 @@ export class Game {
       this.updateUi(true);
       return false;
     }
-    source.outputTargetId = target.id;
+    this.setLinkedReceiver(source, target);
     source.outputTimer = Math.max(source.outputTimer, 0.12);
     if (source.group.userData.stageTwoLanceFeeder === true) {
       this.stageTwoLanceFeederIntroduced = target.type === 'lance';
@@ -1700,7 +1732,7 @@ export class Game {
   private connectTowers(source: TowerState, target: TowerState): boolean {
     const result = this.validateLink(source, target);
     if (!result.valid) return false;
-    source.outputTargetId = target.id;
+    this.setLinkedReceiver(source, target);
     if (source.group.userData.stageTwoLanceFeeder === true) this.stageTwoLanceFeederIntroduced = target.type === 'lance';
     return true;
   }
@@ -1723,7 +1755,8 @@ export class Game {
     }
     for (const source of this.towers) {
       const target = this.linkedReceiver(source);
-      if (!target || !this.validateLink(source, target).valid) source.outputTargetId = null;
+      if (!target || !this.validateLink(source, target).valid) this.setLinkedReceiver(source, null);
+      else this.setLinkedReceiver(source, target);
     }
     const feeder = this.towers.find((tower) => tower.group.userData.stageTwoLanceFeeder === true);
     this.stageTwoLanceFeederIntroduced = Boolean(feeder && this.linkedReceiver(feeder)?.type === 'lance');
@@ -1733,7 +1766,7 @@ export class Game {
     if (ROUTING_MODE !== 'rotation') return false;
     const tower = this.selectedTower();
     if (!tower || (!isAmmoEmitter(tower.type) && tower.type !== 'lance')) {
-      if (!this.isGuidedTutorialActive()) this.showToast('Chọn một trụ đạn hoặc Thương Nexus để xoay hướng bắn.', 'bad');
+      if (!this.isGuidedTutorialActive()) this.showToast('Chọn một trụ có đầu ra để điều khiển luồng đạn.', 'bad');
       return false;
     }
     const tutorialTower = this.tutorialRotationTower();
@@ -1754,8 +1787,10 @@ export class Game {
 
   private tutorialRotationTower(): TowerState | null {
     if (!this.isGuidedTutorialActive()) return null;
-    if (this.tutorialStep === 5 || this.tutorialStep === 13) return this.findTutorialTower('fire') ?? null;
-    if (this.tutorialStep === 9) return this.findTutorialTower('foundry') ?? null;
+    if (this.tutorialStep === 3) return this.findTutorialTower('foundry') ?? null;
+    if (this.tutorialStep === 7) return this.findTutorialTower('fire') ?? null;
+    if (this.tutorialStep === 11) return this.findTutorialTower('ice') ?? null;
+    if (this.tutorialStep === 13) return this.findTutorialTower('terminalFire') ?? null;
     return null;
   }
 
@@ -1763,37 +1798,12 @@ export class Game {
     const foundry = this.findTutorialTower('foundry');
     const fire = this.findTutorialTower('fire');
     const ice = this.findTutorialTower('ice');
-    if (this.tutorialStep === 5 && tower.id === fire?.id) return this.angleToTutorialLane(fire);
-    if (this.tutorialStep === 9 && tower.id === foundry?.id && fire) return this.angleToTower(tower, fire);
-    if (this.tutorialStep === 13 && tower.id === fire?.id && ice) return this.angleToTower(tower, ice);
+    const terminalFire = this.findTutorialTower('terminalFire');
+    if (this.tutorialStep === 3 && tower.id === foundry?.id && fire) return this.angleToTower(tower, fire);
+    if (this.tutorialStep === 7 && tower.id === fire?.id && ice) return this.angleToTower(tower, ice);
+    if (this.tutorialStep === 11 && tower.id === ice?.id && terminalFire) return this.angleToTower(tower, terminalFire);
+    if (this.tutorialStep === 13 && tower.id === terminalFire?.id) return 0;
     return null;
-  }
-
-  private angleToTutorialLane(source: TowerState): number | null {
-    const lanePoint = this.pathXZ[2] ?? this.pathXZ[1] ?? this.pathXZ[0];
-    if (!lanePoint) return null;
-    return Math.atan2(lanePoint.y - source.group.position.z, lanePoint.x - source.group.position.x);
-  }
-
-  private isTowerAimedAtTutorialLane(source: TowerState): boolean {
-    const target = this.angleToTutorialLane(source);
-    return target !== null && this.isAngleAligned(source.aimAngle, target);
-  }
-
-  private tutorialRotationButtonSelector(tower: TowerState | undefined): '#action-left' | '#action-right' {
-    if (!tower) return '#action-right';
-    const target = this.tutorialRotationTarget(tower);
-    if (target === null) return '#action-right';
-    const remaining = Math.atan2(Math.sin(target - tower.aimAngle), Math.cos(target - tower.aimAngle));
-    return remaining < 0 ? '#action-left' : '#action-right';
-  }
-
-  private isRotationTutorialCombatHeld(): boolean {
-    return ROUTING_MODE === 'rotation'
-      && this.activeStage().tutorial
-      && this.phase === 'wave'
-      && this.waveIndex === 1
-      && (this.tutorialStep === 8 || this.tutorialStep === 9);
   }
 
   private angleToTower(source: TowerState, target: TowerState): number {
@@ -1848,10 +1858,6 @@ export class Game {
     if (tutorialTarget !== null && this.isAngleAligned(tower.aimAngle, tutorialTarget)) {
       this.stopHeldRotation();
       this.refreshTutorialProgress();
-      if (this.activeStage().tutorial && [6, 10, 14].includes(this.tutorialStep)) {
-        this.selectedTowerId = null;
-        this.refreshSelectionVisual();
-      }
       this.audio.ui('confirm');
       this.updateUi(true);
     }
@@ -1960,7 +1966,7 @@ export class Game {
     const index = this.towers.indexOf(tower);
     if (index >= 0) this.towers.splice(index, 1);
     for (const source of this.towers) {
-      if (source.outputTargetId === tower.id) source.outputTargetId = null;
+      if (source.outputTargetId === tower.id) this.setLinkedReceiver(source, null);
     }
     if (this.stageIndex === 1 && this.waveIndex === 3) {
       if (tower.type === 'lance') {
@@ -2026,17 +2032,8 @@ export class Game {
     this.spawnCursor = 0;
     this.selectedWaveEnemyKind = null;
     this.hoveredWaveEnemyKind = null;
-    if (ROUTING_MODE === 'link' && this.isGuidedTutorialActive() && this.waveIndex === 2 && this.tutorialStep === 15) {
-      this.tutorialStep = TUTORIAL_STEP_COUNT;
-    }
-    if (ROUTING_MODE === 'rotation' && this.isGuidedTutorialActive()) {
-      if (this.waveIndex === 0 && this.tutorialStep === 1) this.tutorialStep = 2;
-      else if (this.waveIndex === 1 && this.tutorialStep === 6) {
-        this.tutorialStep = 7;
-        this.tutorialFireIdleElapsed = 0;
-        this.tutorialFireIdleObserved = false;
-      } else if (this.waveIndex === 2 && this.tutorialStep === 14) this.tutorialStep = 15;
-    }
+    const finalTutorialStartStep = ROUTING_MODE === 'link' ? 15 : 14;
+    if (this.isGuidedTutorialActive() && this.waveIndex === 2 && this.tutorialStep === finalTutorialStartStep) this.tutorialStep = TUTORIAL_STEP_COUNT;
     if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) {
       this.selectedTowerId = null;
       this.refreshSelectionVisual();
@@ -2092,36 +2089,12 @@ export class Game {
   }
 
   private simulate(delta: number): void {
-    if (this.isRotationTutorialCombatHeld()) return;
     this.waveElapsed += delta;
     this.updateSpawns();
     this.updateEnemies(delta);
     this.updateTowers(delta);
     this.updateProjectiles(delta);
-    this.updateRotationTutorialFireIdle(delta);
     this.checkWaveEnd();
-  }
-
-  private updateRotationTutorialFireIdle(delta: number): void {
-    if (
-      ROUTING_MODE !== 'rotation'
-      || !this.activeStage().tutorial
-      || this.phase !== 'wave'
-      || this.waveIndex !== 1
-      || this.tutorialStep !== 7
-    ) return;
-    const fire = this.findTutorialTower('fire');
-    if (!fire) return;
-    const enemyInRange = this.enemies.some((enemy) => !enemy.dead
-      && ENEMY_DEFINITIONS[enemy.kind].layer === fire.layer
-      && fire.group.position.distanceTo(enemy.group.position) <= this.connectionRange(fire));
-    const fireLaunches = this.projectileLaunchesByTower.get(fire.id) ?? 0;
-    fire.blockedReason = 'Chưa nhận đạn đầu vào';
-    if (!enemyInRange || fireLaunches > 0) return;
-    this.tutorialFireIdleElapsed += delta;
-    if (this.tutorialFireIdleElapsed < ROTATION_TUTORIAL_FIRE_IDLE_DELAY) return;
-    this.tutorialFireIdleObserved = true;
-    this.refreshTutorialProgress();
   }
 
   private updateSpawns(): void {
@@ -2325,7 +2298,7 @@ export class Game {
       if (tower.type === 'lance') {
         tower.skillTimer = Math.max(0, tower.skillTimer - delta);
         const threshold = this.lanceThreshold(tower);
-        if (tower.buffer.length >= threshold && tower.skillTimer <= 0) this.fireLance(tower, threshold);
+        if (tower.buffer.length >= threshold && tower.skillTimer <= 0) this.fireExplosion(tower, threshold);
         continue;
       }
       if (!isAmmoEmitter(tower.type)) continue;
@@ -2349,8 +2322,9 @@ export class Game {
     const interval = 1 / Math.max(0.1, definition.cadence * TOWER_FIRE_RATE_MULTIPLIER * throughput * (1 + (source.level - 1) * 0.13));
     const receiver = this.linkedReceiver(source);
     if (ROUTING_MODE === 'link' && (!receiver || !this.validateLink(source, receiver).valid)) {
-      source.outputTargetId = null;
+      this.setLinkedReceiver(source, null);
       source.blockedReason = 'Chưa liên kết đầu ra';
+      this.refreshNetworkVisuals();
       return;
     }
     if (receiver && receiver.buffer.length >= this.capacity(receiver)) {
@@ -2535,17 +2509,6 @@ export class Game {
     let reaction = REACTION_PAIRS.find((pair) =>
       (existing.has(pair.a) && incoming.includes(pair.b)) || (existing.has(pair.b) && incoming.includes(pair.a)),
     );
-    if (
-      !reaction
-      && ROUTING_MODE === 'rotation'
-      && this.activeStage().tutorial
-      && this.waveIndex === 2
-      && this.tutorialStep === 15
-      && incoming.includes('fire')
-      && incoming.includes('ice')
-    ) {
-      reaction = REACTION_PAIRS.find((pair) => pair.name === 'Sốc Nhiệt');
-    }
 
     const pairCount = REACTION_PAIRS.filter((pair) => incoming.includes(pair.a) && incoming.includes(pair.b)).length;
     let direct = round.damage * (1 + Math.min(0.72, pairCount * 0.16));
@@ -2607,24 +2570,22 @@ export class Game {
   private resolveReaction(name: string, color: number, round: Round, enemy: EnemyState, position: THREE.Vector3): void {
     this.reactionCount += 1;
     const reactionPair = REACTION_PAIRS.find((pair) => pair.name === name);
-    const isRotationTutorialReaction = ROUTING_MODE === 'rotation'
+    const isLinkTutorialReaction = ROUTING_MODE === 'link'
       && this.activeStage().tutorial
       && this.waveIndex === 2
-      && this.tutorialStep === 15;
-    if (reactionPair && !isRotationTutorialReaction) {
+      && this.tutorialStep === TUTORIAL_STEP_COUNT
+      && !this.discoveredCues.has('reaction');
+    if (reactionPair && !isLinkTutorialReaction) {
       this.queueDiscoveryCue(
         'reaction',
         `<i data-cue-element="${reactionPair.a}">${this.elementCueGlyph(reactionPair.a)}</i><b>+</b><i data-cue-element="${reactionPair.b}">${this.elementCueGlyph(reactionPair.b)}</i><b>→</b><i>✹</i>`,
         { worldPosition: position.clone().add(new THREE.Vector3(0, 2.2, 0)), duration: 2.8 },
       );
     }
-    if (isRotationTutorialReaction) {
-      if (!this.discoveredCues.has('reaction')) {
-        this.discoveredCues.add('reaction');
-        this.discoveryCueTriggerCounts.reaction += 1;
-      }
-      this.tutorialStep = 16;
-      this.reactionTutorialPopupDelay = ROTATION_TUTORIAL_REACTION_POPUP_DELAY;
+    if (isLinkTutorialReaction) {
+      this.discoveredCues.add('reaction');
+      this.discoveryCueTriggerCounts.reaction += 1;
+      this.reactionTutorialPopupDelay = TUTORIAL_REACTION_POPUP_DELAY;
       this.updateUi(true);
     }
     const bonus = 18 + round.damage * 0.38 + enemy.maxHp * REACTION_MAX_HP_DAMAGE_RATIO;
@@ -2761,12 +2722,6 @@ export class Game {
     this.spawnBurst(enemy.group.position.clone().add(new THREE.Vector3(0, 0.6, 0)), definition.color, 0.62);
     if (cause && cause !== 'Diện rộng') this.showToast(`Đã hạ ${definition.name}${cause ? ` · ${cause}` : ''} · +${reward} Arcana`, 'good');
     this.audio.destroy();
-    if (
-      ROUTING_MODE === 'rotation'
-      && this.activeStage().tutorial
-      && this.waveIndex === 0
-      && this.tutorialStep === 2
-    ) this.tutorialNeutralKillObserved = true;
     this.scene.remove(enemy.group);
     this.disposeEnemy(enemy);
     this.enemies.splice(index, 1);
@@ -2794,12 +2749,15 @@ export class Game {
     else enemy.cracked = 0;
   }
 
-  private fireLance(tower: TowerState, threshold: number): void {
-    const target = this.enemies
-      .filter((enemy) => !enemy.dead && ENEMY_DEFINITIONS[enemy.kind].layer === tower.layer)
-      .sort((a, b) => b.progress - a.progress)[0];
-    if (!target) {
-      tower.blockedReason = 'Đợi mục tiêu cùng tầng';
+  private fireExplosion(tower: TowerState, threshold: number): void {
+    const targets = this.enemies.filter((enemy) => {
+      if (enemy.dead || ENEMY_DEFINITIONS[enemy.kind].layer !== tower.layer) return false;
+      const dx = enemy.group.position.x - tower.group.position.x;
+      const dz = enemy.group.position.z - tower.group.position.z;
+      return Math.hypot(dx, dz) <= EXPLOSION_RADIUS;
+    });
+    if (targets.length === 0) {
+      tower.blockedReason = 'Đợi kẻ địch trong vùng nổ';
       return;
     }
     const consumed = tower.buffer.splice(0, threshold);
@@ -2810,56 +2768,94 @@ export class Game {
       damage: averageDamage * (2.2 + tower.level * 0.42),
       elements,
     };
-    const start = this.towerPort(tower);
-    const direction = ROUTING_MODE === 'rotation'
-      ? new THREE.Vector3(Math.cos(tower.aimAngle), 0, Math.sin(tower.aimAngle))
-      : target.group.position.clone().sub(start).setY(0).normalize();
-    let end = start.clone().addScaledVector(direction, 19 + tower.level * 2);
-    const hit = this.firstBlockerHit(start, end, tower.layer);
-    if (hit !== null) end = start.clone().lerp(end, Math.max(0, hit - 0.01));
-    this.createLanceVfx(start, end, elements);
-    const segment = end.clone().sub(start);
-    const segmentLengthSq = segment.lengthSq();
-    for (const enemy of [...this.enemies]) {
-      if (enemy.dead || ENEMY_DEFINITIONS[enemy.kind].layer !== tower.layer) continue;
-      const toEnemy = enemy.group.position.clone().sub(start);
-      const t = THREE.MathUtils.clamp(toEnemy.dot(segment) / segmentLengthSq, 0, 1);
-      const closest = start.clone().addScaledVector(segment, t);
-      if (closest.distanceTo(enemy.group.position) <= 1.25 + ENEMY_DEFINITIONS[enemy.kind].radius) {
-        this.applyProjectileHit(round, enemy, closest);
-      }
+    const center = tower.group.position.clone();
+    center.y += 0.18;
+    this.createExplosionVfx(center, elements);
+    let totalDamage = 0;
+    for (const enemy of targets) {
+      const hpBefore = enemy.hp;
+      this.applyProjectileHit(round, enemy, enemy.group.position.clone());
+      this.spawnBurst(enemy.group.position.clone().add(new THREE.Vector3(0, 0.12, 0)), this.mixedColor(elements), 0.7);
+      totalDamage += Math.max(0, hpBefore - enemy.hp);
     }
+    this.lastExplosionHitCount = targets.length;
+    this.lastExplosionTargetCueCount = targets.length;
+    this.lastExplosionDamage = totalDamage;
     tower.skillTimer = 2.2 / TOWER_FIRE_RATE_MULTIPLIER;
     tower.pulse = 0.6;
     this.audio.special();
-    this.showToast(`Thương Nexus đã phóng đạn ${elementList(elements)}.`, 'reaction');
+    this.showToast(`Nổ Arcana phát nổ với ${elementList(elements)}.`, 'reaction');
   }
 
-  private createLanceVfx(start: THREE.Vector3, end: THREE.Vector3, elements: readonly Element[]): void {
-    const direction = end.clone().sub(start);
-    const length = direction.length();
+  private createExplosionVfx(center: THREE.Vector3, elements: readonly Element[]): void {
     const color = this.mixedColor(elements);
     const group = new THREE.Group();
-    group.position.copy(start);
-    group.userData.effectKind = 'lance';
-    group.userData.anchorStart = start.clone();
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.42, 0.64, length, 12, 1, true),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }),
+    group.position.copy(center);
+    group.userData.effectKind = 'explosion';
+    group.userData.anchorStart = center.clone();
+    group.userData.radius = EXPLOSION_RADIUS;
+    const zone = new THREE.Mesh(
+      new THREE.CircleGeometry(EXPLOSION_RADIUS, 40),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.3, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }),
     );
-    beam.name = 'lance-beam';
-    beam.position.copy(direction).multiplyScalar(0.5);
-    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
-    group.add(beam);
-    for (let index = 0; index < 5; index += 1) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.7 + index * 0.08, 0.055, 6, 28), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false }));
-      ring.position.copy(end).sub(start).multiplyScalar((index + 0.5) / 5);
-      ring.quaternion.copy(beam.quaternion);
-      ring.rotateX(Math.PI / 2);
+    zone.name = 'explosion-zone';
+    zone.rotation.x = -Math.PI / 2;
+    zone.position.y = 0.035;
+    zone.scale.setScalar(0.18);
+    zone.userData.vfxRole = 'zone';
+    zone.userData.baseOpacity = 0.3;
+    group.add(zone);
+
+    const outerCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.78, 16, 10),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    outerCore.name = 'explosion-core';
+    outerCore.position.y = 0.5;
+    outerCore.userData.vfxRole = 'core';
+    outerCore.userData.baseOpacity = 0.82;
+    group.add(outerCore);
+    const innerCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.38, 14, 9),
+      new THREE.MeshBasicMaterial({ color: 0xfff8dd, transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    innerCore.name = 'explosion-core';
+    innerCore.position.y = 0.52;
+    innerCore.userData.vfxRole = 'core';
+    innerCore.userData.baseOpacity = 0.96;
+    group.add(innerCore);
+
+    const ringRadii = [0.68, 1.1, 1.52, 1.94] as const;
+    for (let index = 0; index < ringRadii.length; index += 1) {
+      const radius = ringRadii[index];
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, 0.115 - index * 0.012, 7, 36),
+        new THREE.MeshBasicMaterial({ color: index === ringRadii.length - 1 ? 0xffefae : color, transparent: true, opacity: 0.92 - index * 0.08, blending: THREE.AdditiveBlending, depthWrite: false }),
+      );
+      ring.name = 'explosion-ring';
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.08 + index * 0.045;
+      ring.scale.setScalar(0.2);
+      ring.userData.vfxRole = 'ring';
+      ring.userData.delay = index * 0.045;
+      ring.userData.baseOpacity = 0.92 - index * 0.08;
       group.add(ring);
     }
+    for (let index = 0; index < 18; index += 1) {
+      const angle = index / 18 * Math.PI * 2;
+      const shard = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.13 + (index % 3) * 0.025, 0),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false }),
+      );
+      shard.name = 'explosion-shard';
+      shard.position.set(Math.cos(angle) * 0.5, 0.3 + (index % 3) * 0.12, Math.sin(angle) * 0.5);
+      shard.userData.vfxRole = 'shard';
+      shard.userData.baseOpacity = 0.92;
+      shard.userData.direction = new THREE.Vector3(Math.cos(angle) * 0.92, 0.16 + (index % 2) * 0.12, Math.sin(angle) * 0.92);
+      group.add(shard);
+    }
     this.effectsGroup.add(group);
-    this.effects.push({ object: group, life: 0.34, maxLife: 0.34, rises: false, scales: false });
+    this.effects.push({ object: group, life: 0.92, maxLife: 0.92, rises: false, scales: false });
   }
 
   private checkWaveEnd(): void {
@@ -2885,7 +2881,7 @@ export class Game {
     } else if (this.isGuidedTutorialActive()) {
       this.tutorialStep = ROUTING_MODE === 'link'
         ? this.waveIndex === 1 ? 6 : 11
-        : this.waveIndex === 1 ? 3 : 11;
+        : this.waveIndex === 1 ? 5 : 9;
       this.selectedTowerId = null;
       this.clearLinkMode();
       this.interactionMode = 'inspect';
@@ -3041,14 +3037,12 @@ export class Game {
     this.impactParticleBursts = 0;
     this.lanceVfxMaxAnchorError = 0;
     this.lanceVfxMaxScaleError = 0;
+    this.lastExplosionTargetCueCount = 0;
     this.impactParticleStates.length = 0;
     this.impactParticles.geometry.setDrawRange(0, 0);
     for (const mesh of this.statusIconMeshes.values()) mesh.count = 0;
     this.statusIconBackdrop.count = 0;
     this.tutorialStep = 0;
-    this.tutorialNeutralKillObserved = false;
-    this.tutorialFireIdleElapsed = 0;
-    this.tutorialFireIdleObserved = false;
     this.reactionTutorialPopupDelay = -1;
     this.reactionTutorialPopupVisible = false;
     this.reactionTutorialElement.classList.add('hidden');
@@ -3216,24 +3210,48 @@ export class Game {
       const effect = this.effects[index];
       effect.life -= delta;
       const ratio = Math.max(0, effect.life / effect.maxLife);
+      const progress = 1 - ratio;
+      const isExplosion = effect.object.userData.effectKind === 'explosion';
       if (effect.rises) effect.object.position.y += delta * 1.25;
-      if (effect.scales !== false) effect.object.scale.setScalar(1 + (1 - ratio) * 0.6);
+      if (!isExplosion && effect.scales !== false) effect.object.scale.setScalar(1 + progress * 0.6);
       effect.object.traverse((child) => {
         if (!(child instanceof THREE.Mesh || child instanceof THREE.Sprite)) return;
         const material = child.material;
-        if (material instanceof THREE.Material) material.opacity = ratio;
         const direction = child.userData.direction as THREE.Vector3 | undefined;
-        if (direction) child.position.addScaledVector(direction, delta * 1.7);
+        if (!isExplosion) {
+          if (material instanceof THREE.Material) material.opacity = ratio;
+          if (direction) child.position.addScaledVector(direction, delta * 1.7);
+          return;
+        }
+        const baseOpacity = Number(child.userData.baseOpacity ?? 1);
+        const fade = progress < 0.68 ? 1 : THREE.MathUtils.clamp((1 - progress) / 0.32, 0, 1);
+        const role = child.userData.vfxRole as string | undefined;
+        if (role === 'zone') {
+          const expansion = THREE.MathUtils.smoothstep(progress, 0, 0.34);
+          child.scale.setScalar(0.18 + expansion * 0.82);
+          if (material instanceof THREE.Material) material.opacity = baseOpacity * fade * (0.86 + Math.sin(progress * Math.PI * 4) * 0.14);
+        } else if (role === 'ring') {
+          const delay = Number(child.userData.delay ?? 0);
+          const localProgress = THREE.MathUtils.clamp((progress - delay) / 0.46, 0, 1);
+          child.scale.setScalar(0.2 + THREE.MathUtils.smoothstep(localProgress, 0, 1) * 0.8);
+          if (material instanceof THREE.Material) material.opacity = baseOpacity * fade * (1 - localProgress * 0.42);
+        } else if (role === 'core') {
+          const corePulse = Math.sin(THREE.MathUtils.clamp(progress / 0.4, 0, 1) * Math.PI);
+          child.scale.setScalar(0.82 + corePulse * 0.9);
+          if (material instanceof THREE.Material) material.opacity = baseOpacity * fade;
+        } else {
+          if (material instanceof THREE.Material) material.opacity = baseOpacity * fade;
+          if (direction) child.position.addScaledVector(direction, delta * 1.35);
+          child.rotation.x += delta * 5;
+          child.rotation.y += delta * 6;
+        }
       });
-      if (effect.object.userData.effectKind === 'lance') {
+      if (isExplosion) {
         const anchor = effect.object.userData.anchorStart as THREE.Vector3 | undefined;
         if (anchor) this.lanceVfxMaxAnchorError = Math.max(this.lanceVfxMaxAnchorError, effect.object.position.distanceTo(anchor));
-        this.lanceVfxMaxScaleError = Math.max(
-          this.lanceVfxMaxScaleError,
-          Math.abs(effect.object.scale.x - 1),
-          Math.abs(effect.object.scale.y - 1),
-          Math.abs(effect.object.scale.z - 1),
-        );
+        const zone = effect.object.getObjectByName('explosion-zone');
+        const visualRadius = zone ? EXPLOSION_RADIUS * zone.scale.x : 0;
+        this.lanceVfxMaxScaleError = Math.max(this.lanceVfxMaxScaleError, Math.max(0, visualRadius - EXPLOSION_RADIUS));
       }
       if (effect.life > 0) continue;
       this.effectsGroup.remove(effect.object);
@@ -3283,7 +3301,14 @@ export class Game {
     for (const tower of this.towers) {
       if (ROUTING_MODE === 'rotation' && (isAmmoEmitter(tower.type) || tower.type === 'lance')) this.applyTowerAimVisual(tower);
       const target = this.linkedReceiver(tower);
-      if (!target || (ROUTING_MODE === 'link' && !this.validateLink(tower, target).valid)) continue;
+      if (ROUTING_MODE === 'link') {
+        if (!target || !this.validateLink(tower, target).valid) {
+          if (tower.outputTargetId !== null || tower.aimAngle !== 0) this.setLinkedReceiver(tower, null);
+          continue;
+        }
+        this.setLinkedReceiver(tower, target);
+      }
+      if (!target) continue;
       const start = this.towerPort(tower);
       const end = this.towerPort(target);
       const available = target.buffer.length < this.capacity(target);
@@ -3333,7 +3358,9 @@ export class Game {
     this.placementPreviewGroup.add(grid);
 
     for (const tower of this.towers) {
-      const radius = tower.type === 'amplifier' ? this.amplifierRange(tower) : this.connectionRange(tower);
+      const radius = tower.type === 'amplifier'
+        ? this.amplifierRange(tower)
+        : tower.type === 'lance' ? EXPLOSION_RADIUS : this.connectionRange(tower);
       if (radius <= 0) continue;
       const disc = this.createRangeDisc(radius, TOWER_DEFINITIONS[tower.type].color, 0.09);
       disc.position.copy(tower.group.position).add(new THREE.Vector3(0, 0.04, 0));
@@ -3371,7 +3398,7 @@ export class Game {
     ghost.position.copy(center);
     this.placementPreviewGroup.add(ghost);
     const definition = TOWER_DEFINITIONS[type];
-    const previewRange = type === 'amplifier' ? definition.connectionRange : definition.connectionRange;
+    const previewRange = type === 'lance' ? EXPLOSION_RADIUS : definition.connectionRange;
     if (previewRange > 0) {
       const disc = this.createRangeDisc(previewRange, valid ? definition.color : 0xff5b63, 0.16);
       disc.position.copy(center).add(new THREE.Vector3(0, 0.045, 0));
@@ -3429,7 +3456,9 @@ export class Game {
     this.selectionGroup.clear();
     const tower = this.selectedTower();
     if (!tower) return;
-    const radius = tower.type === 'amplifier' ? this.amplifierRange(tower) : this.connectionRange(tower);
+    const radius = tower.type === 'amplifier'
+      ? this.amplifierRange(tower)
+      : tower.type === 'lance' ? EXPLOSION_RADIUS : this.connectionRange(tower);
     if (radius > 0) {
       const disc = this.createRangeDisc(radius, TOWER_DEFINITIONS[tower.type].color, 0.15);
       disc.position.copy(tower.group.position).add(new THREE.Vector3(0, 0.035, 0));
@@ -3528,16 +3557,16 @@ export class Game {
       const type = button.dataset.towerType as TowerType;
       const definition = TOWER_DEFINITIONS[type];
       const lessonFree = this.isMandatoryLessonPurchase(type);
-      const price = this.towerPurchaseCost(type);
+      const purchaseCost = this.towerPurchaseCost(type);
       const unlocked = this.isTowerUnlocked(type);
       button.disabled = !unlocked || !this.canPurchaseTower(type);
       button.classList.toggle('locked', !unlocked);
       button.dataset.locked = unlocked ? 'false' : 'true';
       button.dataset.lessonFree = String(lessonFree);
       button.classList.toggle('selected', this.interactionMode === 'build' && this.selectedBuildType === type);
-      button.querySelector<HTMLElement>('.build-copy b')!.textContent = String(price);
+      button.querySelector<HTMLElement>('.build-copy b')!.textContent = String(purchaseCost);
       const groupLabel = BUILD_GROUPS.find((group) => group.types.includes(type))?.label ?? definition.role;
-      button.setAttribute('aria-label', `${groupLabel}: ${definition.name}, giá ${price}`);
+      button.setAttribute('aria-label', `${groupLabel}: ${definition.name}, giá ${purchaseCost}`);
     }
     for (const button of this.buildList.querySelectorAll<HTMLButtonElement>('[data-tower-info]')) {
       const type = button.dataset.towerInfo as TowerType;
@@ -3552,7 +3581,11 @@ export class Game {
 
   private renderInspector(): void {
     const tower = this.selectedTower();
-    const linkButton = this.getButton('#action-link');
+    const portraitMobile = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
+    const selectedTowerPoint = portraitMobile && tower
+      ? this.worldToClient(tower.group.position.clone().add(new THREE.Vector3(0, 0.7, 0)))
+      : null;
+    document.body.classList.toggle('inspector-dock-left', Boolean(selectedTowerPoint && selectedTowerPoint.x >= window.innerWidth * 0.5));
     const rotateLeftButton = this.getButton('#action-left');
     const rotateRightButton = this.getButton('#action-right');
     const ammoMagazine = this.getElement('#ammo-magazine');
@@ -3567,13 +3600,11 @@ export class Game {
     detailStats.classList.toggle('hidden', !catalogView);
     closeDetail.classList.toggle('hidden', !catalogView);
     if (catalogDefinition && this.inspectedBuildType) {
-      linkButton.classList.add('hidden');
       rotateLeftButton.classList.add('hidden');
       rotateRightButton.classList.add('hidden');
-      linkButton.setAttribute('aria-pressed', 'false');
       ammoMagazine.classList.add('hidden');
       const unlocked = this.isTowerUnlocked(this.inspectedBuildType);
-      const range = this.inspectedBuildType === 'lance' ? 21 : catalogDefinition.connectionRange;
+      const range = this.inspectedBuildType === 'lance' ? EXPLOSION_RADIUS : catalogDefinition.connectionRange;
       const capacityStat = this.inspectedBuildType === 'lance'
         ? `<div><dt>KHO</dt><dd>${catalogDefinition.capacity} ô</dd></div>`
         : '';
@@ -3592,10 +3623,8 @@ export class Game {
       this.getElement('#buffer-text').textContent = '0 / 0';
       this.getElement('#inspector-detail').textContent = 'Có thể xây khi đợt đang diễn ra. Nhấn 1–7 để chọn nhanh trụ.';
       this.getElement('#branch-controls').classList.add('hidden');
-      linkButton.classList.add('hidden');
       rotateLeftButton.classList.add('hidden');
       rotateRightButton.classList.add('hidden');
-      linkButton.setAttribute('aria-pressed', 'false');
       return;
     }
     const definition = TOWER_DEFINITIONS[tower.type];
@@ -3616,23 +3645,19 @@ export class Game {
       ? receiver
         ? `Liên kết → ${TOWER_DEFINITIONS[receiver.type].shortName}`
         : isAmmoEmitter(tower.type) ? 'Chưa có liên kết đầu ra'
-          : tower.type === 'lance' ? 'Tự kích hoạt khi đầy và có mục tiêu' : 'Hào quang hỗ trợ'
+          : tower.type === 'lance' ? 'Tự nổ khi đầy và địch cùng tầng vào vùng' : 'Hào quang hỗ trợ'
       : receiver
         ? `Đường đạn đi xuyên → ${TOWER_DEFINITIONS[receiver.type].shortName}`
         : isAmmoEmitter(tower.type) ? `Bắn tự do · ${angle}°`
-          : tower.type === 'lance' ? `Hướng kỹ năng · ${angle}°` : 'Hào quang hỗ trợ';
+          : tower.type === 'lance' ? 'Vụ nổ bán kính một ô' : 'Hào quang hỗ trợ';
     const ammoDetail = showsAmmo ? `\nĐạn tích: ${head ? elementList(head.elements) : 'trống'}` : '';
-    this.getElement('#inspector-detail').textContent = `${state}\n${output}${ammoDetail}\n${ROUTING_MODE === 'link' ? 'Tầm liên kết' : 'Tầm bắn'}: ${this.connectionRange(tower).toFixed(1)} · ${definition.description}`;
+    const rangeLabel = tower.type === 'lance' ? 'Bán kính nổ' : ROUTING_MODE === 'link' ? 'Tầm liên kết' : 'Tầm bắn';
+    const displayedRange = tower.type === 'lance' ? EXPLOSION_RADIUS : this.connectionRange(tower);
+    this.getElement('#inspector-detail').textContent = `${state}\n${output}${ammoDetail}\n${rangeLabel}: ${displayedRange.toFixed(1)} · ${definition.description}`;
     const branchControls = this.getElement('#branch-controls');
     branchControls.classList.toggle('hidden', tower.type !== 'amplifier' || this.isGuidedTutorialActive());
     this.getButton('#branch-power').classList.toggle('active', tower.amplifierBranch === 'power');
     this.getButton('#branch-throughput').classList.toggle('active', tower.amplifierBranch === 'throughput');
-    const tutorialLinkStep = this.tutorialStep === 3 || this.tutorialStep === 8 || this.tutorialStep === 13;
-    linkButton.classList.toggle('hidden', ROUTING_MODE !== 'link' || !isAmmoEmitter(tower.type) || (this.isGuidedTutorialActive() && !tutorialLinkStep));
-    linkButton.disabled = !isAmmoEmitter(tower.type);
-    const linkActive = this.interactionMode === 'link' && this.linkSourceTowerId === tower.id;
-    linkButton.classList.toggle('active', linkActive);
-    linkButton.setAttribute('aria-pressed', String(linkActive));
     const tutorialRotationStep = this.tutorialRotationTower()?.id === tower.id;
     const canRotate = isAmmoEmitter(tower.type) || tower.type === 'lance';
     rotateLeftButton.classList.toggle('hidden', ROUTING_MODE !== 'rotation' || !canRotate || (this.isGuidedTutorialActive() && !tutorialRotationStep));
@@ -3651,7 +3676,7 @@ export class Game {
   private towerUpgradeSummary(type: TowerType): string {
     if (type === 'foundry') return 'tăng sát thương, tốc độ sinh đạn và tầm liên kết; cấp 3 sinh hai viên mỗi nhịp.';
     if (type === 'amplifier') return 'mở rộng hào quang và tăng hiệu lực của nhánh Sức Mạnh hoặc Tốc Độ.';
-    if (type === 'lance') return 'tăng sát thương và tầm kỹ năng, đồng thời giảm số đạn cần để kích hoạt.';
+    if (type === 'lance') return 'tăng sát thương và giảm số đạn cần để kích hoạt; bán kính nổ luôn là một ô.';
     return 'tăng tầm liên kết, nhịp truyền và lực nguyên tố cộng vào viên đạn.';
   }
 
@@ -3763,7 +3788,10 @@ export class Game {
         worldPosition = this.findTutorialPlacementWorld('fire');
         dragPlacement = true;
       } else if (this.tutorialStep === 2) worldPosition = foundry?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 3) focusSelector = '#action-link';
+      else if (this.tutorialStep === 3) {
+        worldPosition = fire?.group.position.clone() ?? null;
+        dragPlacement = true;
+      }
       else if (this.tutorialStep === 4) worldPosition = fire?.group.position.clone() ?? null;
       else if (this.tutorialStep === 5) focusSelector = '#start-wave';
       else if (this.tutorialStep === 6) {
@@ -3771,7 +3799,10 @@ export class Game {
         worldPosition = this.findTutorialPlacementWorld('ice');
         dragPlacement = true;
       } else if (this.tutorialStep === 7) worldPosition = fire?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 8) focusSelector = '#action-link';
+      else if (this.tutorialStep === 8) {
+        worldPosition = ice?.group.position.clone() ?? null;
+        dragPlacement = true;
+      }
       else if (this.tutorialStep === 9) worldPosition = ice?.group.position.clone() ?? null;
       else if (this.tutorialStep === 10) focusSelector = '#start-wave';
       else if (this.tutorialStep === 11) {
@@ -3779,7 +3810,10 @@ export class Game {
         worldPosition = this.findTutorialPlacementWorld('terminalFire');
         dragPlacement = true;
       } else if (this.tutorialStep === 12) worldPosition = ice?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 13) focusSelector = '#action-link';
+      else if (this.tutorialStep === 13) {
+        worldPosition = terminalFire?.group.position.clone() ?? null;
+        dragPlacement = true;
+      }
       else if (this.tutorialStep === 14) worldPosition = terminalFire?.group.position.clone() ?? null;
       else if (this.tutorialStep === 15) focusSelector = '#start-wave';
     } else {
@@ -3787,30 +3821,41 @@ export class Game {
         focusSelector = '[data-tower-type="foundry"]';
         worldPosition = this.findTutorialPlacementWorld('foundry');
         dragPlacement = true;
-      } else if (this.tutorialStep === 1) focusSelector = '#start-wave';
-      else if (this.tutorialStep === 3) {
+      } else if (this.tutorialStep === 1) {
         focusSelector = '[data-tower-type="fire"]';
         worldPosition = this.findTutorialPlacementWorld('fire');
         dragPlacement = true;
-      } else if (this.tutorialStep === 4) worldPosition = fire?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 5) focusSelector = this.tutorialRotationButtonSelector(fire);
-      else if (this.tutorialStep === 6) focusSelector = '#start-wave';
-      else if (this.tutorialStep === 7) worldPosition = fire?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 8) worldPosition = foundry?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 9) focusSelector = this.tutorialRotationButtonSelector(foundry);
-      else if (this.tutorialStep === 11) {
+      } else if (this.tutorialStep === 2) worldPosition = foundry?.group.position.clone() ?? null;
+      else if (this.tutorialStep === 3) focusSelector = '#action-right';
+      else if (this.tutorialStep === 4) focusSelector = '#start-wave';
+      else if (this.tutorialStep === 5) {
         focusSelector = '[data-tower-type="ice"]';
         worldPosition = this.findTutorialPlacementWorld('ice');
         dragPlacement = true;
-      } else if (this.tutorialStep === 12) worldPosition = fire?.group.position.clone() ?? null;
-      else if (this.tutorialStep === 13) focusSelector = this.tutorialRotationButtonSelector(fire);
+      } else if (this.tutorialStep === 6) worldPosition = fire?.group.position.clone() ?? null;
+      else if (this.tutorialStep === 7) focusSelector = '#action-left';
+      else if (this.tutorialStep === 8) focusSelector = '#start-wave';
+      else if (this.tutorialStep === 9) {
+        focusSelector = '[data-tower-type="fire"]';
+        worldPosition = this.findTutorialPlacementWorld('terminalFire');
+        dragPlacement = true;
+      } else if (this.tutorialStep === 10) worldPosition = ice?.group.position.clone() ?? null;
+      else if (this.tutorialStep === 11) focusSelector = '#action-right';
+      else if (this.tutorialStep === 12) worldPosition = terminalFire?.group.position.clone() ?? null;
+      else if (this.tutorialStep === 13) focusSelector = '#action-left';
       else if (this.tutorialStep === 14) focusSelector = '#start-wave';
     }
 
     const cueKey = worldPosition
       ? `${this.tutorialStep}:${worldPosition.x.toFixed(2)}:${worldPosition.y.toFixed(2)}:${worldPosition.z.toFixed(2)}`
       : '';
-    this.presentTutorialCue(focusSelector, worldPosition, dragPlacement, cueKey);
+    const linkDragStart = ROUTING_MODE === 'link'
+      ? this.tutorialStep === 3 ? foundry?.group.position.clone() ?? null
+        : this.tutorialStep === 8 ? fire?.group.position.clone() ?? null
+          : this.tutorialStep === 13 ? ice?.group.position.clone() ?? null
+            : null
+      : null;
+    this.presentTutorialCue(focusSelector, worldPosition, dragPlacement, cueKey, linkDragStart);
   }
 
   private updateStageTwoTutorialCue(visible: boolean): void {
@@ -3828,9 +3873,6 @@ export class Game {
       if (this.selectedTowerId !== feeder.id) {
         focusSelector = '';
         worldPosition = feeder.group.position.clone();
-      } else if (ROUTING_MODE === 'link' && this.interactionMode !== 'link') {
-        focusSelector = '#action-link';
-        worldPosition = null;
       } else if (ROUTING_MODE === 'link') {
         focusSelector = '';
         worldPosition = lance.group.position.clone();
@@ -3846,7 +3888,10 @@ export class Game {
     const cueKey = worldPosition
       ? `stage2:${this.waveIndex}:${required}:${worldPosition.x.toFixed(2)}:${worldPosition.y.toFixed(2)}:${worldPosition.z.toFixed(2)}`
       : '';
-    this.presentTutorialCue(focusSelector, worldPosition, required !== null, cueKey);
+    const linkDragStart = ROUTING_MODE === 'link' && !required && feeder && lance && !this.stageTwoLanceFeederIntroduced
+      ? feeder.group.position.clone()
+      : null;
+    this.presentTutorialCue(focusSelector, worldPosition, required !== null || linkDragStart !== null, cueKey, linkDragStart);
   }
 
   private presentTutorialCue(
@@ -3854,13 +3899,14 @@ export class Game {
     worldPosition: THREE.Vector3 | null,
     dragPlacement: boolean,
     cueKey: string,
+    dragStartWorld: THREE.Vector3 | null = null,
   ): void {
     if (focusSelector) {
       const focus = document.querySelector<HTMLElement>(focusSelector);
       focus?.classList.add('tutorial-focus');
       focus?.setAttribute('data-tutorial-focus', 'true');
     }
-    this.updateTutorialHand(focusSelector, worldPosition, dragPlacement);
+    this.updateTutorialHand(focusSelector, worldPosition, dragPlacement, dragStartWorld);
     if (cueKey === this.tutorialCueKey) return;
     this.clearTutorialCue();
     if (!worldPosition) return;
@@ -3921,6 +3967,11 @@ export class Game {
         if (positions.length !== keys.length) continue;
         const center = positions.reduce((sum, position) => sum.add(position), new THREE.Vector3()).multiplyScalar(1 / positions.length);
         let score = -center.length() * 0.18;
+        if (type === 'lance') {
+          const laneDistance = this.distanceToEnemyPath(center.x, center.z);
+          if (placement.layer !== 0 || laneDistance > EXPLOSION_RADIUS) continue;
+          score += 220 - laneDistance * 70;
+        }
         if (type === 'foundry') {
           const lance = this.towers.find((tower) => tower.type === 'lance');
           if (!lance || lance.layer !== placement.layer) continue;
@@ -4018,15 +4069,21 @@ export class Game {
     return this.towers.find((tower) => tower.gx === target.gx && tower.gz === target.gz);
   }
 
-  private updateTutorialHand(focusSelector: string, worldPosition: THREE.Vector3 | null, dragPlacement: boolean): void {
+  private updateTutorialHand(
+    focusSelector: string,
+    worldPosition: THREE.Vector3 | null,
+    dragPlacement: boolean,
+    dragStartWorld: THREE.Vector3 | null = null,
+  ): void {
     const worldTarget = worldPosition ? this.worldToClient(worldPosition.clone().add(new THREE.Vector3(0, 0.45, 0))) : null;
+    const worldStart = dragStartWorld ? this.worldToClient(dragStartWorld.clone().add(new THREE.Vector3(0, 0.45, 0))) : null;
     const focus = focusSelector ? document.querySelector<HTMLElement>(focusSelector) : null;
     const focusRect = focus?.getBoundingClientRect();
     const uiTarget = focusRect ? {
       x: focusRect.left + focusRect.width * 0.72,
       y: focusRect.top + focusRect.height * 0.42,
     } : null;
-    const start = dragPlacement ? uiTarget : worldTarget ?? uiTarget;
+    const start = dragPlacement ? worldStart ?? uiTarget : worldTarget ?? uiTarget;
     const end = dragPlacement ? worldTarget : worldTarget ?? uiTarget;
     if (!start || !end) {
       this.hideTutorialHand();
@@ -4099,7 +4156,7 @@ export class Game {
   private queueDiscoveryCue(
     kind: DiscoveryCueKind,
     html: string,
-    options: { targetSelector?: string; worldPosition?: THREE.Vector3; placement?: 'above' | 'below'; highlightOnly?: boolean; duration?: number } = {},
+    options: { targetSelector?: string; worldPosition?: THREE.Vector3; highlightOnly?: boolean; duration?: number } = {},
     force = false,
   ): void {
     if (!force && this.discoveredCues.has(kind)) return;
@@ -4110,7 +4167,6 @@ export class Game {
       html,
       targetSelector: options.targetSelector,
       worldPosition: options.worldPosition?.clone(),
-      placement: options.placement ?? 'above',
       highlightOnly: options.highlightOnly ?? false,
       duration: options.duration ?? 2.6,
     };
@@ -4123,7 +4179,6 @@ export class Game {
     this.discoveryCueElapsed = 0;
     this.discoveryCardElement.innerHTML = request.html;
     this.discoveryCueElement.dataset.kind = request.kind;
-    this.discoveryCueElement.dataset.placement = request.placement;
     this.discoveryCueElement.classList.toggle('hidden', request.highlightOnly);
     if (request.targetSelector) {
       document.querySelector<HTMLElement>(request.targetSelector)?.classList.add('discovery-target');
@@ -4393,11 +4448,13 @@ export class Game {
     window.__THREE_GAME_TEST_HOOKS__ = {
       seed: (value: number) => { this.rng = createSeededRandom(value); },
       setState: (name: string) => {
+        const preservesTutorialReaction = name === 'tutorial-link' || name === 'tutorial-ready' || name === 'tutorial-wave';
         if (!name.startsWith('intro-')) {
           this.hideDiscoveryCue();
           this.discoveryCueQueue.length = 0;
           this.discoveredCues.add('currency');
-          this.discoveredCues.add('reaction');
+          if (preservesTutorialReaction) this.discoveredCues.delete('reaction');
+          else this.discoveredCues.add('reaction');
           this.discoveredCues.add('nexus');
         }
         if (name === 'active-play') this.createDeterministicDemo(0);
@@ -4442,14 +4499,15 @@ export class Game {
         else if (name === 'intro-currency') this.createDiscoveryDemo('currency');
         else if (name === 'intro-reaction') this.createDiscoveryDemo('reaction');
         else if (name === 'intro-nexus') this.createDiscoveryDemo('nexus');
-        else if (name === 'lance-vfx') {
+        else if (name === 'explosion-vfx') {
           if (this.stageIndex !== 0) this.switchStage(0);
           else this.resetRun();
-          const start = new THREE.Vector3(-4, LAYER_HEIGHTS[0] + 1.1, 0);
-          const end = new THREE.Vector3(9, LAYER_HEIGHTS[0] + 1.1, 0);
-          this.createLanceVfx(start, end, ['fire', 'ice']);
+          const center = new THREE.Vector3(0, LAYER_HEIGHTS[0] + 0.18, 0);
+          this.createExplosionVfx(center, ['fire', 'ice']);
           this.publishDiagnostics();
         }
+        else if (name === 'explosion-skill') this.createExplosionSkillDemo();
+        else if (name === 'relay-lock') this.createRelayLockDemo();
         else if (name === 'fail') {
           this.resetRun();
           this.lives = 0;
@@ -4598,46 +4656,6 @@ export class Game {
     if (this.stageIndex !== 0) this.switchStage(0);
     else this.resetRun();
     this.money = 9999;
-    if (ROUTING_MODE === 'rotation') {
-      this.tryPlaceTower('foundry', TUTORIAL_TOWER_CELLS.foundry.gx, TUTORIAL_TOWER_CELLS.foundry.gz);
-      this.tutorialStep = 3;
-      this.tryPlaceTower('fire', TUTORIAL_TOWER_CELLS.fire.gx, TUTORIAL_TOWER_CELLS.fire.gz);
-      const foundry = this.findTutorialTower('foundry');
-      const fire = this.findTutorialTower('fire');
-      if (!completeLinks) {
-        this.selectedTowerId = fire?.id ?? null;
-        this.interactionMode = 'inspect';
-        this.tutorialStep = 5;
-        this.refreshSelectionVisual();
-        this.updateUi(true);
-        return;
-      }
-      if (fire) {
-        const laneAngle = this.angleToTutorialLane(fire);
-        if (laneAngle !== null) {
-          fire.aimAngle = laneAngle;
-          this.applyTowerAimVisual(fire);
-        }
-      }
-      if (foundry && fire) this.routeTowers(foundry, fire);
-      this.tutorialStep = 11;
-      this.tryPlaceTower('ice', TUTORIAL_TOWER_CELLS.ice.gx, TUTORIAL_TOWER_CELLS.ice.gz);
-      const ice = this.findTutorialTower('ice');
-      if (fire && ice) this.routeTowers(fire, ice);
-      if (startWave && foundry) foundry.buffer.push(this.createNeutralRound(foundry));
-      this.tutorialStep = 14;
-      this.selectedTowerId = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches ? null : ice?.id ?? null;
-      this.waveIndex = 2;
-      this.money = 200;
-      this.refreshNetworkVisuals();
-      this.refreshSelectionVisual();
-      this.updateUi(true);
-      if (startWave) {
-        this.speedIndex = 1;
-        this.startWave();
-      }
-      return;
-    }
     this.tryPlaceTower('foundry', TUTORIAL_TOWER_CELLS.foundry.gx, TUTORIAL_TOWER_CELLS.foundry.gz);
     this.tryPlaceTower('fire', TUTORIAL_TOWER_CELLS.fire.gx, TUTORIAL_TOWER_CELLS.fire.gz);
     const foundry = this.findTutorialTower('foundry');
@@ -4647,8 +4665,7 @@ export class Game {
       this.interactionMode = 'inspect';
       this.tutorialStep = 2;
       this.refreshTutorialProgress();
-      if (ROUTING_MODE === 'link') this.beginLink();
-      else this.updateUi(true);
+      this.updateUi(true);
       return;
     }
     if (foundry && fire) this.routeTowers(foundry, fire);
@@ -4660,6 +4677,10 @@ export class Game {
     this.tryPlaceTower('fire', TUTORIAL_TOWER_CELLS.terminalFire.gx, TUTORIAL_TOWER_CELLS.terminalFire.gz);
     const terminalFire = this.findTutorialTower('terminalFire');
     if (ice && terminalFire) this.routeTowers(ice, terminalFire);
+    if (ROUTING_MODE === 'rotation' && terminalFire) {
+      terminalFire.aimAngle = 0;
+      this.applyTowerAimVisual(terminalFire);
+    }
     if (startWave && foundry) {
       foundry.buffer.push(this.createNeutralRound(foundry));
     }
@@ -4708,15 +4729,10 @@ export class Game {
       const branchFoundry = this.towers.find((tower) => tower.gx === branchCells.foundry.gx && tower.gz === branchCells.foundry.gz);
       const branchFire = this.towers.find((tower) => tower.gx === branchCells.fire.gx && tower.gz === branchCells.fire.gz);
       const branchIce = this.towers.find((tower) => tower.gx === branchCells.ice.gx && tower.gz === branchCells.ice.gz);
+      const terminalFire = this.findTutorialTower('terminalFire');
       if (branchFoundry && branchIce) this.routeTowers(branchFoundry, branchIce);
       if (branchIce && branchFire) this.routeTowers(branchIce, branchFire);
-      if (branchFire) {
-        const laneAngle = this.angleToTutorialLane(branchFire);
-        if (laneAngle !== null) {
-          branchFire.aimAngle = laneAngle;
-          this.applyTowerAimVisual(branchFire);
-        }
-      }
+      if (branchFire && terminalFire) this.routeTowers(branchFire, terminalFire);
     }
     this.waveIndex = 5;
     this.speedIndex = 1;
@@ -4893,6 +4909,73 @@ export class Game {
     this.updateUi(true);
   }
 
+  private createExplosionSkillDemo(): void {
+    if (this.stageIndex !== 1) this.switchStage(1);
+    else this.resetRun();
+    this.waveIndex = 3;
+    this.money = 9999;
+    this.stageTwoLanceIntroduced = true;
+    this.tryPlaceTower('lance', 0, 0);
+    const explosion = this.towers.find((tower) => tower.type === 'lance');
+    if (!explosion) return;
+    for (let index = 0; index < this.lanceThreshold(explosion); index += 1) {
+      explosion.buffer.push({ id: this.nextRoundId++, damage: 17, elements: index % 2 === 0 ? ['fire'] : ['ice'] });
+    }
+    this.spawnEnemy('riftling', 0);
+    this.spawnEnemy('riftling', 0);
+    this.spawnEnemy('wisp', 0);
+    const [inside, outside, otherLayer] = this.enemies;
+    if (!inside || !outside || !otherLayer) return;
+    inside.group.position.copy(explosion.group.position).add(new THREE.Vector3(EXPLOSION_RADIUS * 0.6, 0.45, 0));
+    outside.group.position.copy(explosion.group.position).add(new THREE.Vector3(EXPLOSION_RADIUS + 0.35, 0.45, 0));
+    otherLayer.group.position.copy(explosion.group.position).add(new THREE.Vector3(0.5, LAYER_HEIGHTS[1] - LAYER_HEIGHTS[0] + 0.45, 0));
+    const outsideHp = outside.hp;
+    const otherLayerHp = otherLayer.hp;
+    this.fireExplosion(explosion, this.lanceThreshold(explosion));
+    this.lastExplosionOutsideDamage = Math.max(0, outsideHp - outside.hp);
+    this.lastExplosionOtherLayerDamage = Math.max(0, otherLayerHp - otherLayer.hp);
+    this.updateEnemyStatusPresentation();
+    this.updateUi(true);
+    this.publishDiagnostics();
+  }
+
+  private createRelayLockDemo(): void {
+    if (this.stageIndex !== 1) this.switchStage(1);
+    else this.resetRun();
+    this.money = 9999;
+    this.tryPlaceTower('foundry', 0, 2);
+    this.tryPlaceTower('fire', 2, 2);
+    this.tryPlaceTower('ice', 2, 0);
+    const source = this.towers.find((tower) => tower.type === 'foundry');
+    const relay = this.towers.find((tower) => tower.type === 'fire');
+    const output = this.towers.find((tower) => tower.type === 'ice');
+    if (!source || !relay || !output) return;
+    this.connectTowers(source, relay);
+    this.connectTowers(relay, output);
+    const board = this.activeStage().board;
+    let extra: TowerState | null = null;
+    for (let gx = 0; gx < board.width && !extra; gx += 1) {
+      for (let gz = 0; gz < board.depth && !extra; gz += 1) {
+        const placement = this.validateFootprint('foundry', gx, gz, null);
+        if (!placement.valid || placement.layer !== relay.layer) continue;
+        const start = this.gridToWorld(gx, gz, placement.layer).add(new THREE.Vector3(0, 0.68, 0));
+        const end = this.towerPort(relay);
+        if (start.distanceTo(end) > TOWER_DEFINITIONS.foundry.connectionRange
+          || this.firstBlockerHit(start, end, placement.layer) !== null) continue;
+        const priorCount = this.towers.length;
+        if (this.tryPlaceTower('foundry', gx, gz) && this.towers.length > priorCount) extra = this.towers[this.towers.length - 1] ?? null;
+      }
+    }
+    if (!extra) return;
+    this.selectedTowerId = extra.id;
+    this.interactionMode = 'inspect';
+    this.beginLink();
+    this.refreshNetworkVisuals();
+    this.refreshSelectionVisual();
+    this.updateUi(true);
+    this.publishDiagnostics();
+  }
+
   private publishDiagnostics(): void {
     const info = this.renderer.info;
     const towerLinks = this.towers.flatMap((source) => {
@@ -4903,6 +4986,10 @@ export class Game {
         targetId: target.id,
         distance: this.towerPort(source).distanceTo(this.towerPort(target)),
         range: this.connectionRange(source),
+        facingError: Math.abs(Math.atan2(
+          Math.sin(source.group.rotation.y + this.angleToTower(source, target)),
+          Math.cos(source.group.rotation.y + this.angleToTower(source, target)),
+        )),
       }];
     });
     const connections = towerLinks.length;
@@ -4937,16 +5024,14 @@ export class Game {
       return Math.max(max, Math.min(Math.abs(delta.x), Math.abs(delta.y)));
     }, 0);
     const linkTutorialObjectives = [
-      'place-foundry', 'place-fire', 'select-foundry', 'activate-link', 'link-foundry-fire', 'start-wave-1',
-      'place-ice', 'select-fire', 'activate-link', 'link-fire-ice', 'start-wave-2',
-      'place-terminal-fire', 'select-ice', 'activate-link', 'link-ice-terminal', 'start-wave-3', 'complete',
+      'place-foundry', 'place-fire', 'select-foundry', 'drag-foundry-fire', 'release-foundry-fire', 'start-wave-1',
+      'place-ice', 'select-fire', 'drag-fire-ice', 'release-fire-ice', 'start-wave-2',
+      'place-terminal-fire', 'select-ice', 'drag-ice-terminal', 'release-ice-terminal', 'start-wave-3', 'complete',
     ] as const;
     const rotationTutorialObjectives = [
-      'place-foundry', 'start-wave-1', 'observe-foundry-kill', 'place-fire',
-      'select-fire', 'rotate-fire-lane', 'start-wave-2', 'observe-fire-idle',
-      'select-foundry', 'rotate-foundry-fire', 'finish-wave-2', 'place-ice',
-      'select-fire', 'rotate-fire-ice', 'start-wave-3', 'await-first-reaction',
-      'reaction-popup', 'complete',
+      'place-foundry', 'place-fire', 'select-foundry', 'rotate-foundry-fire', 'start-wave-1',
+      'place-ice', 'select-fire', 'rotate-fire-ice', 'start-wave-2',
+      'place-terminal-fire', 'select-ice', 'rotate-ice-terminal', 'select-terminal-fire', 'rotate-terminal-lane', 'start-wave-3', 'complete',
     ] as const;
     const tutorialObjectives = ROUTING_MODE === 'link' ? linkTutorialObjectives : rotationTutorialObjectives;
     const tutorialObjective = this.isGuidedTutorialActive()
@@ -4954,6 +5039,15 @@ export class Game {
       : this.stageIndex === 1 && this.waveIndex === 3 && !this.stageTwoLanceFeederIntroduced ? 'link-foundry-lance' : '';
     const requiredTutorialTower = this.stageTwoRequiredTower();
     const lessonCell = requiredTutorialTower ? this.findStageTwoLessonCell(requiredTutorialTower) : null;
+    const lessonPositions = requiredTutorialTower && lessonCell
+      ? this.footprintKeys(requiredTutorialTower, lessonCell.gx, lessonCell.gz).map((key) => {
+        const cell = this.cells.get(key);
+        return cell ? this.gridToWorld(cell.gx, cell.gz, cell.layer) : null;
+      }).filter((position): position is THREE.Vector3 => position !== null)
+      : [];
+    const lessonCenter = lessonPositions.length > 0
+      ? lessonPositions.reduce((sum, position) => sum.add(position), new THREE.Vector3()).multiplyScalar(1 / lessonPositions.length)
+      : null;
     const lance = this.towers.find((tower) => tower.type === 'lance') ?? null;
     const lanceAmmoBar = lance?.group.getObjectByName('lanceAmmoBar') ?? null;
     const lanceFeeder = this.towers.find((tower) => tower.group.userData.stageTwoLanceFeeder === true) ?? null;
@@ -4993,7 +5087,11 @@ export class Game {
       const enemy = ENEMY_DEFINITIONS[order.kind];
       return (enemy.resist?.length ?? 0) > 0 || (enemy.immune?.length ?? 0) > 0;
     }).length);
-    const lanceEffects = this.effects.filter((effect) => effect.object.userData.effectKind === 'lance');
+    const lanceEffects = this.effects.filter((effect) => effect.object.userData.effectKind === 'explosion');
+    const activeExplosion = lanceEffects[0]?.object ?? null;
+    const explosionZone = activeExplosion?.getObjectByName('explosion-zone') ?? null;
+    const explosionRingCount = activeExplosion?.getObjectsByProperty('name', 'explosion-ring').length ?? 0;
+    const explosionShardCount = activeExplosion?.getObjectsByProperty('name', 'explosion-shard').length ?? 0;
     const spawnDirectionMarker = this.boardGroup.getObjectByName('enemy-spawn-direction');
     let spawnDirectionError = Math.PI;
     let spawnDirectionInView = false;
@@ -5044,7 +5142,6 @@ export class Game {
       spawnDirectionViewportY,
       tutorialHandVisible: !this.tutorialHandElement.classList.contains('hidden'),
       tutorialHandMode: this.tutorialHandElement.dataset.mode ?? '',
-      tutorialWorldCueObjects: this.tutorialCueGroup.children.length,
       discoveryCueKind: this.discoveryCue?.kind ?? '',
       discoveryCueVisible: !this.discoveryCueElement.classList.contains('hidden'),
       discoveryCueHighlightOnly: this.discoveryCue?.highlightOnly ?? false,
@@ -5076,6 +5173,7 @@ export class Game {
       selectedOutputAngle: this.selectedTower()?.aimAngle ?? null,
       linkSourceTowerId: this.linkSourceTowerId,
       towerLinks,
+      maxLinkedTowerFacingError: towerLinks.reduce((max, link) => Math.max(max, link.facingError), 0),
       linkCandidates,
       lastLinkAttempt: this.lastLinkAttempt,
       towerConnectionRanges: Object.fromEntries(this.towers.map((tower) => [tower.id, this.connectionRange(tower)])),
@@ -5107,12 +5205,7 @@ export class Game {
       tutorialObjective,
       tutorialHeadOnDot: Math.cos(this.findTutorialTower('terminalFire')?.aimAngle ?? 0),
       tutorialDirectShots: this.unlinkedProjectileLaunches,
-      tutorialNeutralKillObserved: this.tutorialNeutralKillObserved,
-      tutorialFireIdleElapsed: this.tutorialFireIdleElapsed,
-      tutorialFireIdleObserved: this.tutorialFireIdleObserved,
       reactionTutorialPopupVisible: this.reactionTutorialPopupVisible,
-      tutorialCombatHeld: this.isRotationTutorialCombatHeld(),
-      tutorialRotationTargetAngle: this.tutorialRotationTower() ? this.tutorialRotationTarget(this.tutorialRotationTower() as TowerState) : null,
       elementalTintStrength: ELEMENT_STATUS_TINT,
       stageStartingMoney: this.activeStage().startingMoney,
       killRewardMultiplier: this.activeStage().killRewardMultiplier,
@@ -5136,6 +5229,7 @@ export class Game {
       )),
       waveHealthMultipliers: stageWaves.map((wave) => wave.healthMultiplier),
       waveSpawnDensities,
+      waveSpawnWindows,
       waveFlyingEnemyCounts,
       waveBarrierEnemyCounts,
       waveResistantEnemyCounts,
@@ -5149,11 +5243,8 @@ export class Game {
       masteryWaveHealthMultipliers: stageWaves.slice(3, 6).map((wave) => wave.healthMultiplier),
       masteryWaveSpawnDensities: waveSpawnDensities.slice(3, 6),
       masteryWaveThreats: waveThreats.slice(3, 6),
-      waveSpawnWindows,
       currentWaveHealthMultiplier: this.currentWaveHealthMultiplier(),
       reactionMaxHpDamageRatio: REACTION_MAX_HP_DAMAGE_RATIO,
-      towerPurchasePriceMultiplier: this.towerPurchasePriceMultiplier(),
-      towerPurchasePrices: Object.fromEntries(BUILD_ORDER.map((type) => [type, this.currentTowerPrice(type)])) as Record<TowerType, number>,
       lastReactionBonusDamage: this.lastReactionBonusDamage,
       activeReactionBarriers: this.enemies.filter((enemy) => enemy.reactionBarrier !== null).length,
       activeArmoredEnemies: this.enemies.filter((enemy) => enemy.kind === 'arcaneBulwark').length,
@@ -5166,8 +5257,18 @@ export class Game {
       lanceVfxCount: lanceEffects.length,
       lanceVfxAnchorError: this.lanceVfxMaxAnchorError,
       lanceVfxScaleError: this.lanceVfxMaxScaleError,
+      explosionRadius: EXPLOSION_RADIUS,
+      explosionHits: this.lastExplosionHitCount,
+      explosionDamage: this.lastExplosionDamage,
+      explosionOutsideDamage: this.lastExplosionOutsideDamage,
+      explosionOtherLayerDamage: this.lastExplosionOtherLayerDamage,
+      explosionVisualRadius: explosionZone ? EXPLOSION_RADIUS * explosionZone.scale.x : 0,
+      explosionRingCount,
+      explosionShardCount,
+      explosionTargetCueCount: this.lastExplosionTargetCueCount,
       requiredTutorialTower,
       lessonCell: lessonCell ? { gx: lessonCell.gx, gz: lessonCell.gz } : null,
+      lessonCellLaneDistance: lessonCenter ? this.distanceToEnemyPath(lessonCenter.x, lessonCenter.z) : null,
       objectiveProgress: this.waveIndex / this.activeStage().waves.length,
       renderer: {
         calls: info.render.calls,

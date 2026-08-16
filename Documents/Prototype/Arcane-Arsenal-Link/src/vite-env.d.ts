@@ -30,7 +30,6 @@ interface ThreeGameDiagnostics {
   spawnDirectionViewportY: number;
   tutorialHandVisible: boolean;
   tutorialHandMode: string;
-  tutorialWorldCueObjects: number;
   discoveryCueKind: '' | 'currency' | 'reaction' | 'nexus';
   discoveryCueVisible: boolean;
   discoveryCueHighlightOnly: boolean;
@@ -64,7 +63,9 @@ interface ThreeGameDiagnostics {
     targetId: number;
     distance: number;
     range: number;
+    facingError: number;
   }>;
+  maxLinkedTowerFacingError: number;
   linkCandidates: Array<{
     towerId: number;
     valid: boolean;
@@ -100,12 +101,7 @@ interface ThreeGameDiagnostics {
   tutorialObjective: string;
   tutorialHeadOnDot: number;
   tutorialDirectShots: number;
-  tutorialNeutralKillObserved: boolean;
-  tutorialFireIdleElapsed: number;
-  tutorialFireIdleObserved: boolean;
   reactionTutorialPopupVisible: boolean;
-  tutorialCombatHeld: boolean;
-  tutorialRotationTargetAngle: number | null;
   elementalTintStrength: number;
   stageStartingMoney: number;
   killRewardMultiplier: number;
@@ -124,6 +120,7 @@ interface ThreeGameDiagnostics {
   waveMaxEnemyLayers: number[];
   waveHealthMultipliers: number[];
   waveSpawnDensities: number[];
+  waveSpawnWindows: number[];
   waveFlyingEnemyCounts: number[];
   waveBarrierEnemyCounts: number[];
   waveResistantEnemyCounts: number[];
@@ -137,11 +134,8 @@ interface ThreeGameDiagnostics {
   masteryWaveHealthMultipliers: number[];
   masteryWaveSpawnDensities: number[];
   masteryWaveThreats: number[];
-  waveSpawnWindows: number[];
   currentWaveHealthMultiplier: number;
   reactionMaxHpDamageRatio: number;
-  towerPurchasePriceMultiplier: number;
-  towerPurchasePrices: Record<'foundry' | 'fire' | 'ice' | 'wind' | 'earth' | 'amplifier' | 'lance', number>;
   lastReactionBonusDamage: number;
   activeReactionBarriers: number;
   activeArmoredEnemies: number;
@@ -153,8 +147,18 @@ interface ThreeGameDiagnostics {
   lanceVfxCount: number;
   lanceVfxAnchorError: number;
   lanceVfxScaleError: number;
+  explosionRadius: number;
+  explosionHits: number;
+  explosionDamage: number;
+  explosionOutsideDamage: number;
+  explosionOtherLayerDamage: number;
+  explosionVisualRadius: number;
+  explosionRingCount: number;
+  explosionShardCount: number;
+  explosionTargetCueCount: number;
   requiredTutorialTower: 'foundry' | 'amplifier' | 'lance' | null;
   lessonCell: { gx: number; gz: number } | null;
+  lessonCellLaneDistance: number | null;
   enemySpeedMultiplier: number;
   lanceAmmoBarCount: number;
   lanceAmmoRatio: number;
@@ -178,7 +182,7 @@ interface ThreeGameDiagnostics {
 
 interface ThreeGameTestHooks {
   seed(value: number): void;
-  setState(name: 'active-play' | 'stress' | 'stage-two-ready' | 'stage-two-wave-three' | 'stage-two-wave-four' | 'stage-two-baseline-final' | 'stage-two-expanded-final' | 'stage-three-ready' | 'stage-three-final' | 'stage-three-final-active' | 'stage-three-baseline-late' | 'stage-three-expanded-late' | 'tutorial-link' | 'tutorial-rotation' | 'tutorial-ready' | 'tutorial-wave' | 'mastery-ready' | 'mastery-two-leaks' | 'mastery-fail' | 'mastery-baseline-final' | 'mastery-expanded-final' | 'terminal-flow' | 'status-fire' | 'status-reaction' | 'reaction-scaling' | 'armored-intact' | 'armored-break' | 'reward-stage-one' | 'reward-stage-two' | 'intro-currency' | 'intro-reaction' | 'intro-nexus' | 'lance-vfx' | 'fail' | 'win'): void;
+  setState(name: 'active-play' | 'stress' | 'stage-two-ready' | 'stage-two-wave-three' | 'stage-two-wave-four' | 'stage-two-baseline-final' | 'stage-two-expanded-final' | 'stage-three-ready' | 'stage-three-final' | 'stage-three-final-active' | 'stage-three-baseline-late' | 'stage-three-expanded-late' | 'tutorial-link' | 'tutorial-rotation' | 'tutorial-ready' | 'tutorial-wave' | 'mastery-ready' | 'mastery-two-leaks' | 'mastery-fail' | 'mastery-baseline-final' | 'mastery-expanded-final' | 'terminal-flow' | 'status-fire' | 'status-reaction' | 'reaction-scaling' | 'armored-intact' | 'armored-break' | 'reward-stage-one' | 'reward-stage-two' | 'intro-currency' | 'intro-reaction' | 'intro-nexus' | 'explosion-vfx' | 'explosion-skill' | 'relay-lock' | 'fail' | 'win'): void;
   setPausedForScreenshot(paused: boolean): void;
   setReducedMotion(enabled: boolean): void;
   setSpeed(index: number): void;
