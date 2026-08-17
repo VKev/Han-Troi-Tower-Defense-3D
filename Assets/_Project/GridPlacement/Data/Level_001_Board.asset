@@ -18,9 +18,9 @@ MonoBehaviour:
     height: 8
   cellSize: 1
   heightUnit: 1
-  visualizeInScene: 1
-  maxCameraGridXSpan: 20
-  maxCameraGridYSpan: 20
+  visualizeInScene: 0
+  maxCameraGridXSpan: 15
+  maxCameraGridYSpan: 9
   cells:
   - coordinate:
       x: 0
@@ -10176,107 +10176,107 @@ MonoBehaviour:
       x: 30
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 25
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 25
@@ -10576,107 +10576,107 @@ MonoBehaviour:
       x: 30
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 26
@@ -10976,107 +10976,107 @@ MonoBehaviour:
       x: 30
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 27
@@ -11376,107 +11376,107 @@ MonoBehaviour:
       x: 30
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 28
@@ -11776,107 +11776,107 @@ MonoBehaviour:
       x: 30
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 29
@@ -12176,107 +12176,107 @@ MonoBehaviour:
       x: 30
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 30
@@ -12576,107 +12576,107 @@ MonoBehaviour:
       x: 30
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 31
@@ -12976,107 +12976,107 @@ MonoBehaviour:
       x: 30
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 32
@@ -13376,107 +13376,107 @@ MonoBehaviour:
       x: 30
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 33
@@ -13776,107 +13776,107 @@ MonoBehaviour:
       x: 30
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 34
@@ -14176,107 +14176,107 @@ MonoBehaviour:
       x: 30
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 31
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 32
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 33
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 34
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 35
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 50
       z: 35
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 51
       z: 35
@@ -16023,6 +16023,26 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 0
+      z: 40
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 40
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 40
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 40
+      y: 0
+    flags: 3
+  - coordinate:
       x: 4
       z: 40
       y: 0
@@ -16403,6 +16423,26 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 0
+      z: 41
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 41
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 41
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 41
+      y: 0
+    flags: 3
+  - coordinate:
       x: 4
       z: 41
       y: 0
@@ -16783,6 +16823,26 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 0
+      z: 42
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 42
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 42
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 42
+      y: 0
+    flags: 3
+  - coordinate:
       x: 4
       z: 42
       y: 0
@@ -17163,6 +17223,26 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 0
+      z: 43
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 43
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 43
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 43
+      y: 0
+    flags: 3
+  - coordinate:
       x: 4
       z: 43
       y: 0
@@ -17540,6 +17620,16 @@ MonoBehaviour:
   - coordinate:
       x: 79
       z: 43
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 44
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 44
       y: 0
     flags: 3
   - coordinate:
@@ -17930,6 +18020,11 @@ MonoBehaviour:
   - coordinate:
       x: 79
       z: 44
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 45
       y: 0
     flags: 3
   - coordinate:
@@ -21128,6 +21223,21 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 0
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
       x: 3
       z: 53
       y: 0
@@ -21189,6 +21299,31 @@ MonoBehaviour:
     flags: 3
   - coordinate:
       x: 15
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 16
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
       z: 53
       y: 0
     flags: 3
@@ -21448,6 +21583,66 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 72
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 53
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
       x: 4
       z: 54
       y: 0
@@ -21469,6 +21664,11 @@ MonoBehaviour:
     flags: 3
   - coordinate:
       x: 8
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 9
       z: 54
       y: 0
     flags: 3
@@ -21503,6 +21703,101 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 16
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 21
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 22
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 23
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 24
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 25
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 26
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 27
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 28
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 29
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 30
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 31
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 32
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 33
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 34
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
       x: 35
       z: 54
       y: 0
@@ -21524,6 +21819,16 @@ MonoBehaviour:
     flags: 3
   - coordinate:
       x: 39
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 40
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 41
       z: 54
       y: 0
     flags: 3
@@ -21675,6 +21980,101 @@ MonoBehaviour:
   - coordinate:
       x: 71
       z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 72
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 54
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 4
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 5
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 6
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 7
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 8
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 9
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 10
+      z: 55
       y: 0
     flags: 3
   - coordinate:
@@ -21703,6 +22103,136 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 16
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 21
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 22
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 23
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 24
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 25
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 26
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 27
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 28
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 29
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 30
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 31
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 32
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 33
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 34
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 35
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 36
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 37
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 38
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 39
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 40
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 41
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
       x: 42
       z: 55
       y: 0
@@ -21853,6 +22383,286 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 72
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 55
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 4
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 5
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 6
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 7
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 8
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 9
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 10
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 11
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 12
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 13
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 14
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 15
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 16
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 21
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 22
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 23
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 24
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 25
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 26
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 27
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 28
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 29
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 30
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 31
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 32
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 33
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 34
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 35
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 36
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 37
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 38
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 39
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 40
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 41
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 42
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 43
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 44
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 45
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 46
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 47
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
       x: 48
       z: 56
       y: 0
@@ -21884,6 +22694,11 @@ MonoBehaviour:
     flags: 3
   - coordinate:
       x: 54
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 55
       z: 56
       y: 0
     flags: 3
@@ -21923,6 +22738,16 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 63
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 64
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
       x: 65
       z: 56
       y: 0
@@ -21955,6 +22780,326 @@ MonoBehaviour:
   - coordinate:
       x: 71
       z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 72
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 56
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 4
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 5
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 6
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 7
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 8
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 9
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 10
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 11
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 12
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 13
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 14
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 15
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 16
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 21
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 22
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 23
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 24
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 25
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 26
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 27
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 28
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 29
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 30
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 31
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 32
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 33
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 34
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 35
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 36
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 37
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 38
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 39
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 40
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 41
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 42
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 43
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 44
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 45
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 46
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 47
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 48
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 49
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 50
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 51
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 52
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 53
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 54
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 55
+      z: 57
       y: 0
     flags: 3
   - coordinate:
@@ -21993,6 +23138,26 @@ MonoBehaviour:
       y: 0
     flags: 3
   - coordinate:
+      x: 63
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 64
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 65
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 66
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
       x: 67
       z: 57
       y: 0
@@ -22015,5 +23180,845 @@ MonoBehaviour:
   - coordinate:
       x: 71
       z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 72
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 57
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 4
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 5
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 6
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 7
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 8
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 9
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 10
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 11
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 12
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 13
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 14
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 15
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 16
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 21
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 22
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 23
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 24
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 25
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 26
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 27
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 28
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 29
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 30
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 31
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 32
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 33
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 34
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 35
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 36
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 37
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 38
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 39
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 40
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 41
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 42
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 43
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 44
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 45
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 46
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 47
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 48
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 49
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 50
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 51
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 52
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 53
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 54
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 55
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 56
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 57
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 58
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 59
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 60
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 61
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 62
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 63
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 64
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 65
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 66
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 67
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 68
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 69
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 70
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 71
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 72
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 58
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 0
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 1
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 2
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 3
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 4
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 5
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 6
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 7
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 8
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 9
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 10
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 11
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 12
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 13
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 14
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 15
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 16
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 17
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 18
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 19
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 20
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 21
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 22
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 23
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 24
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 25
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 26
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 27
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 28
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 29
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 30
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 31
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 32
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 33
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 34
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 35
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 36
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 37
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 38
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 39
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 40
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 41
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 42
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 43
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 44
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 45
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 46
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 47
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 48
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 49
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 50
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 51
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 52
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 53
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 54
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 55
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 56
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 57
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 58
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 59
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 60
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 61
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 62
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 63
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 64
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 65
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 66
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 67
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 68
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 69
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 70
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 71
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 72
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 73
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 74
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 75
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 76
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 77
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 78
+      z: 59
+      y: 0
+    flags: 3
+  - coordinate:
+      x: 79
+      z: 59
       y: 0
     flags: 3
