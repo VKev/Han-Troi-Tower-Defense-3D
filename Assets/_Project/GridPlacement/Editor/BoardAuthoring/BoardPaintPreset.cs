@@ -69,9 +69,10 @@ namespace TowerDefense3D.GridPlacement.Editor
 
         public static BoardPaintPreset GetClosestPreset(BoardCellFlags flags)
         {
+            BoardCellFlags maskedFlags = flags & ~BoardCellFlags.CameraFocus;
             foreach (BoardPaintPreset preset in System.Enum.GetValues(typeof(BoardPaintPreset)))
             {
-                if (GetFlags(preset) == flags)
+                if (GetFlags(preset) == maskedFlags)
                 {
                     return preset;
                 }

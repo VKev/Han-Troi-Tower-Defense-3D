@@ -173,6 +173,270 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator Framer_FocusRegionCellsNarrowFramingBelowFullFootprint()
+        {
+            const int maxCameraGridXSpan = 0;
+            const int maxCameraGridYSpan = 0;
+            const float edgePaddingCells = 1f;
+
+            BoardDefinition fullFootprintBoard = ScriptableObject.CreateInstance<BoardDefinition>();
+            SetField(fullFootprintBoard, "dimensions", new GridDimensions(40, 20, 1));
+            SetField(fullFootprintBoard, "cellSize", 1f);
+            SetField(fullFootprintBoard, "heightUnit", 1f);
+            SetField(fullFootprintBoard, "maxCameraGridXSpan", maxCameraGridXSpan);
+            SetField(fullFootprintBoard, "maxCameraGridYSpan", maxCameraGridYSpan);
+            SetField(
+                fullFootprintBoard,
+                "cells",
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(39, 19, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+
+            BoardDefinition focusRegionBoard = ScriptableObject.CreateInstance<BoardDefinition>();
+            SetField(focusRegionBoard, "dimensions", new GridDimensions(40, 20, 1));
+            SetField(focusRegionBoard, "cellSize", 1f);
+            SetField(focusRegionBoard, "heightUnit", 1f);
+            SetField(focusRegionBoard, "maxCameraGridXSpan", maxCameraGridXSpan);
+            SetField(focusRegionBoard, "maxCameraGridYSpan", maxCameraGridYSpan);
+            SetField(
+                focusRegionBoard,
+                "cells",
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(39, 19, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(10, 5, 0),
+                        BoardCellFlags.CameraFocus),
+                    new BoardCellDefinition(
+                        new GridCell(19, 9, 0),
+                        BoardCellFlags.CameraFocus),
+                });
+
+            // Both boards share the same lowest-level full footprint and the
+            // same grid cap / edge padding inputs; only the presence of
+            // CameraFocus cells differs, isolating the focus-narrowing effect.
+            Assert.That(
+                LowestBoardLevelBoundsCalculator.TryCalculate(
+                    fullFootprintBoard,
+                    out LowestBoardLevelBounds fullFootprintBounds),
+                Is.True);
+            Assert.That(
+                LowestBoardLevelBoundsCalculator.TryCalculate(
+                    focusRegionBoard,
+                    out LowestBoardLevelBounds focusBoardFullBounds),
+                Is.True);
+            Assert.That(focusBoardFullBounds, Is.EqualTo(fullFootprintBounds));
+
+            Assert.That(
+                BoardCameraFocusRegionCalculator.TryCalculate(
+                    fullFootprintBoard,
+                    fullFootprintBounds,
+                    out _),
+                Is.False,
+                "Board with no CameraFocus cells must not narrow the framing region.");
+            Assert.That(
+                BoardCameraFocusRegionCalculator.TryCalculate(
+                    focusRegionBoard,
+                    focusBoardFullBounds,
+                    out LowestBoardLevelBounds focusBounds),
+                Is.True);
+            Assert.That(focusBounds.MinX, Is.EqualTo(10));
+            Assert.That(focusBounds.MinZ, Is.EqualTo(5));
+            Assert.That(focusBounds.MaxXExclusive, Is.EqualTo(20));
+            Assert.That(focusBounds.MaxZExclusive, Is.EqualTo(10));
+
+            var fullFootprintPresenterObject = new GameObject("Full Footprint Board Presenter");
+            BoardScenePresenter fullFootprintPresenter =
+                fullFootprintPresenterObject.AddComponent<BoardScenePresenter>();
+            SetField(fullFootprintPresenter, "board", fullFootprintBoard);
+
+            var focusPresenterObject = new GameObject("Focus Region Board Presenter");
+            BoardScenePresenter focusPresenter =
+                focusPresenterObject.AddComponent<BoardScenePresenter>();
+            SetField(focusPresenter, "board", focusRegionBoard);
+
+            var fullFootprintCameraObject = new GameObject("Full Footprint Board Camera");
+            fullFootprintCameraObject.SetActive(false);
+            Camera fullFootprintCamera = fullFootprintCameraObject.AddComponent<Camera>();
+            fullFootprintCamera.fieldOfView = 43f;
+            fullFootprintCamera.aspect = 16f / 9f;
+            fullFootprintCamera.nearClipPlane = 0.1f;
+            fullFootprintCamera.transform.SetPositionAndRotation(
+                new Vector3(100f, 100f, 100f),
+                Quaternion.Euler(60f, 0f, 0f));
+            BoardCameraFramer fullFootprintFramer =
+                fullFootprintCameraObject.AddComponent<BoardCameraFramer>();
+            SetField(fullFootprintFramer, "targetCamera", fullFootprintCamera);
+            SetField(fullFootprintFramer, "boardPresenter", fullFootprintPresenter);
+
+            var focusCameraObject = new GameObject("Focus Region Board Camera");
+            focusCameraObject.SetActive(false);
+            Camera focusCamera = focusCameraObject.AddComponent<Camera>();
+            focusCamera.fieldOfView = 43f;
+            focusCamera.aspect = 16f / 9f;
+            focusCamera.nearClipPlane = 0.1f;
+            focusCamera.transform.SetPositionAndRotation(
+                new Vector3(100f, 100f, 100f),
+                Quaternion.Euler(60f, 0f, 0f));
+            BoardCameraFramer focusFramer =
+                focusCameraObject.AddComponent<BoardCameraFramer>();
+            SetField(focusFramer, "targetCamera", focusCamera);
+            SetField(focusFramer, "boardPresenter", focusPresenter);
+
+            fullFootprintCameraObject.SetActive(true);
+            focusCameraObject.SetActive(true);
+            yield return null;
+
+            Assert.That(
+                BoardCameraFramingPlane.TryCreate(
+                    fullFootprintBoard,
+                    fullFootprintPresenter.transform,
+                    edgePaddingCells,
+                    out BoardCameraFramingPlane fullFootprintPlane),
+                Is.True);
+            Assert.That(
+                BoardCameraFramingPlane.TryCreate(
+                    focusRegionBoard,
+                    focusPresenter.transform,
+                    edgePaddingCells,
+                    out BoardCameraFramingPlane focusPlane),
+                Is.True);
+
+            // Different focus vs. full-footprint centers plus a tighter
+            // camera distance for the same FOV/rotation prove the framing
+            // result is both different and visibly narrower, not merely
+            // repositioned.
+            Assert.That(focusPlane.Center, Is.Not.EqualTo(fullFootprintPlane.Center));
+            Assert.That(fullFootprintPlane.Center.x, Is.EqualTo(20f).Within(0.0001f));
+            Assert.That(fullFootprintPlane.Center.z, Is.EqualTo(10f).Within(0.0001f));
+            Assert.That(focusPlane.Center.x, Is.EqualTo(15f).Within(0.0001f));
+            Assert.That(focusPlane.Center.z, Is.EqualTo(7.5f).Within(0.0001f));
+
+            float fullFootprintDistance = Vector3.Distance(
+                fullFootprintCamera.transform.position,
+                fullFootprintPlane.Center);
+            float focusDistance = Vector3.Distance(
+                focusCamera.transform.position,
+                focusPlane.Center);
+            Assert.That(
+                focusDistance,
+                Is.LessThan(fullFootprintDistance),
+                "A focus-narrowed region should require a tighter (closer) camera framing distance than the full footprint for the same FOV and rotation.");
+            Assert.That(
+                focusCamera.transform.position,
+                Is.Not.EqualTo(fullFootprintCamera.transform.position));
+
+            Object.Destroy(fullFootprintCameraObject);
+            Object.Destroy(focusCameraObject);
+            Object.Destroy(fullFootprintPresenterObject);
+            Object.Destroy(focusPresenterObject);
+            Object.Destroy(fullFootprintBoard);
+            Object.Destroy(focusRegionBoard);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Framer_NoFocusCellsMatchesPreFeatureFullFootprintFraming()
+        {
+            const float edgePaddingCells = 1f;
+
+            BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
+            SetField(board, "dimensions", new GridDimensions(20, 10, 1));
+            SetField(board, "cellSize", 1f);
+            SetField(board, "heightUnit", 1f);
+            SetField(
+                board,
+                "cells",
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(19, 9, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+
+            var presenterObject = new GameObject("Runtime Board Presenter");
+            BoardScenePresenter presenter =
+                presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            var cameraObject = new GameObject("Runtime Board Camera");
+            cameraObject.SetActive(false);
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 43f;
+            camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 0.1f;
+            camera.transform.SetPositionAndRotation(
+                new Vector3(50f, 50f, 50f),
+                Quaternion.Euler(60f, 0f, 0f));
+            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            SetField(framer, "targetCamera", camera);
+            SetField(framer, "boardPresenter", presenter);
+
+            // No cell carries CameraFocus, so the focus-region step must fall
+            // back to exactly the pre-feature full-lowest-level-footprint
+            // bounds: this is the explicit backward-compatibility proof.
+            Assert.That(
+                LowestBoardLevelBoundsCalculator.TryCalculate(
+                    board,
+                    out LowestBoardLevelBounds fullBounds),
+                Is.True);
+            Assert.That(
+                BoardCameraFocusRegionCalculator.TryCalculate(
+                    board,
+                    fullBounds,
+                    out _),
+                Is.False);
+            Assert.That(
+                BoardCameraFramingBounds.TryCreate(
+                    fullBounds,
+                    board.MaxCameraGridXSpan,
+                    board.MaxCameraGridYSpan,
+                    out BoardCameraFramingBounds expectedFramingBounds),
+                Is.True);
+
+            cameraObject.SetActive(true);
+            yield return null;
+
+            Assert.That(
+                BoardCameraFramingPlane.TryCreate(
+                    board,
+                    presenter.transform,
+                    edgePaddingCells,
+                    out BoardCameraFramingPlane plane),
+                Is.True);
+            Assert.That(
+                plane.Center.x,
+                Is.EqualTo(expectedFramingBounds.CenterX).Within(0.0001f));
+            Assert.That(
+                plane.Center.z,
+                Is.EqualTo(expectedFramingBounds.CenterZ).Within(0.0001f));
+
+            Assert.That(framer.TryCalculatePosition(out Vector3 expectedPosition), Is.True);
+            Assert.That(
+                Vector3.Distance(camera.transform.position, expectedPosition),
+                Is.LessThan(0.0001f));
+
+            Object.Destroy(cameraObject);
+            Object.Destroy(presenterObject);
+            Object.Destroy(board);
+            yield return null;
+        }
+
         private static void SetField<T>(Object target, string fieldName, T value)
         {
             FieldInfo field = target.GetType().GetField(

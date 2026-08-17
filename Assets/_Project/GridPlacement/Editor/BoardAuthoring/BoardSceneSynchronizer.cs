@@ -11,12 +11,16 @@ namespace TowerDefense3D.GridPlacement.Editor
         internal const string GeneratedRootName = "Board Visualization";
         internal const string PlaceableAreaName = "Placeable Area";
         internal const string BlockedAreaName = "Blocked Area";
+        internal const string CameraFocusRegionName = "Camera Focus Region";
         private const string LegacyGeneratedRootName = "__Generated Board Geometry";
         private const string GeneratedSignaturePropertyName = "generatedSignature";
         private const string GroundMaterialPath =
             "Assets/_Project/GridPlacement/Materials/Ground.mat";
         private const string BlockerMaterialPath =
             "Assets/_Project/GridPlacement/Materials/Blocker.mat";
+        private const string CameraFocusMaterialPath =
+            "Assets/_Project/GridPlacement/Materials/CameraFocusRegion.mat";
+        private const float CameraFocusOverlayLift = 0.01f;
         private const string InvalidCameraFramingWarning = "Board camera framing skipped because the synchronized Board has no valid playable footprint or Camera setup.";
         private const float SurfaceThickness = 0.05f;
 
@@ -106,6 +110,7 @@ namespace TowerDefense3D.GridPlacement.Editor
 
             Material groundMaterial = AssetDatabase.LoadAssetAtPath<Material>(GroundMaterialPath);
             Material blockerMaterial = AssetDatabase.LoadAssetAtPath<Material>(BlockerMaterialPath);
+            Material cameraFocusMaterial = AssetDatabase.LoadAssetAtPath<Material>(CameraFocusMaterialPath);
 
             for (int index = 0; index < plan.Rectangles.Count; index++)
             {
@@ -115,6 +120,11 @@ namespace TowerDefense3D.GridPlacement.Editor
                     board,
                     groundMaterial,
                     blockerMaterial);
+            }
+
+            if (plan.FocusRegion.HasValue)
+            {
+                CreateCameraFocusRegion(root, plan.FocusRegion.Value, board, cameraFocusMaterial);
             }
 
             ApplyComponentState(root, board.VisualizeInScene);
@@ -170,7 +180,8 @@ namespace TowerDefense3D.GridPlacement.Editor
                 return false;
             }
 
-            if (root.childCount != plan.Rectangles.Count)
+            int expectedChildCount = plan.Rectangles.Count + (plan.FocusRegion.HasValue ? 1 : 0);
+            if (root.childCount != expectedChildCount)
             {
                 return false;
             }
@@ -181,6 +192,17 @@ namespace TowerDefense3D.GridPlacement.Editor
                 if (child.name != GetRectangleName(plan.Rectangles[index])
                     || child.GetComponent<MeshRenderer>() == null
                     || child.GetComponent<BoxCollider>() == null)
+                {
+                    return false;
+                }
+            }
+
+            if (plan.FocusRegion.HasValue)
+            {
+                Transform focusChild = root.GetChild(plan.Rectangles.Count);
+                if (focusChild.name != CameraFocusRegionName
+                    || focusChild.GetComponent<MeshRenderer>() == null
+                    || focusChild.GetComponent<Collider>() != null)
                 {
                     return false;
                 }
@@ -262,6 +284,50 @@ namespace TowerDefense3D.GridPlacement.Editor
 
             BoxCollider collider = generated.GetComponent<BoxCollider>();
             collider.enabled = true;
+        }
+
+        private static void CreateCameraFocusRegion(
+            Transform root,
+            LowestBoardLevelBounds focusRegion,
+            BoardDefinition board,
+            Material cameraFocusMaterial)
+        {
+            int spanX = focusRegion.MaxXExclusive - focusRegion.MinX;
+            int spanZ = focusRegion.MaxZExclusive - focusRegion.MinZ;
+            if (spanX <= 0 || spanZ <= 0)
+            {
+                return;
+            }
+
+            float centerX = (focusRegion.MinX + spanX * 0.5f) * board.CellSize;
+            float centerZ = (focusRegion.MinZ + spanZ * 0.5f) * board.CellSize;
+            float overlayY = focusRegion.Level * board.HeightUnit + CameraFocusOverlayLift;
+
+            GameObject generated = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            generated.name = CameraFocusRegionName;
+            Undo.RegisterCreatedObjectUndo(generated, "Create Camera Focus Region");
+
+            // This is a pure visual indicator and must carry no collider.
+            // Unity's Quad primitive includes a MeshCollider by default; remove it.
+            Collider primitiveCollider = generated.GetComponent<Collider>();
+            if (primitiveCollider != null)
+            {
+                UnityEngine.Object.DestroyImmediate(primitiveCollider);
+            }
+
+            generated.transform.SetParent(root, false);
+            generated.transform.localPosition = new Vector3(centerX, overlayY, centerZ);
+            generated.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            generated.transform.localScale = new Vector3(
+                spanX * board.CellSize,
+                spanZ * board.CellSize,
+                1f);
+
+            MeshRenderer renderer = generated.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = cameraFocusMaterial;
+            renderer.enabled = board.VisualizeInScene;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
         }
 
         private static string GetRectangleName(BoardGeometryRectangle rectangle)

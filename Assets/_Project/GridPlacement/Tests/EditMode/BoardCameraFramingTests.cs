@@ -421,6 +421,146 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             Assert.That(result.height, Is.EqualTo(0.54f).Within(0.0001f));
         }
 
+        [Test]
+        public void Plane_FocusRegionNarrowsToUnionOfFocusFlaggedCellsWithNoCapOrPadding()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(10, 10, 1),
+                1f,
+                1f,
+                new[]
+                {
+                    Cell(0, 0, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(9, 9, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(2, 2, 0, BoardCellFlags.CameraFocus),
+                    Cell(4, 3, 0, BoardCellFlags.CameraFocus),
+                });
+            Transform origin = Track(new GameObject("Focus Only Origin")).transform;
+
+            bool createdPlane = BoardCameraFramingPlane.TryCreate(
+                board,
+                origin,
+                0f,
+                out BoardCameraFramingPlane plane);
+
+            Assert.That(createdPlane, Is.True);
+            Assert.That(
+                Vector3.Distance(plane.Corner0, new Vector3(2f, 0f, 2f)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(plane.Corner2, new Vector3(5f, 0f, 4f)),
+                Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void Plane_IgnoresCameraFocusCellsOutsideLowestLevelAndFallsBackToFullFootprint()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(10, 10, 2),
+                1f,
+                1f,
+                new[]
+                {
+                    Cell(0, 0, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(9, 9, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(4, 4, 1, BoardCellFlags.CameraFocus),
+                });
+            Transform origin = Track(new GameObject("Ignored Focus Origin")).transform;
+
+            bool createdPlane = BoardCameraFramingPlane.TryCreate(
+                board,
+                origin,
+                0f,
+                out BoardCameraFramingPlane plane);
+
+            Assert.That(createdPlane, Is.True);
+            Assert.That(
+                Vector3.Distance(plane.Corner0, new Vector3(0f, 0f, 0f)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(plane.Corner2, new Vector3(10f, 0f, 10f)),
+                Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void Plane_NoCameraFocusCellsProducesSameFramingAsPreFeatureFullFootprintWithCapAndPadding()
+        {
+            // No CameraFocus bit is set anywhere on this board, so
+            // BoardCameraFocusRegionCalculator.TryCalculate must return false and the
+            // solver must fall back to exactly the pre-feature full-footprint plus
+            // Grid X/Y cap plus edge-padding formula (backward compatibility).
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(40, 10, 1),
+                1f,
+                1f,
+                new[]
+                {
+                    Cell(0, 3, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(39, 6, 0, BoardCellFlags.SupportsPlacement),
+                },
+                maxCameraGridXSpan: 10);
+            Transform origin = Track(new GameObject("Backward Compat Origin")).transform;
+
+            bool createdPlane = BoardCameraFramingPlane.TryCreate(
+                board,
+                origin,
+                1f,
+                out BoardCameraFramingPlane plane);
+
+            Assert.That(createdPlane, Is.True);
+            Assert.That(
+                Vector3.Distance(plane.Corner0, new Vector3(14f, 0f, 2f)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(plane.Corner2, new Vector3(26f, 0f, 8f)),
+                Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void Plane_ComposesFocusRegionBeforeGridCapBeforeEdgePadding()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(20, 20, 2),
+                1f,
+                1f,
+                new[]
+                {
+                    Cell(0, 0, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(19, 19, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(5, 5, 0, BoardCellFlags.CameraFocus),
+                    Cell(10, 8, 0, BoardCellFlags.CameraFocus),
+                },
+                maxCameraGridXSpan: 4,
+                maxCameraGridYSpan: 2);
+            Transform origin = Track(new GameObject("Composition Order Origin")).transform;
+
+            bool createdPlane = BoardCameraFramingPlane.TryCreate(
+                board,
+                origin,
+                1f,
+                out BoardCameraFramingPlane plane);
+
+            Assert.That(createdPlane, Is.True);
+            // Focus union of (5,5)-(10,8) is X:[5,11) Z:[5,9); the X/Y span cap
+            // (4/2) then narrows that focus-centered region to X:[6,10) Z:[6,8);
+            // edge padding of 1 cell is applied last, giving X:[5,11] Z:[5,9].
+            // Applying the cap to the full 20x20 footprint instead (wrong order)
+            // would center on X:10/Z:10 and yield X:[7,13]/Z:[8,12], which does
+            // not match these expected corners.
+            Assert.That(
+                Vector3.Distance(plane.Corner0, new Vector3(5f, 0f, 5f)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(plane.Corner1, new Vector3(11f, 0f, 5f)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(plane.Corner2, new Vector3(11f, 0f, 9f)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(plane.Corner3, new Vector3(5f, 0f, 9f)),
+                Is.LessThan(0.0001f));
+        }
+
         private BoardDefinition CreateBoard(
             GridDimensions dimensions,
             float cellSize,

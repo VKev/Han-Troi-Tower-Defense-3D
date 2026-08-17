@@ -130,9 +130,21 @@ namespace TowerDefense3D.GridPlacement
                 || !IsFinite(edgePaddingCells) || edgePaddingCells < 0f
                 || !LowestBoardLevelBoundsCalculator.TryCalculate(
                     board,
-                    out LowestBoardLevelBounds fullBounds)
-                || !BoardCameraFramingBounds.TryCreate(
+                    out LowestBoardLevelBounds fullBounds))
+            {
+                return false;
+            }
+
+            LowestBoardLevelBounds baseBounds =
+                BoardCameraFocusRegionCalculator.TryCalculate(
+                    board,
                     fullBounds,
+                    out LowestBoardLevelBounds focusBounds)
+                    ? focusBounds
+                    : fullBounds;
+
+            if (!BoardCameraFramingBounds.TryCreate(
+                    baseBounds,
                     maxGridXSpan,
                     maxGridYSpan,
                     out BoardCameraFramingBounds framingBounds))

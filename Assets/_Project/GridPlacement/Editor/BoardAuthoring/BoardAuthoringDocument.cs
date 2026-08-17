@@ -96,6 +96,45 @@ namespace TowerDefense3D.GridPlacement.Editor
             }
         }
 
+        public void SetCameraFocus(GridCell coordinate, bool enabled)
+        {
+            BoardCellFlags current = GetFlags(coordinate);
+            BoardCellFlags updated = enabled
+                ? current | BoardCellFlags.CameraFocus
+                : current & ~BoardCellFlags.CameraFocus;
+
+            if (updated == BoardCellFlags.None)
+            {
+                cells.Remove(coordinate);
+            }
+            else
+            {
+                cells[coordinate] = updated;
+            }
+        }
+
+        public bool TryGetLowestPlayableLevel(out int level)
+        {
+            bool found = false;
+            int lowest = 0;
+            foreach (KeyValuePair<GridCell, BoardCellFlags> pair in cells)
+            {
+                if ((pair.Value & BoardCellFlags.SupportsPlacement) == 0)
+                {
+                    continue;
+                }
+
+                if (!found || pair.Key.Y < lowest)
+                {
+                    lowest = pair.Key.Y;
+                    found = true;
+                }
+            }
+
+            level = found ? lowest : 0;
+            return found;
+        }
+
         public void SetMetrics(float cellSize, float heightUnit)
         {
             CellSize = Mathf.Max(0.01f, cellSize);
@@ -182,7 +221,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             int unknownFlagCount = 0;
             const BoardCellFlags knownFlags = BoardCellFlags.SupportsPlacement
                 | BoardCellFlags.Buildable
-                | BoardCellFlags.StaticBlocker;
+                | BoardCellFlags.StaticBlocker
+                | BoardCellFlags.CameraFocus;
 
             foreach (KeyValuePair<GridCell, BoardCellFlags> pair in cells)
             {

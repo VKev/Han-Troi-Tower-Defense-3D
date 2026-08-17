@@ -297,6 +297,158 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 Is.LessThan(0.0001f));
         }
 
+        [Test]
+        public void Synchronizer_GeneratesColliderlessCameraFocusOverlayWhenFocusCellsExist()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(6, 6, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(5, 5, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(2, 2, 0),
+                        BoardCellFlags.CameraFocus),
+                    new BoardCellDefinition(
+                        new GridCell(3, 3, 0),
+                        BoardCellFlags.CameraFocus),
+                });
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);
+            Assert.That(root, Is.Not.Null);
+            Transform focusOverlay = root.Find(BoardSceneSynchronizer.CameraFocusRegionName);
+            Assert.That(focusOverlay, Is.Not.Null);
+
+            MeshRenderer renderer = focusOverlay.GetComponent<MeshRenderer>();
+            Assert.That(renderer, Is.Not.Null);
+            Assert.That(renderer.enabled, Is.True, "Overlay must follow board.VisualizeInScene.");
+            Assert.That(renderer.sharedMaterial, Is.Not.Null);
+            Assert.That(
+                focusOverlay.GetComponents<Collider>(),
+                Is.Empty,
+                "The Camera Focus Region overlay is pure visual and must carry no collider.");
+
+            // Focus union of (2,2)-(3,3) is X:[2,4) Z:[2,4); center (3,3), span 2x2.
+            Assert.That(focusOverlay.localPosition.x, Is.EqualTo(3f).Within(0.0001f));
+            Assert.That(focusOverlay.localPosition.z, Is.EqualTo(3f).Within(0.0001f));
+            Assert.That(focusOverlay.localScale.x, Is.EqualTo(2f).Within(0.0001f));
+            Assert.That(focusOverlay.localScale.y, Is.EqualTo(2f).Within(0.0001f));
+            AssertGeneratedNamesAreReadable(root);
+        }
+
+        [Test]
+        public void Synchronizer_CameraFocusOverlayFollowsVisualizeInSceneToggle()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(6, 6, 1),
+                false,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(2, 2, 0),
+                        BoardCellFlags.CameraFocus),
+                });
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);
+            Transform focusOverlay = root.Find(BoardSceneSynchronizer.CameraFocusRegionName);
+            Assert.That(focusOverlay, Is.Not.Null, "Overlay must still be generated even while hidden.");
+            Assert.That(
+                focusOverlay.GetComponent<MeshRenderer>().enabled,
+                Is.False,
+                "visualizeInScene = false must hide the overlay.");
+
+            // visualizeInScene is part of the geometry signature (matching the
+            // pre-existing behavior for the placement/blocker geometry), so
+            // toggling it triggers a full regenerate rather than an in-place
+            // ApplyComponentState reuse; re-find the overlay after resync.
+            SetField(board, "visualizeInScene", true);
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Transform focusOverlayAfterToggle = root.Find(BoardSceneSynchronizer.CameraFocusRegionName);
+            Assert.That(focusOverlayAfterToggle, Is.Not.Null);
+            Assert.That(
+                focusOverlayAfterToggle.GetComponent<MeshRenderer>().enabled,
+                Is.True,
+                "Ticking Visualize In Scene must show the overlay.");
+        }
+
+        [Test]
+        public void Synchronizer_OmitsCameraFocusOverlayWhenNoFocusCellsExist()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(4, 4, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);
+            Assert.That(root, Is.Not.Null);
+            Assert.That(root.Find(BoardSceneSynchronizer.CameraFocusRegionName), Is.Null);
+        }
+
+        [Test]
+        public void Synchronizer_RemovesCameraFocusOverlayWhenFocusCellsAreCleared()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(6, 6, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(2, 2, 0),
+                        BoardCellFlags.CameraFocus),
+                });
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+            BoardSceneSynchronizer.Synchronize(board);
+            Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);
+            Assert.That(root.Find(BoardSceneSynchronizer.CameraFocusRegionName), Is.Not.Null);
+
+            SetField(
+                board,
+                "cells",
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Assert.That(root.Find(BoardSceneSynchronizer.CameraFocusRegionName), Is.Null);
+        }
+
         private static void AssertGeneratedNamesAreReadable(Transform root)
         {
             Transform[] generated = root.GetComponentsInChildren<Transform>(true);

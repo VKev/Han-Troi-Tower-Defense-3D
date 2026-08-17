@@ -13,6 +13,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private static readonly string[] BrushSizeLabels =
             { "1 x 1", "3 x 3", "5 x 5" };
         private static readonly int[] BrushSizes = { 1, 3, 5 };
+        private static readonly Color CameraFocusAccentColor = new Color(0.15f, 0.85f, 0.95f, 1f);
 
         private BoardDefinition boardAsset;
         private BoardAuthoringDocument document;
@@ -30,6 +31,9 @@ namespace TowerDefense3D.GridPlacement.Editor
         private float visualCellSize = 32f;
         private bool strokeActive;
         private bool strokeChanged;
+        private bool strokeIsCameraFocus;
+        private bool cameraFocusBrushActive;
+        private bool cameraFocusAllowed;
         private GridCell lastPaintedCell;
         private int gridControlId;
 
@@ -205,7 +209,7 @@ namespace TowerDefense3D.GridPlacement.Editor
                 {
                     Color previous = GUI.backgroundColor;
                     GUI.backgroundColor = BoardPaintPresetUtility.GetColor(preset);
-                    bool selected = selectedPreset == preset;
+                    bool selected = !cameraFocusBrushActive && selectedPreset == preset;
                     if (GUILayout.Toggle(
                             selected,
                             BoardPaintPresetUtility.GetLabel(preset),
@@ -213,6 +217,7 @@ namespace TowerDefense3D.GridPlacement.Editor
                             GUILayout.MinWidth(96f)))
                     {
                         selectedPreset = preset;
+                        cameraFocusBrushActive = false;
                     }
 
                     GUI.backgroundColor = previous;
@@ -229,6 +234,48 @@ namespace TowerDefense3D.GridPlacement.Editor
                 "Left-click/drag paints the selected preset. Right-click/drag erases. "
                 + "The brush is centered and clipped at Board edges. Z=0 is the bottom row.",
                 EditorStyles.miniLabel);
+
+            DrawCameraFocusToggle();
+        }
+
+        private void DrawCameraFocusToggle()
+        {
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Camera Focus Brush", EditorStyles.boldLabel);
+
+            bool lowestLevelKnown = document.TryGetLowestPlayableLevel(out int lowestLevel);
+            cameraFocusAllowed = lowestLevelKnown && selectedLevel == lowestLevel;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUI.enabled = cameraFocusAllowed;
+                string tooltip = cameraFocusAllowed
+                    ? "Left-click/drag marks cells for camera focus. Right-click/drag clears them. "
+                        + "Independent of the preset brush above."
+                    : "Camera Focus can only be painted on the lowest playable level "
+                        + "(the lowest Y level containing a Supports Placement cell).";
+                bool toggled = GUILayout.Toggle(
+                    cameraFocusBrushActive,
+                    new GUIContent("Camera Focus", tooltip),
+                    "Button",
+                    GUILayout.MinWidth(120f));
+                cameraFocusBrushActive = toggled && cameraFocusAllowed;
+                GUI.enabled = true;
+            }
+
+            if (!cameraFocusAllowed)
+            {
+                EditorGUILayout.LabelField(
+                    "Disabled outside the lowest playable level.",
+                    EditorStyles.miniLabel);
+            }
+            else
+            {
+                EditorGUILayout.LabelField(
+                    "Left-click/drag marks focus cells. Right-click/drag clears them. "
+                    + "Preset flags on the same cell are preserved.",
+                    EditorStyles.miniLabel);
+            }
         }
 
         private void DrawGrid()
@@ -302,13 +349,24 @@ namespace TowerDefense3D.GridPlacement.Editor
                     EditorGUI.DrawRect(cellRect, BoardPaintPresetUtility.GetColor(preset));
                     GUI.Box(cellRect, GUIContent.none);
 
-                    if (flags != BoardPaintPresetUtility.GetFlags(preset))
+                    if ((flags & ~BoardCellFlags.CameraFocus) != BoardPaintPresetUtility.GetFlags(preset))
                     {
                         GUI.Label(cellRect, "?", EditorStyles.centeredGreyMiniLabel);
                     }
                     else if ((flags & BoardCellFlags.StaticBlocker) != 0)
                     {
                         GUI.Label(cellRect, "X", EditorStyles.whiteBoldLabel);
+                    }
+
+                    if ((flags & BoardCellFlags.CameraFocus) != 0)
+                    {
+                        const float accentSize = 6f;
+                        var accentRect = new Rect(
+                            cellRect.xMax - accentSize - 1f,
+                            cellRect.y + 1f,
+                            accentSize,
+                            accentSize);
+                        EditorGUI.DrawRect(accentRect, CameraFocusAccentColor);
                     }
 
                     if (cellRect.Contains(Event.current.mousePosition))
@@ -323,14 +381,25 @@ namespace TowerDefense3D.GridPlacement.Editor
 
         private void HandleGridInput(Rect gridRect, GridDimensions dimensions, Event current)
         {
+            bool useCameraFocusBrush = cameraFocusBrushActive && cameraFocusAllowed;
+
             if (current.type == EventType.MouseDown
                 && (current.button == 0 || current.button == 1)
                 && TryGetCell(gridRect, dimensions, current.mousePosition, out GridCell coordinate))
             {
                 strokeActive = true;
                 strokeChanged = false;
+                strokeIsCameraFocus = useCameraFocusBrush;
                 GUIUtility.hotControl = gridControlId;
-                PaintCell(coordinate, current.button == 1 ? BoardPaintPreset.Empty : selectedPreset);
+                if (useCameraFocusBrush)
+                {
+                    PaintCameraFocusCell(coordinate, current.button != 1);
+                }
+                else
+                {
+                    PaintCell(coordinate, current.button == 1 ? BoardPaintPreset.Empty : selectedPreset);
+                }
+
                 current.Use();
             }
             else if (current.type == EventType.MouseDrag
@@ -343,9 +412,16 @@ namespace TowerDefense3D.GridPlacement.Editor
                         current.mousePosition,
                         out GridCell dragCoordinate))
                 {
-                    PaintCell(
-                        dragCoordinate,
-                        current.button == 1 ? BoardPaintPreset.Empty : selectedPreset);
+                    if (strokeIsCameraFocus)
+                    {
+                        PaintCameraFocusCell(dragCoordinate, current.button != 1);
+                    }
+                    else
+                    {
+                        PaintCell(
+                            dragCoordinate,
+                            current.button == 1 ? BoardPaintPreset.Empty : selectedPreset);
+                    }
                 }
 
                 current.Use();
@@ -400,6 +476,46 @@ namespace TowerDefense3D.GridPlacement.Editor
             return changed;
         }
 
+        private void PaintCameraFocusCell(GridCell coordinate, bool enabled)
+        {
+            if (strokeChanged && coordinate == lastPaintedCell)
+            {
+                return;
+            }
+
+            lastPaintedCell = coordinate;
+            strokeChanged |= PaintCameraFocusBrush(document, coordinate, brushSize, enabled);
+            Repaint();
+        }
+
+        internal static bool PaintCameraFocusBrush(
+            BoardAuthoringDocument targetDocument,
+            GridCell center,
+            int size,
+            bool enabled)
+        {
+            GridDimensions dimensions = targetDocument.Dimensions;
+            int radius = size / 2;
+            int minX = Mathf.Max(0, center.X - radius);
+            int maxX = Mathf.Min(dimensions.Width - 1, center.X + radius);
+            int minZ = Mathf.Max(0, center.Z - radius);
+            int maxZ = Mathf.Min(dimensions.Depth - 1, center.Z + radius);
+            bool changed = false;
+
+            for (int z = minZ; z <= maxZ; z++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    var coordinate = new GridCell(x, z, center.Y);
+                    BoardCellFlags before = targetDocument.GetFlags(coordinate);
+                    targetDocument.SetCameraFocus(coordinate, enabled);
+                    changed |= before != targetDocument.GetFlags(coordinate);
+                }
+            }
+
+            return changed;
+        }
+
         private void CommitStroke()
         {
             if (!strokeActive)
@@ -409,7 +525,7 @@ namespace TowerDefense3D.GridPlacement.Editor
 
             if (strokeChanged && document != null)
             {
-                document.Commit("Paint Board Cells");
+                document.Commit(strokeIsCameraFocus ? "Toggle Camera Focus" : "Paint Board Cells");
             }
 
             strokeActive = false;
@@ -462,6 +578,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             boardAsset = board;
             document = board != null ? new BoardAuthoringDocument(board) : null;
             selectedLevel = 0;
+            cameraFocusBrushActive = false;
             scrollPosition = Vector2.zero;
             SyncPendingValues();
             Repaint();

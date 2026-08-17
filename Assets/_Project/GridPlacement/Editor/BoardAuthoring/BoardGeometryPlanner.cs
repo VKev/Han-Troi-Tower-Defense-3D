@@ -30,18 +30,32 @@ namespace TowerDefense3D.GridPlacement.Editor
                 BuildRectangles(flags, dimensions, rectangles);
             }
 
+            LowestBoardLevelBounds? focusRegion = null;
+            if (LowestBoardLevelBoundsCalculator.TryCalculate(
+                    board,
+                    out LowestBoardLevelBounds lowestLevelBounds)
+                && BoardCameraFocusRegionCalculator.TryCalculate(
+                    board,
+                    lowestLevelBounds,
+                    out LowestBoardLevelBounds focusBounds))
+            {
+                focusRegion = focusBounds;
+            }
+
             string signature = BuildSignature(
                 dimensions,
                 board.CellSize,
                 board.HeightUnit,
                 board.VisualizeInScene,
-                rectangles);
+                rectangles,
+                focusRegion);
 
             return new BoardGeometryPlan(
                 board.CellSize,
                 board.HeightUnit,
                 board.VisualizeInScene,
                 rectangles,
+                focusRegion,
                 signature);
         }
 
@@ -232,7 +246,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             float cellSize,
             float heightUnit,
             bool visualizeInScene,
-            IReadOnlyList<BoardGeometryRectangle> rectangles)
+            IReadOnlyList<BoardGeometryRectangle> rectangles,
+            LowestBoardLevelBounds? focusRegion)
         {
             var canonical = new StringBuilder();
             canonical.Append(dimensions.Width).Append('|')
@@ -240,7 +255,22 @@ namespace TowerDefense3D.GridPlacement.Editor
                 .Append(dimensions.Depth).Append('|')
                 .Append(cellSize.ToString("R", CultureInfo.InvariantCulture)).Append('|')
                 .Append(heightUnit.ToString("R", CultureInfo.InvariantCulture)).Append('|')
-                .Append(visualizeInScene ? '1' : '0');
+                .Append(visualizeInScene ? '1' : '0').Append('|');
+
+            if (focusRegion.HasValue)
+            {
+                LowestBoardLevelBounds region = focusRegion.Value;
+                canonical.Append("focus:")
+                    .Append(region.Level).Append(',')
+                    .Append(region.MinX).Append(',')
+                    .Append(region.MinZ).Append(',')
+                    .Append(region.MaxXExclusive).Append(',')
+                    .Append(region.MaxZExclusive);
+            }
+            else
+            {
+                canonical.Append("nofocus");
+            }
 
             for (int index = 0; index < rectangles.Count; index++)
             {

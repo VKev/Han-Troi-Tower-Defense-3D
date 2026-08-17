@@ -47,12 +47,14 @@ namespace TowerDefense3D.GridPlacement.Editor
             float heightUnit,
             bool visualizeInScene,
             IReadOnlyList<BoardGeometryRectangle> rectangles,
+            LowestBoardLevelBounds? focusRegion,
             string signature)
         {
             CellSize = cellSize;
             HeightUnit = heightUnit;
             VisualizeInScene = visualizeInScene;
             Rectangles = rectangles ?? throw new ArgumentNullException(nameof(rectangles));
+            FocusRegion = focusRegion;
             Signature = signature ?? throw new ArgumentNullException(nameof(signature));
         }
 
@@ -63,6 +65,13 @@ namespace TowerDefense3D.GridPlacement.Editor
         internal bool VisualizeInScene { get; }
 
         internal IReadOnlyList<BoardGeometryRectangle> Rectangles { get; }
+
+        /// <summary>
+        /// The authored Camera Focus region at the lowest playable level, when
+        /// one or more cells there carry <see cref="BoardCellFlags.CameraFocus"/>.
+        /// Null when no such cell exists, so no overlay is generated.
+        /// </summary>
+        internal LowestBoardLevelBounds? FocusRegion { get; }
 
         internal string Signature { get; }
     }

@@ -9,7 +9,8 @@ namespace TowerDefense3D.GridPlacement
         None = 0,
         SupportsPlacement = 1 << 0,
         Buildable = 1 << 1,
-        StaticBlocker = 1 << 2
+        StaticBlocker = 1 << 2,
+        CameraFocus = 1 << 3
     }
 
     /// <summary>
@@ -32,5 +33,6 @@ namespace TowerDefense3D.GridPlacement
         public bool SupportsPlacement => (flags & BoardCellFlags.SupportsPlacement) != 0;
         public bool IsBuildable => (flags & BoardCellFlags.Buildable) != 0;
         public bool IsStaticBlocker => (flags & BoardCellFlags.StaticBlocker) != 0;
+        public bool IsCameraFocus => (flags & BoardCellFlags.CameraFocus) != 0;
     }
 }
