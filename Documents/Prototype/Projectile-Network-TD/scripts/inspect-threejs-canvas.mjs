@@ -269,7 +269,8 @@ async function main() {
       } else if (state && state !== 'preparation') {
         hooks.setState?.(state);
         if (state === 'elevated-hit-demo') hooks.advance?.(16);
-        if (state === 'soul-field-damage-demo') hooks.advance?.(1.7);
+        if (state === 'skill-feedback' || state === 'soul-field-damage-demo') hooks.advance?.(0.19);
+        if (state === 'victory-travel') hooks.advance?.(1.2);
       }
       hooks.setPausedForScreenshot?.(true);
       return true;

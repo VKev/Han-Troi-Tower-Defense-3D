@@ -35,6 +35,123 @@ test('active combat state remains visually stable', async ({ page }, testInfo) =
   });
 });
 
+test('unlinked elemental tower silhouettes remain dim but readable beside the raised drought trail', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    window.__THREE_GAME_TEST_HOOKS__!.setState('element-models');
+    window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true);
+  });
+  await expect(page).toHaveScreenshot(`element-towers-trail-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.025,
+  });
+});
+
+test('broken route keeps source and terminal bright while intermediate towers dim', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    window.__THREE_GAME_TEST_HOOKS__!.setState('broken-chain-labels');
+    window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true);
+  });
+  const state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const nodes = state.nodes as Array<{ type: string; networkVisual: { state: string; reason: string } }>;
+  expect(nodes.filter(({ type }) => type === 'generator' || type === 'nexus').every(({ networkVisual }) => networkVisual.state === 'full' && networkVisual.reason === 'endpoint')).toBe(true);
+  expect(nodes.filter(({ type }) => type !== 'generator' && type !== 'nexus').every(({ networkVisual }) => networkVisual.state === 'dimmed' && networkVisual.reason === 'incomplete-route')).toBe(true);
+  await expect(page).toHaveScreenshot(`broken-route-tower-brightness-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.025,
+  });
+});
+
+test('source and Rain Drum endpoint lesson labels both network anchors without highlight clutter', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    window.__THREE_GAME_TEST_HOOKS__!.setState('intro-currency');
+    window.__THREE_GAME_TEST_HOOKS__!.setPausedForScreenshot(true);
+  });
+  const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(snapshot.tutorialObjective).toBe('link-generator-nexus');
+  expect(snapshot.tutorialEndpointLabels).toEqual([
+    expect.objectContaining({ role: 'source', label: 'ĐẦU', connected: false, color: '#fff4c9' }),
+    expect.objectContaining({ role: 'terminal', label: 'CUỐI', connected: false, color: '#fff4c9' }),
+  ]);
+  expect(snapshot.tutorialEndpointPresentation).toEqual({ rings: 0, glyphs: 0, halos: 0, sockets: 0, linkHalves: 0 });
+  expect(snapshot.tutorialChainReminder).toMatchObject({ visible: true });
+  await expect(page.locator('#tutorial-hand')).toHaveAttribute('data-mode', 'drag');
+  await expect(page).toHaveScreenshot(`tutorial-source-terminal-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.02,
+  });
+});
+
+test('completed chain LED notification remains visually stable', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.setState('chain-complete-notice');
+    hooks.advance(0.42);
+    hooks.setPausedForScreenshot(true);
+  });
+  const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(snapshot.chainCompletionNotice).toMatchObject({
+    active: true, passesTotal: 2, currentPass: 1, brightSegmentCount: 0, beamOverlayCount: 0,
+  });
+  expect(snapshot.tutorialEndpointLabels).toEqual([
+    expect.objectContaining({ role: 'source', connected: true, color: '#65f7a4' }),
+    expect.objectContaining({ role: 'terminal', connected: true, color: '#65f7a4' }),
+  ]);
+  await expect(page).toHaveScreenshot(`chain-complete-notice-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.025,
+  });
+});
+
+test('Cóc Bắt Mồi solid tongue model, rounded tip, and subtle impact remain visually stable', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.setState('skill-feedback');
+    hooks.setPausedForScreenshot(true);
+    hooks.advance(0.19);
+  });
+  await expect(page).toHaveScreenshot(`frog-tongue-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.035,
+  });
+});
+
+test('text-free frog skill tutorial shows the drag origin and both target previews', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.setState('mastery-ready');
+    hooks.setPausedForScreenshot(true);
+    hooks.startWave();
+    hooks.advance(0.6);
+  });
+  const button = await page.locator('#soul-skill').boundingBox();
+  const target = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.getSoulSkillTargetClientPoint());
+  if (!button || !target) throw new Error('Missing Cóc Bắt Mồi preview endpoints');
+  await expect(page.locator('#tutorial-hand')).toBeVisible();
+  await expect(page.locator('#tutorial-hand')).toHaveAttribute('data-mode', 'drag');
+  await page.mouse.move(button.x + button.width / 2, button.y + button.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(target.x, target.y, { steps: 8 });
+  await expect(page).toHaveScreenshot(`frog-tongue-preview-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.035,
+  });
+  await page.mouse.up();
+});
+
+test('frog victory hop remains visually stable before the level fade', async ({ page }, testInfo) => {
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.setState('victory-travel');
+    hooks.setPausedForScreenshot(false);
+    hooks.advance(1.2);
+    hooks.setPausedForScreenshot(true);
+  });
+  await expect(page).toHaveScreenshot(`frog-victory-hop-${testInfo.project.name}.png`, {
+    animations: 'disabled',
+    maxDiffPixelRatio: 0.025,
+  });
+});
+
 test('first elemental reaction explanation remains visually stable', async ({ page }, testInfo) => {
   await page.evaluate(() => {
     window.__THREE_GAME_TEST_HOOKS__!.setState('tutorial-reaction');
@@ -66,7 +183,7 @@ test('unrestricted logical grid and footprint remain visually stable while dragg
   const card = page.locator('.build-card[data-type="nexus"]');
   await card.scrollIntoViewIfNeeded();
   const box = await card.boundingBox();
-  if (!box) throw new Error('Missing Tỏa Hồn build card');
+  if (!box) throw new Error('Missing Trống Gọi Mưa build card');
   const target = await page.evaluate(() => {
     const hooks = window.__THREE_GAME_TEST_HOOKS__!; const id = hooks.getGridCellIdAt(-7, 0);
     return id === null ? null : hooks.getSlotClientPoint(id);

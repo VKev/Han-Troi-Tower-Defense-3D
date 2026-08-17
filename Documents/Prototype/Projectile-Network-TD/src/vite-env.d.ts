@@ -6,11 +6,13 @@ interface ThreeGameTestHooks {
   seed(seed: number): void;
   setReducedMotion(enabled: boolean): void;
   setPausedForScreenshot(paused: boolean): void;
-  setState(name: 'mastery-ready' | 'mastery-two-leaks' | 'mastery-fail' | 'mastery-baseline-final' | 'mastery-expanded-final' | 'tutorial-reaction' | 'intro-currency' | 'intro-nexus' | 'elevated-hit-demo' | 'stage-two-wave-three' | 'stage-two-wave-four' | 'stage-two-wave-five' | 'skill-feedback' | 'soul-field-damage-demo'): void;
+  setState(name: 'mastery-ready' | 'mastery-two-leaks' | 'mastery-fail' | 'mastery-baseline-final' | 'mastery-expanded-final' | 'tutorial-reaction' | 'intro-currency' | 'intro-nexus' | 'stage-two-wave-three' | 'stage-two-wave-four' | 'skill-feedback' | 'soul-field-damage-demo' | 'element-models' | 'victory-travel' | 'victory-transition' | 'dual-terminal-network' | 'reaction-cooldown' | 'chain-complete-notice' | 'broken-chain-labels'): void;
   autoBuildMinimumChain(): void;
   startWave(): void;
   dismissReactionTutorial(): void;
+  procTestReaction(reaction: 'hellfire' | 'deepFreeze' | 'tempest' | 'shatter' | 'firestorm' | 'sandstorm' | 'permafrost' | 'steamBurst'): void;
   setSoul(value: number): void;
+  creditRainChargeHits(hitCount: number): void;
   setElementStatusDemo(element: 'fire' | 'ice' | 'wind' | 'earth'): void;
   setLinkDragPointerWorld(sourceType: string, x: number, z: number): void;
   advance(seconds: number): void;

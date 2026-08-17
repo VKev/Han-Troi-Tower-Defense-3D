@@ -68,6 +68,8 @@ Assets/_Project/<FeatureName>/
 - Write the subject in Vietnamese and capitalize only its first letter. Do not use Title Case.
 - Keep established technical keywords, feature names, API names, and product terminology in English when translating them would reduce clarity.
 - Keep the subject concise, imperative, and without a trailing period.
+- Keep the commit message a single-line subject; do not add a body or bullet list.
+- Do not append a `Co-Authored-By` trailer or any other AI-attribution line. The commit author is the project owner's configured Git identity.
 
 Examples:
 

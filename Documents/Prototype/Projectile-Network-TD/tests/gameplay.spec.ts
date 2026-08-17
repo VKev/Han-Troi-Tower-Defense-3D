@@ -6,37 +6,68 @@ async function boot(page: Page, path = '/'): Promise<void> {
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setReducedMotion(true));
 }
 
-test('Level 2 and Level 3 mirror Link pressure curves and introduce flying enemies from wave 3', async ({ page }) => {
-  for (const [level, expectedWaves, expectedPlatforms, expectedGold] of [[2, 6, 2, 220], [3, 10, 4, 220]] as const) {
+test('Level 2 and Level 3 preserve Link pressure curves on ground-only drought battlefields', async ({ page }) => {
+  for (const [level, expectedWaves, expectedGold, expectedHealth, expectedRainCharge] of [
+    [2, 6, 220, [1.8, 2.4, 3.5, 5, 7.5, 10.5], 0.5],
+    [3, 10, 220, [2, 2.8, 4, 5.8, 8, 11, 14.5, 19, 24.5, 31], 0.35],
+  ] as const) {
     await boot(page, `/?level=${level}`);
     const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
-    expect(snapshot).toMatchObject({ stageIndex: level - 1, waveCount: expectedWaves, highGroundPlatformCount: expectedPlatforms });
+    expect(snapshot).toMatchObject({ theme: 'coc-kien-troi-drought', stageIndex: level - 1, waveCount: expectedWaves, highGroundPlatformCount: 0 });
     expect((snapshot.balance as { startingGold: number }).startingGold).toBe(expectedGold);
-    const layerOne = snapshot.waveLayerOneEnemyCounts as number[];
-    expect(layerOne.slice(0, 2)).toEqual([0, 0]);
-    expect(layerOne[2]).toBeGreaterThan(0);
-    expect((snapshot.highGroundSlots as unknown[]).length).toBeGreaterThanOrEqual(level === 2 ? 16 : 50);
+    expect(snapshot.waveLayerOneEnemyCounts).toEqual(Array(expectedWaves).fill(0));
+    expect(snapshot.waveHealthMultipliers).toEqual(expectedHealth);
+    expect((snapshot.balance as { rainChargeMultiplier: number }).rainChargeMultiplier).toBe(expectedRainCharge);
+    const chargedSoul = await page.evaluate(() => {
+      const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+      hooks.setSoul(0);
+      hooks.creditRainChargeHits(10);
+      return hooks.snapshot().soul;
+    });
+    expect(chargedSoul).toBeCloseTo(10 * expectedRainCharge, 5);
+    expect(snapshot.highGroundSlots).toEqual([]);
     await expect(page.locator(`#stage-select [data-stage="${level - 1}"]`)).toHaveAttribute('aria-current', 'page');
   }
 });
 
-test('paired high-ground networks physically hit the flying lane on Level 2 and Level 3', async ({ page }) => {
+test('former air archetypes remain full-detail ground threats on Level 2 and Level 3', async ({ page }) => {
   for (const level of [2, 3]) {
     await boot(page, `/?level=${level}`);
-    await page.evaluate(() => {
-      const hooks = window.__THREE_GAME_TEST_HOOKS__!;
-      hooks.setState('elevated-hit-demo');
-      hooks.advance(16);
-    });
     const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
-    expect(snapshot.layerOneEnemyHits as number).toBeGreaterThan(0);
-    const nodes = snapshot.nodes as Array<{ position: number[]; active: boolean }>;
-    expect(nodes).toHaveLength(4);
-    expect(nodes.every((node) => node.position[1] > 3 && node.active)).toBe(true);
+    const enemies = (snapshot.balance as { enemies: Record<string, { layer: number }> }).enemies;
+    expect(enemies.wisp.layer).toBe(0);
+    expect(enemies.skyWarder.layer).toBe(0);
+    expect(snapshot.highGroundPlatformCount).toBe(0);
   }
 });
 
-test('Dồn Dập and Trọng Hồn explain cadence and damage in the upgrade UI', async ({ page }, testInfo) => {
+test('enemy trails have no spawn-direction arrow on any campaign level', async ({ page }) => {
+  for (const level of [1, 2, 3]) {
+    await boot(page, `/?level=${level}`);
+    const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+    expect(snapshot.pathVisual).toMatchObject({
+      layers: ['shoulder', 'raised-edge', 'textured-surface'],
+      spawnDirectionMarkerCount: 0,
+    });
+  }
+});
+
+test('completed links use one translucent white style outside the endpoint tutorial', async ({ page }) => {
+  for (const level of [2, 3]) {
+    await boot(page, `/?level=${level}`);
+    await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.autoBuildMinimumChain());
+    const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+    expect(snapshot.completedLinkStyle).toEqual({ color: '#ffffff', opacityActive: 0.42, opacityInactive: 0.18 });
+    expect(snapshot.tutorialEndpointLinkHighlights).toEqual([]);
+    expect(snapshot.completedLinkVisuals as Array<{ color: string; opacity: number; transparent: boolean }>).toEqual([
+      expect.objectContaining({ color: '#ffffff', opacity: 0.42, transparent: true }),
+      expect.objectContaining({ color: '#ffffff', opacity: 0.42, transparent: true }),
+      expect.objectContaining({ color: '#ffffff', opacity: 0.42, transparent: true }),
+    ]);
+  }
+});
+
+test('Dồn Dập and Trọng Đạn explain cadence and damage in the upgrade UI', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'The branch copy is renderer-independent.');
   await boot(page);
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.autoBuildMinimumChain());
@@ -45,21 +76,56 @@ test('Dồn Dập and Trọng Hồn explain cadence and damage in the upgrade UI
   await expect(page.locator('#branch-a')).toContainText('Dồn Dập');
   await expect(page.locator('#branch-a')).toContainText('0,68 giây');
   await expect(page.locator('#branch-a')).toContainText('12 sát thương');
-  await expect(page.locator('#branch-b')).toContainText('Trọng Hồn');
+  await expect(page.locator('#branch-b')).toContainText('Trọng Đạn');
   await expect(page.locator('#branch-b')).toContainText('1,35 giây');
   await expect(page.locator('#branch-b')).toContainText('26 sát thương');
 });
 
-test('Soul Field deals repeated AOE ticks with layered impact and floating damage feedback', async ({ page }) => {
+test('Trống Gọi Mưa offers the approved Quét Rộng and Đớp Mạnh frog-skill branches', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'The branch copy is renderer-independent.');
   await boot(page);
-  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('skill-feedback'));
-  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(2.1));
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.autoBuildMinimumChain());
+  const nexus = await nodePoint(page, 'nexus');
+  await page.mouse.click(nexus.x, nexus.y);
+  await expect(page.locator('#branch-a')).toContainText('Quét Rộng');
+  await expect(page.locator('#branch-a')).toContainText('3,1');
+  await expect(page.locator('#branch-b')).toContainText('Đớp Mạnh');
+  await expect(page.locator('#branch-b')).toContainText('2,5');
   const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
-  expect(snapshot).toMatchObject({ soulCasts: 1, activeSoulFields: 1 });
-  expect(snapshot.soulFieldDamageTicks as number).toBeGreaterThanOrEqual(2);
-  expect(snapshot.soulFieldDamageEvents as number).toBeGreaterThanOrEqual(6);
+  expect(snapshot.tongueSkill).toMatchObject({ branch: 'base', radius: 2.7, flatDamage: 220, maxHpRatio: 0.18, maxHpCap: 500 });
+});
+
+test('Cóc Bắt Mồi deals one non-stacking impact, lighter corridor damage, and captures impact kills', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.setState('skill-feedback');
+    hooks.setPausedForScreenshot(true);
+  });
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(0.08));
+  const extending = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const extension = extending.tongueSkill as { phase: string; origin: number[]; visualLength: number; targetDistance: number };
+  expect(extension.phase).toBe('outbound');
+  expect(extension.visualLength).toBeGreaterThan(0.5);
+  expect(extension.visualLength).toBeLessThan(extension.targetDistance);
+  expect(extension.origin).toEqual((extending.fixedNexus as { mouthPosition: number[] }).mouthPosition);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(0.11));
+  const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(snapshot).toMatchObject({ soulCasts: 1 });
+  expect(snapshot.tongueSkill).toMatchObject({
+    active: true, phase: 'impact', radius: 2.7, corridorDamageRatio: 0.2,
+    impactHits: 3, corridorHits: 1, capturedKills: 3, carrying: 3,
+    presentation: {
+      modelType: 'solid-3d-tapered', bodyGeometry: 'tapered-cylinder', bodyMaterial: 'MeshStandardMaterial',
+      rootRadius: 0.2, bodyTipRadius: 0.34, tipGeometry: 'SphereGeometry', tipRadius: 0.68,
+      tipHighlight: true, capturedEnemyScale: 0.62, usesGlow: false, glowMeshCount: 0,
+      impactDiscOpacity: 0.06, dirtParticleCount: 14, activeDirtParticles: 14,
+    },
+  });
   expect(snapshot.activeVfxCount as number).toBeGreaterThanOrEqual(4);
-  expect(snapshot.enemyCount as number).toBe(3);
+  expect(snapshot.enemyCount as number).toBe(1);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(0.5));
+  expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).tongueSkill).toMatchObject({ active: false, carrying: 0 });
   await expect(page.locator('#game-canvas')).toBeVisible();
 });
 
@@ -85,7 +151,6 @@ async function gridCellId(page: Page, x: number, z: number, tier: 'low' | 'high'
 }
 
 async function dragLink(page: Page, source: { x: number; y: number }, target: { x: number; y: number }): Promise<void> {
-  await page.mouse.click(source.x, source.y);
   await page.mouse.move(source.x, source.y);
   await page.mouse.down();
   await page.mouse.move(target.x, target.y, { steps: 8 });
@@ -121,13 +186,41 @@ test('desktop tutorial alternates unrestricted placement, linking, and immediate
   const generatorSlot = await gridCellId(page, -5, -4);
   await dragBuild(page, 'nexus', nexusSlot);
   await dragBuild(page, 'generator', generatorSlot);
-  expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).tutorialObjective).toBe('link-generator-nexus');
+  const endpointLesson = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(endpointLesson.tutorialObjective).toBe('link-generator-nexus');
+  expect(endpointLesson.tutorialEndpointLabels).toEqual([
+    expect.objectContaining({ name: 'tutorialSourceLabelMarker', role: 'source', label: 'ĐẦU', connected: false, color: '#fff4c9' }),
+    expect.objectContaining({ name: 'tutorialTerminalLabelMarker', role: 'terminal', label: 'CUỐI', connected: false, color: '#fff4c9' }),
+  ]);
+  expect(endpointLesson.tutorialEndpointPresentation).toEqual({ rings: 0, glyphs: 0, halos: 0, sockets: 0, linkHalves: 0 });
+  expect(endpointLesson.tutorialEndpointBuildLabels).toEqual([
+    { type: 'generator', text: 'Lò Đạn (ĐẦU)' },
+    { type: 'nexus', text: 'Trống Mưa (CUỐI)' },
+  ]);
+  expect(endpointLesson.tutorialChainReminder).toMatchObject({ visible: true });
+  await expect(page.locator('#tutorial-chain-reminder')).toBeVisible();
   await dragLink(page, await nodePoint(page, 'generator'), await nodePoint(page, 'nexus'));
+  const directLink = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(directLink.tutorialEndpointLabels).toHaveLength(2);
+  expect(directLink.tutorialEndpointLabels).toEqual([
+    expect.objectContaining({ role: 'source', connected: true, color: '#65f7a4' }),
+    expect.objectContaining({ role: 'terminal', connected: true, color: '#65f7a4' }),
+  ]);
+  expect(directLink.completedLinkStyle).toEqual({ color: '#ffffff', opacityActive: 0.42, opacityInactive: 0.18 });
+  expect(directLink.completedLinkVisuals).toEqual([
+    expect.objectContaining({ color: '#ffffff', opacity: 0.42, transparent: true, visible: true }),
+  ]);
+  expect(directLink.tutorialEndpointLinkHighlights).toEqual([]);
+  expect(directLink.tutorialChainReminder).toMatchObject({ visible: false });
+  expect(directLink.chainCompletionNotice).toMatchObject({
+    active: true, passesTotal: 2, currentPass: 1, brightSegmentCount: 0, beamOverlayCount: 0,
+  });
   await expect(page.locator('#start-wave')).toBeEnabled();
   await page.locator('#start-wave').click();
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(90));
   let state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
   expect(state).toMatchObject({ phase: 'preparation', waveIndex: 1, tutorialObjective: 'place-fire' });
+  expect(state.tutorialEndpointLabels).toHaveLength(2);
 
   await dragBuild(page, 'fire', await gridCellId(page, -5, 0));
   await dragLink(page, await nodePoint(page, 'generator'), await nodePoint(page, 'fire'));
@@ -136,10 +229,23 @@ test('desktop tutorial alternates unrestricted placement, linking, and immediate
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(120));
   state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
   expect(state).toMatchObject({ phase: 'preparation', waveIndex: 2, tutorialObjective: 'place-ice' });
+  expect(state.tutorialEndpointLabels).toHaveLength(2);
 
   await dragBuild(page, 'ice', await gridCellId(page, -5, -6));
   await dragLink(page, await nodePoint(page, 'fire'), await nodePoint(page, 'ice'));
   await dragLink(page, await nodePoint(page, 'ice'), await nodePoint(page, 'nexus'));
+  const chainedLink = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const chainedNodes = chainedLink.nodes as Array<{ id: number; type: string }>;
+  expect(chainedLink.tutorialEndpointLinkHighlights).toEqual([]);
+  expect(chainedLink.chainCompletionNotice).toMatchObject({
+    active: true, passesTotal: 2, brightSegmentCount: 0, beamOverlayCount: 0,
+    routeNodeIds: ['generator', 'fire', 'ice', 'nexus'].map((type) => chainedNodes.find((node) => node.type === type)!.id),
+  });
+  expect((chainedLink.completedLinkVisuals as Array<{ color: string; transparent: boolean }>)).toEqual([
+    expect.objectContaining({ color: '#ffffff', transparent: true }),
+    expect.objectContaining({ color: '#ffffff', transparent: true }),
+    expect.objectContaining({ color: '#ffffff', transparent: true }),
+  ]);
   await page.locator('#start-wave').click();
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(30));
   state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
@@ -151,8 +257,197 @@ test('desktop tutorial alternates unrestricted placement, linking, and immediate
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(120));
   const mastery = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
   expect(mastery).toMatchObject({ phase: 'preparation', waveIndex: 3, gold: 340, baseHp: 3, masteryCheckpointCaptured: true });
+  expect(mastery.tutorialEndpointLabels).toEqual([
+    expect.objectContaining({ role: 'source', label: 'ĐẦU', connected: true, color: '#65f7a4' }),
+    expect.objectContaining({ role: 'terminal', label: 'CUỐI', connected: true, color: '#65f7a4' }),
+  ]);
   expect((state.nodes as Array<{ type: string; slotId: number }>).find((node) => node.type === 'nexus')?.slotId).toBe(nexusSlot);
   expect(errors).toEqual([]);
+});
+
+test('source and terminal labels persist into mastery on desktop and mobile', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('mastery-ready'));
+  const state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state).toMatchObject({ stageIndex: 0, tutorialMasteryPhase: true });
+  expect(state.tutorialEndpointLabels).toEqual([
+    expect.objectContaining({ role: 'source', label: 'ĐẦU', connected: true, color: '#65f7a4' }),
+    expect.objectContaining({ role: 'terminal', label: 'CUỐI', connected: true, color: '#65f7a4' }),
+  ]);
+  expect(state.tutorialEndpointPresentation).toEqual({ rings: 0, glyphs: 0, halos: 0, sockets: 0, linkHalves: 0 });
+  expect(state.completedLinkStyle).toEqual({ color: '#ffffff', opacityActive: 0.42, opacityInactive: 0.18 });
+  expect(state.tutorialEndpointLinkHighlights).toEqual([]);
+});
+
+test('intermediate towers are dim until they belong to a complete source-to-terminal route', async ({ page }) => {
+  await boot(page);
+  const presentation = (node: { networkVisual: unknown }) => node.networkVisual as {
+    state: string; reason: string; materialCount: number;
+    colorRatio: number; emissiveRatio: number; emissiveIntensityRatio: number;
+  };
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('element-models'));
+  let state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const looseElements = state.nodes as Array<{ type: string; active: boolean; networkVisual: unknown }>;
+  expect((state.balance as { networkTowerPresentation: unknown }).networkTowerPresentation).toEqual({
+    dimColorMultiplier: 0.32,
+    dimEmissiveMultiplier: 0.08,
+    dimEmissiveIntensityMultiplier: 0.12,
+  });
+  expect(looseElements.map(({ type }) => type).sort()).toEqual(['earth', 'fire', 'ice', 'wind']);
+  for (const node of looseElements) {
+    expect(node.active).toBe(false);
+    const visual = presentation(node);
+    expect(visual).toMatchObject({ state: 'dimmed', reason: 'incomplete-route' });
+    expect(visual.materialCount).toBeGreaterThan(0);
+    expect(visual.colorRatio).toBeCloseTo(0.32, 5);
+    expect(visual.emissiveRatio).toBeCloseTo(0.08, 5);
+    expect(visual.emissiveIntensityRatio).toBeCloseTo(0.12, 5);
+  }
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('mastery-ready'));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const completeRoute = state.nodes as Array<{ type: string; active: boolean; networkVisual: unknown }>;
+  for (const node of completeRoute) {
+    const visual = presentation(node);
+    expect(visual.state).toBe('full');
+    expect(visual.reason).toBe(node.type === 'generator' || node.type === 'nexus' ? 'endpoint' : 'complete-route');
+    expect(visual.colorRatio).toBeCloseTo(1, 5);
+    expect(visual.emissiveRatio).toBeCloseTo(1, 5);
+    expect(visual.emissiveIntensityRatio).toBeCloseTo(1, 5);
+  }
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('broken-chain-labels'));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const brokenRoute = state.nodes as Array<{ type: string; active: boolean; networkVisual: unknown }>;
+  for (const node of brokenRoute) {
+    const visual = presentation(node);
+    if (node.type === 'generator' || node.type === 'nexus') {
+      expect(visual).toMatchObject({ state: 'full', reason: 'endpoint' });
+      expect(visual.colorRatio).toBeCloseTo(1, 5);
+    } else {
+      expect(node.active).toBe(false);
+      expect(visual).toMatchObject({ state: 'dimmed', reason: 'incomplete-route' });
+      expect(visual.colorRatio).toBeCloseTo(0.32, 5);
+    }
+  }
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('dual-terminal-network'));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const dualRoute = state.nodes as Array<{ networkVisual: unknown }>;
+  expect(dualRoute).toHaveLength(5);
+  expect(dualRoute.every((node) => presentation(node).state === 'full')).toBe(true);
+});
+
+test('a newly completed chain announces itself with exactly two LED passes then restores normal link visibility', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('chain-complete-notice'));
+  let state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state.chainCompletionNotice).toMatchObject({
+    active: true, passesTotal: 2, currentPass: 1, brightSegmentCount: 0, beamOverlayCount: 0,
+  });
+  expect((state.chainCompletionNotice as { activeLedCount: number }).activeLedCount).toBeGreaterThan(0);
+
+  const emptyPoint = await point(page, 'getSlotClientPoint', await gridCellId(page, 5, -6));
+  await page.mouse.click(emptyPoint.x, emptyPoint.y);
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state.chainCompletionNotice).toMatchObject({ active: true, beamOverlayCount: 0 });
+  expect(state.visibleCompletedLinks).toEqual([]);
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(1.55));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state.chainCompletionNotice).toMatchObject({ active: true, passesTotal: 2, currentPass: 2, completedPasses: 1 });
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.advance(1.5));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state.chainCompletionNotice).toMatchObject({ active: false, passesTotal: 2, ledCount: 0, brightSegmentCount: 0 });
+  expect((state.completedLinkVisuals as Array<{ visible: boolean }>).every((link) => !link.visible)).toBe(true);
+});
+
+test('endpoint labels are green only while the full directed chain remains valid', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('chain-complete-notice'));
+  let labels = (await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).tutorialEndpointLabels as Array<{
+    connected: boolean; color: string;
+  }>;
+  expect(labels).toHaveLength(2);
+  expect(labels.every((label) => label.connected && label.color === '#65f7a4')).toBe(true);
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('broken-chain-labels'));
+  const broken = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  labels = broken.tutorialEndpointLabels as Array<{ connected: boolean; color: string }>;
+  expect(broken.activeChains).toBe(0);
+  expect(labels).toHaveLength(2);
+  expect(labels.every((label) => !label.connected && label.color === '#fff4c9')).toBe(true);
+});
+
+test('endpoint labels pulse once whenever full-route validity changes', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => {
+    window.__THREE_GAME_TEST_HOOKS__!.setReducedMotion(false);
+    window.__THREE_GAME_TEST_HOOKS__!.setState('chain-complete-notice');
+  });
+  await expect.poll(async () => {
+    const pulse = (await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).tutorialEndpointPulse as {
+      active: boolean; currentScale: number; direction: string; transitions: number;
+    };
+    return pulse.active && pulse.direction === 'connected' && pulse.transitions === 1 && pulse.currentScale > 1.12;
+  }).toBe(true);
+  await expect.poll(async () => {
+    const pulse = (await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).tutorialEndpointPulse as {
+      active: boolean; currentScale: number;
+    };
+    return !pulse.active && Math.abs(pulse.currentScale - 1) < 0.001;
+  }).toBe(true);
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('broken-chain-labels'));
+  await expect.poll(async () => {
+    const pulse = (await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).tutorialEndpointPulse as {
+      active: boolean; currentScale: number; direction: string; transitions: number;
+    };
+    return pulse.active && pulse.direction === 'disconnected' && pulse.transitions === 2 && pulse.currentScale > 1.12;
+  }).toBe(true);
+  await expect.poll(async () => {
+    const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+    const labels = snapshot.tutorialEndpointLabels as Array<{ scale: number }>;
+    const pulse = snapshot.tutorialEndpointPulse as { active: boolean };
+    return !pulse.active && labels.length === 2 && labels.every((label) => Math.abs(label.scale - 1) < 0.001);
+  }).toBe(true);
+});
+
+test('Wind cannot stall enemies and repeated reactions respect a per-enemy cooldown', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setElementStatusDemo('wind'));
+  let state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect((state.activeEnemies as Array<{ progress: number; windTime: number }>)[0]).toMatchObject({ progress: 4, windTime: 1.8 });
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('reaction-cooldown'));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state).toMatchObject({ reactionProcs: 2, blockedReactionProcs: 1 });
+  expect(state.reactionBalance).toMatchObject({
+    repeatCooldown: 2.25,
+    baseWindProgressRewind: 0,
+    tempestProgressRewind: { regular: 0.8, boss: 0.35 },
+  });
+  let cooldowns = (state.reactionBalance as { activeEnemyCooldowns: Array<{ cooldowns: Record<string, number> }> }).activeEnemyCooldowns[0].cooldowns;
+  expect(cooldowns.tempest).toBeGreaterThan(2);
+  expect(cooldowns.tempest).toBeLessThanOrEqual(2.25);
+  expect(cooldowns.shatter).toBeGreaterThan(2);
+  expect(cooldowns.shatter).toBeLessThanOrEqual(2.25);
+
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.procTestReaction('tempest'));
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state).toMatchObject({ reactionProcs: 2, blockedReactionProcs: 2 });
+
+  await page.evaluate(() => {
+    window.__THREE_GAME_TEST_HOOKS__!.advance(2.3);
+    window.__THREE_GAME_TEST_HOOKS__!.procTestReaction('tempest');
+  });
+  state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state).toMatchObject({ reactionProcs: 3, blockedReactionProcs: 2 });
+  cooldowns = (state.reactionBalance as { activeEnemyCooldowns: Array<{ cooldowns: Record<string, number> }> }).activeEnemyCooldowns[0].cooldowns;
+  expect(cooldowns.tempest).toBeGreaterThan(2);
+  expect(cooldowns.tempest).toBeLessThanOrEqual(2.25);
 });
 
 test('active links deal real segment damage and trigger a terminal reaction', async ({ page }) => {
@@ -170,6 +465,25 @@ test('active links deal real segment damage and trigger a terminal reaction', as
   expect(snapshot.reactionProcs as number).toBeGreaterThan(0);
   expect(snapshot.killedEnemies as number).toBeGreaterThan(0);
   expect((snapshot.camera as { orbitEnabled: boolean }).orbitEnabled).toBe(true);
+});
+
+test('two independent generator routes both transport into the two-input Rain Drum', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('dual-terminal-network'));
+  let snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(snapshot.activeChains).toBe(2);
+  const nodesBefore = snapshot.nodes as Array<{ type: string; active: boolean; nexusInputs: number[] }>;
+  expect(nodesBefore.filter(({ type, active }) => type === 'generator' && active)).toHaveLength(2);
+  expect(nodesBefore.find(({ type }) => type === 'nexus')?.nexusInputs).toHaveLength(2);
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.startWave();
+    hooks.advance(2.5);
+  });
+  snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const generators = (snapshot.nodes as Array<{ type: string; launches: number }>).filter(({ type }) => type === 'generator');
+  expect(generators).toHaveLength(2);
+  expect(generators.every(({ launches }) => launches > 0)).toBe(true);
 });
 
 test('unlinked tutorial source cannot start the first practice wave', async ({ page }, testInfo) => {
@@ -203,10 +517,7 @@ test('mobile touch places on unrestricted cells, links, and starts practice imme
     await touchDrag({ x: box.x + box.width * 0.7, y: box.y + box.height * 0.45 }, await point(page, 'getSlotClientPoint', slotId));
   }
 
-  const touchLink = async (source: { x: number; y: number }, target: { x: number; y: number }) => {
-    await page.touchscreen.tap(source.x, source.y);
-    await touchDrag(source, target);
-  };
+  const touchLink = async (source: { x: number; y: number }, target: { x: number; y: number }) => touchDrag(source, target);
   await touchLink(await nodePoint(page, 'generator'), await nodePoint(page, 'nexus'));
   await expect(page.locator('body')).not.toHaveClass(/is-link-dragging/);
   await expect(page.locator('#start-wave')).toBeEnabled();
@@ -227,8 +538,8 @@ test('drag-link renders a live high-contrast guide on desktop and mobile', async
 
   if (testInfo.project.name.includes('mobile')) {
     const client = await page.context().newCDPSession(page);
-    await page.touchscreen.tap(source.x, source.y);
     await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...source, id: 1 }] });
+    expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).linkDrag).toMatchObject({ active: true });
     for (let step = 1; step <= 8; step += 1) {
       await client.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
@@ -242,11 +553,11 @@ test('drag-link renders a live high-contrast guide on desktop and mobile', async
     await expect(page.locator('#game-canvas')).toHaveClass(/link-target-valid/);
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   } else {
-    await page.mouse.click(source.x, source.y);
-    expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).selectedNodeId).not.toBeNull();
     await page.mouse.move(source.x, source.y);
     await page.mouse.down();
-    expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).linkDrag).toMatchObject({ active: true });
+    const started = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+    expect(started.linkDrag).toMatchObject({ active: true });
+    expect(started.selectedNodeId).toBe((started.linkDrag as { sourceId: number }).sourceId);
     await page.mouse.move(target.x, target.y, { steps: 8 });
     await expect(page.locator('body')).toHaveClass(/is-link-dragging/);
     const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
@@ -342,7 +653,17 @@ test('first-reaction icon and modal match Link feedback', async ({ page }) => {
   await expect(page.locator('#reaction-tutorial-title')).not.toBeEmpty();
   await page.locator('#reaction-tutorial-continue').click();
   await expect(page.locator('#reaction-tutorial-overlay')).toBeHidden();
-  expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).phase).toBe('wave');
+  // The repositioned Ice route can defeat the final enemy before the delayed lesson opens;
+  // dismissing the lesson then correctly completes the already-cleared wave.
+  expect((await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).phase).toBe('preparation');
+  await page.evaluate(() => {
+    const hooks = window.__THREE_GAME_TEST_HOOKS__!;
+    hooks.setState('tutorial-reaction'); hooks.startWave(); hooks.advance(30);
+  });
+  const replay = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(replay.reactionProcs as number).toBeGreaterThan(0);
+  expect(replay.reactionTutorialPopupVisible).toBe(false);
+  await expect(page.locator('#reaction-tutorial-overlay')).toBeHidden();
 });
 
 test('enemy elemental tint and icon are visible on desktop and mobile', async ({ page }) => {
@@ -353,7 +674,7 @@ test('enemy elemental tint and icon are visible on desktop and mobile', async ({
   await expect(page.locator('#game-canvas')).toBeVisible();
 });
 
-test('completed link lines are visible only for the selected network', async ({ page }, testInfo) => {
+test('completed links appear only for the selected network after the completion notice ends', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Network visibility is renderer-shared; mobile link-drag coverage runs separately.');
   await boot(page);
   await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.autoBuildMinimumChain());
@@ -366,7 +687,7 @@ test('completed link lines are visible only for the selected network', async ({ 
   await dragBuild(page, 'earth', isolatedSlot);
   snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
   expect((snapshot.nodes as Array<{ id: number; type: string; slotId: number }>).find((node) => node.type === 'earth' && node.slotId === isolatedSlot)?.id).toBe(snapshot.selectedNodeId);
-  expect(snapshot.visibleCompletedLinks).toHaveLength(0);
+  expect(snapshot.visibleCompletedLinks).toEqual([]);
 
   await page.mouse.click((await nodePoint(page, 'generator')).x, (await nodePoint(page, 'generator')).y);
   snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
@@ -376,7 +697,7 @@ test('completed link lines are visible only for the selected network', async ({ 
   await page.mouse.click(emptyPoint.x, emptyPoint.y);
   snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
   expect(snapshot.selectedNodeId).toBeNull();
-  expect(snapshot.visibleCompletedLinks).toHaveLength(0);
+  expect(snapshot.visibleCompletedLinks).toEqual([]);
 });
 
 test('x1 x2 x3 controls accelerate wave simulation on desktop and mobile', async ({ page }) => {
@@ -400,7 +721,7 @@ test('x1 x2 x3 controls accelerate wave simulation on desktop and mobile', async
   await expect(page.locator('#speed-controls [data-speed="2"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Soul prototype exposes the Link prototype combat balance contract', async ({ page }) => {
+test('Cóc Kiện Trời prototype preserves the Link prototype combat balance contract', async ({ page }) => {
   await boot(page);
   const snapshot = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
   const balance = snapshot.balance as {
