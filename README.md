@@ -1,8 +1,8 @@
 # TowerDefense3D
 
-## Product target
+## Project overview
 
-TowerDefense3D is an **Android-first 3D tower-defense game** built with Unity `6000.3.21f1`. Android touch devices are the current primary target; iOS support is deferred. Mouse input in the Unity Editor is a development fallback, not the main interaction model.
+TowerDefense3D is a **mobile-first 3D tower-defense game** built with Unity. Touch devices are the primary target; mouse input in the Unity Editor is a development fallback rather than the main interaction model.
 
 Project decisions should therefore preserve these constraints:
 
@@ -10,83 +10,7 @@ Project decisions should therefore preserve these constraints:
 - Keep controls, placement feedback, and UI readable on small screens and inside device safe areas.
 - Avoid interactions that depend on hover, right-click, or a hardware keyboard.
 - Treat mobile CPU, GPU, memory, battery, thermal limits, and allocation pressure as production constraints.
-- Validate gameplay and presentation on representative Android landscape aspect ratios. Physical-device performance and build convergence remain required before release, but are explicitly outside the current Grid Placement implementation run.
-
-## Approved Grid Placement decision record
-
-Status: **Approved for implementation**
-
-### Platform and presentation contract
-
-- Target Unity `6000.3.21f1`; do not add an older-Editor compatibility branch.
-- Target Android only for this implementation. iOS, application icons, and custom splash artwork are deferred.
-- Company Name: `nextgen.khanghv2.vng`.
-- Android Application ID: `vng.khanghv2.nextgen.towerdefense3d`.
-- Run fullscreen in landscape. Permit Landscape Left and Landscape Right, disable portrait orientations, and disable Android resizable or multi-window behavior.
-- Target 60 FPS on a mid-range Android device. This run establishes only an evidence-based project baseline; it does not include physical-device build, profiling, or performance convergence.
-
-### Placement interaction contract
-
-- Touch is the primary input and the Unity Editor provides a mouse fallback.
-- Selecting a tower begins placement. Touch or drag moves one candidate. Releasing over a valid candidate immediately revalidates and atomically places the tower; there is no Confirm button.
-- Releasing over an invalid candidate performs no gameplay mutation and keeps the red candidate available for repositioning or cancellation.
-- A Safe Area Cancel control and Android Back both cancel placement.
-- A placement gesture that starts over UI is ignored. Only one primary pointer controls placement; secondary pointers are ignored.
-- Pausing or losing application focus cancels or suspends the gesture safely and must never place a tower.
-
-### Grid and validation contract
-
-- The board uses an XZ ground plane with discrete vertical Y levels. Code and documentation use `Width` for X, `Depth` for Z, and `Height` for Y.
-- Horizontal `CellSize` and vertical `HeightUnit` are independently configurable.
-- Authored support and buildability exist per level, including demo levels 0, 1, and 2. Every base cell under a candidate footprint must have valid support at the candidate base level.
-- Occupancy is fully three-dimensional across `Width × Depth × Height`. Static blockers occupy authored cells.
-- Stacking, rotation, selling, moving, economy checks, path validation, save/load, and other tower-defense systems are outside this feature.
-- A centered anchor determines the footprint. For even dimensions, the unmatched remainder extends toward positive X and positive Z.
-- Placement performs atomic reserve, spawn, and rollback. A failed spawn must not leave occupancy behind.
-
-### Architecture and feedback contract
-
-- Use feature-oriented modules under `Assets/_Project`; when a module is organized or reorganized, place its player-build source under a `Scripts/` root.
-- Keep Unity lifecycle, input, scene references, and GameObject ownership in thin `MonoBehaviour` shells; keep deterministic mapping, validation, and occupancy rules in plain C#.
-- Use immutable `ScriptableObject` definitions for authored tower and board data, direct serialized references for local collaboration, a small enum for placement state, and managed flat arrays for board storage.
-- Use intentional runtime and test assembly definitions with a one-way acyclic dependency graph.
-- Do not introduce a singleton, dependency-injection container, event bus, Jobs/Burst, or a pooling framework for this feature.
-- Show only one combined translucent candidate footprint/ghost: green when valid and red when invalid. Never render the full grid or create one renderer object per cell.
-- `Assets/Scenes/SampleScene.unity` is the integration scene. `Assets/Plugins` and Unity-generated `.csproj`, `.sln`, and `.slnx` files are read-only.
-
-## Current third-party asset boundary
-
-The project intentionally keeps only **DOTween Pro** under `Assets/Plugins`, at `Assets/Plugins/Demigiant`. Its `DOTWEEN*` scripting defines and setup assets must be preserved unless the project owner explicitly approves removing DOTween.
-
-The following imported asset packages are intentionally absent and must not be restored, referenced, or added to scripting defines without new explicit approval:
-
-- More Mountains Feel.
-- FImpossible Creations packages, including Legs Animator, Optimizers, Spine Animator, and Tail Animator.
-- KINEMATION Retarget Pro.
-- RootMotion Final IK.
-- Sirenix Odin Inspector and Serializer.
-- Technie Collider Creator.
-
-This boundary applies to imported asset packages under `Assets/Plugins`; it does not authorize removing Unity Package Manager dependencies from `Packages/manifest.json`. Future agents must audit current project references and obtain approval before adding or restoring any third-party package.
-
-### Approved implementation graph
-
-The durable Beads graph uses these dependency-safe work packages:
-
-1. **B1 — Mobile and identity baseline plus this decision record.** Establish the approved Android-only product constants and documentation baseline.
-2. **B2 — Android Player Settings and frame-rate policy.** Apply identity, orientation, fullscreen, and non-resizable settings and add the small `MobileFrameRatePolicy` runtime owner.
-3. **B3 — Grid contracts, definitions, and assembly boundaries.** Establish stable value types, immutable authored definitions, and runtime/test assembly contracts.
-4. **B4 — Board mapping and authored surfaces.** Implement XZ/Y coordinate mapping, per-level support/buildability, centered footprint enumeration, and static blockers.
-5. **B5 — Validation, 3D occupancy, and atomic reservation.** Validate full `Width × Depth × Height` footprints and provide reserve/spawn/rollback semantics.
-6. **B6 — Touch placement controller and cancellation.** Implement primary touch with Editor mouse fallback, drag/release placement, UI-start rejection, invalid-release retention, Safe Area Cancel, Android Back, and pause/focus safety.
-7. **B7 — Candidate footprint and ghost presentation.** Implement the one combined translucent green/red preview without a full-grid or per-cell renderer architecture.
-8. **B8 — Serialized SampleScene integration.** Author and wire the demo board levels 0/1/2, definitions, prefab, input, materials, Safe Area UI, and scene references.
-9. **B9 — Evidence-based mobile render and quality baseline.** Inspect the integrated scene and change existing render-quality settings only when current evidence justifies the change.
-10. **B10 — Consolidated verification.** Verify compilation and Console state, run relevant Edit Mode and Play Mode tests, inspect Player Settings and serialized scene wiring, exercise placement behavior in the Editor where available, and refresh and verify Better Context.
-
-Dependencies: B1 precedes B2 and B3; B3 precedes B4 and B5; B2, B4, and B5 precede B6; B3 and B5 precede B7; B2, B4, B5, B6, and B7 precede B8; B8 precedes B9; B9 precedes B10.
-
-There is deliberately no B11 in this run. Android physical-device build, profiling, thermal validation, and 60 FPS convergence are deferred rather than inferred from Editor evidence.
+- Validate gameplay, presentation, builds, and performance on representative mobile aspect ratios and physical devices before release.
 
 ## Project documentation
 
@@ -104,18 +28,16 @@ Do not use `Documents/` for generated caches, temporary agent output, Unity-gene
 
 `Documents/TechnicalSpec/` is the canonical location for feature-level technical specifications. Use one English Markdown file per feature with the filename format `<FeatureName>_Technical_Specification.md`.
 
-The initial implemented specification is [`GridPlacement_Technical_Specification.md`](Documents/TechnicalSpec/GridPlacement_Technical_Specification.md).
-
 When the project owner explicitly approves an implementation plan, the responsible agent must:
 
-1. Create or update that feature's technical specification before changing implementation files. If an approved plan is resumed and no specification exists, reconstruct it from the approved plan and current repository evidence first.
+1. Create or update the feature's technical specification before changing implementation files.
 2. Mark the specification `Approved` only when the project owner explicitly approved the plan. Otherwise keep it `Draft` or `Under Review`.
 3. Record the approved scope, non-goals, architecture and ownership, data and runtime-state contracts, interaction flow, folder and assembly boundaries, serialized integration, compatibility or migration constraints, verification plan, risks, and deferred work.
 4. Implement against the specification. Do not silently expand scope or replace an approved decision; obtain approval for material changes and update the specification before continuing.
 5. After implementation, update the same file with the actual status, validation evidence, known limitations, and any approved deviation from the original plan.
-6. Record consequential AI-assisted decisions in `Documents/AICollaboration/` and keep execution tasks and dependencies in Beads rather than turning the specification into a task list.
+6. Record consequential AI-assisted decisions in `Documents/AICollaboration/` and keep execution tasks in the project's issue tracker rather than turning the specification into a task list.
 
-Technical specifications are version-controlled project records. If a broad ignore rule excludes a new Markdown file, add only the intended specification explicitly instead of committing unrelated ignored documents.
+Technical specifications are durable project records and should be reviewed and version-controlled according to repository policy.
 
 ## Documentation language
 
@@ -125,26 +47,19 @@ Non-English names, source phrases, or direct quotations may be retained only whe
 
 ## Feature source layout
 
-Organize project-owned features around a reusable module shape. `<FeatureName>` is a placeholder for the feature's stable name; it is not a literal folder name.
+Organize project-owned features under a stable feature root. `<FeatureName>` is a placeholder rather than a literal folder name.
 
 ```text
 Assets/_Project/<FeatureName>/
-├── Scripts/
-│   ├── Definitions/        # Authored data types, including ScriptableObject definitions
-│   ├── Domain/             # Deterministic feature rules and value types
-│   ├── Application/        # Use cases and feature orchestration
-│   ├── Interaction/        # Input and external interaction adapters
-│   ├── Presentation/       # Runtime views and presentation components
-│   └── <Product>.<FeatureName>.Runtime.asmdef
-├── Data/                   # Authored asset instances, such as .asset files
-├── Editor/                 # Editor-only tooling
-└── Tests/                  # Edit Mode and Play Mode tests
+├── Scripts/     # Player-build source
+├── Data/        # Authored data assets
+├── Editor/      # Editor-only tooling
+└── Tests/       # Automated tests
 ```
 
-- Use `Scripts/` instead of `Runtime/` as the player-build source root.
-- Adapt or omit responsibility folders when a feature does not need them; do not create empty layers only to match the example.
-- Keep ScriptableObject class definitions in `Scripts/Definitions/` and their authored `.asset` instances in `Data/`.
-- A responsibility folder does not require its own assembly. Keep one feature runtime assembly unless a measured dependency or platform boundary justifies another assembly definition.
+- Add responsibility-based subfolders only when the feature needs them; do not create empty layers to match an example.
+- Keep source definitions separate from authored data instances.
+- Introduce additional assembly boundaries only when a clear dependency, platform, or test boundary justifies them.
 - Preserve stable namespaces and assembly names during folder-only reorganizations unless a separate approved change explicitly alters those contracts.
 
 ## Commit message convention
@@ -157,9 +72,9 @@ Assets/_Project/<FeatureName>/
 Examples:
 
 ```text
-feat: Thêm tutorial cho prototype
-fix: Sửa grid placement trên mobile
-docs: Cập nhật AI collaboration log
+feat: Thêm chức năng mới
+fix: Sửa lỗi tương tác
+docs: Cập nhật tài liệu dự án
 ```
 
 ## AI collaboration records
@@ -172,7 +87,7 @@ Use the filename format:
 AI_Collaboration_Log_<Area>_dd_mm.md
 ```
 
-Example: [`AI_Collaboration_Log_Dev_13_08.md`](Documents/AICollaboration/AI_Collaboration_Log_Dev_13_08.md).
+Existing records are available in [`Documents/AICollaboration/`](Documents/AICollaboration/).
 
 Every entry must include:
 
@@ -183,35 +98,17 @@ Every entry must include:
 5. **Rationale** — why that decision was made.
 6. **Implementation or verification result** — the implementation or verification result.
 
-Each log must also record the responsible chat/session ID. When several sessions contribute, identify the responsible session for each entry.
+Each log must also record the responsible chat/session ID. When several sessions contribute, identify the responsible session for each entry. Store the session ID rather than a raw transcript or machine-specific transcript path.
 
-## Better Context summaries and agent handoff
+## AI-assisted project work
 
-Use Better Context as the first navigation layer for project work. The current generated maps are intentionally bounded, so a single broad root summary is not sufficient context for an agent that is spawned to work inside a feature.
-
-- Prefer several concise, path-scoped summaries over one large project summary. At minimum, summarize the durable responsibility of the relevant feature folder and any important runtime, Editor, test, data, or integration boundary that is not already clear from generated evidence.
-- Before reading or writing within a feature, follow the managed `AGENTS.md` chain from the repository root to the target and read every relevant stored summary along that path. A map or summary omission is not evidence that a file, asset, or behavior does not exist.
-- Before spawning a worker, the parent agent or technical lead must identify the relevant Better Context map and summary paths in the worker brief. The worker must read that context before implementation so it does not begin with only the immediate filename or Bead description.
-- Keep each summary factual, stable, and at most 240 characters. Describe durable responsibility or ownership; do not store temporary task status, guesses, secrets, full method inventories, or raw chat content.
-- Add summaries only where they materially improve future navigation. Do not summarize every file, and do not use summaries as a substitute for inspecting current source, serialized assets, live Unity state, compilation, or tests.
-- Audit existing summaries before changing them. Preserve unrelated entries, update a summary when its responsibility changes, remove obsolete paths after a verified deletion or rename, and never hand-edit `.ctx-summaries.json` or the managed blocks in `AGENTS.md`.
-
-Write several related summaries in one batched refresh and then verify the generated maps:
-
-```powershell
-better-context-unity --root <repository-root> agents `
-  --summary 'Assets/_Project/<FeatureName>=Owns one durable gameplay feature and its supporting assets.' `
-  --summary 'Assets/_Project/<FeatureName>/Scripts=Player-build feature code grouped by stable responsibility.' `
-  --summary 'Assets/_Project/<FeatureName>/Scripts/Definitions=Authored data definition types for the feature.' `
-  --summary 'Assets/_Project/<FeatureName>/Editor=Editor-only tooling for the feature.'
-better-context-unity --root <repository-root> verify -v --json
-```
-
-Never run Better Context refresh, verification, generation, or Editor snapshot work while Unity is entering Play Mode or is already in Play Mode. Wait until Unity has returned to Edit Mode and is idle, then perform one batched refresh after the task's changes.
+- Follow the applicable instructions in `AGENTS.md` before changing project files.
+- Treat generated maps, indexes, and summaries as navigation aids rather than substitutes for current source, assets, runtime state, compilation, or tests.
+- Keep tool-specific setup, commands, and maintenance procedures in agent instructions or dedicated operational documentation.
+- Record consequential decisions and validation outcomes in `Documents/AICollaboration/`.
 
 ## Security and traceability
 
 - Redact API keys, credentials, personal data, and other secrets.
-- Store the session ID, not the raw transcript or a machine-specific transcript path.
 - Do not mark a plan as approved unless the user or project owner explicitly approved it.
 - Link validation evidence where practical, but keep generated caches and transient setup output out of this documentation hierarchy.

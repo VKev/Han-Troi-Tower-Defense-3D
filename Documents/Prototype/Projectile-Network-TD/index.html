@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c101c" />
+    <meta name="description" content="Projectile Network TD — thủ thành 3D bằng mạng lưới đạn linh hồn." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23131222'/%3E%3Cpath d='M32 7 48 19l-3 23-13 15-13-15-3-23Zm0 9-8 7 3 16 5 7 5-7 3-16Z' fill='%23a986ff'/%3E%3C/svg%3E" />
+    <title>Projectile Network TD</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="game-canvas" aria-label="Chiến trường 3D Projectile Network TD"></canvas>
+      <div id="link-drag-overlay" data-state="idle" aria-hidden="true"><i></i><b></b><span></span></div>
+
+      <header id="top-bar" class="soul-panel">
+        <div class="brand-lockup"><span class="brand-mark" aria-hidden="true">⬢</span><div><strong>PROJECTILE NETWORK TD</strong><small id="stage-label">MẠCH HỒN ĐẦU TIÊN</small></div></div>
+        <nav id="stage-select" class="stage-select" aria-label="Chọn màn">
+          <a href="?level=1" data-stage="0" title="Màn 1">I</a><a href="?level=2" data-stage="1" title="Màn 2">II</a><a href="?level=3" data-stage="2" title="Màn 3">III</a>
+        </nav>
+        <div class="metrics" aria-live="polite">
+          <div class="metric base"><span>CĂN CỨ</span><strong id="base-value">03</strong></div>
+          <div class="metric gold"><span>VÀNG</span><strong id="gold-value">420</strong></div>
+          <div class="metric"><span>ĐỢT</span><strong id="wave-value">1 / 6</strong></div>
+          <div class="metric"><span>ĐỊCH</span><strong id="enemy-value">00</strong></div>
+          <div class="metric soul"><span>LINH HỒN</span><strong id="soul-value">00 / 50</strong></div>
+        </div>
+        <nav class="utility-actions" aria-label="Điều khiển">
+          <button id="sound-button" class="icon-button" type="button" title="Âm thanh">◖))</button>
+          <button id="restart-button" class="icon-button danger" type="button" title="Chơi lại">↻</button>
+        </nav>
+      </header>
+
+      <aside id="build-dock" class="soul-panel" aria-label="Nút linh hồn">
+        <div class="panel-heading"><span>NGHI THỨC</span><small>CHUẨN BỊ</small></div>
+        <div id="build-list"></div>
+      </aside>
+
+      <aside id="node-inspector" class="soul-panel empty" aria-label="Nút đã chọn">
+        <div class="panel-heading"><span id="inspector-role">MẠNG HỒN</span><small id="inspector-state">—</small></div>
+        <div class="inspector-title"><span id="inspector-icon" aria-hidden="true">◇</span><div><strong id="inspector-name">Chưa chọn nút</strong><small id="inspector-branch">Chạm một nút để xem.</small></div></div>
+        <p id="inspector-detail">Nối các trụ để tạo một chuỗi hoàn chỉnh từ Giếng Hồn tới Tỏa Hồn.</p>
+        <div id="queue-meter" class="queue-meter hidden"><span>HÀNG ĐỢI</span><div><i id="queue-fill"></i></div><b id="queue-value">0 / 8</b></div>
+        <div id="charge-meter" class="queue-meter hidden"><span id="charge-label">LINH LỰC</span><div><i id="charge-fill"></i></div><b id="charge-value">0 / 6</b></div>
+        <div id="branch-controls" class="branch-controls hidden"><button id="branch-a" type="button"></button><button id="branch-b" type="button"></button></div>
+        <div class="node-actions"><button id="action-upgrade" type="button"><span>⇧</span>Nâng cấp</button><button id="action-sell" class="danger" type="button"><span>¤</span>Bán</button></div>
+      </aside>
+
+      <section id="wave-panel" class="soul-panel" aria-label="Đợt tiếp theo">
+        <div class="wave-copy"><span id="phase-label">CHUẨN BỊ</span><strong id="wave-title">Đọc Đường Đạn</strong></div>
+        <div id="wave-enemies" class="wave-enemies" aria-label="Đội hình địch"></div>
+        <div id="speed-controls" class="speed-controls" role="group" aria-label="Tốc độ game">
+          <button type="button" data-speed="1" class="active" aria-pressed="true">x1</button>
+          <button type="button" data-speed="2" aria-pressed="false">x2</button>
+          <button type="button" data-speed="3" aria-pressed="false">x3</button>
+        </div>
+        <button id="start-wave" class="primary-button" type="button">BẮT ĐẦU</button>
+      </section>
+
+      <button id="soul-skill" class="soul-skill locked" type="button" aria-label="Linh Vực" disabled><span>⬢</span><i></i><b>LINH VỰC</b></button>
+
+      <div id="tutorial-hand" class="tutorial-hand hidden" aria-hidden="true"><span>☝</span><i></i></div>
+      <div id="toast" class="toast hidden" role="status"></div>
+
+      <section id="result-overlay" class="modal-layer hidden" aria-live="polite">
+        <div class="result-card"><div class="result-sigil">⬢</div><div id="result-kicker" class="eyebrow">NGHI THỨC HOÀN TẤT</div><h2 id="result-title">Linh mạch trụ vững</h2><p id="result-copy">Ba đợt vong linh đã bị đẩy lùi.</p><button id="result-restart" class="primary-button large" type="button">CHƠI LẠI</button></div>
+      </section>
+
+      <section id="reaction-tutorial-overlay" class="modal-layer hidden" aria-hidden="true" aria-labelledby="reaction-tutorial-title">
+        <div class="reaction-tutorial-card">
+          <div class="reaction-formula" aria-hidden="true">
+            <i id="reaction-formula-a" data-element="fire">◆</i><b>+</b><i id="reaction-formula-b" data-element="ice">✦</i><b>→</b><i id="reaction-formula-result" data-element="reaction">☁</i>
+          </div>
+          <div class="eyebrow">PHẢN ỨNG NGUYÊN TỐ</div>
+          <h2 id="reaction-tutorial-title">Bộc Hơi</h2>
+          <p>Hai linh ấn tương hợp tạo phản ứng, gây sát thương bùng nổ và hiệu ứng chiến thuật mới.</p>
+          <button id="reaction-tutorial-continue" class="primary-button large" type="button">TIẾP TỤC</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

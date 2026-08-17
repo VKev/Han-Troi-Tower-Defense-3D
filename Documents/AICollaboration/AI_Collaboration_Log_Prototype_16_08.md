@@ -6,7 +6,7 @@
 - **Area:** `Documents/Prototype`
 - **Responsible Codex sessions:** `019ffa0d-09cb-7df2-b2e2-cd1e72bd2a74`, `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
 - **Responsible ChatGPT chats:** `6a7e858a-80fc-8322-9e39-ebfb4fcaa7db`, `6a7c3d0c-d31c-8323-9f15-4baea55ecb54`
-- **Tracking issues represented in these entries:** `TowerDefense3D-15b`, `TowerDefense3D-66z`, `TowerDefense3D-nf9`, `TowerDefense3D-3vb`, `TowerDefense3D-612`, `TowerDefense3D-0ra`, `TowerDefense3D-ucg`, `TowerDefense3D-4s6`, `TowerDefense3D-6ub`, `TowerDefense3D-afa`, `TowerDefense3D-2c0`, `TowerDefense3D-qb4`, `TowerDefense3D-2x6`
+- **Tracking issues represented in these entries:** `TowerDefense3D-15b`, `TowerDefense3D-66z`, `TowerDefense3D-nf9`, `TowerDefense3D-3vb`, `TowerDefense3D-612`, `TowerDefense3D-0ra`, `TowerDefense3D-ucg`, `TowerDefense3D-4s6`, `TowerDefense3D-6ub`, `TowerDefense3D-afa`, `TowerDefense3D-2c0`, `TowerDefense3D-qb4`, `TowerDefense3D-2x6`, `TowerDefense3D-3i4`
 - **Legacy Toad production prototype:** [tower-defense-am-duong.vercel.app](https://tower-defense-am-duong.vercel.app)
 - **Rotation prototype:** [`Documents/Prototype/Arcane-Arsenal/`](../Prototype/Arcane-Arsenal/) — [production](https://arcane-arsenal-tower-defense.vercel.app)
 - **Explicit-link prototype:** [`Documents/Prototype/Arcane-Arsenal-Link/`](../Prototype/Arcane-Arsenal-Link/) — [production](https://arcane-arsenal-link-network.vercel.app)
@@ -581,3 +581,212 @@ Stable aliases preserve existing playtest bookmarks. Direct HTTP and determinist
 ### Implementation or verification result
 
 Both local and Vercel TypeScript/Vite builds passed. Link deployment `dpl_DyvZRfQnKKw2a4Cwj9DVYP7uTuiL` and Rotation deployment `dpl_CtZEuqgN3TTxoaRPh9Pe3oQof8Aq` reached `READY`. Both stable aliases and their hashed JavaScript/CSS assets returned HTTP 200. Four public desktop/mobile probes rendered nonblank canvases on real Intel D3D11 with zero console/page errors and standard renderer budgets. Link reported routing mode `link`, Nổ visual radius `2`, four rings, eighteen shards, and one target cue; Rotation reported routing mode `rotation`, Level 2 Wave 3, the required Amplifier lesson, and the retained `35` Arcana state. The existing deterministic gameplay and visual-regression evidence was reused because no source implementation changed after its passing run. No Git commit, push, or Dolt remote sync was requested or performed.
+
+## Entry 41 — Restore Link parity and make Tỏa Hồn a grid tower
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-vsf`
+
+### Problem being addressed
+
+The first Soul prototype did not yet reproduce the Link prototype's logical grid placement, card-drag tutorial, authored tutorial combat geometry, or accepted projectile/enemy balance. It also represented the Soul core as a fixed endpoint seal, while the owner requested that Tỏa Hồn become a tower and retain the name and gameplay contract defined by the approved DOCX/Raw Concept 3 source.
+
+### Prompt used
+
+The user requested restoration of grid placement, tutorial drag animation and correct tutorial positions, full Link-prototype parity for projectile speed/size/hitbox, fire rate, enemy speed/HP/density and general balance, then explicitly requested that Tỏa Hồn be represented as a tower and named according to the DOCX or Raw Concept 3.
+
+### Important AI response
+
+The AI read `Documents/Raw/Projectile_Network_TD_Prototype_GDD_Technical_Contract_V0_2.docx` as the naming and mechanics authority and preserved its Tỏa Hồn contract: free, unique, up to two inputs, no output, immediate projectile consumption, Soul/Soul Skill charge, and no resale. The latest owner instruction revised only its placement/presentation into a real draggable grid tower. The AI then copied the accepted Link tutorial lane, tower combat constants, enemy profiles, formation timing, economy, projectile feedback, and regular-buffer behavior into the Soul implementation while retaining the Soul theme and fixed camera orientation.
+
+### Option selected, revised, or rejected
+
+- **Selected:** expose Tỏa Hồn as the first free tower card and place it through the same logical grid drag interaction as every other tower.
+- **Selected:** retain the DOCX rules of one unique Tỏa Hồn, two incoming links, no outgoing link, immediate consumption, Soul charge, Soul Skill charge, and zero resale.
+- **Selected:** use a shortened tutorial lane and authored Generator, Fire, Ice, and Tỏa Hồn cells whose three link segments physically cross the enemy route.
+- **Selected:** copy Link's projectile speed `27.6`, collision radius `0.84`, visual scale `2`, fire-rate multiplier `1.5`, enemy-speed multiplier `0.6`, tutorial gold `420`, Nexus health `3`, refund `0.6`, node ranges/prices, enemy profiles, and lateral formation patterns.
+- **Selected:** remove regular buff-tower ammo caps; only Special retains a visible capacity-eight buffer.
+- **Rejected:** keeping two fixed endpoint seals, inventing a different Soul-core name, retaining capacity-three processor backpressure, or approximating Link balance by appearance alone.
+
+### Rationale
+
+Using the approved DOCX prevents naming and mechanics drift, while treating the owner's newest request as an explicit presentation override avoids preserving an obsolete endpoint interaction. Exact diagnostic parity and real pointer/touch tests make the Soul variant meaningfully comparable to Link rather than merely similar in theme. Authored lane-crossing placements make the icon-only tutorial demonstrably capable of teaching a winning chain.
+
+### Implementation or verification result
+
+The production build passed. The complete Playwright matrix produced `12 passed` and `4` intentional platform skips; a separate visual-regression run produced `4/4` passes. Tests covered real desktop/mobile card-to-grid dragging, visible grid/footprint/range previews, guided link dragging, incomplete-chain gating, segment damage, terminal reactions, retry, and exact Link-balance diagnostics. Desktop/mobile Intel D3D11 probes were nonblank, remained within their `300/150` draw-call budgets, and reported zero console/page errors. Vercel deployment `dpl_8NVPoKScD4aXgjrSRXttJd9nm5ff` reached `READY`; the stable alias and hashed JS/CSS assets returned HTTP 200. Live desktop/mobile probes showed a four-tower Generator -> Fire -> Ice -> Tỏa Hồn chain, four direct hits, two reactions, two kills, fixed camera orientation, and the accepted Link balance contract. The Three.js director reference audit passed. No Git commit, push, or Dolt remote sync was requested or performed.
+
+## Entry 42 — Open the Soul build grid and restore elemental feedback
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-ebj`
+
+### Problem being addressed
+
+The Soul prototype still limited placement to ten authored cells, front-loaded several tower and link instructions before allowing practice, and omitted the Link prototype's enemy elemental icons and first-reaction explanation.
+
+### Prompt used
+
+The user requested placement on any valid logical grid cell, a shorter icon-only tutorial that places Tỏa Hồn and Giếng Hồn before immediately linking and starting, and restoration of the elemental icons and reaction feedback present in the earlier Link prototype.
+
+### Important AI response
+
+The AI replaced the fixed slots with 119 logical cells across valid low and high terrain while retaining continuous ground and rendering the grid only during placement. It reorganized onboarding into three learn-by-doing waves and restored strong enemy elemental tint, camera-facing status icons, reaction-impact feedback, and a delayed first-reaction formula card that pauses and resumes combat.
+
+### Option selected, revised, or rejected
+
+- **Selected:** permit every valid logical cell while preserving path, platform-base, occupancy, footprint, economy, and unique-Tỏa-Hồn validation.
+- **Selected:** treat tutorial cells as animated suggestions rather than placement locks.
+- **Selected:** teach Tỏa Hồn, Giếng Hồn, linking, and Wave 1 immediately; introduce Hỏa in Wave 2 and Băng plus the first reaction in Wave 3.
+- **Selected:** require zero, one, then two processors across the three guided waves so each lesson is practiced before the next one.
+- **Selected:** reuse the Link prototype's strong tint, active-element icons, reaction icon, and first-reaction explanation.
+- **Rejected:** a permanently visible ground grid, another long non-interactive instruction chain, and per-relay reaction sprites that would consume mobile render headroom.
+
+### Rationale
+
+Open grid placement restores the intended spatial strategy, while short practice beats let the player prove each interaction before receiving another instruction. Batched placement tiles and impact-only reaction glyphs preserve visual clarity without exceeding the mobile renderer budget.
+
+### Implementation or verification result
+
+The production build passed. The full Playwright matrix produced `22 passed` and `4` intentional platform skips, including real desktop/mobile placement outside the former authored cells, link-and-start onboarding, elemental status presentation, first-reaction pause/resume, balance parity, retry, and ten visual baselines. Production-preview probes on hardware-backed Intel D3D11 rendered nonblank output with zero console/page errors and measured `147` desktop draw calls against a `300` budget and `141` mobile draw calls against a `150` budget. The current revision was not deployed, committed, pushed, or Dolt-synced because those actions were not requested.
+
+## Entry 43 — Copy the Link tutorial contract into the Soul prototype and deploy it
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-60v`
+
+### Problem being addressed
+
+The Soul prototype still differed from the accepted Link tutorial in its road, battlefield size, tower suggestions, wave count, pressure curve, economy, and retry flow. It also lacked a distinct Nexus base at the route endpoint, so the movable Raw Concept 3 Tỏa Hồn tower could be mistaken for the player's fixed objective.
+
+### Prompt used
+
+The user confirmed that the Nexus must be a separate fixed model, requested the Link tutorial road and tower positions, and asked to copy every tutorial and balance decision from the Link prototype while changing only the dark-fantasy Soul skin and Raw Concept 3-specific mechanics. The user then requested deployment.
+
+### Important AI response
+
+The AI treated the Link Stage 1 contract as the balance authority and copied its axis-aligned route, low-terrain board, camera, four tutorial world positions, projectile/enemy constants, reward multipliers, tower-price growth, and exact six-wave curve. It retained the Soul variant's movable free Tỏa Hồn, two-input/no-output terminal rule, Soul collection and fields, directed drag linking, and dark procedural art. A separate procedural Nexus model was added at the path endpoint.
+
+### Option selected, revised, or rejected
+
+- **Selected:** copy path points `(-11,-2) -> (-3,-2) -> (-3,2) -> (7,2)`, segment lengths `[8,4,10]`, continuous low terrain, and the four Link tutorial positions.
+- **Selected:** adapt the first Link combat beat to the Raw Concept 3 requirement by placing and connecting Giếng Hồn with movable Tỏa Hồn before starting Wave 1.
+- **Selected:** keep Waves 1–3 guided and easy, then remove the hand for Waves 4–6 with enemy counts `[12,16,21]`, HP multipliers `[6,10,14]`, and rising spawn density.
+- **Selected:** grant an exact `340`-Gold, `3`-health post-reaction checkpoint; mastery failure retries from Wave 4 rather than replaying onboarding.
+- **Selected:** increase paid-tower prices by `0.12` per paid tower up to the Link cap; exclude free Tỏa Hồn from that count.
+- **Selected:** highlight Gold on the first paid placement and Nexus health on the first leak without opening a popup.
+- **Revised:** track enemy hits per projectile segment, matching Link behavior, while retaining payload-level hit history for Tỏa Hồn Soul collection.
+- **Rejected:** retaining the old high-terrain map, a three-wave-only tutorial, using Tỏa Hồn as the fixed base, weakening the mastery waves until the original chain could win unchanged, or introducing enemy LOD.
+
+### Rationale
+
+Exact copied geometry and diagnostics make the Soul prototype comparable to Link instead of merely similar. The fixed Nexus resolves objective readability without violating the approved movable Tỏa Hồn contract. The three guided plus three mastery structure teaches one mechanic at a time, then proves that the player must use the copied economy to buy additional reaction segments. Highlight-only onboarding preserves the established icon-and-animation tutorial language.
+
+### Implementation or verification result
+
+The TypeScript/Vite production build passed. The complete desktop/mobile Playwright matrix produced `29` passes and `5` intentional platform skips, including real pointer/touch placement and linking, the full three-wave tutorial, exact road/position/balance diagnostics, fixed Nexus presentation, mastery checkpoint retry, highlight-only Gold/Nexus cues, ten visual baselines, and a deterministic final-wave comparison where the unchanged four-node tutorial chain loses while a purchasable nine-node expanded reaction network wins. Hardware-backed Intel D3D11 preview probes were nonblank, error-free, and measured `143` desktop / `137` mobile draw calls. Director reference audit passed. Vercel deployment `dpl_HxkQnT3nc9NXNn7YF5DwWpVuC5C7` reached `READY`; the stable alias, root, `index-BZsGf_H-.js`, and `index-C4QChe12.css` returned HTTP 200. Live desktop/mobile probes confirmed the new six-wave bundle, exact copied road and tower positions, separate fixed Nexus, fixed camera, nonblank output, zero console/page errors, and `73` / `67` draw calls. No Git commit, push, or Dolt remote sync was requested or performed.
+
+## Entry 44 — Add orbit camera, contextual links, live drag feedback, speed controls, and deploy Soul
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-3i4`
+
+### Problem being addressed
+
+The Soul prototype still locked the camera angle, gave insufficient source-to-pointer feedback while dragging a link, and rendered every completed network line even when the player was inspecting an unrelated tower or no tower. The user also requested faster play controls through `x2` and `x3` simulation speeds and required every completed update to be deployed.
+
+### Prompt used
+
+The user clarified that angle rotation meant the camera, requested a clear straight line from the source tower to the mouse or finger during link dragging, required completed links to appear only for the selected tower's network, requested `x2` and `x3` time controls, and asked for deployment after the update.
+
+### Important AI response
+
+The AI preserved the authored default view while adding bounded orbit: desktop right-drag and mobile two-finger centroid drag rotate the camera, existing left/one-finger pan and wheel/pinch zoom remain intact, and pitch stays between `28°` and `68°`. Link dragging now uses a high-contrast glow/core/endpoint beam with aiming, valid, and invalid states, plus a bounded screen-space tower hit area for procedural silhouettes. Completed links are hidden by default and shown only when both endpoints belong to the selected tower's connected component. Clicking empty ground or selecting an isolated tower hides all completed links. Responsive `x1`, `x2`, and `x3` controls accelerate fixed-step wave simulation without accelerating camera or pointer input.
+
+### Option selected, revised, or rejected
+
+- **Selected:** right-drag orbit on desktop and two-finger drag orbit on mobile while retaining camera-relative pan and pinch/wheel zoom.
+- **Selected:** clamp camera pitch instead of allowing the battlefield to flip or reach unreadable grazing angles.
+- **Selected:** keep the active drag beam visible independently from completed-link visibility.
+- **Selected:** derive displayed completed links from the selected tower's undirected connected component; no selection or an isolated selection displays zero completed links.
+- **Selected:** add a small click-on-empty-ground deselection gesture without interfering with drag-pan.
+- **Selected:** provide persistent `x1`, `x2`, and `x3` controls with at least `44px` mobile hit targets and scale only gameplay simulation time.
+- **Rejected:** permanently displaying all network lines, accelerating camera input with game speed, snap camera rotation, or relaxing camera pitch without bounds.
+
+### Rationale
+
+Contextual lines reduce battlefield clutter while preserving exact network inspection when it is relevant. The live drag guide makes source, destination, and link validity visually causal on both pointer and touch paths. Bounded orbit exposes the 3D Soul presentation without sacrificing lane readability, while fixed-step speed scaling shortens observation time without changing network balance or interaction precision.
+
+### Implementation or verification result
+
+The TypeScript/Vite production build passed. The complete desktop/mobile Playwright matrix produced `40` passes and `6` intentional platform skips, covering real orbit/pan/zoom input, live drag-link feedback, selected-network-only completed links, isolated/no-selection hiding, `x1`/`x2`/`x3` simulation, tutorial, combat, reactions, retry, bot pressure, and fourteen visual baselines. Hardware-backed Intel D3D11 probes were nonblank, reported zero console/page errors, and measured `73` desktop / `67` mobile draw calls. Vercel deployment `dpl_EjarB7RXbAHjf76Q2pjA4BX78EB4` reached `READY`; the stable Soul alias plus hashed `index-mBrI41-r.js` and `index-CrAcgve5.css` assets returned HTTP 200. Live public desktop/mobile probes confirmed `orbitEnabled: true`, one selected three-link component, and the same `73` / `67` draw-call budgets. No Git commit, push, or Dolt remote sync was requested or performed.
+
+## Entry 45 — Complete the Soul campaign and teach drag-to-cast Linh Vực
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-zvh`
+
+### Problem being addressed
+
+The Soul prototype had only the copied tutorial battlefield, while the owner required balanced Level 2 and Level 3 content with accurate paired high ground and flying-lane combat. After that campaign work, Linh Vực still lacked an explicit tutorial, drag targeting, an AOE preview, and clear evidence that enemies remained under repeated field damage.
+
+### Prompt used
+
+The user requested Level 2 and Level 3 parity with the Link prototype, accurate high terrain whose projectile segments cross the flying path, explanations for Dồn Dập and Trọng Hồn, stronger damage-skill feedback, then a text-free Linh Vực tutorial. The final interaction revision required dragging the skill from its HUD button while previewing the affected area.
+
+### Important AI response
+
+The AI added selectable six-wave and ten-wave Soul maps using the accepted Link pressure/economy curves, ground-only opening waves, later flying and counter enemies, and paired plateau networks that physically hit Layer 1 enemies. Generator branch buttons now show exact cadence and damage. Linh Vực became a single drag-to-cast gesture: the first mastery wave animates a hand from the ready skill button toward the enemy route, dragging renders a filled AOE disc with two high-contrast rings, and release creates an initial impact plus repeated field-damage ticks.
+
+### Option selected, revised, or rejected
+
+- **Selected:** copy Link Level 2/3 wave counts, HP growth, density, economy, enemy resistance/immunity/vulnerability, reaction barriers, and Layer 1 introduction from Wave 3.
+- **Selected:** pair high-ground build zones across the real flying lane and prove actual Layer 1 projectile hits rather than relying on visual proximity.
+- **Selected:** define Dồn Dập as `0.68s` / `12` physical damage and Trọng Hồn as `1.35s` / `26` physical damage, with both values visible in the upgrade UI.
+- **Selected:** teach Linh Vực at Wave 4 after the elemental-reaction lesson, using only highlight, hand motion, drag preview, and combat feedback.
+- **Selected:** apply persistent field damage every `0.82s`; each successful tick produces one field pulse plus enemy flash, particles, and bounded floating numbers.
+- **Rejected:** click-then-click targeting, a text modal for the skill lesson, decorative high ground that misses the flying path, one-time-only Soul Field damage, enemy LOD, or feedback that exists only in diagnostics.
+
+### Rationale
+
+Campaign parity keeps the Soul theme mechanically comparable with the accepted Link prototype. Paired elevated networks preserve the rule that same-layer projectile geometry must intersect airborne routes. One continuous drag is faster and more legible on touch screens, while a radius preview exposes the tactical commitment before release. Repeated pulses and per-target hit feedback make persistent AOE damage causally visible without adding tutorial text or unbounded effects.
+
+### Implementation or verification result
+
+The TypeScript/Vite production build passed. The complete desktop/mobile Playwright matrix produced `49` passes and `7` intentional platform skips, including Level 2/3 data, real high-ground hits, branch descriptions, drag-to-cast skill input, tutorial hand state, AOE preview, and repeated field damage. The separate mobile touch-start flow passed `5/5` repeated runs after its interaction-state assertion was hardened. Hardware-backed Intel D3D11 probes were nonblank and error-free: Linh Vực produced two ticks across three enemies (`6` damage events) with `13` VFX objects at capture, using `77` desktop / `71` mobile draw calls; the mobile drag preview used `55`. Deployment `dpl_Hy3LqQSsctXaYqtkQB67APoUbk5b` reached `READY`; the stable alias, three level routes, and hashed `index-DQWcISfV.js` / `index-C4hKGpph.css` assets returned HTTP 200. No Git commit, push, or Dolt remote sync was requested or performed.
+
+## Entry 46 — Gate the Linh Vực lesson on a live enemy and teach free Level 2 support towers
+
+- **Responsible Codex session:** `019ffe7b-5f24-7130-8ff7-e26a9fdc8b71`
+- **Tracking issue:** `TowerDefense3D-bsu`
+- **Date:** `2026-08-16`
+
+### Problem being addressed
+
+The Linh Vực tutorial could point toward an empty route before an enemy had actually entered the wave. Level 2 also exposed Hỗ Trợ and Xung Hồn immediately instead of reproducing the accepted Link prototype's staged Wave 3/Wave 4 lessons, and mandatory tutorial towers could become unaffordable under the dynamic tower-price curve.
+
+### Prompt used
+
+The owner requested a proper drag tutorial only when Linh Vực is charged and enemies are currently present, then requested that Level 2 lock Hỗ Trợ and Xung Hồn, teach Hỗ Trợ at Wave 3 and Xung Hồn at Wave 4, use the Link prototype as the interaction reference, and waive all mandatory tutorial costs.
+
+### Important AI response
+
+The AI compared the accepted `Arcane-Arsenal-Link` lesson implementation before changing the Soul build. It retained the Link rhythm of card highlight, animated card-to-grid hand, mandatory suggested cell, blocked Wave Start, network gesture, and zero-cost grant. Because Soul Hỗ Trợ and Xung Hồn are inline processors rather than a passive aura and terminal endpoint, each granted tower is inserted into the existing final link using two guided drags: current terminal to lesson tower, then lesson tower to Tỏa Hồn. On portrait mobile, the inspector now collapses during those guided rewires so it cannot cover the source or target.
+
+### Option selected, revised, or rejected
+
+- **Selected:** keep both Level 2 lesson towers locked initially; unlock Hỗ Trợ at Wave 3 and Xung Hồn at Wave 4.
+- **Selected:** charge `0` for each mandatory lesson placement, assign zero invested/resale value, and exclude granted towers from paid-tower price growth.
+- **Selected:** dynamically choose a visible empty grid cell that is linkable from the current terminal and back to Tỏa Hồn; Xung Hồn additionally prefers cells close to the enemy lane.
+- **Selected:** block the next wave until the granted tower has both its instructed input and output links.
+- **Selected:** require Linh Vực to be full, the wave to be active, and at least one living enemy to exist before highlighting the skill or animating the drag hand.
+- **Revised:** map the Link prototype's one-step Amplifier/Nổ lessons into two-link inline insertions so the Soul towers are demonstrably active under Raw Concept 3 network rules.
+- **Rejected:** pointing Linh Vực toward an empty fallback path point, charging the player for mandatory onboarding, allowing resale profit from a free grant, or starting the wave with an unconnected lesson tower.
+
+### Rationale
+
+The player now sees each lesson only when it can be performed and immediately validated in combat. Free mandatory placements prevent the dynamic economy from deadlocking onboarding, while zero resale and price-growth exclusion preserve later balance. Inserting rather than merely placing the Soul support nodes teaches their actual network role and avoids a misleading tutorial copied literally from a mechanically different tower.
+
+### Implementation or verification result
+
+The TypeScript/Vite production build passed. The complete desktop/mobile Playwright matrix produced `51` passes and `7` intentional platform skips. New real mouse/touch coverage verifies the initial locks, free Wave 3 Hỗ Trợ and Wave 4 Xung Hồn drags, two required rewires, unchanged Gold, zero-profit grant state, Start-button gating, portrait inspector collapse, and the Linh Vực hand remaining hidden until a living enemy spawns. Hardware-backed Intel D3D11 local and public probes were nonblank and reported zero console/page errors. Public Level 2 lesson captures used `58` desktop and `56` mobile draw calls; live-enemy Linh Vực previews used `67` and `61`. Implementation deployment `dpl_7oy22esEVgp2JjEsoPuqSjJDycyt` reached `READY`, the stable Soul alias and all three level routes returned HTTP 200, and the public hashed assets were `index-Cu2flkC0.js` / `index-C4hKGpph.css`. No Git commit, push, or Dolt remote sync was requested or performed.
