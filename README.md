@@ -50,17 +50,26 @@ Non-English names, source phrases, or direct quotations may be retained only whe
 Organize project-owned features under a stable feature root. `<FeatureName>` is a placeholder rather than a literal folder name.
 
 ```text
-Assets/_Project/<FeatureName>/
+Assets/Scripts/<FeatureName>/
 ├── Scripts/     # Player-build source
-├── Data/        # Authored data assets
 ├── Editor/      # Editor-only tooling
 └── Tests/       # Automated tests
 ```
 
 - Add responsibility-based subfolders only when the feature needs them; do not create empty layers to match an example.
-- Keep source definitions separate from authored data instances.
 - Introduce additional assembly boundaries only when a clear dependency, platform, or test boundary justifies them.
 - Preserve stable namespaces and assembly names during folder-only reorganizations unless a separate approved change explicitly alters those contracts.
+- Do not store authored ScriptableObject/settings instances or general-purpose loadable assets (textures, materials, prefabs, models) inside a feature folder; see "Shared asset roots" below.
+
+## Shared asset roots
+
+Two root-level folders under `Assets/` centralize instance data instead of scattering it per feature:
+
+- `Assets/Config/<FeatureName>/` stores every authored ScriptableObject/settings instance owned by that feature (for example board definitions, tower definitions, level catalogs). Non-feature-specific engine or render-pipeline settings live under a category folder instead, such as `Assets/Config/Rendering/`.
+- `Assets/Resources/<Category>/` stores general-purpose loadable assets (textures, materials, prefabs, models) organized by asset type rather than by feature. Vendor assets that specifically require Unity's `Resources` folder behavior (for example `DOTweenSettings.asset`) also live here at the root; do not relocate a vendor-required entry out of this folder.
+- Assets inside `Assets/TextMesh Pro/Resources/` remain vendor-owned and out of scope for this convention, per the vendor/third-party boundary already in effect for that folder.
+- When code loads one of these assets by a literal string path (`AssetDatabase.LoadAssetAtPath`, `Resources.Load`), update that path alongside any move; a direct serialized-field reference needs no code change since Unity tracks it by GUID.
+- Because the project owner drops new assets into `Assets/Resources/` directly and often, refresh Better Context (`better-context-unity scan` then `agents` then `verify`) before every commit that touches `Assets/Resources/` or `Assets/Config/`, so the generated maps stay accurate for the next agent or session.
 
 ## Commit message convention
 
