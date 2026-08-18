@@ -2630,6 +2630,7 @@ export class Game {
     if (this.phase !== 'preparation') return;
     const node = this.selectedNodeId ? this.nodes.get(this.selectedNodeId) : null;
     if (!node || node.branch || !NODE_DEFINITIONS[node.type].branches) return;
+    if (this.gold < NODE_DEFINITIONS[node.type].upgradeCost) { this.error('Không đủ Vàng.'); return; }
     this.branchControls.animate([{ transform: 'scale(.96)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 220 });
   }
 
@@ -3272,6 +3273,7 @@ export class Game {
       this.inspectorBranch.textContent = 'Chạm một trụ để xem.';
       this.inspectorDetail.textContent = 'Nối các trụ để tạo một chuỗi hoàn chỉnh từ Lò Đạn tới Trống Gọi Mưa.';
       this.queueMeter.classList.add('hidden'); this.chargeMeter.classList.add('hidden'); this.branchControls.classList.add('hidden');
+      this.branchControls.classList.remove('tutorial-focus'); this.upgradeButton.classList.remove('tutorial-focus');
       return;
     }
     const definition = NODE_DEFINITIONS[node.type];
@@ -3307,8 +3309,14 @@ export class Game {
       renderBranch(this.branchA, branches[0]); renderBranch(this.branchB, branches[1]);
       this.branchA.classList.toggle('selected', node.branch === branches[0]);
       this.branchB.classList.toggle('selected', node.branch === branches[1]);
-      const disabled = this.phase !== 'preparation' || node.branch !== null || this.gold < definition.upgradeCost;
+      const disabled = this.phase !== 'preparation' || node.branch !== null;
+      const unaffordable = this.gold < definition.upgradeCost;
       this.branchA.disabled = disabled; this.branchB.disabled = disabled;
+      this.branchA.classList.toggle('unaffordable', !disabled && unaffordable);
+      this.branchB.classList.toggle('unaffordable', !disabled && unaffordable);
+      const upgradeLesson = ACTIVE_STAGE_INDEX === 1 && node.group.userData.stageTwoLessonType != null && !node.branch;
+      this.branchControls.classList.toggle('tutorial-focus', upgradeLesson);
+      this.upgradeButton.classList.toggle('tutorial-focus', upgradeLesson);
     }
     this.upgradeButton.disabled = this.phase !== 'preparation' || node.branch !== null || !branches;
     this.sellButton.disabled = this.phase !== 'preparation' || node.type === 'nexus';
@@ -4464,7 +4472,7 @@ export class Game {
       activeChains: [...this.nodes.values()].filter((node) => node.type === 'generator' && node.active).length,
       links: [...this.nodes.values()].filter((node) => node.outputTargetId !== null).map((node) => ({ sourceId: node.id, targetId: node.outputTargetId })),
       visibleCompletedLinks: this.links.filter((link) => link.group.visible).map((link) => ({ sourceId: link.sourceId, targetId: link.targetId })),
-      nodes: [...this.nodes.values()].map((node) => ({ id: node.id, type: node.type, slotId: node.slotId, position: node.group.position.toArray(), active: node.active, reason: node.invalidReason, input: node.inputSourceId, nexusInputs: [...node.nexusInputSourceIds], output: node.outputTargetId, queue: node.buffer.length, reserved: node.reservedIncoming, charge: node.charge, pulseCharge: node.pulseCharge, branch: node.branch, totalInvested: node.totalInvested, lessonGrant: node.group.userData.lessonGrant === true, launches: this.projectileLaunchesByNode.get(node.id) ?? 0, networkVisual: this.nodeNetworkPresentation(node) })),
+      nodes: [...this.nodes.values()].map((node) => ({ id: node.id, type: node.type, slotId: node.slotId, position: node.group.position.toArray(), active: node.active, reason: node.invalidReason, input: node.inputSourceId, nexusInputs: [...node.nexusInputSourceIds], output: node.outputTargetId, queue: node.buffer.length, reserved: node.reservedIncoming, charge: node.charge, pulseCharge: node.pulseCharge, branch: node.branch, totalInvested: node.totalInvested, lessonGrant: node.group.userData.lessonGrant === true, stageTwoLessonType: node.group.userData.stageTwoLessonType ?? null, launches: this.projectileLaunchesByNode.get(node.id) ?? 0, networkVisual: this.nodeNetworkPresentation(node) })),
       directHits: this.directHits, layerOneEnemyHits: this.layerOneEnemyHits, reactionProcs: this.reactionProcs, blockedReactionProcs: this.blockedReactionProcs, specialPulses: this.specialPulses,
       reactionBalance: {
         repeatCooldown: REACTION_REPEAT_COOLDOWN,

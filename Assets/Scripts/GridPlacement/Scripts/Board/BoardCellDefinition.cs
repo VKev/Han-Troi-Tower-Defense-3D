@@ -10,7 +10,10 @@ namespace TowerDefense3D.GridPlacement
         SupportsPlacement = 1 << 0,
         Buildable = 1 << 1,
         StaticBlocker = 1 << 2,
-        CameraFocus = 1 << 3
+        CameraFocus = 1 << 3,
+        Road = 1 << 4,
+        RoadSpawn = 1 << 5,
+        RoadEnd = 1 << 6
     }
 
     /// <summary>
@@ -34,5 +37,8 @@ namespace TowerDefense3D.GridPlacement
         public bool IsBuildable => (flags & BoardCellFlags.Buildable) != 0;
         public bool IsStaticBlocker => (flags & BoardCellFlags.StaticBlocker) != 0;
         public bool IsCameraFocus => (flags & BoardCellFlags.CameraFocus) != 0;
+        public bool IsRoad => (flags & BoardCellFlags.Road) != 0;
+        public bool IsRoadSpawn => (flags & BoardCellFlags.RoadSpawn) != 0;
+        public bool IsRoadEnd => (flags & BoardCellFlags.RoadEnd) != 0;
     }
 }

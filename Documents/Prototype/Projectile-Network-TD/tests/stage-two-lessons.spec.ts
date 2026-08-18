@@ -115,3 +115,27 @@ test('Level 2 teaches free Hỗ Trợ on Wave 3 and Trụ Sấm on Wave 4', asyn
   await expect(page.locator('#start-wave')).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+test('the free lesson tower highlights Nâng cấp until upgraded, and an unaffordable branch still reports Không đủ Vàng', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.setState('stage-two-wave-four'));
+  const state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(state.gold).toBe(55);
+  const support = (state.nodes as Array<{ type: string; slotId: number; branch: string | null; stageTwoLessonType: string | null }>)
+    .find((node) => node.type === 'support');
+  expect(support).toMatchObject({ branch: null, stageTwoLessonType: 'support' });
+
+  const point = await nodePoint(page, 'support', support!.slotId);
+  await page.mouse.click(point.x, point.y);
+  await expect(page.locator('#branch-controls')).toHaveClass(/tutorial-focus/);
+  await expect(page.locator('#action-upgrade')).toHaveClass(/tutorial-focus/);
+  await expect(page.locator('#branch-a')).toBeEnabled();
+  await expect(page.locator('#branch-a')).toHaveClass(/unaffordable/);
+
+  await page.locator('#branch-a').click();
+  await expect(page.locator('#toast')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#toast')).toContainText('Không đủ Vàng');
+  const afterFailedClick = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  expect(afterFailedClick.gold).toBe(55);
+  expect((afterFailedClick.nodes as Array<{ type: string; branch: string | null }>).find((n) => n.type === 'support')?.branch).toBeNull();
+});

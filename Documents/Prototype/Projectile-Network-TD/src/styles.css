@@ -131,6 +131,8 @@ button:focus-visible { outline: 2px solid #8cf1f4; outline-offset: 2px; }
 .branch-controls button small { margin-top: 3px; color: #b8adc3; font-size: 8px; line-height: 1.2; }
 .branch-controls button.selected { border-color: #8cebf0; background: rgba(45,128,138,.58); }
 .branch-controls button:disabled, .node-actions button:disabled { opacity: .36; cursor: not-allowed; }
+.branch-controls button.unaffordable { opacity: .58; }
+.branch-controls.tutorial-focus, .node-actions button.tutorial-focus { border-color: #fff39a; animation: tutorial-focus-pulse .92s ease-in-out infinite; }
 .node-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .node-actions span { color: #ddc779; margin-right: 4px; }
 .node-actions .danger { color: #ff8c97; }

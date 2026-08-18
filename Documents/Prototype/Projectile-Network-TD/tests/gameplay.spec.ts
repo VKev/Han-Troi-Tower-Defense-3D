@@ -81,6 +81,25 @@ test('Dồn Dập and Trọng Đạn explain cadence and damage in the upgrade U
   await expect(page.locator('#branch-b')).toContainText('26 sát thương');
 });
 
+test('clicking a branch card purchases the upgrade directly and clears the tutorial-focus highlight', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Node selection via page.mouse.click is desktop-only; see the branch-copy test above.');
+  await boot(page);
+  await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.autoBuildMinimumChain());
+  const fire = await nodePoint(page, 'fire');
+  await page.mouse.click(fire.x, fire.y);
+  await expect(page.locator('#branch-a')).toBeEnabled();
+  await expect(page.locator('#branch-controls')).not.toHaveClass(/tutorial-focus/);
+  const before = (await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).nodes as Array<{ type: string; branch: string | null; totalInvested: number }>;
+  const goldBefore = (await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot())).gold as number;
+  await page.locator('#branch-a').click();
+  const state = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__!.snapshot());
+  const fireNode = (state.nodes as Array<{ type: string; branch: string | null; totalInvested: number }>).find((node) => node.type === 'fire');
+  expect(fireNode?.branch).toBe('conduit');
+  expect(fireNode?.totalInvested).toBe(before.find((node) => node.type === 'fire')!.totalInvested + 62);
+  expect(state.gold as number).toBe(goldBefore - 62);
+  await expect(page.locator('#branch-a')).toBeDisabled();
+});
+
 test('Trống Gọi Mưa offers the approved Quét Rộng and Đớp Mạnh frog-skill branches', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'The branch copy is renderer-independent.');
   await boot(page);
