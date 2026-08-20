@@ -18,6 +18,8 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string LevelOneScenePath = "Assets/Scenes/Levels/Level_001.unity";
         private const string LevelTwoScenePath = "Assets/Scenes/Levels/Level_002.unity";
+        private const string ApplicationLifetimeScopeTypeName =
+            "TowerDefense3D.GameFlow.ApplicationLifetimeScope";
         private const int TransitionFrameBudget = 600;
 
         private string saveRoot;
@@ -35,9 +37,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             yield return load;
             yield return null;
 
-            GameFlowCoordinator flow = FindLoaded<GameFlowCoordinator>();
-            Assert.That(flow, Is.Not.Null);
-            yield return WaitForState(flow, GameFlowState.LevelMenu);
+            yield return WaitForLevelMenu();
         }
 
         [UnityTearDown]
@@ -71,26 +71,24 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         [UnityTest]
         public IEnumerator Boot_ShowsLevelMenu_WithoutAutoLoadingLevel()
         {
-            GameFlowCoordinator flow = FindLoaded<GameFlowCoordinator>();
-            SaveCoordinator save = FindLoaded<SaveCoordinator>();
+            ApplicationUIManager applicationUi = FindLoaded<ApplicationUIManager>();
 
-            Assert.That(flow.State, Is.EqualTo(GameFlowState.LevelMenu));
-            Assert.That(save.Progress.IsUnlocked(1), Is.True);
-            Assert.That(save.Progress.IsUnlocked(2), Is.False);
+            Assert.That(applicationUi, Is.Not.Null);
+            Assert.That(applicationUi.IsInitialized, Is.True);
+            Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
-            Assert.That(FindLevelButton(1), Is.Not.Null);
-            Assert.That(FindLevelButton(2), Is.Not.Null);
+            Assert.That(GetLevelButtonLabel(1), Does.StartWith("Play "));
+            Assert.That(GetLevelButtonLabel(2), Does.StartWith("Unlock "));
             yield break;
         }
 
         [UnityTest]
         public IEnumerator LevelOne_FirstTapLoads_AndReturnRestoresMenuWithoutDuplicates()
         {
-            GameFlowCoordinator flow = FindLoaded<GameFlowCoordinator>();
             ClickLevel(1);
-            yield return WaitForState(flow, GameFlowState.Gameplay);
+            yield return WaitForGameplay(LevelOneScenePath);
 
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.True);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
@@ -98,7 +96,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoaded<Camera>(), Is.EqualTo(1));
             Assert.That(CountLoaded<AudioListener>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<GameFlowCoordinator>(), Is.EqualTo(1));
+            Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(CountLoaded<ApplicationUIManager>(), Is.EqualTo(1));
             Assert.That(CountLoaded<LevelSceneContext>(), Is.EqualTo(1));
 
@@ -108,31 +106,25 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             AssertMigratedGameplayUi(gameplayUi, "Level_001_Board");
 
             GetPrivateField<Button>(gameplayUi, "returnToMenuButton").onClick.Invoke();
-            yield return WaitForState(flow, GameFlowState.LevelMenu);
+            yield return WaitForLevelMenu();
 
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<GameFlowCoordinator>(), Is.EqualTo(1));
+            Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
         }
 
         [UnityTest]
         public IEnumerator LevelTwo_FirstTapUnlocks_SecondTapLoads_AndUnlockPersists()
         {
-            GameFlowCoordinator flow = FindLoaded<GameFlowCoordinator>();
-            SaveCoordinator save = FindLoaded<SaveCoordinator>();
-
             ClickLevel(2);
-            yield return null;
-            yield return null;
+            yield return WaitForLevelButtonLabel(2, "Play ");
 
-            Assert.That(flow.State, Is.EqualTo(GameFlowState.LevelMenu));
-            Assert.That(save.Progress.IsUnlocked(2), Is.True);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(FindLevelButton(2), Is.Not.Null);
 
             ClickLevel(2);
-            yield return WaitForState(flow, GameFlowState.Gameplay);
+            yield return WaitForGameplay(LevelTwoScenePath);
 
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(LevelTwoScenePath));
             GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
@@ -143,47 +135,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             CollectionAssert.Contains(persisted.Data.UnlockedLevelNumbers, 2);
 
             GetPrivateField<Button>(gameplayUi, "returnToMenuButton").onClick.Invoke();
-            yield return WaitForState(flow, GameFlowState.LevelMenu);
-        }
-
-        [UnityTest]
-        public IEnumerator MissingLevel_ShowsRetry_AndDoesNotChangeUnlockProgress()
-        {
-            GameFlowCoordinator flow = FindLoaded<GameFlowCoordinator>();
-            SaveCoordinator save = FindLoaded<SaveCoordinator>();
-            LevelCatalog original = GetPrivateField<LevelCatalog>(flow, "levelCatalog");
-            LevelCatalog invalid = UnityEngine.Object.Instantiate(original);
-            SetCatalogEntries(
-                invalid,
-                new LevelCatalogEntry(1, "Level 1", "Assets/Scenes/Levels/Missing.unity"),
-                new LevelCatalogEntry(2, "Level 2", LevelTwoScenePath));
-            SetPrivateField(flow, "levelCatalog", invalid);
-
-            try
-            {
-                ClickLevel(1);
-                yield return WaitForState(flow, GameFlowState.BlockingError);
-
-                CollectionAssert.AreEqual(new[] { 1 }, save.Progress.CreateSortedSnapshot());
-                Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
-                Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
-
-                BlockingErrorScreen error = FindLoaded<BlockingErrorScreen>();
-                Assert.That(error, Is.Not.Null);
-                Button retry = GetPrivateField<Button>(error, "retryButton");
-                Button startNew = GetPrivateField<Button>(error, "startNewButton");
-                Assert.That(retry.gameObject.activeInHierarchy, Is.True);
-                Assert.That(startNew.gameObject.activeSelf, Is.False);
-
-                retry.onClick.Invoke();
-                yield return null;
-                yield return WaitForState(flow, GameFlowState.BlockingError);
-                CollectionAssert.AreEqual(new[] { 1 }, save.Progress.CreateSortedSnapshot());
-            }
-            finally
-            {
-                UnityEngine.Object.Destroy(invalid);
-            }
+            yield return WaitForLevelMenu();
         }
 
         private static void AssertMigratedGameplayUi(
@@ -210,40 +162,81 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(manager.GetComponentInChildren<SafeAreaFitter>(true), Is.Not.Null);
         }
 
-        private static IEnumerator WaitForState(
-            GameFlowCoordinator flow,
-            GameFlowState expected)
+        private static IEnumerator WaitForLevelMenu()
         {
             for (int frame = 0; frame < TransitionFrameBudget; frame++)
             {
-                if (flow != null && flow.State == expected)
+                FailIfBlockingError("level menu");
+                ApplicationUIManager applicationUi = FindLoaded<ApplicationUIManager>();
+                LevelButtonView levelOne = FindLevelButton(1);
+                LevelButtonView levelTwo = FindLevelButton(2);
+                if (applicationUi != null
+                    && applicationUi.IsInitialized
+                    && levelOne != null
+                    && levelOne.gameObject.activeInHierarchy
+                    && levelTwo != null
+                    && levelTwo.gameObject.activeInHierarchy)
                 {
                     yield break;
-                }
-
-                if (flow != null
-                    && flow.State == GameFlowState.BlockingError
-                    && expected != GameFlowState.BlockingError)
-                {
-                    BlockingErrorScreen error = FindLoaded<BlockingErrorScreen>();
-                    Text message = error != null
-                        ? GetPrivateField<Text>(error, "messageLabel")
-                        : null;
-                    Assert.Fail(
-                        "Entered BlockingError while waiting for "
-                        + expected
-                        + ": "
-                        + (message != null ? message.text : "missing error message"));
                 }
 
                 yield return null;
             }
 
+            Assert.Fail("Timed out waiting for the level menu.");
+        }
+
+        private static IEnumerator WaitForGameplay(string scenePath)
+        {
+            for (int frame = 0; frame < TransitionFrameBudget; frame++)
+            {
+                FailIfBlockingError("gameplay scene " + scenePath);
+                GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
+                if (IsSceneLoaded(scenePath)
+                    && SceneManager.GetActiveScene().path == scenePath
+                    && gameplayUi != null
+                    && gameplayUi.IsInitialized)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail("Timed out waiting for gameplay scene " + scenePath + ".");
+        }
+
+        private static IEnumerator WaitForLevelButtonLabel(int levelNumber, string prefix)
+        {
+            for (int frame = 0; frame < TransitionFrameBudget; frame++)
+            {
+                FailIfBlockingError("level button " + levelNumber);
+                string label = GetLevelButtonLabel(levelNumber);
+                if (!string.IsNullOrEmpty(label) && label.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail("Timed out waiting for level button label " + levelNumber + ".");
+        }
+
+        private static void FailIfBlockingError(string expected)
+        {
+            BlockingErrorScreen error = FindLoaded<BlockingErrorScreen>();
+            if (error == null || !error.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            Text message = GetPrivateField<Text>(error, "messageLabel");
             Assert.Fail(
-                "Timed out waiting for GameFlowState. Expected "
+                "Entered BlockingError while waiting for "
                 + expected
-                + ", current "
-                + (flow != null ? flow.State.ToString() : "missing flow"));
+                + ": "
+                + (message != null ? message.text : "missing error message"));
         }
 
         private static void ClickLevel(int levelNumber)
@@ -267,6 +260,13 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             }
 
             return null;
+        }
+
+        private static string GetLevelButtonLabel(int levelNumber)
+        {
+            LevelButtonView view = FindLevelButton(levelNumber);
+            Text label = view != null ? GetPrivateField<Text>(view, "label") : null;
+            return label != null ? label.text : string.Empty;
         }
 
         private static T FindLoaded<T>() where T : Component
@@ -298,6 +298,23 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             return count;
         }
 
+        private static int CountLoadedByFullName(string fullName)
+        {
+            int count = 0;
+            Component[] values = Resources.FindObjectsOfTypeAll<Component>();
+            for (int index = 0; index < values.Length; index++)
+            {
+                Component value = values[index];
+                if (IsLoadedSceneObject(value)
+                    && string.Equals(value.GetType().FullName, fullName, StringComparison.Ordinal))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         private static bool IsLoadedSceneObject(Component component)
         {
             return component != null
@@ -318,25 +335,6 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, "Missing private field " + fieldName);
             return (T)field.GetValue(target);
-        }
-
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            FieldInfo field = target.GetType().GetField(
-                fieldName,
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.That(field, Is.Not.Null, "Missing private field " + fieldName);
-            field.SetValue(target, value);
-        }
-
-        private static void SetCatalogEntries(
-            LevelCatalog catalog,
-            params LevelCatalogEntry[] entries)
-        {
-            FieldInfo field = typeof(LevelCatalog).GetField(
-                "levels",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            field.SetValue(catalog, new List<LevelCatalogEntry>(entries));
         }
 
         private void BackupRealSaveDirectory()

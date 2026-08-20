@@ -1,47 +1,99 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using VContainer.Unity;
 
 namespace TowerDefense3D.GameFlow
 {
+    public interface IApplicationUIController : IApplicationUI
+    {
+        void Initialize();
+        void Shutdown();
+    }
+
     /// <summary>
     /// Sole owner of boot, menu, loading, gameplay, and blocking-error phases.
     /// </summary>
-    [DisallowMultipleComponent]
-    public sealed class GameFlowCoordinator : MonoBehaviour
+    public sealed class GameFlowCoordinator : IStartable, IDisposable
     {
-        [SerializeField] private LevelCatalog levelCatalog;
-        [SerializeField] private SaveCoordinator saveCoordinator;
-        [SerializeField] private LevelSceneLoader levelSceneLoader;
-        [SerializeField] private MonoBehaviour applicationUiBehaviour;
+        private readonly LevelCatalog levelCatalog;
+        private readonly SaveCoordinator saveCoordinator;
+        private readonly LevelSceneLoader levelSceneLoader;
+        private readonly IApplicationUIController applicationUi;
 
-        private IApplicationUI applicationUi;
+        private bool isStarted;
+        private bool isDisposed;
 
         public GameFlowState State { get; private set; } = GameFlowState.Booting;
 
-        private void Awake()
+        public GameFlowCoordinator(
+            LevelCatalog levelCatalog,
+            SaveCoordinator saveCoordinator,
+            LevelSceneLoader levelSceneLoader,
+            IApplicationUIController applicationUi)
         {
-            applicationUi = applicationUiBehaviour as IApplicationUI;
-            if (levelCatalog == null
-                || saveCoordinator == null
-                || levelSceneLoader == null
-                || applicationUi == null)
+            this.levelCatalog = levelCatalog ?? throw new ArgumentNullException(nameof(levelCatalog));
+            this.saveCoordinator = saveCoordinator ?? throw new ArgumentNullException(nameof(saveCoordinator));
+            this.levelSceneLoader = levelSceneLoader ?? throw new ArgumentNullException(nameof(levelSceneLoader));
+            this.applicationUi = applicationUi ?? throw new ArgumentNullException(nameof(applicationUi));
+        }
+
+        public void Start()
+        {
+            if (isStarted || isDisposed)
             {
-                Debug.LogError(
-                    "GameFlowCoordinator requires a LevelCatalog, SaveCoordinator, LevelSceneLoader, and IApplicationUI.",
-                    this);
-                enabled = false;
+                return;
+            }
+
+            bool applicationUiInitialized = false;
+            try
+            {
+                applicationUi.Initialize();
+                applicationUiInitialized = true;
+                isStarted = true;
+                BootNow();
+            }
+            catch (Exception startupException)
+            {
+                isStarted = false;
+                if (applicationUiInitialized)
+                {
+                    try
+                    {
+                        applicationUi.Shutdown();
+                    }
+                    catch (Exception rollbackException)
+                    {
+                        throw new AggregateException(
+                            "GameFlowCoordinator startup and UI rollback both failed.",
+                            startupException,
+                            rollbackException);
+                    }
+                }
+
+                throw;
             }
         }
 
-        private void Start()
+        public void Dispose()
         {
-            BootNow();
+            if (isDisposed)
+            {
+                return;
+            }
+
+            isDisposed = true;
+            if (!isStarted)
+            {
+                return;
+            }
+
+            isStarted = false;
+            applicationUi.Shutdown();
         }
 
         public void BootNow()
         {
-            if (!enabled || applicationUi == null)
+            if (!isStarted || isDisposed)
             {
                 return;
             }
@@ -75,7 +127,7 @@ namespace TowerDefense3D.GameFlow
 
         public void RequestReturnToLevelMenu()
         {
-            if (State != GameFlowState.Gameplay)
+            if (!isStarted || isDisposed || State != GameFlowState.Gameplay)
             {
                 return;
             }
@@ -133,6 +185,11 @@ namespace TowerDefense3D.GameFlow
 
         private void OnLevelLoadCompleted(LevelLoadRequest request, LevelTransitionResult result)
         {
+            if (!isStarted || isDisposed)
+            {
+                return;
+            }
+
             applicationUi.HideLoading();
             if (result.IsSuccess)
             {
@@ -151,6 +208,11 @@ namespace TowerDefense3D.GameFlow
 
         private void OnReturnToMenuCompleted(LevelTransitionResult result)
         {
+            if (!isStarted || isDisposed)
+            {
+                return;
+            }
+
             applicationUi.HideLoading();
             if (result.IsSuccess)
             {

@@ -69,14 +69,18 @@ namespace TowerDefense3D.GameFlow
         public void Shutdown()
         {
             Unsubscribe();
-            if (IsInitialized)
+            if (IsInitialized && placementController != null)
             {
-                placementController?.CancelPlacement();
+                placementController.CancelPlacement();
             }
 
             requestReturnToMenu = null;
             IsInitialized = false;
-            placementHud?.Hide();
+            if (placementHud != null)
+            {
+                placementHud.Hide();
+            }
+
             if (navigationRoot != null)
             {
                 navigationRoot.SetActive(false);
@@ -117,8 +121,15 @@ namespace TowerDefense3D.GameFlow
                 }
             }
 
-            cancelPlacementButton?.onClick.RemoveListener(HandleCancelPlacement);
-            returnToMenuButton?.onClick.RemoveListener(HandleReturnToMenu);
+            if (cancelPlacementButton != null)
+            {
+                cancelPlacementButton.onClick.RemoveListener(HandleCancelPlacement);
+            }
+
+            if (returnToMenuButton != null)
+            {
+                returnToMenuButton.onClick.RemoveListener(HandleReturnToMenu);
+            }
         }
 
         private void HandleTowerRequested(TowerDefinition definition)

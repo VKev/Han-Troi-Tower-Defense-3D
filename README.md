@@ -76,6 +76,16 @@ Assets/Scripts/<FeatureName>/
 - A version identifier is allowed only when it is part of an explicit compatibility or migration contract, such as a save schema or external API. Its owner, supported values, and migration behavior must be clear in code or documentation.
 - Rename versioned assets through Unity's Asset Database and update any literal load paths; preserve GUID-based serialized references.
 
+## Runtime lifecycle ownership
+
+- Keep one application composition root in `Assets/Scenes/Bootstrap.unity`. The current root is `ApplicationLifetimeScope`, using VContainer 1.19.0.
+- Register exactly one application entry point for high-level flow. `GameFlowCoordinator` owns boot, menu, loading, gameplay, and blocking-error phase transitions; do not add another manager callback that starts the same flow.
+- Prefer pure C# services for application logic and persistence. Register existing Unity components only when they need authored references, coroutines, scene APIs, GameObject state, or other engine-owned behavior.
+- Keep level activation explicit through `LevelSceneContext`. Participants initialize in authored order and shut down in reverse order; the current order is `GridPlacementSceneAdapter` followed by `GameplayUIManager`.
+- Keep engine- and object-local callbacks on their owning `MonoBehaviour`, such as input polling, camera framing, frame pacing, Safe Area updates, view subscriptions, and destruction cleanup. These callbacks must not become additional application entry points.
+- Do not expose a mutable `Manager.Instance`, use global container `Resolve` calls, add an unmanaged `DontDestroyOnLoad` root, or store scene-owned Unity objects in application services.
+- Add a session or level child scope only when an approved lifetime requirement needs it. The current architecture has one application scope and scene participants, with no session or level `LifetimeScope`.
+
 ## Shared asset roots
 
 Two root-level folders under `Assets/` centralize instance data instead of scattering it per feature:

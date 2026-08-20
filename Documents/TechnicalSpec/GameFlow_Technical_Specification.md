@@ -48,7 +48,7 @@ The implementation starts with Level 1 and Level 2 and must support additional c
 - Persistence of placed towers, occupancy, placement candidates, camera state, UI state, or current scene.
 - Multiple save slots, cloud save, encryption, or server-authoritative progress.
 - Addressables or remote scene delivery.
-- VContainer migration, a service locator, a global event bus, or a global singleton API.
+- Additional session or level `LifetimeScope` layers, a service locator, a global event bus, or a global singleton API. The approved Bootstrap application scope is described in Section 4.
 - Pause, settings, shop, thumbnail, or advanced screen-animation systems.
 - iOS implementation in this phase.
 
@@ -58,13 +58,32 @@ The implementation starts with Level 1 and Level 2 and must support additional c
 
 `Assets/Scenes/Bootstrap.unity` is the first enabled player scene and the sole application composition root. It survives every content transition and owns:
 
-- `GameFlowCoordinator`
-- `LevelSceneLoader`
-- `SaveCoordinator`
-- `ApplicationUIManager`
+- exactly one `ApplicationLifetimeScope`
+- exactly one `LevelSceneLoader`
+- the persistent `ApplicationUIManager` instance
 - `MobileFrameRatePolicy`
 - exactly one `EventSystem` with the Input System UI module
 - persistent Level Menu, loading, blocking-error, Start New confirmation, save-warning, and input-blocker presentation
+
+`ApplicationLifetimeScope` is the only VContainer composition root. It validates its authored `LevelCatalog`, `LevelSceneLoader`, and `ApplicationUIManager` references, then registers:
+
+- the authored `LevelCatalog` instance;
+- one application-owned `LocalSaveRepository` and one singleton `SaveCoordinator`;
+- the existing `LevelSceneLoader` and `ApplicationUIManager` components;
+- `GameFlowCoordinator` as the sole application entry point through `IStartable` and `IDisposable`.
+
+`GameFlowCoordinator` and `SaveCoordinator` are pure C# objects rather than scene components. VContainer owns their construction and disposal. The application startup order is explicit:
+
+```text
+build ApplicationLifetimeScope container
+-> construct application services and GameFlowCoordinator
+-> invoke GameFlowCoordinator.Start
+-> initialize ApplicationUIManager
+-> validate LevelCatalog and initialize SaveCoordinator
+-> publish the Level Menu or the classified blocking error
+```
+
+On application-scope disposal, VContainer invokes `GameFlowCoordinator.Dispose`, which shuts down the application UI once. No second `MonoBehaviour.Start`, `Awake`, or global singleton drives the same application flow.
 
 Bootstrap must not own a gameplay board, placed towers, level camera, level lighting, or Grid Placement controller.
 
@@ -82,13 +101,26 @@ Each `Assets/Scenes/Levels/Level_###.unity` scene owns:
 
 A level scene must not contain an `EventSystem`, `MobileFrameRatePolicy`, `ApplicationUIManager`, `SaveCoordinator`, or loading/error UI.
 
+`LevelSceneContext` is the scene readiness and teardown boundary. Its authored participants are initialized in array order:
+
+```text
+GridPlacementSceneAdapter
+-> GameplayUIManager
+```
+
+Shutdown runs in reverse order so the UI unsubscribes and cancels placement before the placement controller releases its runtime state. `LevelSceneContext.OnDestroy` is a safety fallback for scene destruction; it is not an additional application entry point.
+
 ### 4.3 Dependency direction
 
 `GameFlowCoordinator` is the only authority that changes the application flow phase or requests a scene transition. UI views publish commands; they do not load scenes or read/write files.
 
 Core save and scene-flow code does not depend on Grid Placement. The gameplay UI integration adapter may depend on the existing Grid Placement runtime assembly so it can forward tower-selection and cancel commands.
 
-Explicit Bootstrap and scene-context composition is preferred over VContainer because the repository does not currently use VContainer for project-owned runtime composition and the approved lifetime graph is small.
+Dependencies flow from the Bootstrap composition root into narrow constructors or registered components. Runtime code does not expose the container, call global `Resolve`, publish a mutable static `Instance`, or create another persistent root. `GameFlowCoordinator` depends on the catalog, save coordinator, scene loader, and application UI contract; none of those services depend back on the coordinator.
+
+The architecture is intentionally hybrid. VContainer owns application construction, startup, and disposal. `LevelSceneContext` owns ordered scene activation and reverse shutdown. Unity callbacks remain on engine- or object-local components when Unity itself owns the event: frame pacing in `MobileFrameRatePolicy.Awake`, pointer polling in `GridPlacementController.Update`, camera framing in `BoardCameraFramer.OnEnable`/`LateUpdate`, view subscription cleanup, and destruction fallbacks. These callbacks must not make application phase or scene-transition decisions.
+
+This approved VContainer decision supersedes only the earlier clauses in this specification that excluded VContainer or preferred manual Bootstrap composition. It does not change the approved player flow, save contract, additive-scene policy, UI ownership, or introduce a session/level child scope.
 
 ## 5. Application flow state
 
@@ -242,10 +274,9 @@ The gameplay manager subscribes and unsubscribes listeners symmetrically. Before
 
 ```text
 Bootstrap
-|-- ApplicationRoot
-|   |-- GameFlowCoordinator
+|-- Application Systems
+|   |-- ApplicationLifetimeScope
 |   |-- LevelSceneLoader
-|   |-- SaveCoordinator
 |   `-- MobileFrameRatePolicy
 |-- EventSystem
 `-- ApplicationUI
@@ -264,9 +295,12 @@ Bootstrap
         `-- SaveWarning
 ```
 
+The application container additionally owns the non-GameObject `GameFlowCoordinator`, `SaveCoordinator`, and `LocalSaveRepository`. They do not appear as Bootstrap components.
+
 ```text
 LevelRoot
 |-- LevelSceneContext
+|   `-- Participants: GridPlacementSceneAdapter, GameplayUIManager
 |-- World
 |   |-- Main Camera
 |   |-- Lighting
@@ -365,24 +399,23 @@ A failed save keeps the in-memory unlock. `SaveWarningView` exposes Retry Save. 
 ## 9. Source and asset layout
 
 ```text
-Assets/_Project/GameFlow/
+Assets/Scripts/GameFlow/
 |-- Scripts/
 |   |-- Application/
+|   |   |-- ApplicationLifetimeScope.cs
+|   |   `-- GameFlowCoordinator.cs
 |   |-- Levels/
 |   |-- Save/
-|   |-- UI/
+|   |-- LevelSceneContext.cs
 |   `-- TowerDefense3D.GameFlow.Runtime.asmdef
-|-- Data/
-|   `-- LevelCatalog.asset
-|-- Prefabs/UI/
-|   |-- ApplicationUI.prefab
-|   |-- GameplayUI.prefab
-|   `-- LevelButton.prefab
 |-- Editor/
-|   `-- LevelCatalogValidator.cs
 `-- Tests/
     |-- EditMode/
     `-- PlayMode/
+
+Assets/Scripts/UI/Scripts/       # Single project-owned UI source home
+Assets/Config/GameFlow/          # LevelCatalog and other authored configuration
+Assets/Resources/Prefabs/        # Shared ApplicationUI, GameplayUI, and LevelButton prefabs
 
 Assets/Scenes/
 |-- Bootstrap.unity
@@ -391,7 +424,7 @@ Assets/Scenes/
     `-- Level_002.unity
 ```
 
-The runtime assembly owns the stable public contracts before parallel implementation begins. Editor and test assemblies reference it without introducing runtime references to editor-only code.
+The runtime assembly owns the stable public contracts before parallel implementation begins. Editor and test assemblies reference it without introducing runtime references to editor-only code. UI stays in the existing `Assets/Scripts/UI/Scripts/` module rather than creating a second UI source tree under GameFlow.
 
 ## 10. Serialized migration procedure
 
@@ -487,6 +520,7 @@ The feature is complete only when the approved player behavior is implemented; s
 - Added the `TowerDefense3D.GameFlow.Runtime` assembly with the approved save, scene-flow, level-catalog, application UI, gameplay UI, and composition contracts.
 - Added transactional local autosave with primary, backup, and owned temporary-file recovery. Persisted state contains unlocked level numbers only.
 - Added Bootstrap-owned application services and UI, level-scoped gameplay UI, native additive scene loading, retry paths, Start New confirmation, and save-warning retry.
+- Added the VContainer 1.19.0 application composition root with one `GameFlowCoordinator` entry point, pure C# save/application services, and authored Unity adapters.
 - Migrated the existing Grid Placement HUD into the shared gameplay UI ownership model without moving placement rules into UI code.
 - Preserved the original scene GUID while moving `SampleScene` to `Level_001`, and preserved the original Board GUID while moving `Board.asset` to `Level_001_Board.asset`.
 - Added independent Level 2 scene and Board assets, a two-entry Level Catalog, and Build Settings ordered as Bootstrap, Level 1, and Level 2.

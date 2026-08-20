@@ -1,15 +1,20 @@
 using System;
-using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
     /// Owns unlocked-level runtime state and coordinates snapshot-based persistence.
     /// </summary>
-    [DisallowMultipleComponent]
-    public sealed class SaveCoordinator : MonoBehaviour
+    public sealed class SaveCoordinator
     {
-        private LocalSaveRepository repository;
+        private readonly LocalSaveRepository repository;
+        private readonly string applicationVersion;
+
+        public SaveCoordinator(LocalSaveRepository repository, string applicationVersion)
+        {
+            this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            this.applicationVersion = applicationVersion ?? string.Empty;
+        }
 
         public UnlockProgress Progress { get; private set; }
         public SaveWriteResult LastWriteResult { get; private set; }
@@ -17,8 +22,6 @@ namespace TowerDefense3D.GameFlow
 
         public SaveLoadResult Initialize()
         {
-            EnsureRepository();
-
             SaveLoadResult loadResult = repository.Load();
             if (loadResult.IsSuccess)
             {
@@ -63,7 +66,6 @@ namespace TowerDefense3D.GameFlow
 
         public SaveWriteResult StartNew()
         {
-            EnsureRepository();
             SaveWriteResult deleteResult = repository.DeleteOwnedAutosave();
             if (!deleteResult.IsSuccess)
             {
@@ -78,7 +80,6 @@ namespace TowerDefense3D.GameFlow
 
         private SaveWriteResult SaveCurrent()
         {
-            EnsureRepository();
             if (Progress == null)
             {
                 LastWriteResult = new SaveWriteResult(
@@ -90,17 +91,9 @@ namespace TowerDefense3D.GameFlow
             SaveRootV1 snapshot = SaveRootV1.Create(
                 Progress.CreateSortedSnapshot(),
                 DateTime.UtcNow.ToString("O"),
-                Application.version);
+                applicationVersion);
             LastWriteResult = repository.Save(snapshot);
             return LastWriteResult;
-        }
-
-        private void EnsureRepository()
-        {
-            if (repository == null)
-            {
-                repository = new LocalSaveRepository(Application.persistentDataPath);
-            }
         }
     }
 }

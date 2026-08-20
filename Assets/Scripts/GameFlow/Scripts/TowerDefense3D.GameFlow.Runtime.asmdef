@@ -3,6 +3,7 @@
     "rootNamespace": "TowerDefense3D.GameFlow",
     "references": [
         "TowerDefense3D.GridPlacement.Runtime",
+        "VContainer",
         "Unity.ugui"
     ],
     "includePlatforms": [],

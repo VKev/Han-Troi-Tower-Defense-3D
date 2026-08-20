@@ -8,7 +8,7 @@ namespace TowerDefense3D.GameFlow
     /// Persistent Bootstrap-owned presentation facade. Domain and transition decisions stay in GameFlowCoordinator.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ApplicationUIManager : MonoBehaviour, IApplicationUI
+    public sealed class ApplicationUIManager : MonoBehaviour, IApplicationUIController
     {
         [SerializeField] private LevelMenuScreen levelMenuScreen;
         [SerializeField] private LoadingScreen loadingScreen;
@@ -16,13 +16,52 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private SaveWarningView saveWarningView;
         [SerializeField] private GameObject inputBlocker;
 
-        private void Awake()
+        public bool IsInitialized { get; private set; }
+
+        public void Initialize()
         {
+            if (IsInitialized)
+            {
+                return;
+            }
+
             levelMenuScreen?.Hide();
             loadingScreen?.Hide();
             blockingErrorScreen?.Hide();
             saveWarningView?.Hide();
             SetInputBlocked(false);
+            IsInitialized = true;
+        }
+
+        public void Shutdown()
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            if (levelMenuScreen != null)
+            {
+                levelMenuScreen.Hide();
+            }
+
+            if (loadingScreen != null)
+            {
+                loadingScreen.Hide();
+            }
+
+            if (blockingErrorScreen != null)
+            {
+                blockingErrorScreen.Hide();
+            }
+
+            if (saveWarningView != null)
+            {
+                saveWarningView.Hide();
+            }
+
+            SetInputBlocked(false);
+            IsInitialized = false;
         }
 
         public void ShowLevelMenu(IReadOnlyList<LevelMenuItemState> levels, Action<int> onLevelSelected)

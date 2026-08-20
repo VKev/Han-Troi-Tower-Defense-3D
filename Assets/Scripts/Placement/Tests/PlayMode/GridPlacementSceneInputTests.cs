@@ -31,6 +31,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                     : null;
 
             Assert.That(controller, Is.Not.Null);
+            controller.Initialize();
             Assert.That(controller.Occupancy, Is.Not.Null);
             Assert.That(controller.SelectedTower, Is.Not.Null);
             Assert.That(placedRoot, Is.Not.Null);

@@ -18,9 +18,9 @@ MonoBehaviour:
     height: 8
   cellSize: 1
   heightUnit: 1
-  visualizeInScene: 1
-  maxCameraGridXSpan: 20
-  maxCameraGridYSpan: 20
+  visualizeInScene: 0
+  maxCameraGridXSpan: 7
+  maxCameraGridYSpan: 7
   cells:
   - coordinate:
       x: 0
@@ -10601,72 +10601,72 @@ MonoBehaviour:
       x: 35
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 26
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 26
@@ -11001,72 +11001,72 @@ MonoBehaviour:
       x: 35
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 27
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 27
@@ -11401,72 +11401,72 @@ MonoBehaviour:
       x: 35
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 38
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 28
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 28
@@ -11801,77 +11801,77 @@ MonoBehaviour:
       x: 35
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 29
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 38
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 39
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 40
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 41
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 42
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 43
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 44
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 45
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 46
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 47
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 48
       z: 29
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 49
       z: 29
       y: 0
-    flags: 3
+    flags: 67
   - coordinate:
       x: 50
       z: 29
@@ -12201,72 +12201,72 @@ MonoBehaviour:
       x: 35
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 30
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 38
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 30
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 30
@@ -12601,72 +12601,72 @@ MonoBehaviour:
       x: 35
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 31
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 38
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 31
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 31
@@ -13001,72 +13001,72 @@ MonoBehaviour:
       x: 35
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 32
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 38
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 32
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 32
@@ -13401,72 +13401,72 @@ MonoBehaviour:
       x: 35
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 33
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 38
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 33
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 33
@@ -13801,72 +13801,72 @@ MonoBehaviour:
       x: 35
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 36
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 37
       z: 34
       y: 0
-    flags: 3
+    flags: 27
   - coordinate:
       x: 38
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 39
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 40
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 41
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 42
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 43
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 44
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 45
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 46
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 47
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 48
       z: 34
       y: 0
-    flags: 3
+    flags: 11
   - coordinate:
       x: 49
       z: 34
@@ -14211,7 +14211,7 @@ MonoBehaviour:
       x: 37
       z: 35
       y: 0
-    flags: 3
+    flags: 35
   - coordinate:
       x: 38
       z: 35
@@ -24022,4 +24022,99 @@ MonoBehaviour:
       z: 59
       y: 0
     flags: 3
-  gridPlaceables: []
+  gridPlaceables:
+  - coordinate:
+      x: 37
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 38
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 39
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 40
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 41
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 42
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 43
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 44
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 45
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 46
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 47
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 48
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 49
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 37
+      z: 30
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 37
+      z: 31
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 37
+      z: 32
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 37
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 37
+      z: 34
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 37
+      z: 35
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}

@@ -53,9 +53,15 @@ namespace TowerDefense3D.GridPlacement
         public bool CandidateIsValid => hasCandidate && candidateIsValid;
         public GridCell CandidateCell => candidateCell;
         public GridOccupancy Occupancy => occupancy;
+        public bool IsInitialized { get; private set; }
 
-        private void Awake()
+        public void Initialize()
         {
+            if (IsInitialized)
+            {
+                return;
+            }
+
             if (worldCamera == null)
             {
                 worldCamera = Camera.main;
@@ -63,27 +69,63 @@ namespace TowerDefense3D.GridPlacement
 
             if (boardDefinition == null)
             {
-                Debug.LogError("GridPlacementController requires a BoardDefinition.", this);
-                enabled = false;
+                throw new InvalidOperationException("GridPlacementController requires a BoardDefinition.");
+            }
+
+            try
+            {
+                Vector3 origin = boardOrigin != null ? boardOrigin.position : transform.position;
+                var initializedBoard = new GridBoard(boardDefinition, origin);
+                var initializedOccupancy = new GridOccupancy(boardDefinition.Dimensions);
+                var initializedValidator = new PlacementValidator(
+                    initializedBoard,
+                    initializedOccupancy);
+
+                board = initializedBoard;
+                occupancy = initializedOccupancy;
+                validator = initializedValidator;
+                nextOwnerId = 1;
+                IsInitialized = true;
+
+                if (initialTower != null)
+                {
+                    SelectTower(initialTower);
+                }
+            }
+            catch
+            {
+                Shutdown();
+                throw;
+            }
+        }
+
+        public void Shutdown()
+        {
+            if (!IsInitialized)
+            {
                 return;
             }
 
-            Vector3 origin = boardOrigin != null ? boardOrigin.position : transform.position;
-            board = new GridBoard(boardDefinition, origin);
-            occupancy = new GridOccupancy(boardDefinition.Dimensions);
-            validator = new PlacementValidator(board, occupancy);
-        }
-
-        private void Start()
-        {
-            if (initialTower != null)
-            {
-                SelectTower(initialTower);
-            }
+            IsInitialized = false;
+            CancelActivePointer();
+            selectedTower = null;
+            hasCandidate = false;
+            candidateIsValid = false;
+            validator = null;
+            occupancy = null;
+            board = null;
+            nextOwnerId = 1;
+            preview?.SetTower(null);
+            preview?.Hide();
         }
 
         private void Update()
         {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 CancelPlacement();
@@ -102,6 +144,11 @@ namespace TowerDefense3D.GridPlacement
 
         public void SelectTower(TowerDefinition definition)
         {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
             selectedTower = definition;
             preview?.SetTower(definition);
 
@@ -119,6 +166,11 @@ namespace TowerDefense3D.GridPlacement
 
         public void CancelPlacement()
         {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
             CancelActivePointer();
             selectedTower = null;
             ClearCandidate();
@@ -375,7 +427,7 @@ namespace TowerDefense3D.GridPlacement
 
         private void OnApplicationPause(bool pauseStatus)
         {
-            if (pauseStatus)
+            if (IsInitialized && pauseStatus)
             {
                 CancelActivePointer();
             }
@@ -383,7 +435,7 @@ namespace TowerDefense3D.GridPlacement
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (!hasFocus)
+            if (IsInitialized && !hasFocus)
             {
                 CancelActivePointer();
             }
