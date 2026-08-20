@@ -3,8 +3,9 @@
 | Field | Value |
 |---|---|
 | Status | Implemented and verified |
-| Specification version | 1.1 |
+| Specification version | 1.2 |
 | Approved | 14 August 2026 |
+| Last updated | 20 August 2026 |
 | Unity version | 6000.3.21f1 |
 | Owning modules | `Assets/Scripts/Board/` and `Assets/Scripts/Camera/` |
 | Runtime namespace | `TowerDefense3D.GridPlacement` |
@@ -13,7 +14,7 @@
 
 ## 1. Purpose
 
-Board Camera Framing keeps the lowest playable Board level fully visible after the authored Board size, authored cells, Board origin, or mobile viewport changes. It preserves the current perspective composition while moving the scene camera to the closest valid snap position that contains the approved Board footprint.
+Board Camera Framing keeps the lowest playable Board level fully visible after the authored Board size, authored cells, Board origin, or mobile viewport changes. It preserves the current perspective composition while moving the scene camera to the closest valid snap position that contains the approved Board footprint. Designers may then apply explicit Camera-local position and rotation offsets to that automatic pose.
 
 ## 2. Approved scope
 
@@ -21,7 +22,7 @@ Board Camera Framing keeps the lowest playable Board level fully visible after t
 - Build the horizontal footprint from all in-bounds `SupportsPlacement` or `StaticBlocker` cells on that selected level.
 - Ignore all cells on higher levels when calculating camera distance.
 - Add one authored cell of horizontal world padding around the footprint so the Board edge remains visible.
-- Preserve the assigned Camera rotation, perspective field of view, viewport, and clipping configuration.
+- Capture and preserve the assigned Camera rotation as the authored base rotation, then allow an explicit Camera-local Euler offset without changing the lens, viewport, or clipping configuration.
 - Snap the Camera immediately; do not animate or blend the framing change.
 - Respect the current Board transform, including a translated or rotated `Board Origin`.
 - Fit within a configurable composition rectangle inside the device safe area.
@@ -43,8 +44,8 @@ Board Camera Framing keeps the lowest playable Board level fully visible after t
 | Owner | Lifetime | Responsibility |
 |---|---|---|
 | Lowest-level bounds calculator | One calculation | Select the approved Board level, merge duplicate authored flags logically, ignore invalid cells, and return integer X/Z extents. |
-| Perspective framing solver | One calculation | Convert four world corners and a safe viewport rectangle into the minimum valid Camera position while preserving rotation and field of view. |
-| `BoardCameraFramer` | Scene | Own serialized references and tuning, observe relevant runtime input changes, calculate a pose, and apply a snap only when the pose changes. |
+| Perspective framing solver | One calculation | Convert four world corners and a safe viewport rectangle into the minimum valid Camera position for the supplied rotation and field of view. |
+| `BoardCameraFramer` | Scene | Own serialized references, the captured authored base rotation, Camera-local offsets, and framing tuning; observe relevant runtime input changes, calculate a final pose, and apply a snap only when the pose changes. |
 | `BoardCameraAuthoringSynchronizer` | Editor synchronization | Recalculate matching Camera framers after Board visualization synchronization and record Camera movement through Unity Undo. |
 | `Main Camera` | Scene | Remain the only output Camera and receive the opt-in `BoardCameraFramer` component. |
 
@@ -79,9 +80,12 @@ If no in-bounds `SupportsPlacement` cell exists, framing fails without moving th
 - an explicit perspective `Camera` reference;
 - an explicit `BoardScenePresenter` reference;
 - `edgePaddingCells`, default `1.0`;
-- a normalized composition rectangle inside the safe area, default `(x: 0.05, y: 0.08, width: 0.90, height: 0.84)`.
+- a normalized composition rectangle inside the safe area, default `(x: 0.05, y: 0.08, width: 0.90, height: 0.84)`;
+- `cameraLocalRotationOffsetEuler`, default `(0, 0, 0)`, composed onto the captured authored base rotation before framing;
+- `cameraLocalPositionOffset`, default `(0, 0, 0)`, applied after framing along the final Camera's local right, up, and forward axes.
 
 Settings are scene configuration, not new ScriptableObject assets.
+Zero offsets preserve the previous framing behavior. The component context menu command `Capture Current Camera Rotation As Base` intentionally replaces the stored base rotation with the Camera's current rotation.
 
 ## 6. Perspective framing contract
 
@@ -94,19 +98,19 @@ It must:
 3. Account for asymmetric left, right, bottom, and top framing limits.
 4. Solve the minimum forward distance satisfying every corner against all four frustum boundaries and the near plane.
 5. Offset the Camera along its right and up axes so the Board center projects to the composition rectangle center.
-6. Return only a position; Camera rotation and lens settings remain unchanged.
+6. Return the fitted position for the supplied rotation; the solver does not mutate Camera state or lens settings.
 7. Reject invalid perspective, field-of-view, aspect, safe-rectangle, or clipping inputs without applying a partial pose.
 
-The applied pose must place every padded footprint corner in front of the Camera and inside the approved framing rectangle.
+`BoardCameraFramer` composes `authored base rotation * local rotation offset`, passes that final rotation to the solver, then adds `final rotation * local position offset` to the fitted position. The solver-fitted pose contains every padded footprint corner inside the approved framing rectangle. A non-zero position offset is a deliberate final composition override and may move part of that footprint outside the rectangle.
 
 ## 7. Runtime flow
 
 1. `BoardCameraFramer` validates its serialized Camera and Board presenter references.
-2. At runtime startup it calculates and immediately applies the framing position.
-3. It caches the inputs that can invalidate the result: Camera aspect/lens, Camera rotation, pixel rectangle, device safe area, Board transform, Board definition, and framing settings.
+2. At runtime startup it calculates and immediately applies the final Camera position and rotation.
+3. It caches the inputs that can invalidate the result: Camera aspect/lens, current Camera pose, captured base rotation, Camera-local offsets, pixel rectangle, device safe area, Board transform, Board definition, and framing settings.
 4. It recalculates only when one of those inputs changes.
 5. Idle checks must not allocate or rewrite the Camera transform.
-6. A failed recalculation preserves the last valid Camera position.
+6. A failed recalculation preserves the last valid Camera pose.
 
 The feature does not observe generated renderer changes and does not mutate gameplay time or placement state.
 
@@ -117,8 +121,8 @@ The feature does not observe generated renderer changes and does not mutate game
 3. It delegates camera work to `BoardCameraAuthoringSynchronizer`.
 4. The camera synchronizer finds loaded `BoardCameraFramer` components that
    reference the synchronized `BoardScenePresenter`.
-5. It calculates the approved snap position, records only a changed Camera
-   transform through Unity Undo, and marks the scene dirty.
+5. It calculates the approved final pose, records only a changed Camera
+   transform through Unity Undo, applies position and rotation together, and marks the scene dirty.
 
 Editor synchronization must remain disabled while entering Play Mode or compiling. A framing failure must not invalidate or roll back successful Board geometry synchronization.
 
@@ -147,7 +151,7 @@ All new player-build code remains in `TowerDefense3D.GridPlacement.Runtime`. No 
 - Add `BoardCameraFramer` to `Main Camera`.
 - Reference the Camera on the same GameObject.
 - Reference `Grid Placement/Board Origin` and its `BoardScenePresenter`.
-- Preserve the user's current Camera rotation, field of view, clipping planes, and existing scene edits.
+- Capture the user's current Camera rotation as the base pose; zero offsets preserve that rotation, field of view, clipping planes, and existing scene edits.
 - Preserve the existing `GridPlacementController.worldCamera` reference.
 
 No generated Board child is a serialized dependency of the Camera framer.
@@ -158,6 +162,7 @@ No generated Board child is a serialized dependency of the Camera framer.
 - Cinemachine `3.1.7` remains installed but unused by this feature.
 - Preserve the existing namespace, runtime assembly name, GUID-backed Board asset, and scene references.
 - The current Camera is perspective. An orthographic Camera produces a controlled failure instead of an implicit mode change.
+- Existing scenes migrate with zero Camera-local offsets. The first valid component initialization captures the current Camera rotation as the authored base.
 - Scene mutation must preserve the pre-existing user-owned
   `Assets/Scenes/Levels/Level_001.unity` changes.
 
@@ -172,12 +177,14 @@ No generated Board child is a serialized dependency of the Camera framer.
 - Verify every padded corner lies in the requested rectangle at landscape `16:9`, `20:9`, and `4:3` aspects.
 - Verify near-plane containment and invalid projection inputs.
 - Verify Board synchronization reframes only matching framers and records a changed Camera pose.
+- Verify the solver uses `base rotation * local rotation offset`, then applies the position offset along the resulting Camera-local axes.
 
 ### 12.2 Play Mode
 
 - Verify startup framing uses the serialized scene references.
 - Verify a viewport or safe-area input change causes one snap recalculation.
 - Verify stable inputs do not continuously rewrite the Camera.
+- Verify authored position and rotation offsets survive projection or viewport changes.
 
 ### 12.3 Unity and visual evidence
 
@@ -196,6 +203,7 @@ No generated Board child is a serialized dependency of the Camera framer.
 | Multiple Camera owners fight over transform | Keep each level scene on one direct Camera owner and do not add Cinemachine. |
 | Empty or invalid Board moves Camera unpredictably | Fail without mutation and preserve the last valid pose. |
 | Editor synchronization dirties unrelated scenes | Match framers by explicit presenter reference and write only changed transforms. |
+| A designer offset hides part of the automatically fitted Board | Treat the position offset as an explicit final composition override and verify the intended view visually. |
 
 ## 14. Deferred work
 
@@ -214,14 +222,14 @@ Implementation completed on 14 August 2026 with no approved-scope deviation.
 
 - `Assets/Scripts/Board/Scripts/LowestBoardLevelBounds.cs` selects the lowest playable level and its deterministic horizontal footprint.
 - `Assets/Scripts/Camera/Scripts/BoardCameraFramingSolver.cs` constructs transformed Board corners and solves the minimum perspective Camera position.
-- `Assets/Scripts/Camera/Scripts/BoardCameraFramer.cs` owns scene references, safe-area composition, startup snap, and changed-input observation.
+- `Assets/Scripts/Camera/Scripts/BoardCameraFramer.cs` owns scene references, safe-area composition, the captured authored base rotation, Camera-local offsets, startup snap, and changed-input observation.
 - `Assets/Scripts/Board/Editor/BoardAuthoring/BoardSceneSynchronizer.cs`
   delegates camera updates after Board synchronization.
 - `Assets/Scripts/Camera/Editor/BoardCameraAuthoringSynchronizer.cs`
   reframes matching loaded Camera components through Unity Undo.
-- `Assets/Scripts/Camera/Tests/EditMode/BoardCameraFramingTests.cs` covers level selection, transformed corners, safe-area composition, projection inputs, and landscape aspect ratios.
-- `Assets/Scripts/Board/Tests/EditMode/BoardSceneAuthoringTests.cs` verifies matching-presenter Editor synchronization and corner containment.
-- `Assets/Scripts/Camera/Tests/PlayMode/BoardCameraFramingPlayModeTests.cs` verifies startup snap, stable-input behavior, and a changed mobile viewport aspect.
+- `Assets/Scripts/Camera/Tests/EditMode/BoardCameraFramingTests.cs` covers level selection, transformed corners, safe-area composition, projection inputs, landscape aspect ratios, and Camera-local pose composition.
+- `Assets/Scripts/Board/Tests/EditMode/BoardSceneAuthoringTests.cs` verifies matching-presenter Editor synchronization, corner containment, and offset pose application.
+- `Assets/Scripts/Camera/Tests/PlayMode/BoardCameraFramingPlayModeTests.cs` verifies startup snap, stable-input behavior, changed mobile viewport aspect, and offset persistence after projection changes.
 - `Assets/Scenes/Levels/Level_001.unity` assigns `Main Camera` and `Grid Placement/Board Origin` to `BoardCameraFramer` with one-cell padding and the approved inner composition rectangle.
 
 ### Verification evidence
@@ -236,7 +244,10 @@ Implementation completed on 14 August 2026 with no approved-scope deviation.
 - The saved `Main Camera` position is approximately `(-5.73, 26.10, -13.06)` while its pre-existing rotation `(59.15, 0.10, 0)`, field of view `43`, near clip `0.1`, and far clip `200` remain unchanged.
 - Better Context refreshed all managed maps and verified source hash `38556005203c` after implementation.
 
+The Camera-local offset extension was verified on 20 August 2026. Unity compiled with zero Console errors; the complete Grid Placement Edit Mode suite passed 104 of 104 tests and the complete Grid Placement Play Mode suite passed 8 of 8 tests. The project continues to use the direct scene Camera without Cinemachine ownership.
+
 ### Known limitations
 
 - Physical Android cutout and safe-area acceptance remains deferred to device QA.
 - The feature intentionally fails without moving the Camera when references, perspective projection, or the playable Board footprint are invalid.
+- A non-zero Camera-local position offset intentionally overrides the final safe framing position, so composition acceptance remains a designer visual-QA responsibility.

@@ -412,6 +412,62 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         }
 
         [Test]
+        public void Synchronizer_AppliesCameraLocalPositionAndRotationOffsets()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(6, 4, 1),
+                true,
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(5, 3, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+            GameObject presenterObject = Track(new GameObject("Board Presenter"));
+            BoardScenePresenter presenter =
+                presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            GameObject cameraObject = Track(new GameObject("Offset Camera"));
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 43f;
+            camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 0.1f;
+            camera.transform.SetPositionAndRotation(
+                new Vector3(50f, 50f, 50f),
+                Quaternion.Euler(60f, 4f, 0f));
+            BoardCameraFramer framer =
+                cameraObject.AddComponent<BoardCameraFramer>();
+            SetField(framer, "targetCamera", camera);
+            SetField(framer, "boardPresenter", presenter);
+            SetField(
+                framer,
+                "cameraLocalPositionOffset",
+                new Vector3(1f, 0.5f, -1.5f));
+            SetField(
+                framer,
+                "cameraLocalRotationOffsetEuler",
+                new Vector3(3f, 8f, 0f));
+            Assert.That(
+                framer.TryCalculatePose(
+                    out Vector3 expectedPosition,
+                    out Quaternion expectedRotation),
+                Is.True);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Assert.That(
+                Vector3.Distance(camera.transform.position, expectedPosition),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(camera.transform.rotation, expectedRotation),
+                Is.LessThan(0.0001f));
+        }
+
+        [Test]
         public void Synchronizer_PreservesOverflowGeometryWhileCameraUsesCappedWindow()
         {
             BoardDefinition board = CreateBoard(

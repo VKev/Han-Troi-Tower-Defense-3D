@@ -561,6 +561,90 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 Is.LessThan(0.0001f));
         }
 
+        [Test]
+        public void Framer_AppliesCameraLocalOffsetsToSolvedPose()
+        {
+            BoardDefinition board = CreateBoard(
+                new GridDimensions(8, 6, 1),
+                1f,
+                1f,
+                new[]
+                {
+                    Cell(0, 0, 0, BoardCellFlags.SupportsPlacement),
+                    Cell(7, 5, 0, BoardCellFlags.SupportsPlacement),
+                });
+            Transform presenterTransform =
+                Track(new GameObject("Offset Board Presenter")).transform;
+            BoardScenePresenter presenter =
+                presenterTransform.gameObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            GameObject cameraObject = Track(new GameObject("Offset Board Camera"));
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 43f;
+            camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 0.1f;
+            Quaternion baseRotation = Quaternion.Euler(58f, 11f, 0f);
+            camera.transform.rotation = baseRotation;
+
+            BoardCameraFramer framer =
+                cameraObject.AddComponent<BoardCameraFramer>();
+            SetField(framer, "targetCamera", camera);
+            SetField(framer, "boardPresenter", presenter);
+            var localPositionOffset = new Vector3(1.25f, -0.5f, -2f);
+            var localRotationOffset = new Vector3(3f, 7f, 1f);
+            SetField(
+                framer,
+                "cameraLocalPositionOffset",
+                localPositionOffset);
+            SetField(
+                framer,
+                "cameraLocalRotationOffsetEuler",
+                localRotationOffset);
+
+            Assert.That(
+                framer.TryCalculatePose(
+                    out Vector3 actualPosition,
+                    out Quaternion actualRotation),
+                Is.True);
+
+            Quaternion expectedRotation =
+                baseRotation * Quaternion.Euler(localRotationOffset);
+            Assert.That(
+                Quaternion.Angle(actualRotation, expectedRotation),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                BoardCameraFramingPlane.TryCreate(
+                    board,
+                    presenterTransform,
+                    1f,
+                    out BoardCameraFramingPlane plane),
+                Is.True);
+            Assert.That(
+                BoardCameraFramingSolver.TryCalculatePosition(
+                    plane,
+                    expectedRotation,
+                    camera.fieldOfView,
+                    camera.aspect,
+                    camera.nearClipPlane,
+                    new Rect(0.05f, 0.08f, 0.9f, 0.84f),
+                    out Vector3 fittedPosition),
+                Is.True);
+            Vector3 expectedPosition =
+                fittedPosition + expectedRotation * localPositionOffset;
+            Assert.That(
+                Vector3.Distance(actualPosition, expectedPosition),
+                Is.LessThan(0.0001f));
+
+            Assert.That(framer.FrameNow(), Is.True);
+            Assert.That(
+                Vector3.Distance(camera.transform.position, expectedPosition),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(camera.transform.rotation, expectedRotation),
+                Is.LessThan(0.0001f));
+        }
+
         private BoardDefinition CreateBoard(
             GridDimensions dimensions,
             float cellSize,

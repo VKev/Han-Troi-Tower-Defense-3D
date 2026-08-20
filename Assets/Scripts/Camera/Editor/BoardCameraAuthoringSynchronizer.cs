@@ -25,7 +25,9 @@ namespace TowerDefense3D.GridPlacement.Editor
                     continue;
                 }
 
-                if (!framer.TryCalculatePosition(out Vector3 position))
+                if (!framer.TryCalculatePose(
+                        out Vector3 position,
+                        out Quaternion rotation))
                 {
                     Debug.LogWarning(
                         InvalidCameraFramingWarning,
@@ -35,13 +37,15 @@ namespace TowerDefense3D.GridPlacement.Editor
 
                 Transform cameraTransform = framer.TargetCamera.transform;
                 if ((cameraTransform.position - position).sqrMagnitude
-                    <= 0.000001f)
+                        <= 0.000001f
+                    && Quaternion.Angle(cameraTransform.rotation, rotation)
+                        <= 0.0001f)
                 {
                     continue;
                 }
 
                 Undo.RecordObject(cameraTransform, "Frame Board Camera");
-                cameraTransform.position = position;
+                cameraTransform.SetPositionAndRotation(position, rotation);
                 EditorSceneManager.MarkSceneDirty(framer.gameObject.scene);
             }
         }

@@ -23,7 +23,7 @@ Allow a board designer to limit how many horizontal grid cells the existing pers
 - Preventing gameplay or authored content outside the camera-framed subset.
 - Adding camera movement, panning, zoom controls, dynamic tracking, or runtime framing-limit changes.
 - Replacing the current camera with Cinemachine or introducing any other camera package.
-- Changing the perspective camera's authored rotation, field of view, projection mode, or Safe Area policy.
+- Changing the perspective camera's field of view, projection mode, Safe Area policy, captured base rotation, or explicit Camera-local offsets as a side effect of the grid-span limits.
 
 ## Terminology and coordinate mapping
 
@@ -77,9 +77,9 @@ Board cells outside the capped camera rectangle remain normal board cells. Their
 
 ## Camera behavior and compatibility
 
-The existing perspective camera remains directly owned and configured by the scene. Framing may adjust only the position/distance already controlled by the current framing flow. The implementation must preserve:
+The existing perspective camera remains directly owned and configured by the scene. The grid-span limits change only the framing bounds supplied to the current framing flow. The implementation must preserve:
 
-- the camera's authored rotation;
+- the camera's captured authored base rotation and explicit Camera-local position/rotation offsets;
 - the camera's authored field of view;
 - perspective projection;
 - the existing Safe Area-aware framing calculation;
@@ -92,10 +92,10 @@ No Cinemachine camera, virtual camera, brain, composer, or package dependency is
 - **`BoardDefinition`** owns and serializes the two authored camera limit values and exposes their read-only runtime contract.
 - **Board Painter** owns designer editing, Grid X/Grid Y labels, Unlimited guidance, non-negative authoring constraints, Undo/dirty handling, and persistence through `BoardDefinition`.
 - **`BoardCameraFramingSolver`** owns the deterministic, Unity-scene-independent framing math. It creates exact centered camera-only bounds, including half-cell edges where required, then accounts for padding and the existing perspective/Safe Area inputs.
-- **`BoardCameraFramer`** owns runtime scene references and lifecycle. It reads the board definition and lowest-level bounds, gathers the current camera and Safe Area inputs, invokes the solver, and applies the solved camera position without changing rotation or field of view.
+- **`BoardCameraFramer`** owns runtime scene references and lifecycle. It reads the board definition and lowest-level bounds, composes the captured base rotation with the explicit local rotation offset, gathers the current camera and Safe Area inputs, invokes the solver, then applies the explicit local position offset without changing field of view.
 - **`BoardSceneSynchronizer`** owns Editor authoring synchronization for the existing scene framing components. It propagates the board reference and preserves the established synchronization behavior; it must not duplicate solver policy.
 
-The flow is `BoardDefinition` authored values -> `BoardCameraFramer` inputs -> `BoardCameraFramingSolver` capped solution -> direct perspective `Camera` position. Board generation, collider generation, and placement systems do not consume the camera limits.
+The flow is `BoardDefinition` authored values -> `BoardCameraFramer` inputs -> `BoardCameraFramingSolver` capped solution -> explicit Camera-local position offset -> direct perspective `Camera` pose. Board generation, collider generation, and placement systems do not consume the camera limits.
 
 ## Serialization and migration
 
@@ -120,7 +120,7 @@ Implementation verification must cover these layers independently:
 2. Run Edit Mode tests for Unlimited values, one-axis and two-axis caps, oversized caps, non-zero and negative minimum coordinates, exact centering across odd/even parity, Grid Y-to-world-Z mapping, camera movement when one edge grows, and padding-after-cap ordering.
 3. Verify Board Painter editing, labels, Unlimited guidance, serialization, Undo, and dirty-state behavior.
 4. Verify `BoardSceneSynchronizer` preserves and synchronizes the expected board/framer references without changing camera policy.
-5. Run relevant Play Mode tests to confirm the direct perspective camera keeps its rotation and field of view, respects Safe Area inputs, and uses the capped rectangle.
+5. Run relevant Play Mode tests to confirm the direct perspective camera preserves its captured base plus explicit local offsets and field of view, respects Safe Area inputs, and uses the capped rectangle before the deliberate final position offset.
 6. Regress board geometry, colliders, coordinate mapping, occupancy, placement validation, previews, and placement in overflow cells to confirm they are unaffected.
 7. Inspect the serialized integration scene and board definition after implementation, separately from compilation and automated tests.
 
@@ -137,3 +137,5 @@ Implementation verification must cover these layers independently:
 The camera-limit architecture, Board Painter contract, and centered-bounds correction are implemented. On 2026-08-14, the project owner rejected the earlier minimum-edge anchor after observing that painting additional cells on the right did not move the camera. `BoardCameraFramingBounds` now preserves the complete playable-bounds center with floating-point camera edges, including half-cell edges when span parity differs. The affected pure, Editor synchronization, and Play Mode tests now require the camera position to move when only the maximum X or designer Grid Y/world-Z edge grows. `BoardDefinition`, Board Painter fields, generated geometry, colliders, placement rules, scene references, camera rotation, and field of view were not changed by this correction.
 
 Unity `6000.3.21f1` imported and compiled the correction with zero Console errors. The Grid Placement Edit Mode suite passed 39 of 39 tests. Both Board Camera Play Mode tests passed, including `Framer_CappedPoseRecentersWhenOnlyMaximumEdgesGrow`. The broader Play Mode suite passed 4 tests and retained the pre-existing `GridPlacementSceneInputTests.EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate` failure because that test still searches for the removed `Grid Placement Demo/Placed Towers` hierarchy path; this is tracked separately as `TowerDefense3D-bpw` and is not caused by the camera correction. A live 1920x1080 capture confirmed the Camera reframed the current authored Board in Play Mode while retaining rotation `(59.15, 0.10, 0)`.
+
+On 2026-08-20, `BoardCameraFramer` gained explicit Camera-local position and Euler rotation offsets. The grid-span limit remains upstream of those offsets and does not modify their authored values. Unity compiled with zero Console errors; the complete Grid Placement Edit Mode suite passed 104 of 104 tests and the complete Grid Placement Play Mode suite passed 8 of 8 tests.

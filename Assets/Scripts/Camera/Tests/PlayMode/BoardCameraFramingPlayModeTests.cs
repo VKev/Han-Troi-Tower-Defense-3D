@@ -437,6 +437,112 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator Framer_AuthoredOffsetsPersistWhenProjectionChanges()
+        {
+            BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
+            SetField(board, "dimensions", new GridDimensions(12, 8, 1));
+            SetField(board, "cellSize", 1f);
+            SetField(board, "heightUnit", 1f);
+            SetField(
+                board,
+                "cells",
+                new[]
+                {
+                    new BoardCellDefinition(
+                        new GridCell(0, 0, 0),
+                        BoardCellFlags.SupportsPlacement),
+                    new BoardCellDefinition(
+                        new GridCell(11, 7, 0),
+                        BoardCellFlags.SupportsPlacement),
+                });
+
+            var presenterObject = new GameObject("Offset Board Presenter");
+            BoardScenePresenter presenter =
+                presenterObject.AddComponent<BoardScenePresenter>();
+            SetField(presenter, "board", board);
+
+            var cameraObject = new GameObject("Offset Board Camera");
+            cameraObject.SetActive(false);
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 43f;
+            camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 0.1f;
+            Quaternion baseRotation = Quaternion.Euler(61f, 5f, 0f);
+            camera.transform.rotation = baseRotation;
+            BoardCameraFramer framer =
+                cameraObject.AddComponent<BoardCameraFramer>();
+            SetField(framer, "targetCamera", camera);
+            SetField(framer, "boardPresenter", presenter);
+
+            var localPositionOffset = new Vector3(1.5f, 0.25f, -1f);
+            var localRotationOffset = new Vector3(2f, 6f, 0f);
+            SetField(
+                framer,
+                "cameraLocalRotationOffsetEuler",
+                localRotationOffset);
+            SetField(framer, "cameraLocalPositionOffset", Vector3.zero);
+            Assert.That(
+                framer.TryCalculatePose(
+                    out Vector3 fittedPosition,
+                    out Quaternion expectedRotation),
+                Is.True);
+            SetField(
+                framer,
+                "cameraLocalPositionOffset",
+                localPositionOffset);
+            Assert.That(
+                framer.TryCalculatePose(
+                    out Vector3 offsetPosition,
+                    out Quaternion offsetRotation),
+                Is.True);
+            Assert.That(
+                Quaternion.Angle(
+                    expectedRotation,
+                    baseRotation * Quaternion.Euler(localRotationOffset)),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(offsetRotation, expectedRotation),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Vector3.Distance(
+                    offsetPosition - fittedPosition,
+                    expectedRotation * localPositionOffset),
+                Is.LessThan(0.0001f));
+
+            cameraObject.SetActive(true);
+            yield return null;
+            Assert.That(
+                Vector3.Distance(camera.transform.position, offsetPosition),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(camera.transform.rotation, expectedRotation),
+                Is.LessThan(0.0001f));
+
+            camera.rect = new Rect(0f, 0f, 0.75f, 1f);
+            camera.aspect = 4f / 3f;
+            Assert.That(
+                framer.TryCalculatePose(
+                    out Vector3 reframedPosition,
+                    out Quaternion reframedRotation),
+                Is.True);
+            yield return null;
+            Assert.That(
+                Vector3.Distance(camera.transform.position, reframedPosition),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(camera.transform.rotation, reframedRotation),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(reframedRotation, expectedRotation),
+                Is.LessThan(0.0001f));
+
+            Object.Destroy(cameraObject);
+            Object.Destroy(presenterObject);
+            Object.Destroy(board);
+            yield return null;
+        }
+
         private static void SetField<T>(Object target, string fieldName, T value)
         {
             FieldInfo field = target.GetType().GetField(

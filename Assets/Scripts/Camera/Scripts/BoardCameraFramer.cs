@@ -15,6 +15,12 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, Min(0f)] private float edgePaddingCells = 1f;
         [SerializeField] private Rect compositionRectInSafeArea =
             new Rect(0.05f, 0.08f, 0.9f, 0.84f);
+        [Tooltip("Applied after automatic framing in the final Camera's local right, up, and forward axes.")]
+        [SerializeField] private Vector3 cameraLocalPositionOffset;
+        [Tooltip("Local Euler delta applied to the captured authored Camera rotation before framing.")]
+        [SerializeField] private Vector3 cameraLocalRotationOffsetEuler;
+        [SerializeField, HideInInspector] private Vector3 authoredBaseRotationEuler;
+        [SerializeField, HideInInspector] private bool hasAuthoredBaseRotation;
 
         private Camera observedCamera;
         private BoardScenePresenter observedPresenter;
@@ -29,6 +35,9 @@ namespace TowerDefense3D.GridPlacement
         private float observedNearClip;
         private float observedPadding;
         private bool observedOrthographic;
+        private Vector3 observedCameraLocalPositionOffset;
+        private Vector3 observedCameraLocalRotationOffsetEuler;
+        private Vector3 observedAuthoredBaseRotationEuler;
         private Vector3 observedBoardPosition;
         private Quaternion observedBoardRotation;
         private Vector3 observedBoardScale;
@@ -38,14 +47,19 @@ namespace TowerDefense3D.GridPlacement
 
         public Camera TargetCamera => targetCamera;
         public BoardScenePresenter BoardPresenter => boardPresenter;
+        public Vector3 CameraLocalPositionOffset => cameraLocalPositionOffset;
+        public Vector3 CameraLocalRotationOffsetEuler =>
+            cameraLocalRotationOffsetEuler;
 
         private void Reset()
         {
             targetCamera = GetComponent<Camera>();
+            CaptureCurrentCameraRotationAsBase();
         }
 
         private void OnEnable()
         {
+            EnsureAuthoredBaseRotation();
             hasObservedInputs = false;
             if (Application.isPlaying)
             {
@@ -66,12 +80,17 @@ namespace TowerDefense3D.GridPlacement
             edgePaddingCells = Mathf.Max(0f, edgePaddingCells);
             compositionRectInSafeArea = SanitizeCompositionRect(
                 compositionRectInSafeArea);
+            cameraLocalPositionOffset = SanitizeVector(
+                cameraLocalPositionOffset);
+            cameraLocalRotationOffsetEuler = SanitizeVector(
+                cameraLocalRotationOffsetEuler);
+            EnsureAuthoredBaseRotation();
             hasObservedInputs = false;
         }
 
         public bool FrameNow()
         {
-            if (!TryCalculatePosition(out Vector3 position))
+            if (!TryCalculatePose(out Vector3 position, out Quaternion rotation))
             {
                 if (!failureReported)
                 {
@@ -87,9 +106,11 @@ namespace TowerDefense3D.GridPlacement
             failureReported = false;
             Transform cameraTransform = targetCamera.transform;
             if ((cameraTransform.position - position).sqrMagnitude
-                > PositionEpsilonSquared)
+                    > PositionEpsilonSquared
+                || Quaternion.Angle(cameraTransform.rotation, rotation)
+                    > 0.0001f)
             {
-                cameraTransform.position = position;
+                cameraTransform.SetPositionAndRotation(position, rotation);
             }
 
             return true;
@@ -97,9 +118,19 @@ namespace TowerDefense3D.GridPlacement
 
         public bool TryCalculatePosition(out Vector3 position)
         {
+            return TryCalculatePose(out position, out _);
+        }
+
+        public bool TryCalculatePose(
+            out Vector3 position,
+            out Quaternion rotation)
+        {
             position = default;
+            rotation = Quaternion.identity;
             if (targetCamera == null || boardPresenter == null
-                || boardPresenter.Board == null || targetCamera.orthographic)
+                || boardPresenter.Board == null || targetCamera.orthographic
+                || !IsFinite(cameraLocalPositionOffset)
+                || !TryGetFramingRotation(out rotation))
             {
                 return false;
             }
@@ -127,14 +158,20 @@ namespace TowerDefense3D.GridPlacement
                 return false;
             }
 
-            return BoardCameraFramingSolver.TryCalculatePosition(
-                plane,
-                targetCamera.transform.rotation,
-                targetCamera.fieldOfView,
-                targetCamera.aspect,
-                targetCamera.nearClipPlane,
-                framingRect,
-                out position);
+            if (!BoardCameraFramingSolver.TryCalculatePosition(
+                    plane,
+                    rotation,
+                    targetCamera.fieldOfView,
+                    targetCamera.aspect,
+                    targetCamera.nearClipPlane,
+                    framingRect,
+                    out Vector3 fittedPosition))
+            {
+                return false;
+            }
+
+            position = fittedPosition + rotation * cameraLocalPositionOffset;
+            return IsFinite(position);
         }
 
         public static bool TryBuildSafeViewportRect(
@@ -196,7 +233,13 @@ namespace TowerDefense3D.GridPlacement
                 || observedCamera != targetCamera
                 || observedPresenter != boardPresenter
                 || observedPadding != edgePaddingCells
-                || observedCompositionRect != compositionRectInSafeArea)
+                || observedCompositionRect != compositionRectInSafeArea
+                || observedCameraLocalPositionOffset
+                    != cameraLocalPositionOffset
+                || observedCameraLocalRotationOffsetEuler
+                    != cameraLocalRotationOffsetEuler
+                || observedAuthoredBaseRotationEuler
+                    != authoredBaseRotationEuler)
             {
                 return true;
             }
@@ -243,6 +286,10 @@ namespace TowerDefense3D.GridPlacement
                 : 0;
             observedPadding = edgePaddingCells;
             observedCompositionRect = compositionRectInSafeArea;
+            observedCameraLocalPositionOffset = cameraLocalPositionOffset;
+            observedCameraLocalRotationOffsetEuler =
+                cameraLocalRotationOffsetEuler;
+            observedAuthoredBaseRotationEuler = authoredBaseRotationEuler;
             observedSafeArea = Screen.safeArea;
 
             if (targetCamera != null)
@@ -266,6 +313,46 @@ namespace TowerDefense3D.GridPlacement
             hasObservedInputs = true;
         }
 
+        [ContextMenu("Capture Current Camera Rotation As Base")]
+        private void CaptureCurrentCameraRotationAsBase()
+        {
+            if (targetCamera == null)
+            {
+                return;
+            }
+
+            authoredBaseRotationEuler =
+                targetCamera.transform.rotation.eulerAngles;
+            hasAuthoredBaseRotation = true;
+            hasObservedInputs = false;
+        }
+
+        private bool EnsureAuthoredBaseRotation()
+        {
+            if (!hasAuthoredBaseRotation
+                || !IsFinite(authoredBaseRotationEuler))
+            {
+                CaptureCurrentCameraRotationAsBase();
+            }
+
+            return hasAuthoredBaseRotation
+                && IsFinite(authoredBaseRotationEuler);
+        }
+
+        private bool TryGetFramingRotation(out Quaternion rotation)
+        {
+            rotation = Quaternion.identity;
+            if (!EnsureAuthoredBaseRotation()
+                || !IsFinite(cameraLocalRotationOffsetEuler))
+            {
+                return false;
+            }
+
+            rotation = Quaternion.Euler(authoredBaseRotationEuler)
+                * Quaternion.Euler(cameraLocalRotationOffsetEuler);
+            return IsFinite(rotation);
+        }
+
         private static Rect SanitizeCompositionRect(Rect rect)
         {
             float minX = Mathf.Clamp01(rect.xMin);
@@ -280,6 +367,12 @@ namespace TowerDefense3D.GridPlacement
             return Rect.MinMaxRect(minX, minY, maxX, maxY);
         }
 
+        private static Vector3 SanitizeVector(Vector3 value) =>
+            new Vector3(
+                IsFinite(value.x) ? value.x : 0f,
+                IsFinite(value.y) ? value.y : 0f,
+                IsFinite(value.z) ? value.z : 0f);
+
         private static bool IsValidPixelRect(Rect rect) =>
             IsFinite(rect.xMin) && IsFinite(rect.yMin)
             && IsFinite(rect.width) && IsFinite(rect.height)
@@ -292,5 +385,12 @@ namespace TowerDefense3D.GridPlacement
 
         private static bool IsFinite(float value) =>
             !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private static bool IsFinite(Vector3 value) =>
+            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static bool IsFinite(Quaternion value) =>
+            IsFinite(value.x) && IsFinite(value.y)
+            && IsFinite(value.z) && IsFinite(value.w);
     }
 }
