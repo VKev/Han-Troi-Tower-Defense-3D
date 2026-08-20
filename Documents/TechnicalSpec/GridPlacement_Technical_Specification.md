@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| Status | Implemented from an approved plan; one known Play Mode verification failure remains |
-| Specification version | 1.0 |
-| Last verified | 14 August 2026 |
+| Status | Implemented and verified |
+| Specification version | 1.1 |
+| Last verified | 19 August 2026 |
 | Unity version | 6000.3.21f1 |
-| Owning module | `Assets/_Project/GridPlacement/` |
+| Owning modules | `Assets/Scripts/Board/`, `Camera/`, `Placement/`, `Tower/`, and `UI/` |
 | Runtime namespace | `TowerDefense3D.GridPlacement` |
 | Runtime assembly | `TowerDefense3D.GridPlacement.Runtime` |
 
 ## 1. Purpose
 
-Grid Placement provides the authored board model, deterministic three-dimensional placement rules, mobile-first pointer interaction, atomic occupancy mutation, candidate feedback, Editor authoring tools, and SampleScene integration required to place tower prefabs on an XZ board with discrete Y levels.
+Grid Placement provides the authored board model, deterministic three-dimensional placement rules, mobile-first pointer interaction, atomic occupancy mutation, candidate feedback, Editor authoring tools, and level-scene integration required to place tower prefabs on an XZ board with discrete Y levels.
 
 This document describes the implemented baseline and is the technical contract for future Grid Placement changes. It is grounded in the approved Grid Placement decision record, the B1-B10 implementation graph, current project source, serialized assets, and live Unity inspection.
 
@@ -65,23 +65,31 @@ Direct references are preferred for owned one-to-one collaboration. The feature 
 ## 4. Project structure
 
 ```text
-Assets/_Project/GridPlacement/
-├── Scripts/
-│   ├── Definitions/        ScriptableObject definition types
-│   ├── Board/              Coordinates, dimensions, mapping, and immutable Board state
-│   ├── Placement/          Footprints, validation, occupancy, reservations, and results
-│   ├── Interaction/        Scene input and UI selection adapters
-│   ├── Presentation/       Board visibility, placement preview, and Safe Area fitting
-│   └── TowerDefense3D.GridPlacement.Runtime.asmdef
-├── Data/                   Board.asset and BasicTower.asset
-├── Editor/BoardAuthoring/  Board Painter, validation, planning, and synchronization
-├── Tests/EditMode/         Deterministic rules and Editor-authoring tests
-├── Tests/PlayMode/         Scene, input, collider, and preview tests
-├── Materials/              Board, blocker, tower, and transparent preview materials
-└── Prefabs/                BasicTower.prefab
+Assets/Scripts/
+├── Board/
+│   ├── Scripts/                  Board data, coordinates, runtime state, and scene presenter
+│   ├── Editor/BoardAuthoring/    Board Painter, planning, and scene synchronization
+│   └── Tests/                    Board-focused Edit Mode and Play Mode tests
+├── Camera/
+│   ├── Scripts/                  Board focus and camera framing
+│   ├── Editor/                   Camera authoring synchronization
+│   └── Tests/                    Camera-focused Edit Mode and Play Mode tests
+├── Placement/
+│   ├── Scripts/                  Placement rules, occupancy, input, and preview
+│   └── Tests/                    Placement-focused tests and the existing test assemblies
+├── Tower/Scripts/                Tower definitions and footprints
+└── UI/Scripts/                   Safe Area and tower-selection UI behaviours
+
+Assets/Config/GridPlacement/      Authored Board and tower definition assets
+Assets/Resources/                 Shared materials, prefabs, models, and textures
 ```
 
-Responsibility folders do not create separate runtime assemblies. All children of `Scripts/` compile into the existing runtime assembly.
+The feature roots do not create separate runtime assemblies. The runtime
+`.asmdef` remains under `Placement/Scripts`; the other runtime feature roots
+join it through GUID-backed `.asmref` files. Board owns the existing Editor
+assembly, while Camera Editor code joins it through an `.asmref`. Board and
+Camera test folders likewise join the existing Edit Mode and Play Mode test
+assemblies. Namespaces and assembly names remain unchanged.
 
 ## 5. Data contracts
 
@@ -110,10 +118,12 @@ Duplicate authored coordinates are merged with bitwise OR when `GridBoard` build
 
 - `BoardDefinition` owns dimensions, `CellSize`, `HeightUnit`, scene-visualization visibility, and the authored cell list.
 - `TowerDefinition` owns a prefab reference and a `TowerFootprint`.
-- Definition classes live in `Scripts/Definitions/`; authored `.asset` instances live in `Data/`.
+- `BoardDefinition` lives in `Assets/Scripts/Board/Scripts/`;
+  `TowerDefinition` lives in `Assets/Scripts/Tower/Scripts/`; authored
+  `.asset` instances live in `Assets/Config/GridPlacement/`.
 - Runtime placement must not mutate the source ScriptableObject assets.
 
-### 5.4 Current SampleScene configuration
+### 5.4 Current level-scene Board configuration
 
 The current authored sample is not a permanent API constant:
 
@@ -226,14 +236,16 @@ Valid candidates are translucent green. Invalid candidates are translucent red. 
 - `BoardAuthoringDocument` merges duplicate flags, removes empty entries, preserves in-bounds data during resize, validates authoring errors, sorts serialized cells deterministically by Y/Z/X, and commits with Unity Undo/Redo support.
 - `BoardChangeScheduler` batches Board asset changes and does not synchronize while entering Play Mode or compiling.
 - `BoardGeometryPlanner` merges authored cells into deterministic rectangles and computes a hidden signature from dimensions, metrics, visibility, and rectangle data.
-- `BoardSceneSynchronizer` owns the `Board Visualization` root and semantic `Placeable Area` and `Blocked Area` children. Generated render geometry uses shared Ground or Blocker materials and always retains enabled colliders.
+- `BoardSceneSynchronizer` owns board geometry and prefab synchronization.
+  `BoardCameraAuthoringSynchronizer`, under the Camera feature, separately
+  owns the Editor-only camera-framing update.
 - Synchronization reuses matching generated geometry and rebuilds only when the hidden signature or required components no longer match.
 
 ## 10. Assembly boundaries
 
 | Assembly | Platform | Dependencies | Responsibility |
 |---|---|---|---|
-| `TowerDefense3D.GridPlacement.Runtime` | Player and Editor | `Unity.InputSystem`, `Unity.ugui` | All code under `Scripts/`. |
+| `TowerDefense3D.GridPlacement.Runtime` | Player and Editor | `Unity.InputSystem`, `Unity.ugui` | Runtime code across Board, Camera, Placement, Tower, and UI feature roots. |
 | `TowerDefense3D.GridPlacement.BoardAuthoring.Editor` | Editor only | Runtime assembly | Board asset authoring and scene synchronization. |
 | `TowerDefense3D.GridPlacement.EditModeTests` | Editor tests | Runtime, Editor authoring, Unity test runners | Deterministic rules and authoring coverage. |
 | `TowerDefense3D.GridPlacement.PlayModeTests` | Play Mode tests | Runtime, Unity test runner, Input System test framework | Scene lifecycle, input, preview, and collider coverage. |
@@ -242,7 +254,9 @@ Runtime code must not reference `UnityEditor` or test assemblies. Folder respons
 
 ## 11. Serialized integration
 
-`Assets/Scenes/SampleScene.unity` is the integration scene. Current project-owned component paths are:
+`Assets/Scenes/Levels/Level_001.unity` and `Level_002.unity` are the current
+integration scenes. Their serialized component references remain GUID-based
+and therefore survive this folder-only source migration.
 
 | Path | Component responsibility |
 |---|---|
@@ -290,15 +304,22 @@ The Board and tower ScriptableObjects, tower prefab, preview material, and moved
 
 ### 14.2 Current evidence
 
-- Unity compilation after the `Runtime` to `Scripts` migration completed with zero Console errors.
-- All 18 runtime scripts compile into `TowerDefense3D.GridPlacement.Runtime`.
-- Scene and ScriptableObject dependencies resolve to the moved script paths.
-- All moved script, assembly, and `.meta` GUIDs were preserved.
-- Edit Mode result: 15 passed, 0 failed.
-- Play Mode result: 2 passed, 1 failed in `GridPlacementSceneInputTests.EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate` because the expected retained candidate was null. The same result occurred before and after the folder migration, so it is tracked as the pre-existing follow-up bug `TowerDefense3D-bpw` rather than a migration regression.
-- Better Context refreshed and verified source hash `d8e97e099a94` after the folder migration.
+- Unity compilation after the feature-root migration completed with zero
+  Console errors.
+- Representative source ownership and all four assembly identities were
+  verified through Unity's compilation pipeline.
+- All 46 moved script and assembly-definition `.meta` GUIDs were preserved.
+- Edit Mode result: 94 passed, 0 failed.
+- Play Mode result: 7 passed, 0 failed. The former
+  `GridPlacementSceneInputTests.EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate`
+  failure was a stale test fixture: its fixed world point mapped to four
+  unauthored cells after the level layout changed. The test now discovers a
+  visible, non-UI cell that is valid for the selected footprint before driving
+  the real Editor mouse press/release path.
+- Better Context was regenerated for the new feature roots and verified with
+  `is_stale: false`.
 
-The current Play Mode failure prevents claiming a fully green verification suite until `TowerDefense3D-bpw` is resolved.
+Bead `TowerDefense3D-bpw` records the resolved Play Mode fixture failure.
 
 ## 15. Change and approval workflow
 
@@ -326,9 +347,10 @@ These are extension points, not implemented scope:
 ## 17. References
 
 - `README.md` — approved decision record, source-layout convention, and documentation workflow.
-- `Assets/_Project/GridPlacement/AGENTS.md` — generated module map and ownership summary.
-- `Assets/_Project/GridPlacement/Scripts/` — runtime implementation.
-- `Assets/_Project/GridPlacement/Editor/BoardAuthoring/` — Editor authoring implementation.
-- `Assets/_Project/GridPlacement/Tests/` — focused automated verification.
-- `Assets/Scenes/SampleScene.unity` — serialized integration scene.
+- `Assets/Scripts/Board/` — Board runtime, authoring, and focused tests.
+- `Assets/Scripts/Camera/` — camera framing runtime, authoring, and focused tests.
+- `Assets/Scripts/Placement/` — placement runtime and test-assembly ownership.
+- `Assets/Scripts/Tower/` — tower definitions and footprints.
+- `Assets/Scripts/UI/` — Grid Placement UI behaviours.
+- `Assets/Scenes/Levels/` — serialized level-scene integration.
 - Beads B1-B10 — approved dependency-safe implementation graph and verification history.

@@ -14,10 +14,10 @@ This document records four architecture decisions already approved by the projec
 
 ## Approved scope
 
-- Add a `CameraFocus` bit to `TowerDefense3D.GridPlacement.BoardCellFlags` (`Assets/_Project/GridPlacement/Scripts/Board/BoardCellDefinition.cs`), reusing the existing per-cell flags storage (`BoardCellDefinition.flags`, part of `BoardDefinition.cells`). No new serialized field or asset.
-- Scope focus-region cells to the same "lowest playable level" that `LowestBoardLevelBoundsCalculator.TryCalculate` (`Assets/_Project/GridPlacement/Scripts/Board/LowestBoardLevelBounds.cs`) already computes.
-- Add an independent bit-toggle paint/erase brush for `CameraFocus` to the Board Painter (`Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardPainterWindow.cs`) that does not route through the existing preset-paint call (`BoardAuthoringDocument.Paint` / `BoardPaintPresetUtility.GetFlags`). It must independently OR-in/AND-away only the `CameraFocus` bit while preserving whatever preset flags (`SupportsPlacement`, `Buildable`, `StaticBlocker`) the cell already has.
-- Change `BoardCameraFramingSolver`'s composition order (`Assets/_Project/GridPlacement/Scripts/Presentation/BoardCameraFramingSolver.cs`) to: (a) focus-region selection first, (b) then the existing Grid X/Y span cap (`maxCameraGridXSpan` / `maxCameraGridYSpan`), (c) then the existing edge padding (`edgePaddingCells`). The cap and padding math itself is unchanged.
+- Add a `CameraFocus` bit to `TowerDefense3D.GridPlacement.BoardCellFlags` (`Assets/Scripts/Board/Scripts/BoardCellDefinition.cs`), reusing the existing per-cell flags storage (`BoardCellDefinition.flags`, part of `BoardDefinition.cells`). No new serialized field or asset.
+- Scope focus-region cells to the same "lowest playable level" that `LowestBoardLevelBoundsCalculator.TryCalculate` (`Assets/Scripts/Board/Scripts/LowestBoardLevelBounds.cs`) already computes.
+- Add an independent bit-toggle paint/erase brush for `CameraFocus` to the Board Painter (`Assets/Scripts/Board/Editor/BoardAuthoring/BoardPainterWindow.cs`) that does not route through the existing preset-paint call (`BoardAuthoringDocument.Paint` / `BoardPaintPresetUtility.GetFlags`). It must independently OR-in/AND-away only the `CameraFocus` bit while preserving whatever preset flags (`SupportsPlacement`, `Buildable`, `StaticBlocker`) the cell already has.
+- Change `BoardCameraFramingSolver`'s composition order (`Assets/Scripts/Camera/Scripts/BoardCameraFramingSolver.cs`) to: (a) focus-region selection first, (b) then the existing Grid X/Y span cap (`maxCameraGridXSpan` / `maxCameraGridYSpan`), (c) then the existing edge padding (`edgePaddingCells`). The cap and padding math itself is unchanged.
 - Add `CameraFocus` to the known-flags mask in `BoardAuthoringDocument.Validate()` so painted focus cells no longer report as an "unknown flag" warning.
 - Preserve backward compatibility: a board asset with no `CameraFocus` bit set anywhere produces byte-for-byte the same framing behavior as before this feature.
 
@@ -42,7 +42,7 @@ The following four points are owner-approved and must be implemented as describe
 
 ### Component ownership
 
-- **`BoardCellFlags`** (`Assets/_Project/GridPlacement/Scripts/Board/BoardCellDefinition.cs`) owns the bit definition. It gains one member:
+- **`BoardCellFlags`** (`Assets/Scripts/Board/Scripts/BoardCellDefinition.cs`) owns the bit definition. It gains one member:
 
   ```csharp
   [Flags]
@@ -58,7 +58,7 @@ The following four points are owner-approved and must be implemented as describe
 
   `BoardCellDefinition` gains a matching read-only convenience member `IsCameraFocus => (flags & BoardCellFlags.CameraFocus) != 0`, consistent with its existing `SupportsPlacement`, `IsBuildable`, `IsStaticBlocker` properties.
 
-- **A new focus-region calculator** owns computing the union of focus-flagged cells at the lowest level. It is a new static class, `BoardCameraFocusRegionCalculator`, in a new file `Assets/_Project/GridPlacement/Scripts/Board/BoardCameraFocusRegion.cs` (same folder and assembly as `LowestBoardLevelBounds.cs`, i.e. `TowerDefense3D.GridPlacement.Runtime`). It reuses the existing `LowestBoardLevelBounds` struct as its result shape (no new bounds type):
+- **A new focus-region calculator** owns computing the union of focus-flagged cells at the lowest level. It is a new static class, `BoardCameraFocusRegionCalculator`, in a new file `Assets/Scripts/Camera/Scripts/BoardCameraFocusRegion.cs` (same folder and assembly as `LowestBoardLevelBounds.cs`, i.e. `TowerDefense3D.GridPlacement.Runtime`). It reuses the existing `LowestBoardLevelBounds` struct as its result shape (no new bounds type):
 
   ```csharp
   public static class BoardCameraFocusRegionCalculator
@@ -72,7 +72,7 @@ The following four points are owner-approved and must be implemented as describe
 
   `TryCalculate` scans `board.Cells`, keeps only cells within board bounds whose `Coordinate.Y == lowestLevelBounds.Level` and whose `Flags` include `CameraFocus`, and unions their X/Z extents into a `LowestBoardLevelBounds` with the same `Level`. It returns `false` (leaving `focusBounds` as `default`) when no such cell exists, so callers fall back to `lowestLevelBounds` unchanged. This mirrors the existing two-pass scan style already used by `LowestBoardLevelBoundsCalculator.TryCalculate`.
 
-- **`BoardCameraFramingPlane.TryCreate`** (`Assets/_Project/GridPlacement/Scripts/Presentation/BoardCameraFramingSolver.cs`) owns wiring the focus-region step into the existing pipeline. Its internal composition becomes:
+- **`BoardCameraFramingPlane.TryCreate`** (`Assets/Scripts/Camera/Scripts/BoardCameraFramingSolver.cs`) owns wiring the focus-region step into the existing pipeline. Its internal composition becomes:
 
   ```csharp
   if (!LowestBoardLevelBoundsCalculator.TryCalculate(board, out LowestBoardLevelBounds lowestLevelBounds))
@@ -94,7 +94,7 @@ The following four points are owner-approved and must be implemented as describe
 
   `BoardCameraFramingBounds.TryCreate`'s signature, span-cap math, and centering formula are unchanged; it simply receives `baseBounds` (focus-narrowed or full) instead of always receiving the full lowest-level bounds directly. The edge-padding and `boardOrigin.TransformPoint` steps after it are untouched. This satisfies decision 4's ordering: focus selection narrows the input to the cap, the cap still applies to whatever bounds it receives, and padding still applies after the cap.
 
-- **`BoardAuthoringDocument`** (`Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardAuthoringDocument.cs`) owns the independent toggle mutation and the known-flags validation mask. It gains one new public method, parallel to but separate from `Paint`:
+- **`BoardAuthoringDocument`** (`Assets/Scripts/Board/Editor/BoardAuthoring/BoardAuthoringDocument.cs`) owns the independent toggle mutation and the known-flags validation mask. It gains one new public method, parallel to but separate from `Paint`:
 
   ```csharp
   public void SetCameraFocus(GridCell coordinate, bool enabled)
@@ -136,9 +136,9 @@ The following four points are owner-approved and must be implemented as describe
 
   No other `Validate()` behavior changes. `Reload()` and `Commit()` require no changes: both already round-trip a cell's full `flags` value as a raw `int` through `SerializedProperty.intValue` (see "Serialized integration" below), so the new bit is preserved automatically once the enum itself defines it.
 
-- **`BoardPainterWindow`** (`Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardPainterWindow.cs`) owns the independent brush UI and input handling. See "Interaction flow" for the precise control flow.
+- **`BoardPainterWindow`** (`Assets/Scripts/Board/Editor/BoardAuthoring/BoardPainterWindow.cs`) owns the independent brush UI and input handling. See "Interaction flow" for the precise control flow.
 
-- **`BoardPaintPresetUtility`** (`Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardPaintPreset.cs`) owns preset-to-color/label mapping and is not extended with a `CameraFocus` preset (decision 3 keeps it independent of the preset system). `GetClosestPreset(BoardCellFlags flags)` must mask out `CameraFocus` before comparing against preset flag combinations (`GetClosestPreset(flags & ~BoardCellFlags.CameraFocus)`'s equivalent inline mask), so a cell that is both, e.g., `Buildable` and `CameraFocus` still resolves to the `Buildable` preset for coloring instead of falling through to `Empty` with a "?" overlay. This is required because `GetClosestPreset` currently matches by exact flag equality (`GetFlags(preset) == flags`), and no existing preset combination includes `CameraFocus`.
+- **`BoardPaintPresetUtility`** (`Assets/Scripts/Board/Editor/BoardAuthoring/BoardPaintPreset.cs`) owns preset-to-color/label mapping and is not extended with a `CameraFocus` preset (decision 3 keeps it independent of the preset system). `GetClosestPreset(BoardCellFlags flags)` must mask out `CameraFocus` before comparing against preset flag combinations (`GetClosestPreset(flags & ~BoardCellFlags.CameraFocus)`'s equivalent inline mask), so a cell that is both, e.g., `Buildable` and `CameraFocus` still resolves to the `Buildable` preset for coloring instead of falling through to `Empty` with a "?" overlay. This is required because `GetClosestPreset` currently matches by exact flag equality (`GetFlags(preset) == flags`), and no existing preset combination includes `CameraFocus`.
 
 ## Data and runtime-state contracts
 
@@ -190,12 +190,19 @@ The following four points are owner-approved and must be implemented as describe
 
 ## Folder and assembly boundaries
 
-- `BoardCellFlags` / `BoardCellDefinition` changes stay in `Assets/_Project/GridPlacement/Scripts/Board/BoardCellDefinition.cs`, assembly `TowerDefense3D.GridPlacement.Runtime`.
-- The new `BoardCameraFocusRegionCalculator` is added at `Assets/_Project/GridPlacement/Scripts/Board/BoardCameraFocusRegion.cs`, same assembly (`TowerDefense3D.GridPlacement.Runtime`), following the existing `Scripts/Board/` convention used by `LowestBoardLevelBounds.cs` and `GridCell.cs`. No new assembly definition is introduced.
-- `BoardCameraFramingSolver.cs` changes stay in `Assets/_Project/GridPlacement/Scripts/Presentation/`, same assembly, unchanged file.
-- `BoardAuthoringDocument.cs`, `BoardPainterWindow.cs`, and `BoardPaintPreset.cs` changes stay in `Assets/_Project/GridPlacement/Editor/BoardAuthoring/`, assembly `TowerDefense3D.GridPlacement.BoardAuthoring.Editor`. No new Editor assembly is introduced.
-- No change to `TowerDefense3D.GridPlacement.EditModeTests` or `TowerDefense3D.GridPlacement.PlayModeTests` assembly boundaries; new tests (see "Verification plan") are added as new test files/methods inside the existing `Assets/_Project/GridPlacement/Tests/EditMode/` and `Assets/_Project/GridPlacement/Tests/PlayMode/` folders.
-- This keeps the feature entirely inside the existing `GridPlacement` feature root; no cross-feature dependency on `GameFlow` or any other feature is introduced.
+- `BoardCellFlags` / `BoardCellDefinition` changes stay in `Assets/Scripts/Board/Scripts/BoardCellDefinition.cs`, assembly `TowerDefense3D.GridPlacement.Runtime`.
+- The new `BoardCameraFocusRegionCalculator` is added at `Assets/Scripts/Camera/Scripts/BoardCameraFocusRegion.cs`, same assembly (`TowerDefense3D.GridPlacement.Runtime`), following the existing `Scripts/Board/` convention used by `LowestBoardLevelBounds.cs` and `GridCell.cs`. No new assembly definition is introduced.
+- `BoardCameraFramingSolver.cs` changes stay in
+  `Assets/Scripts/Camera/Scripts/`, same assembly, unchanged file.
+- `BoardAuthoringDocument.cs`, `BoardPainterWindow.cs`, and `BoardPaintPreset.cs` changes stay in `Assets/Scripts/Board/Editor/BoardAuthoring/`, assembly `TowerDefense3D.GridPlacement.BoardAuthoring.Editor`. No new Editor assembly is introduced.
+- No change to `TowerDefense3D.GridPlacement.EditModeTests` or
+  `TowerDefense3D.GridPlacement.PlayModeTests` assembly boundaries. Board
+  authoring tests live under `Assets/Scripts/Board/Tests/`; camera solver and
+  runtime tests live under `Assets/Scripts/Camera/Tests/`; both join the
+  existing test assemblies through GUID-backed `.asmref` files.
+- The Board and Camera source roots remain inside the established Grid
+  Placement assemblies; no dependency on `GameFlow` or another feature is
+  introduced.
 
 ## Serialized integration
 
@@ -208,7 +215,7 @@ The following four points are owner-approved and must be implemented as describe
 ## Compatibility and migration constraints
 
 - Backward compatibility is required and structurally guaranteed by decision 4's fallback: any `BoardDefinition` with zero `CameraFocus` bits set produces byte-identical `BoardCameraFramingBounds`/`BoardCameraFramingPlane` output to the pre-feature solver, because `BoardCameraFocusRegionCalculator.TryCalculate` returns `false` and the pipeline uses the untouched full lowest-level bounds.
-- `GridBoard`, `PlacementValidator`, and `BoardGeometryPlanner` (`Assets/_Project/GridPlacement/Scripts/Board/GridBoard.cs`, `Assets/_Project/GridPlacement/Scripts/Placement/PlacementValidator.cs`, `Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardGeometryPlanner.cs`) only test `SupportsPlacement`, `Buildable`, or `StaticBlocker` via bitwise `AND` checks against `BoardCellFlags`; none of them enumerate or switch exhaustively over all flag values. Adding `CameraFocus` is therefore inert to placement rules, occupancy, and generated board geometry/colliders by construction, and none of those files require a change for this feature.
+- `GridBoard`, `PlacementValidator`, and `BoardGeometryPlanner` (`Assets/Scripts/Board/Scripts/GridBoard.cs`, `Assets/Scripts/Placement/Scripts/PlacementValidator.cs`, `Assets/Scripts/Board/Editor/BoardAuthoring/BoardGeometryPlanner.cs`) only test `SupportsPlacement`, `Buildable`, or `StaticBlocker` via bitwise `AND` checks against `BoardCellFlags`; none of them enumerate or switch exhaustively over all flag values. Adding `CameraFocus` is therefore inert to placement rules, occupancy, and generated board geometry/colliders by construction, and none of those files require a change for this feature.
 - `BoardPaintPresetUtility.GetFlags` continues to never return `CameraFocus` for any preset; presets and the focus bit remain orthogonal, so no existing preset's meaning changes.
 - No change to `BoardCameraFramer`, `BoardScenePresenter`, or `BoardSceneSynchronizer` public members; their existing serialized references and Editor synchronization behavior established by `BoardCameraFraming_Technical_Specification.md` and `BoardCameraFramingLimits_Technical_Specification.md` remain authoritative and unchanged.
 - No renamed, removed, or reordered public API on `BoardCameraFramingBounds`, `BoardCameraFramingPlane`, or `BoardCameraFramingSolver`; `BoardCameraFramingPlane.TryCreate`'s two existing overloads keep their current signatures.
@@ -217,9 +224,9 @@ The following four points are owner-approved and must be implemented as describe
 
 Implementation is split across four downstream Beads (not created by this Bead), each validating one layer of this specification. This document exists so each of those Beads can implement its assigned layer without re-deciding the architecture above:
 
-1. **EditMode test Bead — focus-region bounds calculator and solver composition.** Adds `EditMode` tests (in `Assets/_Project/GridPlacement/Tests/EditMode/`, alongside the existing `BoardCameraFramingTests.cs`) covering: `BoardCameraFocusRegionCalculator.TryCalculate` returning `false` when no cell at the lowest level has `CameraFocus`; returning the correct unioned bounds when one or more cells at the lowest level have it; ignoring `CameraFocus` cells at any level other than the computed lowest level; and `BoardCameraFramingPlane.TryCreate`/`BoardCameraFramingBounds.TryCreate` applying the focus narrowing before the existing Grid X/Y span cap and before edge padding, with the pre-existing cap/padding test cases in `BoardCameraFramingTests.cs` continuing to pass unmodified (proving backward compatibility for boards with no focus cells).
-2. **EditMode test Bead — CameraFocus toggle brush/document behavior.** Adds `EditMode` tests (in `Assets/_Project/GridPlacement/Tests/EditMode/`, alongside `BoardAuthoringTests.cs`) covering: `BoardAuthoringDocument.SetCameraFocus` OR-ing in and AND-ing away only the `CameraFocus` bit while preserving existing preset flags on the same cell; `SetCameraFocus` never calling `Paint`/`BoardPaintPresetUtility.GetFlags`; `Validate()` no longer reporting an "unknown flag" warning for cells that only combine known bits including `CameraFocus`; `PaintCameraFocusBrush`'s brush-size and edge-clipping behavior mirroring `PaintBrush`; `TryGetLowestPlayableLevel` returning the expected level (or `false`) against the in-memory document state; and `Commit()`/`Reload()` round-tripping the `CameraFocus` bit through `SerializedObject` with no code change required in either method.
-3. **PlayMode test Bead — end-to-end camera framing.** Adds or extends `PlayMode` tests (in `Assets/_Project/GridPlacement/Tests/PlayMode/`, alongside `BoardCameraFramingPlayModeTests.cs`) covering: `BoardCameraFramer.TryCalculatePosition`/`FrameNow` producing a camera position framed to the focus region when a test board has `CameraFocus` cells at the lowest level, framing the full footprint when it does not, and continuing to respect the existing Grid X/Y cap and edge padding, camera rotation, field of view, and Safe Area handling on top of the (possibly focus-narrowed) bounds.
+1. **EditMode test Bead — focus-region bounds calculator and solver composition.** Adds `EditMode` tests under `Assets/Scripts/Camera/Tests/EditMode/`, alongside the existing `BoardCameraFramingTests.cs`, covering the bounds calculator, fallback, level filtering, and composition order.
+2. **EditMode test Bead — CameraFocus toggle brush/document behavior.** Adds `EditMode` tests under `Assets/Scripts/Camera/Tests/EditMode/` and `Assets/Scripts/Board/Tests/EditMode/`, covering focus-region calculations plus Board authoring, serialization, validation, and brush behavior.
+3. **PlayMode test Bead — end-to-end camera framing.** Adds or extends `PlayMode` tests under `Assets/Scripts/Camera/Tests/PlayMode/`, alongside `BoardCameraFramingPlayModeTests.cs`, covering focused and fallback framing with the existing cap, padding, camera, and Safe Area contracts.
 4. **Final live-Editor verification Bead.** After the above are implemented and green, verifies live in the Unity `6000.3.21f1` Editor: painting/erasing `CameraFocus` cells with the Board Painter's new independent brush persists correctly (Undo, dirty-state, `SerializedObject` round-trip) without disturbing existing preset flags on the same cells; the Camera Focus brush is disabled outside the lowest playable level as authored; the scene camera visibly reframes to the focus region in Play Mode when focus cells are painted and reframes back to the full footprint when they are all erased; and the Console shows zero new errors/warnings from compiling and exercising this feature.
 
 This Bead's own verification is source inspection only: confirm this file exists at the required path with `Status: Draft`, and that it names every symbol/file listed in the assigning Bead's Context section by its real path.
@@ -244,16 +251,16 @@ Implementation completed and verified on 17 August 2026, through the approved Be
 
 ### Implemented files
 
-- `Assets/_Project/GridPlacement/Scripts/Board/BoardCellDefinition.cs` — adds `BoardCellFlags.CameraFocus = 1 << 3` and the `IsCameraFocus` accessor.
-- `Assets/_Project/GridPlacement/Scripts/Board/BoardCameraFocusRegion.cs` (new) — `BoardCameraFocusRegionCalculator.TryCalculate`, unioning `CameraFocus`-flagged cells at the lowest playable level.
-- `Assets/_Project/GridPlacement/Scripts/Presentation/BoardCameraFramingSolver.cs` — `BoardCameraFramingPlane.TryCreate` now narrows to the focus-region result before the existing Grid X/Y span cap when one exists, falling back to the full lowest-level footprint otherwise; the cap and edge-padding math are unchanged.
-- `Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardAuthoringDocument.cs` — adds `SetCameraFocus` (independent bit-toggle, never routes through `Paint`), `TryGetLowestPlayableLevel`, and extends `Validate()`'s known-flags mask.
-- `Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardPaintPreset.cs` — masks `CameraFocus` out of `GetClosestPreset`'s equality comparison.
-- `Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardPainterWindow.cs` — adds the independent, mutually-exclusive Camera Focus brush toggle, `PaintCameraFocusBrush`, a corner-accent visual marker for focus-flagged cells, and masks `CameraFocus` out of `DrawCells`' own separate preset-mismatch check (a second masking fix beyond `GetClosestPreset`, found necessary during live testing).
-- `Assets/_Project/GridPlacement/Tests/EditMode/BoardCameraFocusRegionCalculatorTests.cs` (new) — 4 unit tests on the bounds calculator.
-- `Assets/_Project/GridPlacement/Tests/EditMode/BoardCameraFramingTests.cs` — 4 new integration tests, including an explicit composition-order proof.
-- `Assets/_Project/GridPlacement/Tests/EditMode/BoardAuthoringDocumentCameraFocusTests.cs` (new) — 5 tests on the toggle brush/document behavior.
-- `Assets/_Project/GridPlacement/Tests/PlayMode/BoardCameraFramingPlayModeTests.cs` — 2 new end-to-end tests through real `BoardScenePresenter`/`Camera`/`BoardCameraFramer` components.
+- `Assets/Scripts/Board/Scripts/BoardCellDefinition.cs` — adds `BoardCellFlags.CameraFocus = 1 << 3` and the `IsCameraFocus` accessor.
+- `Assets/Scripts/Camera/Scripts/BoardCameraFocusRegion.cs` (new) — `BoardCameraFocusRegionCalculator.TryCalculate`, unioning `CameraFocus`-flagged cells at the lowest playable level.
+- `Assets/Scripts/Camera/Scripts/BoardCameraFramingSolver.cs` — `BoardCameraFramingPlane.TryCreate` now narrows to the focus-region result before the existing Grid X/Y span cap when one exists, falling back to the full lowest-level footprint otherwise; the cap and edge-padding math are unchanged.
+- `Assets/Scripts/Board/Editor/BoardAuthoring/BoardAuthoringDocument.cs` — adds `SetCameraFocus` (independent bit-toggle, never routes through `Paint`), `TryGetLowestPlayableLevel`, and extends `Validate()`'s known-flags mask.
+- `Assets/Scripts/Board/Editor/BoardAuthoring/BoardPaintPreset.cs` — masks `CameraFocus` out of `GetClosestPreset`'s equality comparison.
+- `Assets/Scripts/Board/Editor/BoardAuthoring/BoardPainterWindow.cs` — adds the independent, mutually-exclusive Camera Focus brush toggle, `PaintCameraFocusBrush`, a corner-accent visual marker for focus-flagged cells, and masks `CameraFocus` out of `DrawCells`' own separate preset-mismatch check (a second masking fix beyond `GetClosestPreset`, found necessary during live testing).
+- `Assets/Scripts/Camera/Tests/EditMode/BoardCameraFocusRegionCalculatorTests.cs` (new) — 4 unit tests on the bounds calculator.
+- `Assets/Scripts/Camera/Tests/EditMode/BoardCameraFramingTests.cs` — 4 new integration tests, including an explicit composition-order proof.
+- `Assets/Scripts/Camera/Tests/EditMode/BoardAuthoringDocumentCameraFocusTests.cs` (new) — 5 tests on the toggle brush/document behavior.
+- `Assets/Scripts/Camera/Tests/PlayMode/BoardCameraFramingPlayModeTests.cs` — 2 new end-to-end tests through real `BoardScenePresenter`/`Camera`/`BoardCameraFramer` components.
 
 ### Verification evidence
 
@@ -289,21 +296,21 @@ Added after initial implementation, at the project owner's explicit request, fol
 
 ### Architecture and ownership (addendum)
 
-- `BoardGeometryPlan` (`Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardGeometryPlan.cs`) gains a `LowestBoardLevelBounds? FocusRegion` property, populated alongside the existing `Rectangles`.
+- `BoardGeometryPlan` (`Assets/Scripts/Board/Editor/BoardAuthoring/BoardGeometryPlan.cs`) gains a `LowestBoardLevelBounds? FocusRegion` property, populated alongside the existing `Rectangles`.
 - `BoardGeometryPlanner.Create` (`BoardGeometryPlanner.cs`) computes `FocusRegion` by composing the already-existing `LowestBoardLevelBoundsCalculator.TryCalculate` and `BoardCameraFocusRegionCalculator.TryCalculate` — the identical composition already used by `BoardCameraFramingPlane.TryCreate` — and folds it into the plan's signature hash so a focus-only authoring change (with no geometry-rectangle change) still triggers a resync.
 - `BoardSceneSynchronizer.HasMatchingGeometry` treats the overlay as one additional expected child (`plan.Rectangles.Count + (plan.FocusRegion.HasValue ? 1 : 0)`), requiring a `MeshRenderer` and explicitly requiring **no** `Collider` on that child — the inverse of its existing requirement that every rectangle child **must** have a `BoxCollider`.
-- `BoardSceneSynchronizer.CreateCameraFocusRegion` creates the overlay as a `GameObject.CreatePrimitive(PrimitiveType.Quad)`, flat-rotated and scaled to the focus region's world span, positioned a small fixed offset (`CameraFocusOverlayLift`, 0.01 world units) above the lowest level's ground surface to avoid z-fighting, using a new dedicated material asset `Assets/_Project/GridPlacement/Materials/CameraFocusRegion.mat` (URP/Lit, Transparent surface, translucent cyan, mirroring the existing `Ground.mat`'s transparent-material settings).
+- `BoardSceneSynchronizer.CreateCameraFocusRegion` creates the overlay as a `GameObject.CreatePrimitive(PrimitiveType.Quad)`, flat-rotated and scaled to the focus region's world span, positioned a small fixed offset (`CameraFocusOverlayLift`, 0.01 world units) above the lowest level's ground surface to avoid z-fighting, using a new dedicated material asset `Assets/Resources/Materials/CameraFocusRegion.mat` (URP/Lit, Transparent surface, translucent cyan, mirroring the existing `Ground.mat`'s transparent-material settings).
 - **Verified defect caught by testing, not assumed:** Unity `6000.3.21f1`'s `GameObject.CreatePrimitive(PrimitiveType.Quad)` attaches a `MeshCollider` by default (unlike the historically documented Quad behavior). `CreateCameraFocusRegion` explicitly destroys any `Collider` component immediately after creation to satisfy the no-collider requirement; the automated test `Synchronizer_GeneratesColliderlessCameraFocusOverlayWhenFocusCellsExist` failed against the first implementation attempt (found a `MeshCollider`) and passed once this fix was applied, then stayed green as a regression guard.
 
 ### Serialized integration (addendum)
 
 - No new field on `BoardDefinition` or `BoardCellDefinition`; this addendum consumes the existing `CameraFocus` flag exactly as the rest of this specification defines it.
-- `Assets/_Project/GridPlacement/Materials/CameraFocusRegion.mat` is a new, version-controlled project asset.
+- `Assets/Resources/Materials/CameraFocusRegion.mat` is a new, version-controlled project asset.
 - `Level_001_Board.asset`/`Level_002_Board.asset` are unaffected until a designer paints `CameraFocus` cells on them.
 
 ### Verification plan (addendum) and evidence
 
-- New EditMode tests added to `Assets/_Project/GridPlacement/Tests/EditMode/BoardSceneAuthoringTests.cs`: overlay is generated with a `MeshRenderer` and zero `Collider` components at the exact expected transform when focus cells exist; overlay is omitted when none exist; overlay is removed on resync when focus cells are cleared; overlay's `MeshRenderer.enabled` follows `VisualizeInScene` across a resync.
+- New EditMode tests added to `Assets/Scripts/Board/Tests/EditMode/BoardSceneAuthoringTests.cs`: overlay is generated with a `MeshRenderer` and zero `Collider` components at the exact expected transform when focus cells exist; overlay is omitted when none exist; overlay is removed on resync when focus cells are cleared; overlay's `MeshRenderer.enabled` follows `VisualizeInScene` across a resync.
 - Full Grid Placement EditMode suite re-run and confirmed: **56 of 56 passed** (52 prior + 4 new).
 - Full Grid Placement PlayMode suite re-run and confirmed unaffected: **7 of 7 passed**.
 - Unity `6000.3.21f1` compiled the addendum with zero new Console errors or warnings, confirmed live via Unity MCP.

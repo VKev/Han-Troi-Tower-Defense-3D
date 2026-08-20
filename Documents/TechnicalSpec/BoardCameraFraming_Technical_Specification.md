@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Status | Implemented and verified |
-| Specification version | 1.0 |
+| Specification version | 1.1 |
 | Approved | 14 August 2026 |
 | Unity version | 6000.3.21f1 |
-| Owning module | `Assets/_Project/GridPlacement/` |
+| Owning modules | `Assets/Scripts/Board/` and `Assets/Scripts/Camera/` |
 | Runtime namespace | `TowerDefense3D.GridPlacement` |
 | Runtime assembly | `TowerDefense3D.GridPlacement.Runtime` |
 | Beads feature | `TowerDefense3D-8m9` |
@@ -45,10 +45,12 @@ Board Camera Framing keeps the lowest playable Board level fully visible after t
 | Lowest-level bounds calculator | One calculation | Select the approved Board level, merge duplicate authored flags logically, ignore invalid cells, and return integer X/Z extents. |
 | Perspective framing solver | One calculation | Convert four world corners and a safe viewport rectangle into the minimum valid Camera position while preserving rotation and field of view. |
 | `BoardCameraFramer` | Scene | Own serialized references and tuning, observe relevant runtime input changes, calculate a pose, and apply a snap only when the pose changes. |
-| `BoardSceneSynchronizer` | Editor synchronization | Recalculate matching Camera framers after Board visualization synchronization and record Camera movement through Unity Undo. |
+| `BoardCameraAuthoringSynchronizer` | Editor synchronization | Recalculate matching Camera framers after Board visualization synchronization and record Camera movement through Unity Undo. |
 | `Main Camera` | Scene | Remain the only output Camera and receive the opt-in `BoardCameraFramer` component. |
 
-The feature uses the existing Camera directly because SampleScene has no Cinemachine owner. It must not add a second transform writer or silently introduce Cinemachine.
+The feature uses the existing Camera directly because the level scenes have no
+Cinemachine owner. It must not add a second transform writer or silently
+introduce Cinemachine.
 
 ## 5. Data contracts
 
@@ -112,30 +114,35 @@ The feature does not observe generated renderer changes and does not mutate game
 
 1. Board authoring commits through the existing `BoardChangeScheduler`.
 2. `BoardSceneSynchronizer` creates, reuses, or updates Board visualization geometry.
-3. It finds loaded `BoardCameraFramer` components that reference the synchronized `BoardScenePresenter`.
-4. It calculates the approved snap position after geometry synchronization.
-5. It records and applies only a changed Camera transform through Unity Undo and marks the scene dirty.
+3. It delegates camera work to `BoardCameraAuthoringSynchronizer`.
+4. The camera synchronizer finds loaded `BoardCameraFramer` components that
+   reference the synchronized `BoardScenePresenter`.
+5. It calculates the approved snap position, records only a changed Camera
+   transform through Unity Undo, and marks the scene dirty.
 
 Editor synchronization must remain disabled while entering Play Mode or compiling. A framing failure must not invalidate or roll back successful Board geometry synchronization.
 
 ## 9. Folder and assembly boundaries
 
 ```text
-Assets/_Project/GridPlacement/
-├── Scripts/
-│   ├── Board/              Lowest playable-level bounds contract and calculation
-│   └── Presentation/       Perspective solver and BoardCameraFramer
-├── Editor/BoardAuthoring/  Existing synchronization integration
-└── Tests/
-    ├── EditMode/           Bounds, solver, and Editor synchronization tests
-    └── PlayMode/           Runtime startup and viewport-change tests
+Assets/Scripts/
+├── Board/
+│   ├── Scripts/                  Lowest playable-level bounds
+│   ├── Editor/BoardAuthoring/    Board synchronization integration
+│   └── Tests/EditMode/           Board-side synchronization tests
+└── Camera/
+    ├── Scripts/                  Focus, perspective solver, and BoardCameraFramer
+    ├── Editor/                   Camera authoring synchronization
+    └── Tests/
+        ├── EditMode/             Bounds and solver tests
+        └── PlayMode/             Runtime startup and viewport-change tests
 ```
 
 All new player-build code remains in `TowerDefense3D.GridPlacement.Runtime`. No new runtime assembly is required. Runtime code must not reference `UnityEditor` or Cinemachine APIs.
 
 ## 10. Serialized integration
 
-`Assets/Scenes/SampleScene.unity` remains the integration scene.
+`Assets/Scenes/Levels/Level_001.unity` remains the integration scene.
 
 - Add `BoardCameraFramer` to `Main Camera`.
 - Reference the Camera on the same GameObject.
@@ -151,7 +158,8 @@ No generated Board child is a serialized dependency of the Camera framer.
 - Cinemachine `3.1.7` remains installed but unused by this feature.
 - Preserve the existing namespace, runtime assembly name, GUID-backed Board asset, and scene references.
 - The current Camera is perspective. An orthographic Camera produces a controlled failure instead of an implicit mode change.
-- Scene mutation must preserve the pre-existing user-owned `SampleScene.unity` changes.
+- Scene mutation must preserve the pre-existing user-owned
+  `Assets/Scenes/Levels/Level_001.unity` changes.
 
 ## 12. Verification plan
 
@@ -185,7 +193,7 @@ No generated Board child is a serialized dependency of the Camera framer.
 | A higher platform expands renderer bounds and zooms out | Calculate only from authored cells on the selected lowest level. |
 | Board origin changes invalidate absolute test points | Convert Board-local edges through the authored presenter transform. |
 | Mobile cutouts or UI obscure the Board | Compose inside `Screen.safeArea` and an additional normalized inner rectangle. |
-| Multiple Camera owners fight over transform | Keep SampleScene on one direct Camera owner and do not add Cinemachine. |
+| Multiple Camera owners fight over transform | Keep each level scene on one direct Camera owner and do not add Cinemachine. |
 | Empty or invalid Board moves Camera unpredictably | Fail without mutation and preserve the last valid pose. |
 | Editor synchronization dirties unrelated scenes | Match framers by explicit presenter reference and write only changed transforms. |
 
@@ -204,20 +212,26 @@ Implementation completed on 14 August 2026 with no approved-scope deviation.
 
 ### Implemented files
 
-- `Assets/_Project/GridPlacement/Scripts/Board/LowestBoardLevelBounds.cs` selects the lowest playable level and its deterministic horizontal footprint.
-- `Assets/_Project/GridPlacement/Scripts/Presentation/BoardCameraFramingSolver.cs` constructs transformed Board corners and solves the minimum perspective Camera position.
-- `Assets/_Project/GridPlacement/Scripts/Presentation/BoardCameraFramer.cs` owns scene references, safe-area composition, startup snap, and changed-input observation.
-- `Assets/_Project/GridPlacement/Editor/BoardAuthoring/BoardSceneSynchronizer.cs` reframes matching loaded Camera components through Unity Undo after Board synchronization.
-- `Assets/_Project/GridPlacement/Tests/EditMode/BoardCameraFramingTests.cs` covers level selection, transformed corners, safe-area composition, projection inputs, and landscape aspect ratios.
-- `Assets/_Project/GridPlacement/Tests/EditMode/BoardSceneAuthoringTests.cs` verifies matching-presenter Editor synchronization and corner containment.
-- `Assets/_Project/GridPlacement/Tests/PlayMode/BoardCameraFramingPlayModeTests.cs` verifies startup snap, stable-input behavior, and a changed mobile viewport aspect.
-- `Assets/Scenes/SampleScene.unity` assigns `Main Camera` and `Grid Placement/Board Origin` to `BoardCameraFramer` with one-cell padding and the approved inner composition rectangle.
+- `Assets/Scripts/Board/Scripts/LowestBoardLevelBounds.cs` selects the lowest playable level and its deterministic horizontal footprint.
+- `Assets/Scripts/Camera/Scripts/BoardCameraFramingSolver.cs` constructs transformed Board corners and solves the minimum perspective Camera position.
+- `Assets/Scripts/Camera/Scripts/BoardCameraFramer.cs` owns scene references, safe-area composition, startup snap, and changed-input observation.
+- `Assets/Scripts/Board/Editor/BoardAuthoring/BoardSceneSynchronizer.cs`
+  delegates camera updates after Board synchronization.
+- `Assets/Scripts/Camera/Editor/BoardCameraAuthoringSynchronizer.cs`
+  reframes matching loaded Camera components through Unity Undo.
+- `Assets/Scripts/Camera/Tests/EditMode/BoardCameraFramingTests.cs` covers level selection, transformed corners, safe-area composition, projection inputs, and landscape aspect ratios.
+- `Assets/Scripts/Board/Tests/EditMode/BoardSceneAuthoringTests.cs` verifies matching-presenter Editor synchronization and corner containment.
+- `Assets/Scripts/Camera/Tests/PlayMode/BoardCameraFramingPlayModeTests.cs` verifies startup snap, stable-input behavior, and a changed mobile viewport aspect.
+- `Assets/Scenes/Levels/Level_001.unity` assigns `Main Camera` and `Grid Placement/Board Origin` to `BoardCameraFramer` with one-cell padding and the approved inner composition rectangle.
 
 ### Verification evidence
 
 - Unity `6000.3.21f1` compiled the final implementation with zero Console errors.
 - Grid Placement Edit Mode passed 24 of 24 tests.
-- The new Board Camera Framing Play Mode test passed. The complete Grid Placement Play Mode run passed 3 tests and retained one unrelated pre-existing failure in `GridPlacementSceneInputTests.EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate`, tracked as `TowerDefense3D-bpw`.
+- The new Board Camera Framing Play Mode test passed. The complete Grid
+  Placement Play Mode suite now passes 7 of 7; the formerly unrelated
+  `GridPlacementSceneInputTests.EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate`
+  fixture failure was resolved under `TowerDefense3D-bpw`.
 - A direct 1920x1080 Camera capture showed every lowest-level Board edge visible inside the frame.
 - The saved `Main Camera` position is approximately `(-5.73, 26.10, -13.06)` while its pre-existing rotation `(59.15, 0.10, 0)`, field of view `43`, near clip `0.1`, and far clip `200` remain unchanged.
 - Better Context refreshed all managed maps and verified source hash `38556005203c` after implementation.

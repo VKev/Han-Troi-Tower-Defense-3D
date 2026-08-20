@@ -18,7 +18,7 @@ MonoBehaviour:
     height: 8
   cellSize: 1
   heightUnit: 1
-  visualizeInScene: 0
+  visualizeInScene: 1
   maxCameraGridXSpan: 20
   maxCameraGridYSpan: 20
   cells:
@@ -24022,3 +24022,4 @@ MonoBehaviour:
       z: 59
       y: 0
     flags: 3
+  gridPlaceables: []
