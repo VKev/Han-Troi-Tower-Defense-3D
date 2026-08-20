@@ -61,6 +61,21 @@ Assets/Scripts/<FeatureName>/
 - Preserve stable namespaces and assembly names during folder-only reorganizations unless a separate approved change explicitly alters those contracts.
 - Do not store authored ScriptableObject/settings instances or general-purpose loadable assets (textures, materials, prefabs, models) inside a feature folder; see "Shared asset roots" below.
 
+### One source home per responsibility
+
+- Reuse an existing feature root before creating another folder for the same responsibility. For example, all project-owned UI scripts belong in `Assets/Scripts/UI/Scripts/`; do not create another `UI` tree under `GameFlow`, `Tower`, or another feature.
+- Keep small modules flat. Do not add `Application`, `Gameplay`, `Presentation`, or similar category folders unless current files establish a real ownership, lifecycle, Editor/runtime, test, or assembly boundary.
+- Apply the same rule to every feature: move a script to its existing owning module instead of creating a second home with the same name.
+- Preserve `.meta` files and GUIDs during moves so scene, prefab, and ScriptableObject references remain intact.
+- `Scripts`, `Editor`, and `Tests` are the standard feature boundaries. Use another boundary name only when it has a concrete technical meaning that the standard layout cannot express.
+
+### Stable filenames and explicit versions
+
+- Use stable, descriptive filenames and `CreateAssetMenu.fileName` values. Do not append opaque balance or iteration labels such as `_V0_3`, `_v2`, `Latest`, or `Final` to ordinary source or asset names.
+- Do not hardcode a balance/revision version merely to identify the current data iteration. Track normal balance evolution in source control and the relevant design documentation.
+- A version identifier is allowed only when it is part of an explicit compatibility or migration contract, such as a save schema or external API. Its owner, supported values, and migration behavior must be clear in code or documentation.
+- Rename versioned assets through Unity's Asset Database and update any literal load paths; preserve GUID-based serialized references.
+
 ## Shared asset roots
 
 Two root-level folders under `Assets/` centralize instance data instead of scattering it per feature:

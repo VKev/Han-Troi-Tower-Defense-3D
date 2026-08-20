@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cb37f3b834003f4ca1da0f5aa80c198, type: 3}
+  m_Name: SoulNexus
+  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.SoulNexusDefinition
+  core:
+    stableId: soul_nexus
+    displayName: Soul Nexus
+    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    network:
+      inputPortCount: 2
+      outputPortCount: 0
+      queueCapacityPerInput: 4
+      createsBackpressure: 1
+    throughput:
+      cycleIntervalSeconds: 0.75
+      batchSize: 1
+      concurrentLines: 1
+      sequenceSpacingSeconds: 0
+    economy:
+      buildCost: 0
+      linearUpgradeCost: 80
+      maxInstancesPerLevel: 1
+      sellable: 0
+  maximumSoul: 50
+  upgradedConsumeBatchSize: 2
+  consumeOrder: 0
+  soulUsesUniqueDirectHitCount: 1
+  consumesWhenSoulIsFull: 1
+  discardsOverflowSoul: 1
+  emptyInputDoesNotBlockOtherInput: 1

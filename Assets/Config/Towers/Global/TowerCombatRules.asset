@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2db57bd253fa7041b3307e85711c533, type: 3}
+  m_Name: TowerCombatRules
+  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerCombatRules
+  minimumProcessorCountInValidChain: 0
+  minimumElementCountInValidChain: 0
+  maximumLinkRangeMeters: 12
+  normalQueueCapacity: 3
+  minimumProcessIntervalSeconds: 0.15
+  projectileSpeedMetersPerSecond: 10
+  projectileCollisionRadiusMeters: 0.18
+  startingGold: 250
+  sellRefundFraction: 0.7
+  normalWaveReward: 100
+  bossWaveReward: 140
+  maximumTierThreeElementTowers: 2
+  minimumEffectiveDefense: 0
+  defenseResolutionOrder: 000000000100000002000000030000000400000005000000

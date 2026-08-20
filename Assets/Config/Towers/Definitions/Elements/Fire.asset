@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16d365ff2957b7f48a558f39d92222a9, type: 3}
+  m_Name: Fire
+  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.FireTowerDefinition
+  core:
+    stableId: fire
+    displayName: Fire
+    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    network:
+      inputPortCount: 1
+      outputPortCount: 1
+      queueCapacityPerInput: 3
+      createsBackpressure: 1
+    throughput:
+      cycleIntervalSeconds: 0.85
+      batchSize: 1
+      concurrentLines: 1
+      sequenceSpacingSeconds: 0
+    economy:
+      buildCost: 70
+      linearUpgradeCost: 0
+      maxInstancesPerLevel: 0
+      sellable: 1
+  upgradeCosts:
+    tierOneCost: 60
+    tierTwoCost: 90
+    tierThreeCost: 140
+  directDamage:
+    amount: 5
+    damageType: 1
+  burn:
+    damagePerTick: 1
+    tickIntervalSeconds: 0.5
+    durationSeconds: 2
+    snapshotsDamageOnApply: 1
+    stackingRule: 0
+  tierOne:
+    queueCapacityBonus: 2
+    outputProjectileCount: 3
+    requiredDownstreamReservationCount: 3
+    sequenceSpacingSeconds: 0.08
+    directFireDamageMultiplier: 1.2
+    conservesTotalPhysicalDamage: 1
+    conservesModifiedDirectFireDamage: 1
+    projectilesHaveIndependentIdsAndHitSets: 1
+  rapidBurnBranch:
+    burnDurationSeconds: 4
+    spreadTargetCount: 2
+    spreadRadiusMeters: 2.5
+    evolutionAura:
+      radiusMeters: 3
+      requiresValidChain: 1
+      affectsOwner: 0
+      stackingRule: 2
+    auraLingerSeconds: 1.25
+    auraBurnPotencyFraction: 0.5
+    burnMagicResistanceIgnoreFraction: 0.25
+    alliedFireMagicPenetrationFraction: 0.1
+  executionBurnBranch:
+    tierTwoBurnDamageMultiplier: 1.25
+    evolutionExtraBurnDurationSeconds: 2
+    maxHealthDamageFraction: 0.02
+    minimumMaxHealthDamage: 10
+    maximumMaxHealthDamage: 50
+    deathSpreadChance: 0.3
+    deathSpreadTargetCount: 2
+    deathSpreadRadiusMeters: 2.5
+    evolutionAura:
+      radiusMeters: 3
+      requiresValidChain: 1
+      affectsOwner: 0
+      stackingRule: 2
+    auraLingerSeconds: 1.25
+    auraBurnPotencyFraction: 0.5

@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c42ae0b2184d1940a0d98458938b8b5, type: 3}
+  m_Name: Wind
+  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.WindTowerDefinition
+  core:
+    stableId: wind
+    displayName: Wind
+    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    network:
+      inputPortCount: 1
+      outputPortCount: 1
+      queueCapacityPerInput: 3
+      createsBackpressure: 1
+    throughput:
+      cycleIntervalSeconds: 0.85
+      batchSize: 1
+      concurrentLines: 1
+      sequenceSpacingSeconds: 0
+    economy:
+      buildCost: 70
+      linearUpgradeCost: 0
+      maxInstancesPerLevel: 0
+      sellable: 1
+  upgradeCosts:
+    tierOneCost: 60
+    tierTwoCost: 90
+    tierThreeCost: 140
+  directDamage:
+    amount: 5
+    damageType: 1
+  basePushDistanceMeters: 0.5
+  pushResistance:
+    normalMultiplier: 1
+    miniBossMultiplier: 0.25
+    bossMultiplier: 0
+  tierOne:
+    processSpeedBonusFraction: 0.2
+    pushDistanceMultiplier: 1.1
+    windDamageMultiplier: 1.1
+  criticalBranch:
+    tierTwoProcessSpeedBonusFraction: 0.3
+    tierTwoCriticalChance: 0.1
+    criticalDamageMultiplier: 1.5
+    evolutionProcessSpeedBonusFraction: 0.5
+    evolutionCriticalChance: 1
+    evolutionAura:
+      radiusMeters: 4.5
+      requiresValidChain: 1
+      affectsOwner: 0
+      stackingRule: 2
+    alliedWindProcessSpeedBonusFraction: 0.2
+  controlBranch:
+    tierTwoPushDistanceMultiplier: 1.3
+    gustRadiusMeters: 2.5
+    gustMaxTargets: 5
+    evolutionLinkRangeMultiplier: 1.3
+    tornadoRadiusMeters: 3
+    tornadoDurationSeconds: 1.5
+    tornadoPushDistanceMeters: 2
+    tornadoPerEnemyCooldownSeconds: 3
+    globalBaseHitCooldownSeconds: 30
+    normalLevitateSeconds: 4
+    miniBossLevitateSeconds: 2
+    bossStunSeconds: 1
