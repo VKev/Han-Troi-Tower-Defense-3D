@@ -20,7 +20,7 @@ MonoBehaviour:
   heightUnit: 1
   visualizeInScene: 0
   maxCameraGridXSpan: 15
-  maxCameraGridYSpan: 9
+  maxCameraGridYSpan: 11
   cells:
   - coordinate:
       x: 12
