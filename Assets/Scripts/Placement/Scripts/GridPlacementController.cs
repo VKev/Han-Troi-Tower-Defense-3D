@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -40,6 +41,7 @@ namespace TowerDefense3D.GridPlacement
         private GridOccupancy occupancy;
         private PlacementValidator validator;
         private TowerDefinition selectedTower;
+        private TowerCombatDefinition selectedCombatDefinition;
         private PointerState pointerState;
         private PointerKind pointerKind;
         private int trackedPointerId;
@@ -49,11 +51,16 @@ namespace TowerDefense3D.GridPlacement
         private int nextOwnerId = 1;
 
         public TowerDefinition SelectedTower => selectedTower;
+        public TowerCombatDefinition SelectedCombatDefinition => selectedCombatDefinition;
+        public Camera WorldCamera => worldCamera;
+        public bool IsPlacementActive => selectedTower != null;
         public bool HasCandidate => hasCandidate;
         public bool CandidateIsValid => hasCandidate && candidateIsValid;
         public GridCell CandidateCell => candidateCell;
         public GridOccupancy Occupancy => occupancy;
         public bool IsInitialized { get; private set; }
+
+        public event Action<TowerPlacementRecord> TowerPlaced;
 
         public void Initialize()
         {
@@ -109,6 +116,7 @@ namespace TowerDefense3D.GridPlacement
             IsInitialized = false;
             CancelActivePointer();
             selectedTower = null;
+            selectedCombatDefinition = null;
             hasCandidate = false;
             candidateIsValid = false;
             validator = null;
@@ -149,6 +157,29 @@ namespace TowerDefense3D.GridPlacement
                 return;
             }
 
+            selectedCombatDefinition = null;
+            ApplyTowerSelection(definition);
+        }
+
+        public void SelectTower(TowerCombatDefinition definition)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            TowerDefinition placementDefinition = definition?.Core?.PlacementDefinition;
+            if (definition != null && placementDefinition == null)
+            {
+                throw new InvalidOperationException($"{definition.name} requires a placement definition.");
+            }
+
+            selectedCombatDefinition = definition;
+            ApplyTowerSelection(placementDefinition);
+        }
+
+        private void ApplyTowerSelection(TowerDefinition definition)
+        {
             selectedTower = definition;
             preview?.SetTower(definition);
 
@@ -173,6 +204,7 @@ namespace TowerDefense3D.GridPlacement
 
             CancelActivePointer();
             selectedTower = null;
+            selectedCombatDefinition = null;
             ClearCandidate();
             preview?.SetTower(null);
         }
@@ -330,6 +362,7 @@ namespace TowerDefense3D.GridPlacement
         private void TryPlaceCandidate()
         {
             TowerDefinition tower = selectedTower;
+            TowerCombatDefinition combatDefinition = selectedCombatDefinition;
             if (tower == null || tower.Prefab == null)
             {
                 candidateIsValid = false;
@@ -346,6 +379,8 @@ namespace TowerDefense3D.GridPlacement
             }
 
             GameObject instance = null;
+            TowerRuntimeView runtimeView = null;
+            int ownerId = 0;
             using (reservation)
             {
                 try
@@ -356,8 +391,25 @@ namespace TowerDefense3D.GridPlacement
                         Quaternion.identity,
                         placedObjectsRoot);
 
-                    int ownerId = NextOwnerId();
-                    if (instance == null || !reservation.Commit(ownerId))
+                    if (instance == null)
+                    {
+                        RefreshCandidate(candidateCell);
+                        return;
+                    }
+
+                    ownerId = NextOwnerId();
+                    if (combatDefinition != null)
+                    {
+                        runtimeView = instance.GetComponent<TowerRuntimeView>();
+                        if (runtimeView == null)
+                        {
+                            runtimeView = instance.AddComponent<TowerRuntimeView>();
+                        }
+
+                        runtimeView.Configure(combatDefinition);
+                    }
+
+                    if (!reservation.Commit(ownerId))
                     {
                         if (instance != null)
                         {
@@ -381,8 +433,39 @@ namespace TowerDefense3D.GridPlacement
                 }
             }
 
+            if (runtimeView != null)
+            {
+                PublishTowerPlaced(new TowerPlacementRecord(
+                    combatDefinition,
+                    tower,
+                    runtimeView,
+                    candidateCell,
+                    ownerId));
+            }
+
             // Keep the chosen tower active for rapid repeated mobile placement.
             RefreshCandidate(candidateCell);
+        }
+
+        private void PublishTowerPlaced(TowerPlacementRecord placement)
+        {
+            Delegate[] handlers = TowerPlaced?.GetInvocationList();
+            if (handlers == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < handlers.Length; index++)
+            {
+                try
+                {
+                    ((Action<TowerPlacementRecord>)handlers[index])(placement);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
         }
 
         private Vector3 GetFootprintBottomCenter(GridCell anchor, TowerFootprint footprint)

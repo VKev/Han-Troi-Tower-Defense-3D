@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using TowerDefense3D.GameFlow.Editor;
+using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,6 +12,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 {
     public sealed class GameFlowEditModeTests
     {
+        private const string TowerCatalogPath =
+            "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
+
         private string testRoot;
 
         [SetUp]
@@ -221,7 +225,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 catalog,
                 new LevelCatalogEntry(1, "Level 1", "Assets/Scenes/Levels/Missing.unity"),
                 new LevelCatalogEntry(2, "Level 2", "Assets/Scenes/Levels/Level_002.unity"));
-            var coordinator = new GameFlowCoordinator(catalog, save, loader, ui);
+            var coordinator = new GameFlowCoordinator(
+                catalog,
+                save,
+                CreateTowerNetworkManager(),
+                loader,
+                ui);
 
             try
             {
@@ -284,6 +293,19 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 "levels",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             field.SetValue(catalog, new List<LevelCatalogEntry>(entries));
+        }
+
+        private static TowerNetworkManager CreateTowerNetworkManager()
+        {
+            TowerCatalog towerCatalog =
+                AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+
+            Assert.That(
+                towerCatalog,
+                Is.Not.Null,
+                $"Tower Catalog is missing at '{TowerCatalogPath}'.");
+
+            return new TowerNetworkManager(towerCatalog);
         }
 
         private static void InvokePrivate(object target, string methodName, params object[] arguments)

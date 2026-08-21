@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using static TowerDefense3D.Towers.TowerRuntimeSpec;
 
 namespace TowerDefense3D.Towers.Tests.EditMode
 {
@@ -287,6 +288,85 @@ namespace TowerDefense3D.Towers.Tests.EditMode
             fixture.Manager.EndLevelSession();
 
             Assert.That(eventCount, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void RegisteredTowers_CreateBuffersFromRuntimeSpecs()
+        {
+            Fixture fixture = CreateFixture();
+
+            fixture.Manager.BeginLevelSession(1);
+
+            TowerNodeId generator =
+                fixture.Manager.RegisterTower(
+                    fixture.Generator,
+                    Position(0f));
+
+            TowerNodeId fire =
+                fixture.Manager.RegisterTower(
+                    fixture.Fire,
+                    Position(1f));
+
+            TowerNodeId nexus =
+                fixture.Manager.RegisterTower(
+                    fixture.Nexus,
+                    Position(2f));
+
+            Assert.That(
+                fixture.Manager.TryCreateInputPortSnapshot(
+                    generator,
+                    0,
+                    out _),
+                Is.False);
+
+            Assert.That(
+                fixture.Manager.TryCreateInputPortSnapshot(
+                    fire,
+                    0,
+                    out TowerInputPortSnapshot firePort),
+                Is.True);
+
+            Assert.That(
+                firePort.Capacity,
+                Is.EqualTo(3));
+
+            Assert.That(
+                firePort.QueuedProjectileCount,
+                Is.Zero);
+
+            Assert.That(
+                firePort.ReservedProjectileCount,
+                Is.Zero);
+
+            Assert.That(
+                fixture.Manager.TryCreateInputPortSnapshot(
+                    nexus,
+                    0,
+                    out TowerInputPortSnapshot nexusPortZero),
+                Is.True);
+
+            Assert.That(
+                fixture.Manager.TryCreateInputPortSnapshot(
+                    nexus,
+                    1,
+                    out TowerInputPortSnapshot nexusPortOne),
+                Is.True);
+
+            Assert.That(
+                nexusPortZero.Capacity,
+                Is.EqualTo(4));
+
+            Assert.That(
+                nexusPortOne.Capacity,
+                Is.EqualTo(4));
+
+            Assert.That(
+                nexusPortZero.AvailableSlotCount,
+                Is.EqualTo(4));
+
+            Assert.That(
+                nexusPortOne.AvailableSlotCount,
+                Is.EqualTo(4));
         }
 
         private Fixture CreateFixture()

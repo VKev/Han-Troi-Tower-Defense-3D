@@ -12,9 +12,6 @@ Shader "TheVayuputra/ToonShader"
         _GlossSoftness ("Gloss Softness", Range(0, 1)) = 0.05
         [HDR]_GlossTint ("Gloss Tint", Color) = (1,1,1,1)
 
-        _EdgeThreshold ("Edge Threshold", Range(0, 1)) = 0.65
-        _EdgeSoftness ("Edge Softness", Range(0,1)) = 0.4
-        _EdgeColor ("Edge Color", Color) = (1,1,1,1)
     }
 
     SubShader
@@ -49,9 +46,6 @@ Shader "TheVayuputra/ToonShader"
                 float _GlossThreshold;
                 float _GlossSoftness;
                 float4 _GlossTint;
-                float _EdgeThreshold;
-                float _EdgeSoftness;
-                float4 _EdgeColor;
             CBUFFER_END
 
             struct Attributes
@@ -105,7 +99,6 @@ Shader "TheVayuputra/ToonShader"
                 float3 H = normalize(V + L);
 
                 float NL = dot(N, L) * 0.5 + 0.5;
-                float NV = dot(N, V);
                 float NH = dot(N, H);
 
                 float3 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb;
@@ -126,15 +119,9 @@ Shader "TheVayuputra/ToonShader"
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 float shadow = MainLightRealtimeShadow(shadowCoord);
 
-                float edge = smoothstep(
-                    (1 - _EdgeThreshold) - _EdgeSoftness * 0.5,
-                    (1 - _EdgeThreshold) + _EdgeSoftness * 0.5,
-                    0.5 - NV
-                );
-
                 float3 diffuse = _MainLightColor.rgb * baseMap * _BaseColor.rgb * shadeFactor * shadow;
                 float3 specular = _GlossTint.rgb * shadow * shadeFactor * glossFactor;
-                float3 ambient = edge * _EdgeColor.rgb + SampleSH(N) * _BaseColor.rgb * baseMap;
+                float3 ambient = SampleSH(N) * _BaseColor.rgb * baseMap;
 
                 float3 finalColor = diffuse + ambient + specular;
                 finalColor = MixFog(finalColor, input.fogCoord);

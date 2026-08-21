@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
+using TowerDefense3D.Towers;
+using UnityEditor;
 using UnityEngine;
 
 namespace TowerDefense3D.GameFlow.Tests.EditMode
 {
     public sealed class ApplicationCompositionTests
     {
+        private const string TowerCatalogPath =
+            "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
+
         private string testRoot;
 
         [SetUp]
@@ -67,6 +72,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var coordinator = new GameFlowCoordinator(
                 catalog,
                 saveCoordinator,
+                CreateTowerNetworkManager(),
                 levelSceneLoader,
                 applicationUi);
 
@@ -104,6 +110,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var coordinator = new GameFlowCoordinator(
                 catalog,
                 saveCoordinator,
+                CreateTowerNetworkManager(),
                 levelSceneLoader,
                 applicationUi);
 
@@ -173,6 +180,19 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             {
                 UnityEngine.Object.DestroyImmediate(owner);
             }
+        }
+
+        private static TowerNetworkManager CreateTowerNetworkManager()
+        {
+            TowerCatalog towerCatalog =
+                AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+
+            Assert.That(
+                towerCatalog,
+                Is.Not.Null,
+                $"Tower Catalog is missing at '{TowerCatalogPath}'.");
+
+            return new TowerNetworkManager(towerCatalog);
         }
 
         private static bool ImplementsInterface(Type type, string interfaceFullName)

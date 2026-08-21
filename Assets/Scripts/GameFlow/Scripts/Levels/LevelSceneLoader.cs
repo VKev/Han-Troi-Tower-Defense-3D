@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -37,10 +38,13 @@ namespace TowerDefense3D.GameFlow
 
         public void LoadLevel(
             LevelLoadRequest request,
+            TowerNetworkManager towerNetworkManager,
             Action requestReturnToMenu,
             Action<LevelTransitionResult> completion)
         {
-            if (!request.IsValid || requestReturnToMenu == null)
+            if (!request.IsValid
+                || towerNetworkManager == null
+                || requestReturnToMenu == null)
             {
                 completion?.Invoke(new LevelTransitionResult(
                     LevelTransitionStatus.InvalidLevel,
@@ -66,7 +70,10 @@ namespace TowerDefense3D.GameFlow
             }
 
             BeginTransition(TransitionKind.Load, request.LevelNumber, request.ScenePath, completion);
-            StartCoroutine(LoadLevelRoutine(request, requestReturnToMenu));
+            StartCoroutine(LoadLevelRoutine(
+                request,
+                towerNetworkManager,
+                requestReturnToMenu));
         }
 
         public void UnloadActiveLevel(Action<LevelTransitionResult> completion)
@@ -89,7 +96,10 @@ namespace TowerDefense3D.GameFlow
             StartCoroutine(UnloadForMenuRoutine());
         }
 
-        private IEnumerator LoadLevelRoutine(LevelLoadRequest request, Action requestReturnToMenu)
+        private IEnumerator LoadLevelRoutine(
+            LevelLoadRequest request,
+            TowerNetworkManager towerNetworkManager,
+            Action requestReturnToMenu)
         {
             if (!Application.CanStreamedLevelBeLoaded(request.ScenePath))
             {
@@ -178,7 +188,7 @@ namespace TowerDefense3D.GameFlow
             }
 
             LevelSceneContext context = contexts[0];
-            var runtimeContext = new LevelSceneRuntimeContext(request.LevelNumber, requestReturnToMenu);
+            var runtimeContext = new LevelSceneRuntimeContext(request.LevelNumber, requestReturnToMenu, towerNetworkManager);
             if (!context.TryInitialize(runtimeContext, out string initializationError))
             {
                 yield return CleanupFailedTarget(loadedScene);

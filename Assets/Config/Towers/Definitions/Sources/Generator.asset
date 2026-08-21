@@ -15,7 +15,7 @@ MonoBehaviour:
   core:
     stableId: generator
     displayName: Generator
-    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    placementDefinition: {fileID: 11400000, guid: 4633e2abd6ec1794c9fedfe77696b2ab, type: 2}
     network:
       inputPortCount: 0
       outputPortCount: 1

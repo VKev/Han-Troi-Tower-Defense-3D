@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -99,6 +100,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(CountLoaded<ApplicationUIManager>(), Is.EqualTo(1));
             Assert.That(CountLoaded<LevelSceneContext>(), Is.EqualTo(1));
+            AssertTowerNetworkInitialized();
 
             GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
             Assert.That(gameplayUi, Is.Not.Null);
@@ -110,6 +112,8 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
+            Assert.That(CountLoaded<TowerNetworkSceneAdapter>(), Is.Zero);
+            Assert.That(CountLoaded<TowerSimulationDriver>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
         }
@@ -127,6 +131,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             yield return WaitForGameplay(LevelTwoScenePath);
 
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(LevelTwoScenePath));
+            AssertTowerNetworkInitialized();
             GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
             AssertMigratedGameplayUi(gameplayUi, "Level_002_Board");
 
@@ -160,6 +165,26 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);
             Assert.That(manager.GetComponentInChildren<SafeAreaFitter>(true), Is.Not.Null);
+        }
+
+        private static void AssertTowerNetworkInitialized()
+        {
+            Assert.That(CountLoaded<TowerNetworkSceneAdapter>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<TowerSimulationDriver>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<TowerNetworkInputController>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<TowerLinkPresenter>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<TowerProjectilePresenter>(), Is.EqualTo(1));
+
+            TowerNetworkSceneAdapter adapter = FindLoaded<TowerNetworkSceneAdapter>();
+            TowerSimulationDriver driver = FindLoaded<TowerSimulationDriver>();
+
+            Assert.That(adapter, Is.Not.Null);
+            Assert.That(adapter.IsInitialized, Is.True);
+            Assert.That(driver, Is.Not.Null);
+            Assert.That(driver.IsInitialized, Is.True);
+            Assert.That(adapter.GetComponent<TowerNetworkInputController>().IsInitialized, Is.True);
+            Assert.That(adapter.GetComponent<TowerLinkPresenter>().IsInitialized, Is.True);
+            Assert.That(adapter.GetComponent<TowerProjectilePresenter>().IsInitialized, Is.True);
         }
 
         private static IEnumerator WaitForLevelMenu()

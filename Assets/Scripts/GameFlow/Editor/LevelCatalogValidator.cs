@@ -5,6 +5,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Towers;
 
 namespace TowerDefense3D.GameFlow.Editor
 {
@@ -145,6 +147,12 @@ namespace TowerDefense3D.GameFlow.Editor
                         scene,
                         $"LevelSceneContext for Level {entry.LevelNumber}",
                         errors);
+                    RequireExactlyOne<GridPlacementController>(scene, "GridPlacementController", errors);
+                    RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);
+                    RequireExactlyOne<TowerSimulationDriver>(scene, "TowerSimulationDriver", errors);
+                    RequireExactlyOne<TowerNetworkInputController>(scene, "TowerNetworkInputController", errors);
+                    RequireExactlyOne<TowerLinkPresenter>(scene, "TowerLinkPresenter", errors);
+                    RequireExactlyOne<TowerProjectilePresenter>(scene, "TowerProjectilePresenter", errors);
 
                     int eventSystems = CountComponents<EventSystem>(scene);
                     if (eventSystems != 0)
@@ -171,8 +179,31 @@ namespace TowerDefense3D.GameFlow.Editor
                         errors.Add(
                             $"Level {entry.LevelNumber} catalog entry does not match authored context {context.LevelNumber}.");
                     }
+
+                    ValidateTowerNetworkObject(scene, entry.LevelNumber, errors);
                 },
                 errors);
+        }
+
+        private static void ValidateTowerNetworkObject(Scene scene, int levelNumber, List<string> errors)
+        {
+            TowerNetworkSceneAdapter adapter = FindFirstComponent<TowerNetworkSceneAdapter>(scene);
+            if (adapter == null)
+            {
+                return;
+            }
+
+            GameObject owner = adapter.gameObject;
+            if (owner.GetComponent<GridPlacementController>() == null
+                || owner.GetComponent<TowerSimulationDriver>() == null
+                || owner.GetComponent<TowerNetworkInputController>() == null
+                || owner.GetComponent<TowerLinkPresenter>() == null
+                || owner.GetComponent<TowerProjectilePresenter>() == null)
+            {
+                errors.Add(
+                    $"Level {levelNumber} must keep placement, simulation, tower input, link, and projectile "
+                    + "components together on the TowerNetworkSceneAdapter object.");
+            }
         }
 
         private static void InspectScene(string scenePath, Action<Scene> inspect, List<string> errors)

@@ -83,23 +83,33 @@ Assets/Scripts/<FeatureName>/
 - Treat the loss of the old serialized key as an intentional data migration. Record and test any non-default value that must be restored; do not assume Unity copied it to the renamed field.
 - If backward compatibility is genuinely required, use an explicit, reviewable Editor or versioned-data migration and remove that migration after its supported window; do not keep the old field name through an attribute.
 
+### C# line wrapping
+
+- Keep method signatures, calls, assignments, declarations, and conditions on one readable line while they remain reasonably short. About 120 characters is a readability target, not a hard limit.
+- Wrap only when a line becomes materially difficult to scan. Break at logical argument or condition groups and indent continuation lines consistently.
+- Do not place every argument, operand, or assignment fragment on a separate line merely because an expression contains several items.
+- Apply formatting cleanup only to files already touched by the current change; do not create unrelated formatting churn.
+
 ## Runtime lifecycle ownership
 
 The project uses the **Hybrid VContainer + Explicit Scene Lifecycle** pattern. VContainer owns application construction and disposal through one pure C# entry point, while scene-owned and engine-bound behavior remains on authored `MonoBehaviour` components activated explicitly by the level context. This avoids competing manager startup callbacks without forcing every scene object into the DI container.
 
 ```text
 Bootstrap/Application Systems [ApplicationLifetimeScope]
-`-- GameFlowCoordinator [sole application IStartable; pure C#]
+|-- GameFlowCoordinator [sole application IStartable; pure C#]
+`-- TowerNetworkManager [application-scoped pure C# service; no engine callbacks]
 
 Level_###/Level Context [LevelSceneContext]
 |-- Grid Placement/Systems [GridPlacementSceneAdapter]
+|-- Grid Placement/Systems [TowerNetworkSceneAdapter + TowerSimulationDriver]
 `-- Gameplay UI [GameplayUIManager]
 ```
 
 - Keep one application composition root in `Assets/Scenes/Bootstrap.unity`. The current root is `ApplicationLifetimeScope`, using VContainer 1.19.0.
 - Register exactly one application entry point for high-level flow. `GameFlowCoordinator` owns boot, menu, loading, gameplay, and blocking-error phase transitions; do not add another manager callback that starts the same flow.
 - Prefer pure C# services for application logic and persistence. Register existing Unity components only when they need authored references, coroutines, scene APIs, GameObject state, or other engine-owned behavior.
-- Keep level activation explicit through `LevelSceneContext`. Participants initialize in authored order and shut down in reverse order; the current order is `GridPlacementSceneAdapter` followed by `GameplayUIManager`.
+- An application-scoped service may own one explicitly bounded level session without becoming another entry point. `TowerNetworkManager` is constructed once by VContainer, while `TowerNetworkSceneAdapter` begins and ends its level data and `TowerSimulationDriver` forwards frame time only after explicit level initialization.
+- Keep level activation explicit through `LevelSceneContext`. Participants initialize in authored order and shut down in reverse order; the current order is `GridPlacementSceneAdapter`, `TowerNetworkSceneAdapter`, then `GameplayUIManager`.
 - Keep engine- and object-local callbacks on their owning `MonoBehaviour`, such as input polling, camera framing, frame pacing, Safe Area updates, view subscriptions, and destruction cleanup. These callbacks must not become additional application entry points.
 - Do not expose a mutable `Manager.Instance`, use global container `Resolve` calls, add an unmanaged `DontDestroyOnLoad` root, or store scene-owned Unity objects in application services.
 - Add a session or level child scope only when an approved lifetime requirement needs it. The current architecture has one application scope and scene participants, with no session or level `LifetimeScope`.

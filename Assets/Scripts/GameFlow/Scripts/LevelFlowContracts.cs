@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Towers;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -51,14 +52,19 @@ namespace TowerDefense3D.GameFlow
 
     public readonly struct LevelSceneRuntimeContext
     {
-        public LevelSceneRuntimeContext(int levelNumber, Action requestReturnToMenu)
+        public LevelSceneRuntimeContext(
+            int levelNumber,
+            Action requestReturnToMenu,
+            TowerNetworkManager towerNetworkManager = null)
         {
             LevelNumber = levelNumber;
             RequestReturnToMenu = requestReturnToMenu;
+            TowerNetworkManager = towerNetworkManager;
         }
 
         public int LevelNumber { get; }
         public Action RequestReturnToMenu { get; }
+        public TowerNetworkManager TowerNetworkManager { get; }
         public bool IsValid => LevelNumber > 0 && RequestReturnToMenu != null;
     }
 

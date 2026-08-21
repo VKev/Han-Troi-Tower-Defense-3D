@@ -3,6 +3,7 @@
     "rootNamespace": "TowerDefense3D.GameFlow.Editor",
     "references": [
         "TowerDefense3D.GameFlow.Runtime",
+        "TowerDefense3D.GridPlacement.Runtime",
         "Unity.ugui"
     ],
     "includePlatforms": [

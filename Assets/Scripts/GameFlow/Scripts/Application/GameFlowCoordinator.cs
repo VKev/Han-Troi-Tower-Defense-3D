@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Towers;
 using VContainer.Unity;
 
 namespace TowerDefense3D.GameFlow
@@ -20,6 +21,7 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelSceneLoader levelSceneLoader;
         private readonly IApplicationUIController applicationUi;
 
+        private readonly TowerNetworkManager towerNetworkManager;
         private bool isStarted;
         private bool isDisposed;
 
@@ -28,6 +30,7 @@ namespace TowerDefense3D.GameFlow
         public GameFlowCoordinator(
             LevelCatalog levelCatalog,
             SaveCoordinator saveCoordinator,
+            TowerNetworkManager towerNetworkManager,
             LevelSceneLoader levelSceneLoader,
             IApplicationUIController applicationUi)
         {
@@ -35,6 +38,8 @@ namespace TowerDefense3D.GameFlow
             this.saveCoordinator = saveCoordinator ?? throw new ArgumentNullException(nameof(saveCoordinator));
             this.levelSceneLoader = levelSceneLoader ?? throw new ArgumentNullException(nameof(levelSceneLoader));
             this.applicationUi = applicationUi ?? throw new ArgumentNullException(nameof(applicationUi));
+            this.towerNetworkManager =
+                towerNetworkManager ?? throw new ArgumentNullException(nameof(towerNetworkManager));
         }
 
         public void Start()
@@ -82,6 +87,7 @@ namespace TowerDefense3D.GameFlow
             }
 
             isDisposed = true;
+            towerNetworkManager.EndLevelSession();
             if (!isStarted)
             {
                 return;
@@ -179,6 +185,7 @@ namespace TowerDefense3D.GameFlow
             applicationUi.SetInputBlocked(true);
             levelSceneLoader.LoadLevel(
                 request,
+                towerNetworkManager,
                 RequestReturnToLevelMenu,
                 result => OnLevelLoadCompleted(request, result));
         }

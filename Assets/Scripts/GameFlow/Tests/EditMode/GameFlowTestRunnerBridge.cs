@@ -18,6 +18,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private const string StatusKey = "TowerDefense3D.GameFlow.Tests.Status";
         private const string ResultKey = "TowerDefense3D.GameFlow.Tests.Result";
         private const string OwnedTestNamespace = "TowerDefense3D.GameFlow.Tests.";
+        private const string TowerTestNamespace = "TowerDefense3D.Towers.Tests.";
 
         static GameFlowTestRunnerBridge()
         {
@@ -28,6 +29,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public static void RunEditMode()
         {
             Start(TestMode.EditMode, "TowerDefense3D.GameFlow.EditModeTests", true);
+        }
+
+        [MenuItem("Tools/Tower Defense/Tests/Run Tower Network EditMode")]
+        public static void RunTowerNetworkEditMode()
+        {
+            Start(TestMode.EditMode, "TowerDefense3D.GridPlacement.EditModeTests", true);
         }
 
         [MenuItem("Tools/Tower Defense/Tests/Run Game Flow PlayMode")]
@@ -153,7 +160,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             private static bool ContainsOwnedTest(ITestAdaptor test)
             {
-                if (test.FullName.IndexOf(OwnedTestNamespace, StringComparison.Ordinal) >= 0)
+                if (IsOwnedTestName(test.FullName))
                 {
                     return true;
                 }
@@ -171,7 +178,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             private static bool ContainsOwnedTest(ITestResultAdaptor result)
             {
-                if (result.FullName.IndexOf(OwnedTestNamespace, StringComparison.Ordinal) >= 0)
+                if (IsOwnedTestName(result.FullName))
                 {
                     return true;
                 }
@@ -185,6 +192,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 }
 
                 return false;
+            }
+
+            private static bool IsOwnedTestName(string fullName)
+            {
+                return fullName.IndexOf(OwnedTestNamespace, StringComparison.Ordinal) >= 0
+                    || fullName.IndexOf(TowerTestNamespace, StringComparison.Ordinal) >= 0;
             }
         }
     }
