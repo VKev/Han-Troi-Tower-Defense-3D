@@ -32,7 +32,6 @@ namespace TowerDefense3D.Towers
 
         [Header("Projectile")]
         [SerializeField, Min(0f)] private float projectileSpeedMetersPerSecond = 10f;
-        [SerializeField, Min(0f)] private float projectileCollisionRadiusMeters = 0.18f;
 
         [Header("Level Economy")]
         [SerializeField, Min(0)] private int startingGold = 250;
@@ -45,7 +44,8 @@ namespace TowerDefense3D.Towers
 
         [Header("Defense Resolution")]
         [SerializeField, Min(0f)] private float minimumEffectiveDefense;
-        [SerializeField] private DefenseResolutionStep[] defenseResolutionOrder =
+        [SerializeField]
+        private DefenseResolutionStep[] defenseResolutionOrder =
         {
             DefenseResolutionStep.StrongestEarthReduction,
             DefenseResolutionStep.PercentPenetration,
@@ -55,13 +55,18 @@ namespace TowerDefense3D.Towers
             DefenseResolutionStep.DamageTakenModifier
         };
 
+        [Header("Simulation")]
+        [SerializeField, Min(0.0001f)]
+        private float simulationTickSeconds = 0.05f;
+
+        public float SimulationTickSeconds => simulationTickSeconds;
+
         public int MinimumProcessorCountInValidChain => minimumProcessorCountInValidChain;
         public int MinimumElementCountInValidChain => minimumElementCountInValidChain;
         public float MaximumLinkRangeMeters => maximumLinkRangeMeters;
         public int NormalQueueCapacity => normalQueueCapacity;
         public float MinimumProcessIntervalSeconds => minimumProcessIntervalSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
-        public float ProjectileCollisionRadiusMeters => projectileCollisionRadiusMeters;
         public int StartingGold => startingGold;
         public float SellRefundFraction => sellRefundFraction;
         public int NormalWaveReward => normalWaveReward;

@@ -50,8 +50,7 @@ MonoBehaviour:
     requiredDownstreamReservationCount: 3
     sequenceSpacingSeconds: 0.08
     directFireDamageMultiplier: 1.2
-    conservesTotalPhysicalDamage: 1
-    conservesModifiedDirectFireDamage: 1
+    conservesTotalFireDamageAcrossClones: 1
     projectilesHaveIndependentIdsAndHitSets: 1
   rapidBurnBranch:
     burnDurationSeconds: 4

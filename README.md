@@ -76,7 +76,25 @@ Assets/Scripts/<FeatureName>/
 - A version identifier is allowed only when it is part of an explicit compatibility or migration contract, such as a save schema or external API. Its owner, supported values, and migration behavior must be clear in code or documentation.
 - Rename versioned assets through Unity's Asset Database and update any literal load paths; preserve GUID-based serialized references.
 
+### Serialized field renames
+
+- Do not use `FormerlySerializedAs` in project-owned source. Prefer the final, descriptive field name so obsolete terminology does not remain hidden in migration attributes.
+- After a direct serialized-field rename, compile in Unity, inspect every affected ScriptableObject, prefab, and scene, restore or confirm the intended value in the Inspector, and save those assets through Unity so they are reserialized under the new field name.
+- Treat the loss of the old serialized key as an intentional data migration. Record and test any non-default value that must be restored; do not assume Unity copied it to the renamed field.
+- If backward compatibility is genuinely required, use an explicit, reviewable Editor or versioned-data migration and remove that migration after its supported window; do not keep the old field name through an attribute.
+
 ## Runtime lifecycle ownership
+
+The project uses the **Hybrid VContainer + Explicit Scene Lifecycle** pattern. VContainer owns application construction and disposal through one pure C# entry point, while scene-owned and engine-bound behavior remains on authored `MonoBehaviour` components activated explicitly by the level context. This avoids competing manager startup callbacks without forcing every scene object into the DI container.
+
+```text
+Bootstrap/Application Systems [ApplicationLifetimeScope]
+`-- GameFlowCoordinator [sole application IStartable; pure C#]
+
+Level_###/Level Context [LevelSceneContext]
+|-- Grid Placement/Systems [GridPlacementSceneAdapter]
+`-- Gameplay UI [GameplayUIManager]
+```
 
 - Keep one application composition root in `Assets/Scenes/Bootstrap.unity`. The current root is `ApplicationLifetimeScope`, using VContainer 1.19.0.
 - Register exactly one application entry point for high-level flow. `GameFlowCoordinator` owns boot, menu, loading, gameplay, and blocking-error phase transitions; do not add another manager callback that starts the same flow.

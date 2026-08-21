@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace TowerDefense3D.GridPlacement
 {
@@ -8,9 +7,7 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField] private BoardDefinition board;
         [SerializeField] private Transform generatedRoot;
         [SerializeField, HideInInspector] private string generatedSignature;
-        [FormerlySerializedAs("generatedRoadVisualRoot")]
         [SerializeField, HideInInspector] private Transform generatedGridPlaceableRoot;
-        [FormerlySerializedAs("generatedRoadVisualSignature")]
         [SerializeField, HideInInspector] private string generatedGridPlaceableSignature;
 
         public BoardDefinition Board => board;

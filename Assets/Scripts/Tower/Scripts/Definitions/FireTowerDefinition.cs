@@ -17,8 +17,7 @@ namespace TowerDefense3D.Towers
             [SerializeField, Min(1)] private int requiredDownstreamReservationCount = 3;
             [SerializeField, Min(0f)] private float sequenceSpacingSeconds = 0.08f;
             [SerializeField, Min(0f)] private float directFireDamageMultiplier = 1.2f;
-            [SerializeField] private bool conservesTotalPhysicalDamage = true;
-            [SerializeField] private bool conservesModifiedDirectFireDamage = true;
+            [SerializeField] private bool conservesTotalFireDamageAcrossClones = true;
             [SerializeField] private bool projectilesHaveIndependentIdsAndHitSets = true;
 
             public int QueueCapacityBonus => queueCapacityBonus;
@@ -27,8 +26,7 @@ namespace TowerDefense3D.Towers
                 requiredDownstreamReservationCount;
             public float SequenceSpacingSeconds => sequenceSpacingSeconds;
             public float DirectFireDamageMultiplier => directFireDamageMultiplier;
-            public bool ConservesTotalPhysicalDamage => conservesTotalPhysicalDamage;
-            public bool ConservesModifiedDirectFireDamage => conservesModifiedDirectFireDamage;
+            public bool ConservesTotalFireDamageAcrossClones => conservesTotalFireDamageAcrossClones;
             public bool ProjectilesHaveIndependentIdsAndHitSets =>
                 projectilesHaveIndependentIdsAndHitSets;
         }
@@ -39,7 +37,8 @@ namespace TowerDefense3D.Towers
             [SerializeField, Min(0f)] private float burnDurationSeconds = 4f;
             [SerializeField, Min(0)] private int spreadTargetCount = 2;
             [SerializeField, Min(0f)] private float spreadRadiusMeters = 2.5f;
-            [SerializeField] private AuraProfile evolutionAura =
+            [SerializeField]
+            private AuraProfile evolutionAura =
                 new AuraProfile(3f, true, false);
             [SerializeField, Min(0f)] private float auraLingerSeconds = 1.25f;
             [SerializeField, Range(0f, 1f)] private float auraBurnPotencyFraction = 0.5f;
@@ -69,7 +68,8 @@ namespace TowerDefense3D.Towers
             [SerializeField, Range(0f, 1f)] private float deathSpreadChance = 0.3f;
             [SerializeField, Min(1)] private int deathSpreadTargetCount = 2;
             [SerializeField, Min(0f)] private float deathSpreadRadiusMeters = 2.5f;
-            [SerializeField] private AuraProfile evolutionAura =
+            [SerializeField]
+            private AuraProfile evolutionAura =
                 new AuraProfile(3f, true, false);
             [SerializeField, Min(0f)] private float auraLingerSeconds = 1.25f;
             [SerializeField, Range(0f, 1f)] private float auraBurnPotencyFraction = 0.5f;
@@ -87,21 +87,26 @@ namespace TowerDefense3D.Towers
             public float AuraBurnPotencyFraction => auraBurnPotencyFraction;
         }
 
-        [SerializeField] private TowerCoreProfile core = new TowerCoreProfile(
+        [SerializeField]
+        private TowerCoreProfile core = new TowerCoreProfile(
             "fire",
             "Fire",
             new TowerNetworkProfile(1, 1, 3, true),
             new TowerThroughputProfile(0.85f, 1, 1),
             new TowerEconomyProfile(70, 0, 0, true));
-        [SerializeField] private ElementUpgradeCostProfile upgradeCosts =
+        [SerializeField]
+        private ElementUpgradeCostProfile upgradeCosts =
             new ElementUpgradeCostProfile();
-        [SerializeField] private DamageProfile directDamage =
+        [SerializeField]
+        private DamageProfile directDamage =
             new DamageProfile(5f, DamageType.Magic);
         [SerializeField] private BurnProfile burn = new BurnProfile(1f, 0.5f, 2f, true);
         [SerializeField] private TierOneProfile tierOne = new TierOneProfile();
-        [SerializeField] private RapidBurnBranchProfile rapidBurnBranch =
+        [SerializeField]
+        private RapidBurnBranchProfile rapidBurnBranch =
             new RapidBurnBranchProfile();
-        [SerializeField] private ExecutionBurnBranchProfile executionBurnBranch =
+        [SerializeField]
+        private ExecutionBurnBranchProfile executionBurnBranch =
             new ExecutionBurnBranchProfile();
 
         public override TowerFamily Family => TowerFamily.Fire;
@@ -130,8 +135,7 @@ namespace TowerDefense3D.Towers
                 tierOne.RequiredDownstreamReservationCount != tierOne.OutputProjectileCount ||
                 tierOne.SequenceSpacingSeconds <= 0f ||
                 tierOne.DirectFireDamageMultiplier < 1f ||
-                !tierOne.ConservesTotalPhysicalDamage ||
-                !tierOne.ConservesModifiedDirectFireDamage ||
+                !tierOne.ConservesTotalFireDamageAcrossClones ||
                 !tierOne.ProjectilesHaveIndependentIdsAndHitSets)
             {
                 errors.Add("Fire Tier 1 projectile clone contract is invalid.");

@@ -8174,6 +8174,10 @@ PrefabInstance:
       propertyPath: placementController
       value: 
       objectReference: {fileID: 933105055}
+    - target: {fileID: 3591226980353722222, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4858077839866566569, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMax.x
       value: 1

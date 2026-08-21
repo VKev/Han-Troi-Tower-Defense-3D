@@ -62,10 +62,14 @@ namespace TowerDefense3D.Towers
 
             if (rules.MaximumLinkRangeMeters <= 0f ||
                 rules.ProjectileSpeedMetersPerSecond <= 0f ||
-                rules.ProjectileCollisionRadiusMeters <= 0f ||
                 rules.MinimumProcessIntervalSeconds <= 0f)
             {
                 errors.Add("Network and projectile distances/speeds must be greater than zero.");
+            }
+
+            if (Math.Abs(rules.SimulationTickSeconds - 0.05f) > 0.0001f)
+            {
+                errors.Add("Tower simulation tick must be exactly 0.05 seconds.");
             }
 
             if (rules.NormalQueueCapacity <= 0)

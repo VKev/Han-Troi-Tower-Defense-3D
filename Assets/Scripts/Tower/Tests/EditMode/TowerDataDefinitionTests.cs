@@ -65,15 +65,14 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
-        public void FireTierOne_EmitsThreeIndependentDamageConservingProjectiles()
+        public void FireTierOne_EmitsThreeIndependentFireDamageConservingProjectiles()
         {
             FireTowerDefinition fire = Create<FireTowerDefinition>();
 
             Assert.That(fire.TierOne.OutputProjectileCount, Is.EqualTo(3));
             Assert.That(fire.TierOne.RequiredDownstreamReservationCount, Is.EqualTo(3));
             Assert.That(fire.TierOne.SequenceSpacingSeconds, Is.EqualTo(0.08f));
-            Assert.That(fire.TierOne.ConservesTotalPhysicalDamage, Is.True);
-            Assert.That(fire.TierOne.ConservesModifiedDirectFireDamage, Is.True);
+            Assert.That(fire.TierOne.ConservesTotalFireDamageAcrossClones,Is.True);
             Assert.That(fire.TierOne.ProjectilesHaveIndependentIdsAndHitSets, Is.True);
         }
 
