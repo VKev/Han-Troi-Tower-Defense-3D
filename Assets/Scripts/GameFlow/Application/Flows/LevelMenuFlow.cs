@@ -8,16 +8,16 @@ namespace TowerDefense3D.GameFlow
     public sealed class LevelMenuFlow
     {
         private readonly LevelCatalog levelCatalog;
-        private readonly SaveCoordinator saveCoordinator;
+        private readonly SaveSystem saveSystem;
         private readonly IApplicationUIController applicationUi;
 
         private GameFlowCoordinator coordinator;
 
-        public LevelMenuFlow(LevelCatalog levelCatalog, SaveCoordinator saveCoordinator,
+        public LevelMenuFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
             IApplicationUIController applicationUi)
         {
             this.levelCatalog = levelCatalog;
-            this.saveCoordinator = saveCoordinator;
+            this.saveSystem = saveSystem;
             this.applicationUi = applicationUi;
         }
 
@@ -38,7 +38,7 @@ namespace TowerDefense3D.GameFlow
             for (int index = 0; index < orderedLevels.Count; index++)
             {
                 LevelCatalogEntry entry = orderedLevels[index];
-                bool isUnlocked = saveCoordinator.Progress.IsUnlocked(entry.LevelNumber);
+                bool isUnlocked = saveSystem.Progress.IsUnlocked(entry.LevelNumber);
                 items.Add(new LevelMenuItemState(entry.LevelNumber, entry.DisplayName, isUnlocked, false));
             }
 
@@ -56,9 +56,9 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            if (!saveCoordinator.Progress.IsUnlocked(levelNumber))
+            if (!saveSystem.Progress.IsUnlocked(levelNumber))
             {
-                saveCoordinator.TryUnlockAndSave(levelNumber, out SaveWriteResult writeResult);
+                saveSystem.TryUnlockAndSave(levelNumber, out SaveWriteResult writeResult);
                 Show();
                 if (!writeResult.IsSuccess)
                 {

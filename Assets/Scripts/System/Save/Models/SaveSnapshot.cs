@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TowerDefense3D.GameFlow
 {
     [Serializable]
-    public sealed class SaveRootV1
+    public sealed class SaveSnapshot
     {
         public const int CurrentSchemaVersion = 1;
         public const string AutosaveSlotId = "autosave";
@@ -21,9 +21,9 @@ namespace TowerDefense3D.GameFlow
         public string AppVersion => appVersion;
         public int[] UnlockedLevelNumbers => unlockedLevelNumbers;
 
-        public static SaveRootV1 Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
+        public static SaveSnapshot Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
         {
-            return new SaveRootV1
+            return new SaveSnapshot
             {
                 schemaVersion = CurrentSchemaVersion,
                 slotId = AutosaveSlotId,
@@ -75,51 +75,5 @@ namespace TowerDefense3D.GameFlow
             error = string.Empty;
             return true;
         }
-    }
-
-    public enum SaveLoadStatus
-    {
-        Success,
-        Missing,
-        Corrupt,
-        Incompatible,
-        Unavailable,
-        Unexpected
-    }
-
-    public readonly struct SaveLoadResult
-    {
-        public SaveLoadResult(SaveLoadStatus status, SaveRootV1 data, string error)
-        {
-            Status = status;
-            Data = data;
-            Error = error ?? string.Empty;
-        }
-
-        public SaveLoadStatus Status { get; }
-        public SaveRootV1 Data { get; }
-        public string Error { get; }
-        public bool IsSuccess => Status == SaveLoadStatus.Success && Data != null;
-    }
-
-    public enum SaveWriteStatus
-    {
-        Success,
-        ValidationFailed,
-        Unavailable,
-        Unexpected
-    }
-
-    public readonly struct SaveWriteResult
-    {
-        public SaveWriteResult(SaveWriteStatus status, string error)
-        {
-            Status = status;
-            Error = error ?? string.Empty;
-        }
-
-        public SaveWriteStatus Status { get; }
-        public string Error { get; }
-        public bool IsSuccess => Status == SaveWriteStatus.Success;
     }
 }

@@ -5,12 +5,12 @@ namespace TowerDefense3D.GameFlow
     /// </summary>
     public sealed class SaveRecoveryFlow
     {
-        private readonly SaveCoordinator saveCoordinator;
+        private readonly SaveSystem saveSystem;
         private readonly IApplicationUIController applicationUi;
 
-        public SaveRecoveryFlow(SaveCoordinator saveCoordinator, IApplicationUIController applicationUi)
+        public SaveRecoveryFlow(SaveSystem saveSystem, IApplicationUIController applicationUi)
         {
-            this.saveCoordinator = saveCoordinator;
+            this.saveSystem = saveSystem;
             this.applicationUi = applicationUi;
         }
 
@@ -24,7 +24,7 @@ namespace TowerDefense3D.GameFlow
 
         private void RetrySave()
         {
-            SaveWriteResult result = saveCoordinator.RetrySave();
+            SaveWriteResult result = saveSystem.RetrySave();
             if (result.IsSuccess)
             {
                 applicationUi.HideSaveWarning();

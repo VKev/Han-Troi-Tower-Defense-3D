@@ -5,15 +5,15 @@ namespace TowerDefense3D.GameFlow
     /// <summary>
     /// Owns unlocked-level runtime state and coordinates snapshot-based persistence.
     /// </summary>
-    public sealed class SaveCoordinator
+    public sealed class SaveSystem
     {
-        private readonly LocalSaveRepository repository;
+        private readonly ISaveRepository repository;
         private readonly string applicationVersion;
 
-        public SaveCoordinator(LocalSaveRepository repository, string applicationVersion)
+        public SaveSystem(ISaveRepository repository, string applicationVersion)
         {
             this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            this.applicationVersion = applicationVersion ?? string.Empty;
+            this.applicationVersion = applicationVersion;
         }
 
         public UnlockProgress Progress { get; private set; }
@@ -44,14 +44,6 @@ namespace TowerDefense3D.GameFlow
 
         public UnlockAttemptResult TryUnlockAndSave(int levelNumber, out SaveWriteResult writeResult)
         {
-            if (Progress == null)
-            {
-                writeResult = new SaveWriteResult(
-                    SaveWriteStatus.ValidationFailed,
-                    "Unlock progress is not initialized.");
-                return UnlockAttemptResult.InvalidLevel;
-            }
-
             UnlockAttemptResult unlockResult = Progress.TryUnlock(levelNumber);
             writeResult = unlockResult == UnlockAttemptResult.Unlocked
                 ? SaveCurrent()
@@ -80,15 +72,7 @@ namespace TowerDefense3D.GameFlow
 
         private SaveWriteResult SaveCurrent()
         {
-            if (Progress == null)
-            {
-                LastWriteResult = new SaveWriteResult(
-                    SaveWriteStatus.ValidationFailed,
-                    "Unlock progress is not initialized.");
-                return LastWriteResult;
-            }
-
-            SaveRootV1 snapshot = SaveRootV1.Create(
+            SaveSnapshot snapshot = SaveSnapshot.Create(
                 Progress.CreateSortedSnapshot(),
                 DateTime.UtcNow.ToString("O"),
                 applicationVersion);

@@ -45,7 +45,7 @@ namespace TowerDefense3D.GameFlow
 
         public bool IsUnlocked(int levelNumber)
         {
-            return levelNumber > 0 && unlockedLevels.Contains(levelNumber);
+            return unlockedLevels.Contains(levelNumber);
         }
 
         public UnlockAttemptResult TryUnlock(int levelNumber)

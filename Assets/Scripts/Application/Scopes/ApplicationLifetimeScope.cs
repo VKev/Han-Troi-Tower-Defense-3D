@@ -34,8 +34,10 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterInstance(levelCatalog);
             builder.RegisterInstance(towerCatalog);
             builder.Register<TowerNetworkManager>(Lifetime.Singleton);
-            builder.RegisterInstance(new LocalSaveRepository(Application.persistentDataPath));
-            builder.Register<SaveCoordinator>(Lifetime.Singleton)
+            builder.Register<ISaveRepository>(
+                _ => new LocalSaveRepository(Application.persistentDataPath),
+                Lifetime.Singleton);
+            builder.Register<SaveSystem>(Lifetime.Singleton)
                 .WithParameter("applicationVersion", Application.version);
             builder.Register<ActiveLevelState>(Lifetime.Singleton);
             builder.Register<BootstrapSceneActivator>(Lifetime.Singleton)

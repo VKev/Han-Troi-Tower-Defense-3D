@@ -107,13 +107,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(repository.Load().Status, Is.EqualTo(SaveLoadStatus.Missing));
 
             SaveWriteResult write = repository.Save(
-                SaveRootV1.Create(new[] { 2, 1 }, "2026-08-15T00:00:00.0000000Z", "test"));
+                SaveSnapshot.Create(new[] { 2, 1 }, "2026-08-15T00:00:00.0000000Z", "test"));
             SaveLoadResult load = repository.Load();
 
             Assert.That(write.IsSuccess, Is.True, write.Error);
             Assert.That(load.IsSuccess, Is.True, load.Error);
             CollectionAssert.AreEqual(new[] { 2, 1 }, load.Data.UnlockedLevelNumbers);
-            Assert.That(load.Data.SlotId, Is.EqualTo(SaveRootV1.AutosaveSlotId));
+            Assert.That(load.Data.SlotId, Is.EqualTo(SaveSnapshot.AutosaveSlotId));
         }
 
         [Test]
@@ -121,10 +121,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             var repository = new LocalSaveRepository(testRoot);
             Assert.That(
-                repository.Save(SaveRootV1.Create(new[] { 1 }, "first", "test")).IsSuccess,
+                repository.Save(SaveSnapshot.Create(new[] { 1 }, "first", "test")).IsSuccess,
                 Is.True);
             Assert.That(
-                repository.Save(SaveRootV1.Create(new[] { 1, 2 }, "second", "test")).IsSuccess,
+                repository.Save(SaveSnapshot.Create(new[] { 1, 2 }, "second", "test")).IsSuccess,
                 Is.True);
 
             File.WriteAllText(repository.PrimaryPath, "{not-json");
@@ -169,10 +169,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             var repository = new LocalSaveRepository(testRoot);
             Assert.That(
-                repository.Save(SaveRootV1.Create(new[] { 1 }, "first", "test")).IsSuccess,
+                repository.Save(SaveSnapshot.Create(new[] { 1 }, "first", "test")).IsSuccess,
                 Is.True);
             Assert.That(
-                repository.Save(SaveRootV1.Create(new[] { 1, 2 }, "second", "test")).IsSuccess,
+                repository.Save(SaveSnapshot.Create(new[] { 1, 2 }, "second", "test")).IsSuccess,
                 Is.True);
 
             string ownedTemp = Path.Combine(repository.SaveRoot, "autosave.abcd.tmp");
@@ -198,19 +198,19 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             string blockedRoot = Path.Combine(testRoot, "not-a-directory");
             File.WriteAllText(blockedRoot, "block directory creation");
             var repository = new LocalSaveRepository(blockedRoot);
-            var coordinator = new SaveCoordinator(repository, "test");
+            var saveSystem = new SaveSystem(repository, "test");
 
-            SaveLoadResult initialization = coordinator.Initialize();
+            SaveLoadResult initialization = saveSystem.Initialize();
             Assert.That(initialization.Status, Is.EqualTo(SaveLoadStatus.Missing));
-            Assert.That(coordinator.LastWriteResult.IsSuccess, Is.False);
+            Assert.That(saveSystem.LastWriteResult.IsSuccess, Is.False);
 
-            UnlockAttemptResult unlock = coordinator.TryUnlockAndSave(2, out SaveWriteResult write);
+            UnlockAttemptResult unlock = saveSystem.TryUnlockAndSave(2, out SaveWriteResult write);
 
             Assert.That(unlock, Is.EqualTo(UnlockAttemptResult.Unlocked));
             Assert.That(write.IsSuccess, Is.False);
-            Assert.That(coordinator.Progress.IsUnlocked(2), Is.True);
-            Assert.That(coordinator.RetrySave().IsSuccess, Is.False);
-            Assert.That(coordinator.Progress.IsUnlocked(2), Is.True);
+            Assert.That(saveSystem.Progress.IsUnlocked(2), Is.True);
+            Assert.That(saveSystem.RetrySave().IsSuccess, Is.False);
+            Assert.That(saveSystem.Progress.IsUnlocked(2), Is.True);
         }
 
         [Test]
@@ -219,7 +219,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             LevelCatalog catalog = ScriptableObject.CreateInstance<LevelCatalog>();
             GameObject loaderOwner = new GameObject("Level Loader Test");
             LevelSceneLoader loader = loaderOwner.AddComponent<LevelSceneLoader>();
-            var save = new SaveCoordinator(new LocalSaveRepository(testRoot), "test");
+            var save = new SaveSystem(new LocalSaveRepository(testRoot), "test");
             var ui = new RecordingApplicationUi();
             TowerNetworkManager towerNetworkManager = CreateTowerNetworkManager();
             var transitionFlow = new LevelTransitionFlow(loader, towerNetworkManager, ui);

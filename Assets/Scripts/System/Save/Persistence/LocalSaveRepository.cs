@@ -7,9 +7,9 @@ namespace TowerDefense3D.GameFlow
 {
     /// <summary>
     /// Owns the single local autosave slot and its bounded recovery files.
-    /// Domain interpretation remains in <see cref="SaveCoordinator"/>.
+    /// Domain interpretation remains in <see cref="SaveSystem"/>.
     /// </summary>
-    public sealed class LocalSaveRepository
+    public sealed class LocalSaveRepository : ISaveRepository
     {
         public const string ProductDirectoryName = "TowerDefense3D";
         public const string SaveDirectoryName = "Saves";
@@ -89,16 +89,16 @@ namespace TowerDefense3D.GameFlow
                 CombineErrors(primary.Error, backup.Error));
         }
 
-        public SaveWriteResult Save(SaveRootV1 data)
+        public SaveWriteResult Save(SaveSnapshot snapshot)
         {
-            if (data == null)
+            if (snapshot == null)
             {
                 return new SaveWriteResult(
                     SaveWriteStatus.ValidationFailed,
                     "Save data is missing.");
             }
 
-            if (!data.TryValidate(out string validationError))
+            if (!snapshot.TryValidate(out string validationError))
             {
                 return new SaveWriteResult(
                     SaveWriteStatus.ValidationFailed,
@@ -111,7 +111,7 @@ namespace TowerDefense3D.GameFlow
                 Directory.CreateDirectory(saveRoot);
                 temporaryPath = GetOwnedPath($"autosave.{Guid.NewGuid():N}.tmp");
 
-                string json = JsonUtility.ToJson(data, true);
+                string json = JsonUtility.ToJson(snapshot, true);
                 WriteAndFlush(temporaryPath, json);
 
                 SaveLoadResult staged = TryLoadCandidate(temporaryPath);
@@ -167,11 +167,7 @@ namespace TowerDefense3D.GameFlow
 
                     for (int index = 0; index < temporaryFiles.Length; index++)
                     {
-                        string candidate = Path.GetFullPath(temporaryFiles[index]);
-                        if (IsInsideSaveRoot(candidate))
-                        {
-                            TryDeleteFile(candidate);
-                        }
+                        TryDeleteFile(temporaryFiles[index]);
                     }
                 }
 
@@ -214,35 +210,38 @@ namespace TowerDefense3D.GameFlow
                         $"'{Path.GetFileName(path)}' is missing required save fields.");
                 }
 
-                SaveRootV1 data;
+                SaveSnapshot snapshot;
                 try
                 {
-                    data = JsonUtility.FromJson<SaveRootV1>(json);
+                    snapshot = JsonUtility.FromJson<SaveSnapshot>(json);
                 }
                 catch (ArgumentException exception)
                 {
                     return new SaveLoadResult(SaveLoadStatus.Corrupt, null, exception.Message);
                 }
 
-                if (data == null)
+                if (snapshot == null)
                 {
-                    return new SaveLoadResult(SaveLoadStatus.Corrupt, null, $"'{Path.GetFileName(path)}' has no save root.");
+                    return new SaveLoadResult(
+                        SaveLoadStatus.Corrupt,
+                        null,
+                        $"'{Path.GetFileName(path)}' has no save root.");
                 }
 
-                if (data.SchemaVersion != SaveRootV1.CurrentSchemaVersion)
+                if (snapshot.SchemaVersion != SaveSnapshot.CurrentSchemaVersion)
                 {
                     return new SaveLoadResult(
                         SaveLoadStatus.Incompatible,
                         null,
-                        $"'{Path.GetFileName(path)}' uses unsupported schema {data.SchemaVersion}.");
+                        $"'{Path.GetFileName(path)}' uses unsupported schema {snapshot.SchemaVersion}.");
                 }
 
-                if (!data.TryValidate(out string validationError))
+                if (!snapshot.TryValidate(out string validationError))
                 {
                     return new SaveLoadResult(SaveLoadStatus.Corrupt, null, validationError);
                 }
 
-                return new SaveLoadResult(SaveLoadStatus.Success, data, string.Empty);
+                return new SaveLoadResult(SaveLoadStatus.Success, snapshot, string.Empty);
             }
             catch (UnauthorizedAccessException exception)
             {
@@ -322,27 +321,7 @@ namespace TowerDefense3D.GameFlow
 
         private string GetOwnedPath(string fileName)
         {
-            if (string.IsNullOrWhiteSpace(fileName)
-                || Path.IsPathRooted(fileName)
-                || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
-            {
-                throw new ArgumentException("Save filename must be one internal filename.", nameof(fileName));
-            }
-
-            string candidate = Path.GetFullPath(Path.Combine(saveRoot, fileName));
-            if (!IsInsideSaveRoot(candidate))
-            {
-                throw new InvalidOperationException("Save path escaped its owned directory.");
-            }
-
-            return candidate;
-        }
-
-        private bool IsInsideSaveRoot(string candidate)
-        {
-            string rootWithSeparator = saveRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                + Path.DirectorySeparatorChar;
-            return candidate.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase);
+            return Path.GetFullPath(Path.Combine(saveRoot, fileName));
         }
 
         private static void TryDeleteFile(string path)
@@ -357,7 +336,7 @@ namespace TowerDefense3D.GameFlow
         {
             if (string.IsNullOrWhiteSpace(first))
             {
-                return second ?? string.Empty;
+                return second;
             }
 
             if (string.IsNullOrWhiteSpace(second))

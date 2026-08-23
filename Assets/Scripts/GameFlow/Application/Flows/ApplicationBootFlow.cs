@@ -6,16 +6,16 @@ namespace TowerDefense3D.GameFlow
     public sealed class ApplicationBootFlow
     {
         private readonly LevelCatalog levelCatalog;
-        private readonly SaveCoordinator saveCoordinator;
+        private readonly SaveSystem saveSystem;
         private readonly IApplicationUIController applicationUi;
 
         private GameFlowCoordinator coordinator;
 
-        public ApplicationBootFlow(LevelCatalog levelCatalog, SaveCoordinator saveCoordinator,
+        public ApplicationBootFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
             IApplicationUIController applicationUi)
         {
             this.levelCatalog = levelCatalog;
-            this.saveCoordinator = saveCoordinator;
+            this.saveSystem = saveSystem;
             this.applicationUi = applicationUi;
         }
 
@@ -43,13 +43,13 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            SaveLoadResult loadResult = saveCoordinator.Initialize();
+            SaveLoadResult loadResult = saveSystem.Initialize();
             if (loadResult.IsSuccess || loadResult.Status == SaveLoadStatus.Missing)
             {
                 coordinator.ShowLevelMenu();
-                if (!saveCoordinator.LastWriteResult.IsSuccess)
+                if (!saveSystem.LastWriteResult.IsSuccess)
                 {
-                    coordinator.ShowSaveWarning(saveCoordinator.LastWriteResult.Error);
+                    coordinator.ShowSaveWarning(saveSystem.LastWriteResult.Error);
                 }
 
                 return;
@@ -69,8 +69,8 @@ namespace TowerDefense3D.GameFlow
 
         private void StartNewFromError()
         {
-            SaveWriteResult result = saveCoordinator.StartNew();
-            if (!saveCoordinator.HasProgress)
+            SaveWriteResult result = saveSystem.StartNew();
+            if (!saveSystem.HasProgress)
             {
                 ShowError(result.Error);
                 return;

@@ -66,7 +66,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             CollectionAssert.AreEqual(new[] { typeof(ApplicationEntryPoint) }, applicationEntryPoints);
             Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(ApplicationEntryPoint)), Is.True);
             Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(GameFlowCoordinator)), Is.False);
-            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(SaveCoordinator)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(SaveSystem)), Is.False);
         }
 
         [Test]
@@ -75,11 +75,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             LevelCatalog catalog = ScriptableObject.CreateInstance<LevelCatalog>();
             GameObject levelLoaderOwner = new GameObject("Level Loader Test");
             LevelSceneLoader levelSceneLoader = levelLoaderOwner.AddComponent<LevelSceneLoader>();
-            var saveCoordinator = new SaveCoordinator(new LocalSaveRepository(testRoot), "test");
+            var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
             var applicationUi = new RecordingApplicationUI();
             GameFlowCoordinator coordinator = CreateGameFlowCoordinator(
                 catalog,
-                saveCoordinator,
+                saveSystem,
                 CreateTowerNetworkManager(),
                 levelSceneLoader,
                 applicationUi);
@@ -107,13 +107,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             LevelCatalog catalog = ScriptableObject.CreateInstance<LevelCatalog>();
             GameObject levelLoaderOwner = new GameObject("Level Loader Startup Failure Test");
             LevelSceneLoader levelSceneLoader = levelLoaderOwner.AddComponent<LevelSceneLoader>();
-            var saveCoordinator = new SaveCoordinator(new LocalSaveRepository(testRoot), "test");
+            var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
             var applicationUi = new RecordingApplicationUI();
             var expectedFailure = new InvalidOperationException("Expected startup failure.");
             applicationUi.ThrowOnNextShowLoading(expectedFailure);
             GameFlowCoordinator coordinator = CreateGameFlowCoordinator(
                 catalog,
-                saveCoordinator,
+                saveSystem,
                 CreateTowerNetworkManager(),
                 levelSceneLoader,
                 applicationUi);
@@ -149,12 +149,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             LevelCatalog catalog = ScriptableObject.CreateInstance<LevelCatalog>();
             GameObject levelLoaderOwner = new GameObject("Level Loader Failed Startup Disposal Test");
             LevelSceneLoader levelSceneLoader = levelLoaderOwner.AddComponent<LevelSceneLoader>();
-            var saveCoordinator = new SaveCoordinator(new LocalSaveRepository(testRoot), "test");
+            var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
             var applicationUi = new RecordingApplicationUI();
             applicationUi.ThrowOnNextShowLoading(new InvalidOperationException("Expected startup failure."));
             GameFlowCoordinator coordinator = CreateGameFlowCoordinator(
                 catalog,
-                saveCoordinator,
+                saveSystem,
                 CreateTowerNetworkManager(),
                 levelSceneLoader,
                 applicationUi);
@@ -175,17 +175,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void SaveCoordinator_UsesInjectedRepositoryWithoutUnityLifecycle()
+        public void SaveSystem_UsesInjectedRepositoryWithoutUnityLifecycle()
         {
-            var coordinator = new SaveCoordinator(new LocalSaveRepository(testRoot), "test");
+            var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
 
-            SaveLoadResult result = coordinator.Initialize();
+            SaveLoadResult result = saveSystem.Initialize();
 
             Assert.That(result.Status, Is.EqualTo(SaveLoadStatus.Missing));
-            Assert.That(coordinator.HasProgress, Is.True);
-            Assert.That(coordinator.Progress.IsUnlocked(1), Is.True);
+            Assert.That(saveSystem.HasProgress, Is.True);
+            Assert.That(saveSystem.Progress.IsUnlocked(1), Is.True);
             Assert.That(
-                typeof(SaveCoordinator).GetMethod(
+                typeof(SaveSystem).GetMethod(
                     "Awake",
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly),
                 Is.Null);
@@ -296,7 +296,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
         private static GameFlowCoordinator CreateGameFlowCoordinator(
             LevelCatalog catalog,
-            SaveCoordinator saveCoordinator,
+            SaveSystem saveSystem,
             TowerNetworkManager towerNetworkManager,
             LevelSceneLoader levelSceneLoader,
             IApplicationUIController applicationUi)
@@ -304,10 +304,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             return new GameFlowCoordinator(
                 applicationUi,
                 towerNetworkManager,
-                new ApplicationBootFlow(catalog, saveCoordinator, applicationUi),
-                new LevelMenuFlow(catalog, saveCoordinator, applicationUi),
+                new ApplicationBootFlow(catalog, saveSystem, applicationUi),
+                new LevelMenuFlow(catalog, saveSystem, applicationUi),
                 new LevelTransitionFlow(levelSceneLoader, towerNetworkManager, applicationUi),
-                new SaveRecoveryFlow(saveCoordinator, applicationUi));
+                new SaveRecoveryFlow(saveSystem, applicationUi));
         }
 
         private static T GetPrivateField<T>(object target, string fieldName)
