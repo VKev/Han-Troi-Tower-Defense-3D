@@ -45,29 +45,37 @@ All human-authored project documentation must be written in English. This requir
 
 Non-English names, source phrases, or direct quotations may be retained only when they are necessary for cultural or technical accuracy, and they must include a nearby English explanation.
 
-## Feature source layout
+## Source layout
 
-Organize project-owned features under a stable feature root. `<FeatureName>` is a placeholder rather than a literal folder name.
+Project-owned C# source uses technical boundaries at the root and feature ownership below `System`, `Components`, `Editor`, and `Tests`.
 
 ```text
-Assets/Scripts/<FeatureName>/
-├── Scripts/     # Player-build source
-├── Editor/      # Editor-only tooling
-└── Tests/       # Automated tests
+Assets/Scripts/
+├── Application/  # VContainer composition, scopes, entry point, and scene-scope integration
+├── System/       # Plain C# game/application logic, state, rules, contracts, and definitions
+├── Components/   # Runtime MonoBehaviour boundaries authored in scenes and prefabs
+├── Editor/       # Editor-only authoring and validation tools
+└── Tests/        # Centralized EditMode and PlayMode tests
 ```
 
-- Add responsibility-based subfolders only when the feature needs them; do not create empty layers to match an example.
-- Introduce additional assembly boundaries only when a clear dependency, platform, or test boundary justifies them.
-- Preserve stable namespaces and assembly names during folder-only reorganizations unless a separate approved change explicitly alters those contracts.
-- Do not store authored ScriptableObject/settings instances or general-purpose loadable assets (textures, materials, prefabs, models) inside a feature folder; see "Shared asset roots" below.
+- `Application` may depend on `Components`, `System`, and VContainer.
+- `Components` may depend on `System`, the Input System, and uGUI. It must not own application or system lifecycle.
+- `System` must not depend on `MonoBehaviour`, `Application`, `Components`, VContainer, Editor APIs, or test assemblies.
+- `Editor` and `Tests` reference only the exact runtime assemblies required by their tools or fixtures.
+- Add responsibility-based subfolders only when current files establish a real ownership boundary; do not create empty layers to match an example.
+- Do not add a shared `Core` folder pre-emptively. Extract a narrowly named shared primitive only after at least two systems have a concrete duplicate requirement.
+- Keep boundary interfaces flat beside their owning system. Do not add a `Ports` folder or an interface solely for naming symmetry or mocking.
+- Preserve stable namespaces during folder-only moves unless a separate approved change changes the namespace contract.
+- Do not store authored ScriptableObject/settings instances or general-purpose loadable assets inside `Assets/Scripts`; see "Shared asset roots" below.
 
 ### One source home per responsibility
 
-- Reuse an existing feature root before creating another folder for the same responsibility. Runtime source lives directly under each feature root beside `Editor` and `Tests`; do not add a redundant child `Scripts` folder. For example, all project-owned UI scripts belong in `Assets/Scripts/UI/`; do not create another `UI` tree under `GameFlow`, `Tower`, or another feature.
-- Keep small modules flat. Do not add `Application`, `Gameplay`, `Presentation`, or similar category folders unless current files establish a real ownership, lifecycle, Editor/runtime, test, or assembly boundary.
-- Apply the same rule to every feature: move a script to its existing owning module instead of creating a second home with the same name.
+- Put plain logic under its owning `System/<SystemName>/` folder and Unity-facing runtime code under the matching `Components/<SystemName>/` folder.
+- Keep feature-specific models, rules, definitions, and collaborators inside the owning system instead of creating parallel top-level feature trees.
+- Keep small modules flat. Add `Models`, `Definitions`, `Rules`, `Views`, or `Presenters` only when the files have a real shared role at that level.
+- Use role-revealing postfixes for peers at the same architectural level, such as `*System`, `*View`, `*Presenter`, `*Source`, and `*Factory`.
 - Preserve `.meta` files and GUIDs during moves so scene, prefab, and ScriptableObject references remain intact.
-- `Scripts`, `Editor`, and `Tests` are the standard feature boundaries. Use another boundary name only when it has a concrete technical meaning that the standard layout cannot express.
+- Do not add a redundant `Scripts` child beneath any source root.
 
 ### Stable filenames and explicit versions
 
@@ -92,32 +100,32 @@ Assets/Scripts/<FeatureName>/
 
 ## Runtime lifecycle ownership
 
-The project uses the **Hybrid VContainer + Explicit Scene Lifecycle** pattern. VContainer owns application construction and disposal through one pure C# entry point, while scene-owned and engine-bound behavior remains on authored `MonoBehaviour` components activated explicitly by the level context. This avoids competing manager startup callbacks without forcing every scene object into the DI container.
+The project uses one VContainer-driven lifecycle entry point for application and system work. Authored Unity objects remain focused boundaries for engine-owned callbacks and serialized references.
 
 ```text
-Bootstrap/Application Systems [ApplicationLifetimeScope]
-|-- GameFlowCoordinator [sole application IStartable and coordinator; pure C#]
-|   |-- ApplicationBootFlow [catalog validation and progress boot]
-|   |-- LevelMenuFlow [menu state and level selection]
-|   |-- LevelTransitionFlow [level load, unload, and completion callbacks]
-|   `-- SaveRecoveryFlow [save warning and retry callbacks]
-`-- TowerNetworkManager [application-scoped pure C# service; no engine callbacks]
-
-Level_###/Level Context [LevelSceneContext]
-|-- Grid Placement/Systems [GridPlacementSceneAdapter]
-|-- Grid Placement/Systems [TowerNetworkSceneAdapter + TowerSimulationDriver]
-`-- Gameplay UI [GameplayUIManager]
+Bootstrap [ApplicationLifetimeScope]
+`-- ApplicationEntryPoint [IAsyncStartable, ITickable, ILateTickable, IDisposable]
+    |-- ApplicationSystemGroup
+    `-- ActiveLevelSystemSlot
+        `-- LevelSystemGroup [owned by the active LevelLifetimeScope]
+            |-- Tick: GameplayInputSystem
+            |-- Tick: GridPlacementSystem
+            |-- Tick: TowerInteractionSystem
+            |-- Tick: TowerSimulationSystem
+            |-- Tick: GameplayUISystem.RefreshIfDirty
+            |-- LateTick: TowerLinkPresentationSystem
+            |-- LateTick: TowerProjectilePresentationSystem
+            `-- LateTick: BoardCameraSystem
 ```
 
-- Keep one application composition root in `Assets/Scenes/Bootstrap.unity`. The current root is `ApplicationLifetimeScope`, using VContainer 1.19.0.
-- Register exactly one application entry point for high-level flow. `GameFlowCoordinator` explicitly initializes focused `*Flow` modules, owns their shared state and routing, and shuts them down in reverse order; do not add another manager callback that starts the same flow.
-- Keep application flow modules together in `Assets/Scripts/GameFlow/Application/Flows/`. Every module uses the `*Flow.cs` suffix, owns its callbacks, and is called directly by `GameFlowCoordinator`; do not add interface layers when no polymorphic substitution is needed.
-- Prefer pure C# services for application logic and persistence. Register existing Unity components only when they need authored references, coroutines, scene APIs, GameObject state, or other engine-owned behavior.
-- An application-scoped service may own one explicitly bounded level session without becoming another entry point. `TowerNetworkManager` is constructed once by VContainer, while `TowerNetworkSceneAdapter` begins and ends its level data and `TowerSimulationDriver` forwards frame time only after explicit level initialization.
-- Keep level activation explicit through `LevelSceneContext`. Participants initialize in authored order and shut down in reverse order; the current order is `GridPlacementSceneAdapter`, `TowerNetworkSceneAdapter`, then `GameplayUIManager`.
-- Keep engine- and object-local callbacks on their owning `MonoBehaviour`, such as input polling, camera framing, frame pacing, Safe Area updates, view subscriptions, and destruction cleanup. These callbacks must not become additional application entry points.
-- Do not expose a mutable `Manager.Instance`, use global container `Resolve` calls, add an unmanaged `DontDestroyOnLoad` root, or store scene-owned Unity objects in application services.
-- Add a session or level child scope only when an approved lifetime requirement needs it. The current architecture has one application scope and scene participants, with no session or level `LifetimeScope`.
+- `ApplicationLifetimeScope` is the persistent composition root in `Assets/Scenes/Bootstrap.unity`.
+- Every additive `Level_###` scene owns one child `LevelLifetimeScope`. The level scope constructs one `LevelSystemGroup`, attaches it to `ActiveLevelSystemSlot`, and detaches it before scene unload and scope disposal.
+- `ApplicationEntryPoint` is the only project type that implements VContainer lifecycle interfaces. It calls concrete systems in an explicit, reviewable order; there is no automatic `IEnumerable` registry and no custom PlayerLoop integration.
+- System lifecycle methods are ordinary methods on concrete classes. Do not introduce project-wide tick interfaces, `SystemTickContext`, or a lifecycle `Core` solely to mirror VContainer.
+- Keep object- and engine-owned callbacks on focused `MonoBehaviour` components: `OnEnable`, `OnDisable`, `OnDestroy`, `OnValidate`, pointer/drag callbacks, trigger/collision callbacks, and similar Unity events.
+- A `MonoBehaviour` may gather Unity data or render state, but it must delegate system decisions, simulation, and application state transitions to plain C# systems.
+- Do not expose a mutable `Manager.Instance`, use global container resolution, add an unmanaged `DontDestroyOnLoad` root, or let application services retain objects owned by a disposed level scope.
+- The detailed approved migration, ordering, dependency graph, and verification contract live in `Documents/TechnicalSpec/SystemLifecycle_Technical_Specification.md`.
 
 ## Shared asset roots
 

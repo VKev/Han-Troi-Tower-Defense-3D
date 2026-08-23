@@ -5,6 +5,9 @@
 **Implementation tracker:** `TowerDefense3D-07y`
 **Target:** Unity 6000.3.21f1, Android-first, fullscreen landscape, 60 FPS target on a representative mid-range device
 
+**Architecture migration:** Lifecycle, source-layout, manager-ownership, and assembly-layout clauses are superseded by the
+approved `SystemLifecycle_Technical_Specification.md`. Player flow, save behavior, and failure handling remain authoritative.
+
 ## 1. Purpose
 
 This specification defines the first production level-flow, local save, and UI-management architecture for TowerDefense3D. It also defines how the existing Grid Placement UI in `SampleScene` is migrated into the new UI ownership model without losing its touch-first behavior.

@@ -6,6 +6,9 @@ Owner: Project owner
 
 Issues: `TowerDefense3D-ji9e`, `TowerDefense3D-jk8f`, `TowerDefense3D-yzrq`
 
+Architecture migration: lifecycle, source-layout, manager-ownership, and assembly-layout clauses are superseded by the
+approved `SystemLifecycle_Technical_Specification.md`. Tower rules, authored data, and simulation behavior remain authoritative.
+
 ## Purpose
 
 This specification defines the first playable tower-network slice. A player places authored Generator, Element, and Soul Nexus towers, links them into directed chains, validates those chains, and starts a fixed-tick test simulation from the Gameplay HUD.

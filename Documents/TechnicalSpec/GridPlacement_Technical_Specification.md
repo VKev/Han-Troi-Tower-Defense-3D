@@ -10,6 +10,9 @@
 | Runtime namespace | `TowerDefense3D.GridPlacement` |
 | Runtime assembly | `TowerDefense3D.GridPlacement.Runtime` |
 
+Lifecycle, source-layout, presenter ownership, and assembly-layout clauses are superseded by the approved
+`SystemLifecycle_Technical_Specification.md`. Placement behavior and authored-data contracts remain authoritative.
+
 ## 1. Purpose
 
 Grid Placement provides the authored board model, deterministic three-dimensional placement rules, mobile-first pointer interaction, atomic occupancy mutation, candidate feedback, Editor authoring tools, and level-scene integration required to place tower prefabs on an XZ board with discrete Y levels.
