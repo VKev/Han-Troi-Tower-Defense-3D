@@ -87,6 +87,33 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
+        public void InterpolationAlpha_UsesTheRemainingTickFraction()
+        {
+            Fixture fixture = CreateRunningFixture();
+            TowerSimulationDriver driver = CreateDriver(fixture.Manager);
+
+            int executedTicks = driver.AdvanceFrame(0.12f);
+
+            Assert.That(executedTicks, Is.EqualTo(2));
+            Assert.That(driver.AccumulatedSeconds, Is.EqualTo(0.02d).Within(0.000001d));
+            Assert.That(driver.InterpolationAlpha, Is.EqualTo(0.4f).Within(0.00001f));
+        }
+
+        [Test]
+        public void TickCompleted_FiresAfterEveryCaughtUpTick()
+        {
+            Fixture fixture = CreateRunningFixture();
+            TowerSimulationDriver driver = CreateDriver(fixture.Manager);
+            var completedTicks = new List<long>();
+            driver.TickCompleted += completedTicks.Add;
+
+            int executedTicks = driver.AdvanceFrame(0.16f);
+
+            Assert.That(executedTicks, Is.EqualTo(3));
+            Assert.That(completedTicks, Is.EqualTo(new long[] { 1L, 2L, 3L }));
+        }
+
+        [Test]
         public void StoppedSimulation_DoesNotAccumulateTime()
         {
             Fixture fixture = CreateFixture();

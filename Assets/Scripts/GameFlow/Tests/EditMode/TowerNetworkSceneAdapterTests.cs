@@ -16,7 +16,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private GameObject cameraOwner;
         private TowerCatalog towerCatalog;
         private TowerNetworkManager manager;
-        private GridPlacementController placementController;
+        private GridPlacementPresenter placementPresenter;
         private TowerSimulationDriver simulationDriver;
         private TowerNetworkInputController inputController;
         private TowerLinkPresenter linkPresenter;
@@ -33,14 +33,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             owner = new GameObject("Tower Network Scene Adapter Test");
             cameraOwner = new GameObject("Tower Network Camera Test");
             Camera worldCamera = cameraOwner.AddComponent<Camera>();
-            placementController = owner.AddComponent<GridPlacementController>();
+            placementPresenter = owner.AddComponent<GridPlacementPresenter>();
             simulationDriver = owner.AddComponent<TowerSimulationDriver>();
             inputController = owner.AddComponent<TowerNetworkInputController>();
             linkPresenter = owner.AddComponent<TowerLinkPresenter>();
             projectilePresenter = owner.AddComponent<TowerProjectilePresenter>();
             adapter = owner.AddComponent<TowerNetworkSceneAdapter>();
 
-            SetPrivateField(placementController, "worldCamera", worldCamera);
+            SetPrivateField(placementPresenter, "worldCamera", worldCamera);
         }
 
         [TearDown]

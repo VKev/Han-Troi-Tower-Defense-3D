@@ -221,22 +221,25 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             LevelSceneLoader loader = loaderOwner.AddComponent<LevelSceneLoader>();
             var save = new SaveCoordinator(new LocalSaveRepository(testRoot), "test");
             var ui = new RecordingApplicationUi();
+            TowerNetworkManager towerNetworkManager = CreateTowerNetworkManager();
+            var transitionFlow = new LevelTransitionFlow(loader, towerNetworkManager, ui);
             SetCatalogEntries(
                 catalog,
                 new LevelCatalogEntry(1, "Level 1", "Assets/Scenes/Levels/Missing.unity"),
                 new LevelCatalogEntry(2, "Level 2", "Assets/Scenes/Levels/Level_002.unity"));
             var coordinator = new GameFlowCoordinator(
-                catalog,
-                save,
-                CreateTowerNetworkManager(),
-                loader,
-                ui);
+                ui,
+                towerNetworkManager,
+                new ApplicationBootFlow(catalog, save, ui),
+                new LevelMenuFlow(catalog, save, ui),
+                transitionFlow,
+                new SaveRecoveryFlow(save, ui));
 
             try
             {
                 coordinator.Start();
                 InvokePrivate(
-                    coordinator,
+                    transitionFlow,
                     "OnLevelLoadCompleted",
                     new LevelLoadRequest(1, "Assets/Scenes/Levels/Missing.unity"),
                     new LevelTransitionResult(

@@ -413,7 +413,7 @@ Assets/Scripts/GameFlow/
     |-- EditMode/
     `-- PlayMode/
 
-Assets/Scripts/UI/Scripts/       # Single project-owned UI source home
+Assets/Scripts/UI/               # Single project-owned UI source home
 Assets/Config/GameFlow/          # LevelCatalog and other authored configuration
 Assets/Resources/Prefabs/        # Shared ApplicationUI, GameplayUI, and LevelButton prefabs
 
@@ -424,7 +424,7 @@ Assets/Scenes/
     `-- Level_002.unity
 ```
 
-The runtime assembly owns the stable public contracts before parallel implementation begins. Editor and test assemblies reference it without introducing runtime references to editor-only code. UI stays in the existing `Assets/Scripts/UI/Scripts/` module rather than creating a second UI source tree under GameFlow.
+The runtime assembly owns the stable public contracts before parallel implementation begins. Editor and test assemblies reference it without introducing runtime references to editor-only code. UI stays in the existing `Assets/Scripts/UI/` module rather than creating a second UI source tree under GameFlow.
 
 ## 10. Serialized migration procedure
 

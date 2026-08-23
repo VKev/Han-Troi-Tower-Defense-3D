@@ -220,9 +220,9 @@ Implementation completed on 14 August 2026 with no approved-scope deviation.
 
 ### Implemented files
 
-- `Assets/Scripts/Board/Scripts/LowestBoardLevelBounds.cs` selects the lowest playable level and its deterministic horizontal footprint.
-- `Assets/Scripts/Camera/Scripts/BoardCameraFramingSolver.cs` constructs transformed Board corners and solves the minimum perspective Camera position.
-- `Assets/Scripts/Camera/Scripts/BoardCameraFramer.cs` owns scene references, safe-area composition, the captured authored base rotation, Camera-local offsets, startup snap, and changed-input observation.
+- `Assets/Scripts/Board/LowestBoardLevelBounds.cs` selects the lowest playable level and its deterministic horizontal footprint.
+- `Assets/Scripts/Camera/BoardCameraFramingSolver.cs` constructs transformed Board corners and solves the minimum perspective Camera position.
+- `Assets/Scripts/Camera/BoardCameraFramer.cs` owns scene references, safe-area composition, the captured authored base rotation, Camera-local offsets, startup snap, and changed-input observation.
 - `Assets/Scripts/Board/Editor/BoardAuthoring/BoardSceneSynchronizer.cs`
   delegates camera updates after Board synchronization.
 - `Assets/Scripts/Camera/Editor/BoardCameraAuthoringSynchronizer.cs`

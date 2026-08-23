@@ -3931,7 +3931,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 55
   maxRayDistance: 300
-  preview: {fileID: 1372048647}
+  view: {fileID: 1372048647}
   placedObjectsRoot: {fileID: 879406992}
   initialTower: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
 --- !u!4 &933105056
@@ -3961,7 +3961,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fde086410e733d64eb8ddc5f86d5ff1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.GridPlacementSceneAdapter
-  placementController: {fileID: 933105055}
+  placementPresenter: {fileID: 933105055}
 --- !u!114 &933105058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3986,7 +3986,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 658a3fd56af620e4fb5cd223e20abaa8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.TowerNetworkSceneAdapter
-  placementController: {fileID: 0}
+  placementPresenter: {fileID: 0}
   simulationDriver: {fileID: 933105058}
   inputController: {fileID: 0}
   linkPresenter: {fileID: 0}
@@ -5810,7 +5810,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8354c039cc4fd3b40b34e8f6858c60df, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.GridPlacementPreview
+  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.GridPlacementView
   footprintMeshFilter: {fileID: 1643766893}
   footprintRenderer: {fileID: 1643766892}
   ghostMeshFilter: {fileID: 1936719180}
@@ -8409,9 +8409,41 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2372656000448359072, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
-      propertyPath: placementController
+      propertyPath: placementPresenter
       value: 
       objectReference: {fileID: 933105055}
+    - target: {fileID: 3100707322968919260, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3100707322968919260, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3146618960878704710, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3146618960878704710, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3222394572055723874, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3222394572055723874, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4032266459473336673, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4032266459473336673, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4858077839866566569, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMax.x
       value: 1
@@ -8428,6 +8460,14 @@ PrefabInstance:
       propertyPath: m_AnchorMin.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5882818942728709152, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5882818942728709152, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5962470982579406877, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_Name
       value: Gameplay UI
@@ -8435,6 +8475,14 @@ PrefabInstance:
     - target: {fileID: 5962470982579406877, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6634160106346576550, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6634160106346576550, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

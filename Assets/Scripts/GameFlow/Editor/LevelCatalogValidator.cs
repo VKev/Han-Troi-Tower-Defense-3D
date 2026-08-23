@@ -147,7 +147,7 @@ namespace TowerDefense3D.GameFlow.Editor
                         scene,
                         $"LevelSceneContext for Level {entry.LevelNumber}",
                         errors);
-                    RequireExactlyOne<GridPlacementController>(scene, "GridPlacementController", errors);
+                    RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);
                     RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);
                     RequireExactlyOne<TowerSimulationDriver>(scene, "TowerSimulationDriver", errors);
                     RequireExactlyOne<TowerNetworkInputController>(scene, "TowerNetworkInputController", errors);
@@ -194,7 +194,7 @@ namespace TowerDefense3D.GameFlow.Editor
             }
 
             GameObject owner = adapter.gameObject;
-            if (owner.GetComponent<GridPlacementController>() == null
+            if (owner.GetComponent<GridPlacementPresenter>() == null
                 || owner.GetComponent<TowerSimulationDriver>() == null
                 || owner.GetComponent<TowerNetworkInputController>() == null
                 || owner.GetComponent<TowerLinkPresenter>() == null

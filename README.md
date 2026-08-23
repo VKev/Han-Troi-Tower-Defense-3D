@@ -63,7 +63,7 @@ Assets/Scripts/<FeatureName>/
 
 ### One source home per responsibility
 
-- Reuse an existing feature root before creating another folder for the same responsibility. For example, all project-owned UI scripts belong in `Assets/Scripts/UI/Scripts/`; do not create another `UI` tree under `GameFlow`, `Tower`, or another feature.
+- Reuse an existing feature root before creating another folder for the same responsibility. Runtime source lives directly under each feature root beside `Editor` and `Tests`; do not add a redundant child `Scripts` folder. For example, all project-owned UI scripts belong in `Assets/Scripts/UI/`; do not create another `UI` tree under `GameFlow`, `Tower`, or another feature.
 - Keep small modules flat. Do not add `Application`, `Gameplay`, `Presentation`, or similar category folders unless current files establish a real ownership, lifecycle, Editor/runtime, test, or assembly boundary.
 - Apply the same rule to every feature: move a script to its existing owning module instead of creating a second home with the same name.
 - Preserve `.meta` files and GUIDs during moves so scene, prefab, and ScriptableObject references remain intact.
@@ -96,7 +96,11 @@ The project uses the **Hybrid VContainer + Explicit Scene Lifecycle** pattern. V
 
 ```text
 Bootstrap/Application Systems [ApplicationLifetimeScope]
-|-- GameFlowCoordinator [sole application IStartable; pure C#]
+|-- GameFlowCoordinator [sole application IStartable and coordinator; pure C#]
+|   |-- ApplicationBootFlow [catalog validation and progress boot]
+|   |-- LevelMenuFlow [menu state and level selection]
+|   |-- LevelTransitionFlow [level load, unload, and completion callbacks]
+|   `-- SaveRecoveryFlow [save warning and retry callbacks]
 `-- TowerNetworkManager [application-scoped pure C# service; no engine callbacks]
 
 Level_###/Level Context [LevelSceneContext]
@@ -106,7 +110,8 @@ Level_###/Level Context [LevelSceneContext]
 ```
 
 - Keep one application composition root in `Assets/Scenes/Bootstrap.unity`. The current root is `ApplicationLifetimeScope`, using VContainer 1.19.0.
-- Register exactly one application entry point for high-level flow. `GameFlowCoordinator` owns boot, menu, loading, gameplay, and blocking-error phase transitions; do not add another manager callback that starts the same flow.
+- Register exactly one application entry point for high-level flow. `GameFlowCoordinator` explicitly initializes focused `*Flow` modules, owns their shared state and routing, and shuts them down in reverse order; do not add another manager callback that starts the same flow.
+- Keep application flow modules together in `Assets/Scripts/GameFlow/Application/Flows/`. Every module uses the `*Flow.cs` suffix, owns its callbacks, and is called directly by `GameFlowCoordinator`; do not add interface layers when no polymorphic substitution is needed.
 - Prefer pure C# services for application logic and persistence. Register existing Unity components only when they need authored references, coroutines, scene APIs, GameObject state, or other engine-owned behavior.
 - An application-scoped service may own one explicitly bounded level session without becoming another entry point. `TowerNetworkManager` is constructed once by VContainer, while `TowerNetworkSceneAdapter` begins and ends its level data and `TowerSimulationDriver` forwards frame time only after explicit level initialization.
 - Keep level activation explicit through `LevelSceneContext`. Participants initialize in authored order and shut down in reverse order; the current order is `GridPlacementSceneAdapter`, `TowerNetworkSceneAdapter`, then `GameplayUIManager`.

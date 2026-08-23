@@ -8,20 +8,20 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 {
     public sealed class LevelLifecycleSourceTests
     {
-        private const string PlacementControllerTypeName =
-            "TowerDefense3D.GridPlacement.GridPlacementController, "
+        private const string PlacementPresenterTypeName =
+            "TowerDefense3D.GridPlacement.GridPlacementPresenter, "
             + "TowerDefense3D.GridPlacement.Runtime";
         private const string BoardDefinitionTypeName =
             "TowerDefense3D.GridPlacement.BoardDefinition, "
             + "TowerDefense3D.GridPlacement.Runtime";
-        private const string PlacementControllerSourcePath =
-            "Assets/Scripts/Placement/Scripts/GridPlacementController.cs";
+        private const string PlacementPresenterSourcePath =
+            "Assets/Scripts/Placement/GridPlacementPresenter.cs";
 
         [Test]
-        public void PlacementController_SourceHasNoSelfStartAndGatesUpdate()
+        public void PlacementPresenter_SourceHasNoSelfStartAndGatesUpdate()
         {
             MonoScript sourceAsset = AssetDatabase.LoadAssetAtPath<MonoScript>(
-                PlacementControllerSourcePath);
+                PlacementPresenterSourcePath);
 
             Assert.That(sourceAsset, Is.Not.Null);
             string source = sourceAsset.text.Replace("\r\n", "\n");
@@ -33,7 +33,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void PlacementController_UsesExplicitIdempotentLifecycleAndSupportsReentry()
+        public void PlacementPresenter_UsesExplicitIdempotentLifecycleAndSupportsReentry()
         {
             GameObject owner = new GameObject("Placement Lifecycle Test");
             Component controller = CreateConfiguredController(owner, out ScriptableObject boardDefinition);
@@ -78,7 +78,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             GameObject owner = new GameObject("Placement Adapter Test");
             Component controller = CreateConfiguredController(owner, out ScriptableObject boardDefinition);
             GridPlacementSceneAdapter adapter = owner.AddComponent<GridPlacementSceneAdapter>();
-            SetPrivateField(adapter, "placementController", controller);
+            SetPrivateField(adapter, "placementPresenter", controller);
             var runtimeContext = new LevelSceneRuntimeContext(1, () => { });
 
             try
@@ -117,7 +117,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
                     () => adapter.Initialize(new LevelSceneRuntimeContext(1, () => { })));
 
-                StringAssert.Contains("requires a GridPlacementController", exception.Message);
+                StringAssert.Contains("requires a GridPlacementPresenter", exception.Message);
                 adapter.Shutdown();
             }
             finally
@@ -130,7 +130,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             GameObject owner,
             out ScriptableObject boardDefinition)
         {
-            Type controllerType = Type.GetType(PlacementControllerTypeName, true);
+            Type controllerType = Type.GetType(PlacementPresenterTypeName, true);
             Type definitionType = Type.GetType(BoardDefinitionTypeName, true);
             Component controller = owner.AddComponent(controllerType);
             boardDefinition = ScriptableObject.CreateInstance(definitionType);

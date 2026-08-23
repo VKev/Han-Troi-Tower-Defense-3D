@@ -80,6 +80,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
+            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
             Assert.That(GetLevelButtonLabel(1), Does.StartWith("Play "));
             Assert.That(GetLevelButtonLabel(2), Does.StartWith("Unlock "));
             yield break;
@@ -107,7 +108,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(gameplayUi.IsInitialized, Is.True);
             AssertMigratedGameplayUi(gameplayUi, "Level_001_Board");
 
-            GetPrivateField<Button>(gameplayUi, "returnToMenuButton").onClick.Invoke();
+            GetReturnToMenuButton(gameplayUi).onClick.Invoke();
             yield return WaitForLevelMenu();
 
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
@@ -116,6 +117,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<TowerSimulationDriver>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
+            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
         }
 
         [UnityTest]
@@ -139,7 +141,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(persisted.IsSuccess, Is.True, persisted.Error);
             CollectionAssert.Contains(persisted.Data.UnlockedLevelNumbers, 2);
 
-            GetPrivateField<Button>(gameplayUi, "returnToMenuButton").onClick.Invoke();
+            GetReturnToMenuButton(gameplayUi).onClick.Invoke();
             yield return WaitForLevelMenu();
         }
 
@@ -148,14 +150,14 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             string expectedBoardName)
         {
             Assert.That(manager, Is.Not.Null);
-            GridPlacementController placement = GetPrivateField<GridPlacementController>(
+            GridPlacementPresenter placement = GetPrivateField<GridPlacementPresenter>(
                 manager,
-                "placementController");
+                "placementPresenter");
             TowerSelectionButton[] selectors = GetPrivateField<TowerSelectionButton[]>(
                 manager,
                 "towerSelectionButtons");
-            Button cancel = GetPrivateField<Button>(manager, "cancelPlacementButton");
-            Button returnButton = GetPrivateField<Button>(manager, "returnToMenuButton");
+            Button cancel = GetCancelPlacementButton(manager);
+            Button returnButton = GetReturnToMenuButton(manager);
 
             Assert.That(placement, Is.Not.Null);
             Assert.That(GetPrivateField<BoardDefinition>(placement, "boardDefinition").name,
@@ -165,6 +167,18 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);
             Assert.That(manager.GetComponentInChildren<SafeAreaFitter>(true), Is.Not.Null);
+        }
+
+        private static Button GetCancelPlacementButton(GameplayUIManager manager)
+        {
+            TowerNetworkHudView hud = GetPrivateField<TowerNetworkHudView>(manager, "towerNetworkHud");
+            return GetPrivateField<Button>(hud, "cancelPlacementButton");
+        }
+
+        private static Button GetReturnToMenuButton(GameplayUIManager manager)
+        {
+            TowerNetworkHudView hud = GetPrivateField<TowerNetworkHudView>(manager, "towerNetworkHud");
+            return GetPrivateField<Button>(hud, "returnToMenuButton");
         }
 
         private static void AssertTowerNetworkInitialized()
