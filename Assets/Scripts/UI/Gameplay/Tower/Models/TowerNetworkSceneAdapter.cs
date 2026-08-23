@@ -1,409 +1,141 @@
 using System;
 using System.Collections.Generic;
-using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
 using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
 {
+    /// <summary>
+    /// Temporary scene compatibility surface while Gameplay UI moves to direct system injection.
+    /// </summary>
     [DisallowMultipleComponent]
-    public sealed class TowerNetworkSceneAdapter : MonoBehaviour, ILevelSceneParticipant, ITowerNetworkSceneRegistry
+    public sealed class TowerNetworkSceneAdapter : MonoBehaviour, ILevelSceneParticipant
     {
-        [SerializeField] private GridPlacementPresenter placementPresenter;
-        [SerializeField] private TowerSimulationDriver simulationDriver;
-        [SerializeField] private TowerNetworkInputController inputController;
-        [SerializeField] private TowerLinkPresenter linkPresenter;
-        [SerializeField] private TowerProjectilePresenter projectilePresenter;
+        private TowerNetworkSystem towerNetworkSystem;
 
-        private readonly Dictionary<TowerNodeId, TowerRuntimeView> viewsByNode =
-            new Dictionary<TowerNodeId, TowerRuntimeView>();
-        private readonly Dictionary<TowerRuntimeView, TowerNodeId> nodesByView =
-            new Dictionary<TowerRuntimeView, TowerNodeId>();
+        public event Action StateChanged
+        {
+            add => RequireSystem().StateChanged += value;
+            remove
+            {
+                if (towerNetworkSystem != null)
+                {
+                    towerNetworkSystem.StateChanged -= value;
+                }
+            }
+        }
 
-        private TowerNetworkManager manager;
+        public bool IsInitialized { get; private set; }
+        public TowerRuntimeView SelectedTower => towerNetworkSystem?.SelectedTower as TowerRuntimeView;
+        public string LastFeedback => towerNetworkSystem?.LastFeedback ?? string.Empty;
+        public bool HasValidChain => towerNetworkSystem?.HasValidChain == true;
+        public int ValidChainCount => towerNetworkSystem?.ValidChainCount ?? 0;
+        public bool IsRunning => towerNetworkSystem?.IsRunning == true;
+        public bool CanEditTopology => towerNetworkSystem?.CanEditTopology == true;
+        public int RegisteredTowerCount => towerNetworkSystem?.RegisteredTowerCount ?? 0;
 
-        public event Action StateChanged;
+        public void Bind(TowerNetworkSystem system)
+        {
+            if (towerNetworkSystem != null)
+            {
+                throw new InvalidOperationException("TowerNetworkSceneAdapter is already bound.");
+            }
 
-        public bool IsInitialized => manager != null;
-        public TowerCatalog Catalog => manager?.Catalog;
-        public TowerRuntimeView SelectedTower => inputController != null ? inputController.SelectedTower : null;
-        public string LastFeedback => inputController != null ? inputController.LastFeedback : string.Empty;
-        public bool HasValidChain => manager != null && manager.HasValidChain;
-        public int ValidChainCount => manager?.ValidChainCount ?? 0;
-        public bool IsRunning => manager != null && manager.IsRunning;
-        public bool CanEditTopology => manager != null && manager.HasLevelSession && !manager.IsRunning;
-        public int RegisteredTowerCount => viewsByNode.Count;
+            towerNetworkSystem = system ?? throw new ArgumentNullException(nameof(system));
+        }
 
         public void Initialize(LevelSceneRuntimeContext context)
         {
-            if (!context.IsValid)
-            {
-                throw new ArgumentException("Tower network received an invalid level runtime context.", nameof(context));
-            }
-
-            if (context.TowerNetworkManager == null)
-            {
-                throw new InvalidOperationException(
-                    "Tower network requires a TowerNetworkManager in the level runtime context.");
-            }
-
-            if (IsInitialized)
-            {
-                throw new InvalidOperationException("TowerNetworkSceneAdapter is already initialized.");
-            }
-
-            ResolveSceneComponents();
-            TowerNetworkManager runtimeManager = context.TowerNetworkManager;
-            runtimeManager.BeginLevelSession(context.LevelNumber);
-            manager = runtimeManager;
-
-            try
-            {
-                placementPresenter.TowerPlaced += HandleTowerPlaced;
-                runtimeManager.StateChanged += HandleManagerStateChanged;
-                inputController.SelectionChanged += HandleInputStateChanged;
-                inputController.FeedbackChanged += HandleInputStateChanged;
-                inputController.Initialize(this, placementPresenter.WorldCamera, placementPresenter.CancelPlacement);
-                linkPresenter.Initialize(runtimeManager, this, inputController);
-                simulationDriver.Initialize(runtimeManager);
-                projectilePresenter.Initialize(runtimeManager, simulationDriver);
-                PublishStateChanged();
-            }
-            catch
-            {
-                Shutdown();
-                throw;
-            }
+            _ = context;
+            RequireSystem();
+            IsInitialized = true;
         }
 
         public void Shutdown()
         {
-            if (manager == null)
-            {
-                return;
-            }
-
-            TowerNetworkManager initializedManager = manager;
-            placementPresenter.TowerPlaced -= HandleTowerPlaced;
-            initializedManager.StateChanged -= HandleManagerStateChanged;
-
-            if (inputController != null)
-            {
-                inputController.SelectionChanged -= HandleInputStateChanged;
-                inputController.FeedbackChanged -= HandleInputStateChanged;
-                inputController.Shutdown();
-            }
-
-            linkPresenter?.Shutdown();
-            projectilePresenter?.Shutdown();
-            simulationDriver?.Shutdown();
-            ClearRegisteredViews();
-            manager = null;
-            initializedManager.EndLevelSession();
-            PublishStateChanged();
+            IsInitialized = false;
         }
 
         public IReadOnlyList<TowerRuntimeView> CreateTowerViewSnapshot()
         {
-            if (manager == null)
+            if (towerNetworkSystem == null)
             {
                 return Array.Empty<TowerRuntimeView>();
             }
 
-            IReadOnlyList<TowerNodeId> orderedNodeIds = manager.CreateNodeIdSnapshot();
-            var snapshot = new List<TowerRuntimeView>(orderedNodeIds.Count);
-            for (int index = 0; index < orderedNodeIds.Count; index++)
+            IReadOnlyList<ITowerRuntimeView> systemViews = towerNetworkSystem.CreateTowerViewSnapshot();
+            var views = new List<TowerRuntimeView>(systemViews.Count);
+            for (int index = 0; index < systemViews.Count; index++)
             {
-                if (viewsByNode.TryGetValue(orderedNodeIds[index], out TowerRuntimeView view) && view != null)
-                {
-                    snapshot.Add(view);
-                }
+                views.Add((TowerRuntimeView)systemViews[index]);
             }
 
-            return snapshot;
+            return views;
         }
 
         public bool TryGetTowerView(TowerNodeId nodeId, out TowerRuntimeView view)
         {
-            return viewsByNode.TryGetValue(nodeId, out view) && view != null;
+            if (towerNetworkSystem != null
+                && towerNetworkSystem.TryGetTowerView(nodeId, out ITowerRuntimeView systemView))
+            {
+                view = (TowerRuntimeView)systemView;
+                return true;
+            }
+
+            view = null;
+            return false;
         }
 
         public bool TryRewire(TowerRuntimeView source, TowerRuntimeView target, out string error)
         {
-            if (manager == null)
-            {
-                error = "Tower network is not initialized.";
-                return false;
-            }
-
-            if (source == null || target == null
-                || !nodesByView.TryGetValue(source, out TowerNodeId sourceId)
-                || !nodesByView.TryGetValue(target, out TowerNodeId targetId))
-            {
-                error = "Both link endpoints must be registered towers.";
-                return false;
-            }
-
-            return manager.TryRewire(sourceId, targetId, out error);
+            return RequireSystem().TryRewire(source, target, out error);
         }
 
-        public void SelectTowerForPlacement(TowerCombatDefinition definition)
+        public bool BeginTowerPlacementDrag(TowerCombatDefinition definition, int pointerId)
         {
-            if (!IsInitialized)
-            {
-                return;
-            }
-
-            inputController.ClearSelection();
-            inputController.ReportFeedback(definition == null
-                ? string.Empty
-                : $"Placing {definition.Core.DisplayName}.");
-            placementPresenter.SelectTower(definition);
-        }
-
-        public bool BeginTowerPlacementDrag(
-            TowerCombatDefinition definition,
-            int pointerId)
-        {
-            if (!CanEditTopology)
-            {
-                inputController?.ReportFeedback("Tower placement is locked while simulation is running.");
-                return false;
-            }
-
-            inputController.ClearSelection();
-            bool began = placementPresenter.BeginPlacementDrag(definition, pointerId);
-            inputController.ReportFeedback(began
-                ? $"Drag {definition.Core.DisplayName} onto the board."
-                : "Tower placement could not start.");
-            return began;
+            return RequireSystem().BeginTowerPlacementDrag(definition, pointerId);
         }
 
         public void UpdateTowerPlacementDrag(int pointerId, Vector2 screenPosition, bool pointerOverUi)
         {
-            if (CanEditTopology)
-            {
-                placementPresenter.UpdatePlacementDrag(pointerId, screenPosition, pointerOverUi);
-            }
+            RequireSystem().UpdateTowerPlacementDrag(pointerId, screenPosition, pointerOverUi);
         }
 
         public bool EndTowerPlacementDrag(int pointerId, Vector2 screenPosition, bool pointerOverUi)
         {
-            if (!CanEditTopology)
-            {
-                placementPresenter.CancelPlacementDrag(pointerId);
-                return false;
-            }
-
-            bool placed = placementPresenter.EndPlacementDrag(pointerId, screenPosition, pointerOverUi);
-            if (!placed)
-            {
-                inputController.ReportFeedback("Tower placement canceled.");
-            }
-
-            return placed;
+            return RequireSystem().EndTowerPlacementDrag(pointerId, screenPosition, pointerOverUi);
         }
 
         public void CancelTowerPlacementDrag(int pointerId)
         {
-            if (placementPresenter.CancelPlacementDrag(pointerId))
-            {
-                inputController?.ReportFeedback("Tower placement canceled.");
-            }
+            RequireSystem().CancelTowerPlacementDrag(pointerId);
         }
 
         public void CancelPlacement()
         {
-            placementPresenter?.CancelPlacement();
-        }
-
-        public void ClearSelection()
-        {
-            inputController?.ClearSelection();
+            towerNetworkSystem?.CancelPlacement();
         }
 
         public bool TryUnlinkSelected(out string error)
         {
-            TowerRuntimeView selectedTower = SelectedTower;
-            if (manager == null || selectedTower == null || !nodesByView.TryGetValue(selectedTower, out TowerNodeId nodeId))
-            {
-                error = "Select a registered tower before unlinking.";
-                inputController?.ReportFeedback(error);
-                return false;
-            }
-
-            bool succeeded = manager.TryUnlinkAll(nodeId, out error);
-            inputController.ReportFeedback(succeeded ? $"Unlinked {GetDisplayName(selectedTower)}." : error);
-            return succeeded;
+            return RequireSystem().TryUnlinkSelected(out error);
         }
 
         public bool TryStartSimulation(out string error)
         {
-            if (manager == null)
-            {
-                error = "Tower network is not initialized.";
-                return false;
-            }
-
-            placementPresenter.CancelPlacement();
-            inputController.ClearSelection();
-            bool succeeded = manager.TryStartSimulation(out error);
-            inputController.ReportFeedback(succeeded ? "Tower simulation started." : error);
-            return succeeded;
+            return RequireSystem().TryStartSimulation(out error);
         }
 
         public bool TryCreateSelectedQueueSummary(out TowerQueueSummary summary)
         {
-            TowerRuntimeView selectedTower = SelectedTower;
-            if (manager == null || selectedTower == null || !selectedTower.NodeId.IsValid
-                || !manager.TryGetNodeSpec(selectedTower.NodeId, out TowerRuntimeSpec spec))
-            {
-                summary = default;
-                return false;
-            }
-
-            int queued = 0;
-            int reserved = 0;
-            int capacity = 0;
-            for (int inputPort = 0; inputPort < spec.InputPortCount; inputPort++)
-            {
-                if (manager.TryCreateInputPortSnapshot(
-                    selectedTower.NodeId,
-                    inputPort,
-                    out TowerInputPortSnapshot port))
-                {
-                    queued += port.QueuedProjectileCount;
-                    reserved += port.ReservedProjectileCount;
-                    capacity += port.Capacity;
-                }
-            }
-
-            summary = new TowerQueueSummary(queued, reserved, capacity);
-            return true;
+            return RequireSystem().TryCreateSelectedQueueSummary(out summary);
         }
 
-        private void ResolveSceneComponents()
+        private TowerNetworkSystem RequireSystem()
         {
-            placementPresenter = placementPresenter != null
-                ? placementPresenter
-                : GetComponent<GridPlacementPresenter>();
-            simulationDriver = simulationDriver != null
-                ? simulationDriver
-                : GetComponent<TowerSimulationDriver>();
-            inputController = inputController != null
-                ? inputController
-                : GetComponent<TowerNetworkInputController>();
-            linkPresenter = linkPresenter != null
-                ? linkPresenter
-                : GetComponent<TowerLinkPresenter>();
-            projectilePresenter = projectilePresenter != null
-                ? projectilePresenter
-                : GetComponent<TowerProjectilePresenter>();
-
-            if (placementPresenter == null || simulationDriver == null || inputController == null
-                || linkPresenter == null || projectilePresenter == null)
-            {
-                throw new InvalidOperationException(
-                    "TowerNetworkSceneAdapter requires GridPlacementPresenter, TowerSimulationDriver, "
-                    + "TowerNetworkInputController, TowerLinkPresenter, and TowerProjectilePresenter on the same object.");
-            }
-        }
-
-        private void HandleTowerPlaced(TowerPlacementRecord placement)
-        {
-            if (manager == null || placement.RuntimeView == null || nodesByView.ContainsKey(placement.RuntimeView))
-            {
-                return;
-            }
-
-            Vector3 position = placement.RuntimeView.transform.position;
-            TowerNodeId nodeId = manager.RegisterTower(
-                placement.CombatDefinition,
-                new TowerWorldPosition(position.x, position.y, position.z));
-
-            try
-            {
-                placement.RuntimeView.BindNode(nodeId);
-                viewsByNode.Add(nodeId, placement.RuntimeView);
-                nodesByView.Add(placement.RuntimeView, nodeId);
-                placement.RuntimeView.Destroyed += HandleTowerDestroyed;
-                inputController.ReportFeedback($"Placed {GetDisplayName(placement.RuntimeView)}.");
-                PublishStateChanged();
-            }
-            catch
-            {
-                placement.RuntimeView.ClearNodeBinding();
-                manager.UnregisterTower(nodeId);
-                throw;
-            }
-        }
-
-        private void HandleTowerDestroyed(TowerRuntimeView view)
-        {
-            if (ReferenceEquals(view, null))
-            {
-                return;
-            }
-
-            TowerNodeId nodeId = view.NodeId;
-            if (!nodeId.IsValid || !viewsByNode.ContainsKey(nodeId))
-            {
-                return;
-            }
-
-            view.Destroyed -= HandleTowerDestroyed;
-            nodesByView.Remove(view);
-            viewsByNode.Remove(nodeId);
-            inputController.ClearSelection();
-
-            if (manager != null && manager.HasLevelSession)
-            {
-                manager.StopSimulation();
-                manager.UnregisterTower(nodeId);
-            }
-
-            PublishStateChanged();
-        }
-
-        private void ClearRegisteredViews()
-        {
-            foreach (TowerRuntimeView view in nodesByView.Keys)
-            {
-                if (view != null)
-                {
-                    view.Destroyed -= HandleTowerDestroyed;
-                    view.ClearNodeBinding();
-                }
-            }
-
-            nodesByView.Clear();
-            viewsByNode.Clear();
-        }
-
-        private void HandleManagerStateChanged()
-        {
-            PublishStateChanged();
-        }
-
-        private void HandleInputStateChanged()
-        {
-            PublishStateChanged();
-        }
-
-        private void PublishStateChanged()
-        {
-            StateChanged?.Invoke();
-        }
-
-        private static string GetDisplayName(TowerRuntimeView view)
-        {
-            string displayName = view?.CombatDefinition?.Core?.DisplayName;
-            return string.IsNullOrWhiteSpace(displayName) ? "Tower" : displayName;
-        }
-
-        private void OnDestroy()
-        {
-            Shutdown();
+            return towerNetworkSystem
+                ?? throw new InvalidOperationException(
+                    "LevelLifetimeScope must bind TowerNetworkSceneAdapter before scene participants initialize.");
         }
     }
 }

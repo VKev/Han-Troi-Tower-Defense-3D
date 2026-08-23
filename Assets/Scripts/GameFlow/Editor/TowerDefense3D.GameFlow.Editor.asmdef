@@ -4,6 +4,7 @@
     "references": [
         "TowerDefense3D.GameFlow.Runtime",
         "TowerDefense3D.GridPlacement.Runtime",
+        "TowerDefense3D.System.Runtime",
         "TowerDefense3D.Components.Runtime",
         "Unity.ugui"
     ],

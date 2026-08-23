@@ -369,6 +369,44 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                 Is.EqualTo(4));
         }
 
+        [Test]
+        public void QueueSummary_AggregatesCapacityAcrossEveryInputPort()
+        {
+            Fixture fixture = CreateFixture();
+            fixture.Manager.BeginLevelSession(1);
+
+            TowerNodeId generator = fixture.Manager.RegisterTower(
+                fixture.Generator,
+                Position(0f));
+            TowerNodeId fire = fixture.Manager.RegisterTower(
+                fixture.Fire,
+                Position(1f));
+            TowerNodeId nexus = fixture.Manager.RegisterTower(
+                fixture.Nexus,
+                Position(2f));
+
+            Assert.That(
+                fixture.Manager.TryCreateQueueSummary(generator, out TowerQueueSummary generatorQueue),
+                Is.True);
+            Assert.That(generatorQueue.Capacity, Is.Zero);
+
+            Assert.That(
+                fixture.Manager.TryCreateQueueSummary(fire, out TowerQueueSummary fireQueue),
+                Is.True);
+            Assert.That(fireQueue.Capacity, Is.EqualTo(3));
+
+            Assert.That(
+                fixture.Manager.TryCreateQueueSummary(nexus, out TowerQueueSummary nexusQueue),
+                Is.True);
+            Assert.That(nexusQueue.Capacity, Is.EqualTo(8));
+            Assert.That(nexusQueue.QueuedProjectileCount, Is.Zero);
+            Assert.That(nexusQueue.ReservedProjectileCount, Is.Zero);
+
+            Assert.That(
+                fixture.Manager.TryCreateQueueSummary(default, out _),
+                Is.False);
+        }
+
         private Fixture CreateFixture()
         {
             TowerCombatRules rules =

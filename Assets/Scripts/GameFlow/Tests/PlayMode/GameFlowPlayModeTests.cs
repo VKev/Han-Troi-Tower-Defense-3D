@@ -119,7 +119,8 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
             Assert.That(CountLoaded<TowerNetworkSceneAdapter>(), Is.Zero);
-            Assert.That(CountLoaded<TowerSimulationDriver>(), Is.Zero);
+            Assert.That(CountLoaded<TowerLinkView>(), Is.Zero);
+            Assert.That(CountLoaded<TowerProjectilePoolView>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
@@ -190,21 +191,16 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         private static void AssertTowerNetworkInitialized()
         {
             Assert.That(CountLoaded<TowerNetworkSceneAdapter>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<TowerSimulationDriver>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<TowerNetworkInputController>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<TowerLinkPresenter>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<TowerProjectilePresenter>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<TowerLinkView>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<TowerProjectilePoolView>(), Is.EqualTo(1));
 
             TowerNetworkSceneAdapter adapter = FindLoaded<TowerNetworkSceneAdapter>();
-            TowerSimulationDriver driver = FindLoaded<TowerSimulationDriver>();
 
             Assert.That(adapter, Is.Not.Null);
             Assert.That(adapter.IsInitialized, Is.True);
-            Assert.That(driver, Is.Not.Null);
-            Assert.That(driver.IsInitialized, Is.True);
-            Assert.That(adapter.GetComponent<TowerNetworkInputController>().IsInitialized, Is.True);
-            Assert.That(adapter.GetComponent<TowerLinkPresenter>().IsInitialized, Is.True);
-            Assert.That(adapter.GetComponent<TowerProjectilePresenter>().IsInitialized, Is.True);
+            Assert.That(adapter.CanEditTopology, Is.True);
+            Assert.That(adapter.GetComponent<TowerLinkView>(), Is.Not.Null);
+            Assert.That(adapter.GetComponent<TowerProjectilePoolView>(), Is.Not.Null);
         }
 
         private static IEnumerator WaitForLevelMenu()

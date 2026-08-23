@@ -161,10 +161,8 @@ namespace TowerDefense3D.GameFlow.Editor
                     RequireExactlyOne<TowerInstanceFactory>(scene, "TowerInstanceFactory", errors);
                     RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);
                     RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);
-                    RequireExactlyOne<TowerSimulationDriver>(scene, "TowerSimulationDriver", errors);
-                    RequireExactlyOne<TowerNetworkInputController>(scene, "TowerNetworkInputController", errors);
-                    RequireExactlyOne<TowerLinkPresenter>(scene, "TowerLinkPresenter", errors);
-                    RequireExactlyOne<TowerProjectilePresenter>(scene, "TowerProjectilePresenter", errors);
+                    RequireExactlyOne<TowerLinkView>(scene, "TowerLinkView", errors);
+                    RequireExactlyOne<TowerProjectilePoolView>(scene, "TowerProjectilePoolView", errors);
                     RequireExactlyOne<SafeAreaView>(scene, "SafeAreaView", errors);
 
                     int eventSystems = CountComponents<EventSystem>(scene);
@@ -210,14 +208,12 @@ namespace TowerDefense3D.GameFlow.Editor
             if (owner.GetComponent<GridPlacementPresenter>() == null
                 || owner.GetComponent<GameplayInputSource>() == null
                 || owner.GetComponent<TowerInstanceFactory>() == null
-                || owner.GetComponent<TowerSimulationDriver>() == null
-                || owner.GetComponent<TowerNetworkInputController>() == null
-                || owner.GetComponent<TowerLinkPresenter>() == null
-                || owner.GetComponent<TowerProjectilePresenter>() == null)
+                || owner.GetComponent<TowerLinkView>() == null
+                || owner.GetComponent<TowerProjectilePoolView>() == null)
             {
                 errors.Add(
-                    $"Level {levelNumber} must keep placement, simulation, tower input, link, and projectile "
-                    + "components together on the TowerNetworkSceneAdapter object.");
+                    $"Level {levelNumber} must keep placement, input, link, and projectile views "
+                    + "together on the TowerNetworkSceneAdapter object.");
             }
         }
 

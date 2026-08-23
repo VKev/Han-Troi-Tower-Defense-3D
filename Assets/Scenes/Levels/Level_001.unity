@@ -745,7 +745,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa13f6043c0e48efa7b729d09bb19460, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelSceneContext
   levelNumber: 1
   participants:
@@ -1083,7 +1083,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -3658,13 +3658,11 @@ GameObject:
   - component: {fileID: 933105056}
   - component: {fileID: 933105055}
   - component: {fileID: 933105057}
-  - component: {fileID: 933105058}
   - component: {fileID: 933105059}
-  - component: {fileID: 933105062}
-  - component: {fileID: 933105061}
-  - component: {fileID: 933105060}
   - component: {fileID: 933105064}
   - component: {fileID: 933105063}
+  - component: {fileID: 933105066}
+  - component: {fileID: 933105065}
   m_Layer: 0
   m_Name: Systems
   m_TagString: Untagged
@@ -3685,6 +3683,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.GridPlacementController
   initialTower: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+  worldCamera: {fileID: 0}
 --- !u!4 &933105056
 Transform:
   m_ObjectHideFlags: 0
@@ -3713,18 +3712,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.GridPlacementSceneAdapter
   placementPresenter: {fileID: 933105055}
---- !u!114 &933105058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 933105054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c4d1c15e5df4354f9bdf732bda46c52, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerSimulationDriver
 --- !u!114 &933105059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3737,54 +3724,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 658a3fd56af620e4fb5cd223e20abaa8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.TowerNetworkSceneAdapter
-  placementPresenter: {fileID: 0}
-  simulationDriver: {fileID: 933105058}
-  inputController: {fileID: 0}
-  linkPresenter: {fileID: 0}
-  projectilePresenter: {fileID: 0}
---- !u!114 &933105060
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 933105054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8bd2896c76aaaa4da1f659970a13404, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerProjectilePresenter
-  defaultPoolCapacity: 16
-  maximumPoolSize: 128
---- !u!114 &933105061
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 933105054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0790950ae26314479b07c70bc4258f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerLinkPresenter
-  linkWidth: 0.1
-  previewWidth: 0.08
-  selectionRadius: 0.75
---- !u!114 &933105062
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 933105054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbea8a26b00bd9b468db43cc736ef6d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerNetworkInputController
-  selectionRadiusPixels: 96
-  linkDragThresholdPixels: 24
 --- !u!114 &933105063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3795,7 +3734,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dac67c8475250394798e1924c4a9889b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GridPlacement.TowerInstanceFactory
   placedObjectsRoot: {fileID: 879406992}
 --- !u!114 &933105064
@@ -3808,8 +3747,36 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29d52b171f321374fbb3a0fd6abc99cf, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameplayInput.GameplayInputSource
+--- !u!114 &933105065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933105054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 065aad8d750956940941c35a65f948b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerProjectilePoolView
+  defaultPoolCapacity: 16
+  maximumPoolSize: 128
+--- !u!114 &933105066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933105054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98878048ab187b841a7ec8416a4cafd5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerLinkView
+  linkWidth: 0.1
+  previewWidth: 0.08
 --- !u!1001 &990887907
 PrefabInstance:
   m_ObjectHideFlags: 0

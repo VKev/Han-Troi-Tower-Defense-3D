@@ -154,7 +154,8 @@ namespace TowerDefense3D.GridPlacement
             TowerRuntimeView runtimeView = placement.Instance.GetComponent<TowerRuntimeView>();
             if (runtimeView == null)
             {
-                runtimeView = placement.Instance.AddComponent<TowerRuntimeView>();
+                throw new InvalidOperationException(
+                    $"Tower prefab '{placement.Instance.name}' must author a TowerRuntimeView component.");
             }
 
             runtimeView.Configure(selectedCombatDefinition);
