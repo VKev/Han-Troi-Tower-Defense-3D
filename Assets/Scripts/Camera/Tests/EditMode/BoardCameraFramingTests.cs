@@ -408,7 +408,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         [Test]
         public void SafeViewport_CombinesCameraSafeAreaAndInnerComposition()
         {
-            bool success = BoardCameraFramer.TryBuildSafeViewportRect(
+            bool success = BoardCameraSystem.TryBuildSafeViewportRect(
                 new Rect(100f, 50f, 800f, 400f),
                 new Rect(140f, 70f, 700f, 360f),
                 new Rect(0.1f, 0.2f, 0.8f, 0.6f),
@@ -575,8 +575,8 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 });
             Transform presenterTransform =
                 Track(new GameObject("Offset Board Presenter")).transform;
-            BoardScenePresenter presenter =
-                presenterTransform.gameObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterTransform.gameObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             GameObject cameraObject = Track(new GameObject("Offset Board Camera"));
@@ -587,10 +587,10 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             Quaternion baseRotation = Quaternion.Euler(58f, 11f, 0f);
             camera.transform.rotation = baseRotation;
 
-            BoardCameraFramer framer =
-                cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer =
+                cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
             var localPositionOffset = new Vector3(1.25f, -0.5f, -2f);
             var localRotationOffset = new Vector3(3f, 7f, 1f);
             SetField(
@@ -602,8 +602,10 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 "cameraLocalRotationOffsetEuler",
                 localRotationOffset);
 
+            var cameraSystem = new BoardCameraSystem(framer);
+
             Assert.That(
-                framer.TryCalculatePose(
+                cameraSystem.TryCalculatePose(
                     out Vector3 actualPosition,
                     out Quaternion actualRotation),
                 Is.True);
@@ -636,7 +638,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 Vector3.Distance(actualPosition, expectedPosition),
                 Is.LessThan(0.0001f));
 
-            Assert.That(framer.FrameNow(), Is.True);
+            Assert.That(cameraSystem.FrameNow(), Is.True);
             Assert.That(
                 Vector3.Distance(camera.transform.position, expectedPosition),
                 Is.LessThan(0.0001f));

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using VContainer.Unity;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -12,18 +13,24 @@ namespace TowerDefense3D.GameFlow
     /// </summary>
     internal sealed class LevelLoadSequence
     {
+        private const string LevelLifetimeScopeTypeName =
+            "TowerDefense3D.GameFlow.LevelLifetimeScope";
+
         private readonly ActiveLevelState activeLevelState;
         private readonly LevelUnloadSequence unloadSequence;
         private readonly BootstrapSceneActivator bootstrapActivator;
+        private readonly LifetimeScope applicationScope;
 
         public LevelLoadSequence(
             ActiveLevelState activeLevelState,
             LevelUnloadSequence unloadSequence,
-            BootstrapSceneActivator bootstrapActivator)
+            BootstrapSceneActivator bootstrapActivator,
+            LifetimeScope applicationScope)
         {
             this.activeLevelState = activeLevelState;
             this.unloadSequence = unloadSequence;
             this.bootstrapActivator = bootstrapActivator;
+            this.applicationScope = applicationScope;
         }
 
         public IEnumerator Run(
@@ -54,7 +61,9 @@ namespace TowerDefense3D.GameFlow
             AsyncOperation loadOperation;
             try
             {
-                loadOperation = SceneManager.LoadSceneAsync(request.ScenePath, LoadSceneMode.Additive);
+                loadOperation = SceneManager.LoadSceneAsync(
+                    request.ScenePath,
+                    LoadSceneMode.Additive);
             }
             catch (Exception exception)
             {
@@ -104,11 +113,45 @@ namespace TowerDefense3D.GameFlow
             }
 
             LevelSceneContext context = contexts[0];
-            var runtimeContext = new LevelSceneRuntimeContext(request.LevelNumber, requestReturnToMenu, towerNetworkManager);
+            List<LifetimeScope> lifetimeScopes = FindLevelLifetimeScopes(loadedScene);
+            if (lifetimeScopes.Count != 1)
+            {
+                yield return bootstrapActivator.CleanupFailedTarget(loadedScene);
+                completion(Fail(
+                    LevelTransitionStatus.InitializationFailed,
+                    $"Scene '{request.ScenePath}' requires exactly one LevelLifetimeScope; "
+                    + $"found {lifetimeScopes.Count}."));
+                yield break;
+            }
+
+            var runtimeContext = new LevelSceneRuntimeContext(
+                request.LevelNumber,
+                requestReturnToMenu,
+                towerNetworkManager);
             if (!context.TryInitialize(runtimeContext, out string initializationError))
             {
                 yield return bootstrapActivator.CleanupFailedTarget(loadedScene);
                 completion(Fail(LevelTransitionStatus.InitializationFailed, initializationError));
+                yield break;
+            }
+
+            string lifetimeScopeError = null;
+            try
+            {
+                using (LifetimeScope.EnqueueParent(applicationScope))
+                {
+                    lifetimeScopes[0].Build();
+                }
+            }
+            catch (Exception exception)
+            {
+                lifetimeScopeError = exception.Message;
+            }
+
+            if (lifetimeScopeError != null)
+            {
+                yield return bootstrapActivator.CleanupFailedTarget(loadedScene);
+                completion(Fail(LevelTransitionStatus.InitializationFailed, lifetimeScopeError));
                 yield break;
             }
 
@@ -127,6 +170,30 @@ namespace TowerDefense3D.GameFlow
             }
 
             return contexts;
+        }
+
+        private static List<LifetimeScope> FindLevelLifetimeScopes(Scene scene)
+        {
+            var lifetimeScopes = new List<LifetimeScope>();
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                LifetimeScope[] rootScopes =
+                    roots[rootIndex].GetComponentsInChildren<LifetimeScope>(true);
+                for (int scopeIndex = 0; scopeIndex < rootScopes.Length; scopeIndex++)
+                {
+                    LifetimeScope scope = rootScopes[scopeIndex];
+                    if (string.Equals(
+                            scope.GetType().FullName,
+                            LevelLifetimeScopeTypeName,
+                            StringComparison.Ordinal))
+                    {
+                        lifetimeScopes.Add(scope);
+                    }
+                }
+            }
+
+            return lifetimeScopes;
         }
     }
 }

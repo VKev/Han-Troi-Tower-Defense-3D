@@ -33,14 +33,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(FramePacingSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(SafeAreaSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(BoardSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(BoardCameraSystem)), Is.False);
         }
 
         [Test]
         public void ActiveLevelSystemSlot_RejectsOverlappingGroupsAndOnlyDetachesItsOwner()
         {
             var slot = new ActiveLevelSystemSlot();
-            var first = new LevelSystemGroup();
-            var second = new LevelSystemGroup();
+            var first = new LevelSystemGroup(null, null);
+            var second = new LevelSystemGroup(null, null);
 
             slot.Attach(first);
 

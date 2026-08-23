@@ -13,7 +13,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             + "TowerDefense3D.GridPlacement.Runtime";
         private const string BoardDefinitionTypeName =
             "TowerDefense3D.GridPlacement.BoardDefinition, "
-            + "TowerDefense3D.GridPlacement.Runtime";
+            + "TowerDefense3D.System.Runtime";
         private const string PlacementPresenterSourcePath =
             "Assets/Scripts/Placement/GridPlacementPresenter.cs";
 

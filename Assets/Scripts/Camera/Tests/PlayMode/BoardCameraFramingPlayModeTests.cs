@@ -9,7 +9,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
     public sealed class BoardCameraFramingPlayModeTests
     {
         [UnityTest]
-        public IEnumerator Framer_SnapsAtStartupAndOnlyReactsToChangedInputs()
+        public IEnumerator CameraSystem_SnapsAtStartupAndOnlyReactsToChangedInputs()
         {
             BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
             SetField(board, "dimensions", new GridDimensions(20, 2, 1));
@@ -32,8 +32,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             presenterObject.transform.SetPositionAndRotation(
                 new Vector3(2f, 0f, -3f),
                 Quaternion.Euler(0f, 15f, 0f));
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             var cameraObject = new GameObject("Runtime Board Camera");
@@ -45,12 +45,14 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             camera.transform.SetPositionAndRotation(
                 new Vector3(40f, 40f, 40f),
                 Quaternion.Euler(60f, 0f, 0f));
-            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer = cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
 
             Vector3 initialPosition = camera.transform.position;
             cameraObject.SetActive(true);
+            var cameraSystem = new BoardCameraSystem(framer);
+            cameraSystem.Start();
             yield return null;
 
             Vector3 landscapePosition = camera.transform.position;
@@ -58,11 +60,13 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 
             Vector3 manualOffsetPosition = landscapePosition + Vector3.one;
             camera.transform.position = manualOffsetPosition;
+            cameraSystem.LateTick();
             yield return null;
             Assert.That(camera.transform.position, Is.EqualTo(manualOffsetPosition));
 
             camera.rect = new Rect(0f, 0f, 0.75f, 1f);
             camera.aspect = 4f / 3f;
+            cameraSystem.LateTick();
             yield return null;
             Assert.That(camera.transform.position, Is.Not.EqualTo(manualOffsetPosition));
             Assert.That(camera.transform.position, Is.Not.EqualTo(landscapePosition));
@@ -74,7 +78,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Framer_CappedPoseRecentersWhenOnlyMaximumEdgesGrow()
+        public IEnumerator CameraSystem_CappedPoseRecentersWhenOnlyMaximumEdgesGrow()
         {
             BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
             SetField(board, "dimensions", new GridDimensions(80, 40, 1));
@@ -96,8 +100,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 });
 
             var presenterObject = new GameObject("Runtime Board Presenter");
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             var cameraObject = new GameObject("Runtime Board Camera");
@@ -109,11 +113,13 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             camera.transform.SetPositionAndRotation(
                 new Vector3(100f, 100f, 100f),
                 Quaternion.Euler(60f, 0f, 0f));
-            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer = cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
 
             cameraObject.SetActive(true);
+            var cameraSystem = new BoardCameraSystem(framer);
+            cameraSystem.Start();
             yield return null;
             Vector3 cappedPosition = camera.transform.position;
             Assert.That(
@@ -155,9 +161,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(expandedPlane.Center.x, Is.EqualTo(40f).Within(0.0001f));
             Assert.That(expandedPlane.Center.z, Is.EqualTo(20f).Within(0.0001f));
             Assert.That(
-                framer.TryCalculatePosition(out Vector3 expectedPosition),
+                cameraSystem.TryCalculatePosition(out Vector3 expectedPosition),
                 Is.True);
-            Assert.That(framer.FrameNow(), Is.True);
+            Assert.That(cameraSystem.FrameNow(), Is.True);
             yield return null;
 
             Assert.That(
@@ -174,7 +180,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Framer_FocusRegionCellsNarrowFramingBelowFullFootprint()
+        public IEnumerator CameraSystem_FocusRegionCellsNarrowFramingBelowFullFootprint()
         {
             const int maxCameraGridXSpan = 0;
             const int maxCameraGridYSpan = 0;
@@ -258,13 +264,13 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(focusBounds.MaxZExclusive, Is.EqualTo(10));
 
             var fullFootprintPresenterObject = new GameObject("Full Footprint Board Presenter");
-            BoardScenePresenter fullFootprintPresenter =
-                fullFootprintPresenterObject.AddComponent<BoardScenePresenter>();
+            BoardView fullFootprintPresenter =
+                fullFootprintPresenterObject.AddComponent<BoardView>();
             SetField(fullFootprintPresenter, "board", fullFootprintBoard);
 
             var focusPresenterObject = new GameObject("Focus Region Board Presenter");
-            BoardScenePresenter focusPresenter =
-                focusPresenterObject.AddComponent<BoardScenePresenter>();
+            BoardView focusPresenter =
+                focusPresenterObject.AddComponent<BoardView>();
             SetField(focusPresenter, "board", focusRegionBoard);
 
             var fullFootprintCameraObject = new GameObject("Full Footprint Board Camera");
@@ -276,10 +282,10 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             fullFootprintCamera.transform.SetPositionAndRotation(
                 new Vector3(100f, 100f, 100f),
                 Quaternion.Euler(60f, 0f, 0f));
-            BoardCameraFramer fullFootprintFramer =
-                fullFootprintCameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView fullFootprintFramer =
+                fullFootprintCameraObject.AddComponent<BoardCameraView>();
             SetField(fullFootprintFramer, "targetCamera", fullFootprintCamera);
-            SetField(fullFootprintFramer, "boardPresenter", fullFootprintPresenter);
+            SetField(fullFootprintFramer, "boardView", fullFootprintPresenter);
 
             var focusCameraObject = new GameObject("Focus Region Board Camera");
             focusCameraObject.SetActive(false);
@@ -290,13 +296,17 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             focusCamera.transform.SetPositionAndRotation(
                 new Vector3(100f, 100f, 100f),
                 Quaternion.Euler(60f, 0f, 0f));
-            BoardCameraFramer focusFramer =
-                focusCameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView focusFramer =
+                focusCameraObject.AddComponent<BoardCameraView>();
             SetField(focusFramer, "targetCamera", focusCamera);
-            SetField(focusFramer, "boardPresenter", focusPresenter);
+            SetField(focusFramer, "boardView", focusPresenter);
 
             fullFootprintCameraObject.SetActive(true);
             focusCameraObject.SetActive(true);
+            var fullFootprintCameraSystem = new BoardCameraSystem(fullFootprintFramer);
+            var focusCameraSystem = new BoardCameraSystem(focusFramer);
+            fullFootprintCameraSystem.Start();
+            focusCameraSystem.Start();
             yield return null;
 
             Assert.That(
@@ -333,7 +343,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(
                 focusDistance,
                 Is.LessThan(fullFootprintDistance),
-                "A focus-narrowed region should require a tighter (closer) camera framing distance than the full footprint for the same FOV and rotation.");
+                "A focus-narrowed region should require a tighter (closer) camera "
+                + "framing distance than the full footprint for the same FOV and rotation.");
             Assert.That(
                 focusCamera.transform.position,
                 Is.Not.EqualTo(fullFootprintCamera.transform.position));
@@ -348,7 +359,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Framer_NoFocusCellsMatchesPreFeatureFullFootprintFraming()
+        public IEnumerator CameraSystem_NoFocusCellsMatchesFullFootprintFraming()
         {
             const float edgePaddingCells = 1f;
 
@@ -370,8 +381,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 });
 
             var presenterObject = new GameObject("Runtime Board Presenter");
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             var cameraObject = new GameObject("Runtime Board Camera");
@@ -383,9 +394,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             camera.transform.SetPositionAndRotation(
                 new Vector3(50f, 50f, 50f),
                 Quaternion.Euler(60f, 0f, 0f));
-            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer = cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
 
             // No cell carries CameraFocus, so the focus-region step must fall
             // back to exactly the pre-feature full-lowest-level-footprint
@@ -410,6 +421,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Is.True);
 
             cameraObject.SetActive(true);
+            var cameraSystem = new BoardCameraSystem(framer);
+            cameraSystem.Start();
             yield return null;
 
             Assert.That(
@@ -426,7 +439,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 plane.Center.z,
                 Is.EqualTo(expectedFramingBounds.CenterZ).Within(0.0001f));
 
-            Assert.That(framer.TryCalculatePosition(out Vector3 expectedPosition), Is.True);
+            Assert.That(
+                cameraSystem.TryCalculatePosition(out Vector3 expectedPosition),
+                Is.True);
             Assert.That(
                 Vector3.Distance(camera.transform.position, expectedPosition),
                 Is.LessThan(0.0001f));
@@ -438,7 +453,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Framer_AuthoredOffsetsPersistWhenProjectionChanges()
+        public IEnumerator CameraSystem_AuthoredOffsetsPersistWhenProjectionChanges()
         {
             BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
             SetField(board, "dimensions", new GridDimensions(12, 8, 1));
@@ -458,8 +473,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 });
 
             var presenterObject = new GameObject("Offset Board Presenter");
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             var cameraObject = new GameObject("Offset Board Camera");
@@ -470,10 +485,10 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             camera.nearClipPlane = 0.1f;
             Quaternion baseRotation = Quaternion.Euler(61f, 5f, 0f);
             camera.transform.rotation = baseRotation;
-            BoardCameraFramer framer =
-                cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer =
+                cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
 
             var localPositionOffset = new Vector3(1.5f, 0.25f, -1f);
             var localRotationOffset = new Vector3(2f, 6f, 0f);
@@ -482,8 +497,10 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 "cameraLocalRotationOffsetEuler",
                 localRotationOffset);
             SetField(framer, "cameraLocalPositionOffset", Vector3.zero);
+
+            var cameraSystem = new BoardCameraSystem(framer);
             Assert.That(
-                framer.TryCalculatePose(
+                cameraSystem.TryCalculatePose(
                     out Vector3 fittedPosition,
                     out Quaternion expectedRotation),
                 Is.True);
@@ -492,7 +509,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 "cameraLocalPositionOffset",
                 localPositionOffset);
             Assert.That(
-                framer.TryCalculatePose(
+                cameraSystem.TryCalculatePose(
                     out Vector3 offsetPosition,
                     out Quaternion offsetRotation),
                 Is.True);
@@ -511,6 +528,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Is.LessThan(0.0001f));
 
             cameraObject.SetActive(true);
+            cameraSystem.Start();
             yield return null;
             Assert.That(
                 Vector3.Distance(camera.transform.position, offsetPosition),
@@ -522,10 +540,11 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             camera.rect = new Rect(0f, 0f, 0.75f, 1f);
             camera.aspect = 4f / 3f;
             Assert.That(
-                framer.TryCalculatePose(
+                cameraSystem.TryCalculatePose(
                     out Vector3 reframedPosition,
                     out Quaternion reframedRotation),
                 Is.True);
+            cameraSystem.LateTick();
             yield return null;
             Assert.That(
                 Vector3.Distance(camera.transform.position, reframedPosition),

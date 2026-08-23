@@ -2,7 +2,8 @@ using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement
 {
-    public sealed class BoardScenePresenter : MonoBehaviour
+    [DisallowMultipleComponent]
+    public sealed class BoardView : MonoBehaviour, IBoardView
     {
         [SerializeField] private BoardDefinition board;
         [SerializeField] private Transform generatedRoot;
@@ -11,17 +12,13 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, HideInInspector] private string generatedGridPlaceableSignature;
 
         public BoardDefinition Board => board;
+        public Vector3 WorldOrigin => transform.position;
         public Transform GeneratedRoot => generatedRoot;
         public Transform GeneratedGridPlaceableRoot => generatedGridPlaceableRoot;
 
-        private void OnEnable()
+        public void ApplyVisibility(bool visible)
         {
-            ApplyVisibility();
-        }
-
-        public void ApplyVisibility()
-        {
-            if (board == null || generatedRoot == null)
+            if (generatedRoot == null)
             {
                 return;
             }
@@ -29,11 +26,7 @@ namespace TowerDefense3D.GridPlacement
             MeshRenderer[] renderers = generatedRoot.GetComponentsInChildren<MeshRenderer>(true);
             for (int index = 0; index < renderers.Length; index++)
             {
-                MeshRenderer renderer = renderers[index];
-                if (renderer != null)
-                {
-                    renderer.enabled = board.VisualizeInScene;
-                }
+                renderers[index].enabled = visible;
             }
         }
     }

@@ -181,7 +181,7 @@ namespace TowerDefense3D.GridPlacement.Editor
                     GridPlaceablePlacement placement = placements[index];
                     if (!IsWithinBounds(placement.Coordinate, dimensions)
                         || placement.Prefab == null
-                        || placement.Prefab.GetComponent<GridPlaceable>() == null)
+                        || placement.Prefab.GetComponent<GridPlaceableAuthoring>() == null)
                     {
                         continue;
                     }
@@ -210,7 +210,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             {
                 GridCell coordinate = ordered[index].Key;
                 GameObject prefab = ordered[index].Value;
-                GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+                GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
                 GridPlaceableTopology topology =
                     GridPlaceableTopology.Isolated;
                 GridPlaceableAxis axis = placeable.IsolatedAxis;

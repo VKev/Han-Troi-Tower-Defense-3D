@@ -135,7 +135,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (!IsValidGridPlaceablePrefab(prefab))
             {
                 throw new ArgumentException(
-                    "Grid placeable must be a prefab asset whose root has a GridPlaceable component.",
+                    "Grid placeable must be a prefab asset whose root has a GridPlaceableAuthoring component.",
                     nameof(prefab));
             }
 
@@ -319,13 +319,15 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (DuplicateGridPlaceableCoordinateCount > 0)
             {
                 issues.Add(
-                    $"{DuplicateGridPlaceableCoordinateCount} duplicate prefab coordinates will be replaced by their last entry.");
+                    $"{DuplicateGridPlaceableCoordinateCount} duplicate prefab coordinates "
+                    + "will be replaced by their last entry.");
             }
 
             if (InvalidGridPlaceableCount > 0)
             {
                 issues.Add(
-                    $"{InvalidGridPlaceableCount} prefab entries are missing a valid root GridPlaceable component and will be removed on save.");
+                    $"{InvalidGridPlaceableCount} prefab entries are missing a valid root "
+                    + "GridPlaceableAuthoring component and will be removed on save.");
             }
 
             int outsideCount = 0;
@@ -527,7 +529,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private static bool IsValidGridPlaceablePrefab(GameObject prefab) =>
             prefab != null
             && PrefabUtility.IsPartOfPrefabAsset(prefab)
-            && prefab.GetComponent<GridPlaceable>() != null;
+            && prefab.GetComponent<GridPlaceableAuthoring>() != null;
 
         private static bool IsWithinBounds(GridCell coordinate, GridDimensions dimensions) =>
             coordinate.X >= 0 && coordinate.X < dimensions.Width

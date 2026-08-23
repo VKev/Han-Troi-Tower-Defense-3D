@@ -110,7 +110,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     new BoardCellDefinition(new GridCell(2, 0, 0), BoardCellFlags.RoadEnd),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             BoardSceneSynchronizer.Synchronize(board);
@@ -155,7 +155,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     new BoardCellDefinition(new GridCell(0, 0, 0), BoardCellFlags.Road),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             BoardSceneSynchronizer.Synchronize(board);
@@ -184,7 +184,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     new BoardCellDefinition(new GridCell(0, 0, 0), BoardCellFlags.SupportsPlacement),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             BoardSceneSynchronizer.Synchronize(board);
@@ -208,7 +208,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     new BoardCellDefinition(new GridCell(0, 0, 0), BoardCellFlags.Road),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
             BoardSceneSynchronizer.Synchronize(board);
             Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);
@@ -237,7 +237,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     new BoardCellDefinition(new GridCell(1, 0, 0), BoardCellFlags.Road),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
             BoardSceneSynchronizer.Synchronize(board);
             Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);
@@ -273,7 +273,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 },
                 heightUnit);
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
             GameObject manual = new GameObject("Manual Child");
             manual.transform.SetParent(presenterObject.transform, false);
@@ -348,8 +348,8 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             presenterObject.transform.SetPositionAndRotation(
                 new Vector3(3f, 2f, -4f),
                 Quaternion.Euler(0f, 20f, 0f));
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             GameObject cameraObject = Track(new GameObject("Matching Camera"));
@@ -360,9 +360,9 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             camera.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
             Vector3 originalPosition = new Vector3(50f, 50f, 50f);
             camera.transform.position = originalPosition;
-            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer = cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
 
             BoardDefinition otherBoard = CreateBoard(
                 new GridDimensions(1, 1, 1),
@@ -374,16 +374,16 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                         BoardCellFlags.SupportsPlacement),
                 });
             GameObject otherPresenterObject = Track(new GameObject("Other Presenter"));
-            BoardScenePresenter otherPresenter =
-                otherPresenterObject.AddComponent<BoardScenePresenter>();
+            BoardView otherPresenter =
+                otherPresenterObject.AddComponent<BoardView>();
             SetField(otherPresenter, "board", otherBoard);
             GameObject otherCameraObject = Track(new GameObject("Other Camera"));
             Camera otherCamera = otherCameraObject.AddComponent<Camera>();
             otherCamera.transform.position = originalPosition;
-            BoardCameraFramer otherFramer =
-                otherCameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView otherFramer =
+                otherCameraObject.AddComponent<BoardCameraView>();
             SetField(otherFramer, "targetCamera", otherCamera);
-            SetField(otherFramer, "boardPresenter", otherPresenter);
+            SetField(otherFramer, "boardView", otherPresenter);
 
             BoardSceneSynchronizer.Synchronize(board);
 
@@ -427,8 +427,8 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                         BoardCellFlags.SupportsPlacement),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             GameObject cameraObject = Track(new GameObject("Offset Camera"));
@@ -439,10 +439,10 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             camera.transform.SetPositionAndRotation(
                 new Vector3(50f, 50f, 50f),
                 Quaternion.Euler(60f, 4f, 0f));
-            BoardCameraFramer framer =
-                cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer =
+                cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
             SetField(
                 framer,
                 "cameraLocalPositionOffset",
@@ -451,8 +451,10 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 framer,
                 "cameraLocalRotationOffsetEuler",
                 new Vector3(3f, 8f, 0f));
+
+            var cameraSystem = new BoardCameraSystem(framer);
             Assert.That(
-                framer.TryCalculatePose(
+                cameraSystem.TryCalculatePose(
                     out Vector3 expectedPosition,
                     out Quaternion expectedRotation),
                 Is.True);
@@ -486,8 +488,8 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             SetField(board, "maxCameraGridYSpan", 20);
 
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             GameObject cameraObject = Track(new GameObject("Board Camera"));
@@ -498,9 +500,11 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             camera.transform.SetPositionAndRotation(
                 new Vector3(100f, 100f, 100f),
                 Quaternion.Euler(60f, 0f, 0f));
-            BoardCameraFramer framer = cameraObject.AddComponent<BoardCameraFramer>();
+            BoardCameraView framer = cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
-            SetField(framer, "boardPresenter", presenter);
+            SetField(framer, "boardView", presenter);
+
+            var cameraSystem = new BoardCameraSystem(framer);
 
             BoardSceneSynchronizer.Synchronize(board);
             Vector3 initialPosition = camera.transform.position;
@@ -526,7 +530,9 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 Is.True);
             Assert.That(plane.Center.x, Is.EqualTo(40f).Within(0.0001f));
             Assert.That(plane.Center.z, Is.EqualTo(20f).Within(0.0001f));
-            Assert.That(framer.TryCalculatePosition(out Vector3 expectedPosition), Is.True);
+            Assert.That(
+                cameraSystem.TryCalculatePosition(out Vector3 expectedPosition),
+                Is.True);
 
             BoardSceneSynchronizer.Synchronize(board);
 
@@ -577,7 +583,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                         BoardCellFlags.CameraFocus),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             BoardSceneSynchronizer.Synchronize(board);
@@ -620,7 +626,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                         BoardCellFlags.CameraFocus),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             BoardSceneSynchronizer.Synchronize(board);
@@ -661,7 +667,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                         BoardCellFlags.SupportsPlacement),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
 
             BoardSceneSynchronizer.Synchronize(board);
@@ -687,7 +693,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                         BoardCellFlags.CameraFocus),
                 });
             GameObject presenterObject = Track(new GameObject("Board Presenter"));
-            BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
             BoardSceneSynchronizer.Synchronize(board);
             Transform root = presenterObject.transform.Find(BoardSceneSynchronizer.GeneratedRootName);

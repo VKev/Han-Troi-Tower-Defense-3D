@@ -16,6 +16,8 @@ namespace TowerDefense3D.GameFlow.Editor
         public const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string ApplicationLifetimeScopeTypeName =
             "TowerDefense3D.GameFlow.ApplicationLifetimeScope";
+        private const string LevelLifetimeScopeTypeName =
+            "TowerDefense3D.GameFlow.LevelLifetimeScope";
 
         [MenuItem("Tools/Tower Defense/Validate Game Flow")]
         public static void ValidateFromMenu()
@@ -81,7 +83,8 @@ namespace TowerDefense3D.GameFlow.Editor
                 if (!enabledBuildPaths.Contains(entry.ScenePath))
                 {
                     errors.Add(
-                        $"Level {entry.LevelNumber} scene '{entry.ScenePath}' is not enabled in the player scene list.");
+                        $"Level {entry.LevelNumber} scene '{entry.ScenePath}' "
+                        + "is not enabled in the player scene list.");
                 }
 
                 if (AssetDatabase.LoadAssetAtPath<SceneAsset>(entry.ScenePath) == null)
@@ -127,6 +130,13 @@ namespace TowerDefense3D.GameFlow.Editor
                     {
                         errors.Add($"Bootstrap must not contain LevelSceneContext; found {levelContexts}.");
                     }
+
+                    int levelLifetimeScopes = CountComponentsByFullName(scene, LevelLifetimeScopeTypeName);
+                    if (levelLifetimeScopes != 0)
+                    {
+                        errors.Add(
+                            $"Bootstrap must not contain LevelLifetimeScope; found {levelLifetimeScopes}.");
+                    }
                 },
                 errors);
         }
@@ -141,6 +151,10 @@ namespace TowerDefense3D.GameFlow.Editor
                         scene,
                         $"LevelSceneContext for Level {entry.LevelNumber}",
                         errors);
+                    RequireExactlyOneByFullName(scene, LevelLifetimeScopeTypeName, "LevelLifetimeScope", errors);
+                    ValidateLevelLifetimeScope(scene, entry.LevelNumber, errors);
+                    RequireExactlyOne<BoardView>(scene, "BoardView", errors);
+                    RequireExactlyOne<BoardCameraView>(scene, "BoardCameraView", errors);
                     RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);
                     RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);
                     RequireExactlyOne<TowerSimulationDriver>(scene, "TowerSimulationDriver", errors);
@@ -171,7 +185,8 @@ namespace TowerDefense3D.GameFlow.Editor
                     if (context != null && context.LevelNumber != entry.LevelNumber)
                     {
                         errors.Add(
-                            $"Level {entry.LevelNumber} catalog entry does not match authored context {context.LevelNumber}.");
+                            $"Level {entry.LevelNumber} catalog entry does not match "
+                            + $"authored context {context.LevelNumber}.");
                     }
 
                     ValidateTowerNetworkObject(scene, entry.LevelNumber, errors);
@@ -197,6 +212,23 @@ namespace TowerDefense3D.GameFlow.Editor
                 errors.Add(
                     $"Level {levelNumber} must keep placement, simulation, tower input, link, and projectile "
                     + "components together on the TowerNetworkSceneAdapter object.");
+            }
+        }
+
+        private static void ValidateLevelLifetimeScope(Scene scene, int levelNumber, List<string> errors)
+        {
+            Component lifetimeScope = FindFirstComponentByFullName(scene, LevelLifetimeScopeTypeName);
+            if (lifetimeScope == null)
+            {
+                return;
+            }
+
+            SerializedProperty autoRun = new SerializedObject(lifetimeScope).FindProperty("autoRun");
+            if (autoRun.boolValue)
+            {
+                errors.Add(
+                    $"Level {levelNumber} LevelLifetimeScope must disable Auto Run; "
+                    + "LevelLoadSequence owns its parented Build call.");
             }
         }
 
@@ -230,6 +262,19 @@ namespace TowerDefense3D.GameFlow.Editor
             where T : Component
         {
             int count = CountComponents<T>(scene);
+            if (count != 1)
+            {
+                errors.Add($"Scene '{scene.path}' requires exactly one {label}; found {count}.");
+            }
+        }
+
+        private static void RequireExactlyOneByFullName(
+            Scene scene,
+            string fullName,
+            string label,
+            List<string> errors)
+        {
+            int count = CountComponentsByFullName(scene, fullName);
             if (count != 1)
             {
                 errors.Add($"Scene '{scene.path}' requires exactly one {label}; found {count}.");
@@ -284,6 +329,26 @@ namespace TowerDefense3D.GameFlow.Editor
             }
 
             return count;
+        }
+
+        private static Component FindFirstComponentByFullName(Scene scene, string fullName)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Component[] components = roots[rootIndex].GetComponentsInChildren<Component>(true);
+                for (int componentIndex = 0; componentIndex < components.Length; componentIndex++)
+                {
+                    Component component = components[componentIndex];
+                    if (component != null
+                        && string.Equals(component.GetType().FullName, fullName, StringComparison.Ordinal))
+                    {
+                        return component;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

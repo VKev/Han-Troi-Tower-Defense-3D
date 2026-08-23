@@ -2,6 +2,8 @@
     "name": "TowerDefense3D.GridPlacement.BoardAuthoring.Editor",
     "rootNamespace": "TowerDefense3D.GridPlacement.Editor",
     "references": [
+        "TowerDefense3D.System.Runtime",
+        "TowerDefense3D.Components.Runtime",
         "GUID:6fb291d48ca5409b840b801244fe31d9"
     ],
     "includePlatforms": [

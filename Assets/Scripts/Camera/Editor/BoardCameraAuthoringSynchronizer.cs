@@ -10,32 +10,39 @@ namespace TowerDefense3D.GridPlacement.Editor
             "Board camera framing skipped because the synchronized Board has "
             + "no valid playable footprint or Camera setup.";
 
-        internal static void Synchronize(BoardScenePresenter presenter)
+        internal static void Synchronize(BoardView boardView)
         {
-            BoardCameraFramer[] framers =
-                Resources.FindObjectsOfTypeAll<BoardCameraFramer>();
-            for (int index = 0; index < framers.Length; index++)
+            BoardCameraView[] cameraViews =
+                Resources.FindObjectsOfTypeAll<BoardCameraView>();
+            for (int index = 0; index < cameraViews.Length; index++)
             {
-                BoardCameraFramer framer = framers[index];
-                if (framer == null || framer.BoardPresenter != presenter
-                    || EditorUtility.IsPersistent(framer)
-                    || !framer.gameObject.scene.IsValid()
-                    || !framer.gameObject.scene.isLoaded)
+                BoardCameraView cameraView = cameraViews[index];
+                if (cameraView.BoardView != boardView
+                    || EditorUtility.IsPersistent(cameraView)
+                    || !cameraView.gameObject.scene.IsValid()
+                    || !cameraView.gameObject.scene.isLoaded)
                 {
                     continue;
                 }
 
-                if (!framer.TryCalculatePose(
+                if (cameraView.TargetCamera == null || boardView.Board == null)
+                {
+                    Debug.LogWarning(InvalidCameraFramingWarning, cameraView);
+                    continue;
+                }
+
+                var cameraSystem = new BoardCameraSystem(cameraView);
+                if (!cameraSystem.TryCalculatePose(
                         out Vector3 position,
                         out Quaternion rotation))
                 {
                     Debug.LogWarning(
                         InvalidCameraFramingWarning,
-                        framer);
+                        cameraView);
                     continue;
                 }
 
-                Transform cameraTransform = framer.TargetCamera.transform;
+                Transform cameraTransform = cameraView.TargetCamera.transform;
                 if ((cameraTransform.position - position).sqrMagnitude
                         <= 0.000001f
                     && Quaternion.Angle(cameraTransform.rotation, rotation)
@@ -46,7 +53,7 @@ namespace TowerDefense3D.GridPlacement.Editor
 
                 Undo.RecordObject(cameraTransform, "Frame Board Camera");
                 cameraTransform.SetPositionAndRotation(position, rotation);
-                EditorSceneManager.MarkSceneDirty(framer.gameObject.scene);
+                EditorSceneManager.MarkSceneDirty(cameraView.gameObject.scene);
             }
         }
     }

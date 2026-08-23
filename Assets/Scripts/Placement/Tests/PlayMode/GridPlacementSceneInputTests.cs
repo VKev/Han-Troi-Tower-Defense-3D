@@ -27,9 +27,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             GameObject placedRoot = GameObject.Find("Grid Placement/Placed Towers");
             GameObject boardOrigin = GameObject.Find("Grid Placement/Board Origin");
             Camera camera = Camera.main;
-            BoardScenePresenter presenter =
+            BoardView presenter =
                 boardOrigin != null
-                    ? boardOrigin.GetComponent<BoardScenePresenter>()
+                    ? boardOrigin.GetComponent<BoardView>()
                     : null;
 
             Assert.That(controller, Is.Not.Null);
@@ -95,9 +95,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             GameObject placedRoot = GameObject.Find("Grid Placement/Placed Towers");
             GameObject boardOrigin = GameObject.Find("Grid Placement/Board Origin");
             Camera camera = Camera.main;
-            BoardScenePresenter presenter =
+            BoardView presenter =
                 boardOrigin != null
-                    ? boardOrigin.GetComponent<BoardScenePresenter>()
+                    ? boardOrigin.GetComponent<BoardView>()
                     : null;
 
             Assert.That(controller, Is.Not.Null);
@@ -164,7 +164,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         }
 
         private static bool TryFindValidPlacementScreenPoint(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             GridPlacementPresenter controller,
             Camera camera,
             out Vector2 screenPoint)

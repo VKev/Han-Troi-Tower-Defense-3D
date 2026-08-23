@@ -58,7 +58,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         public void Planner_InfersStraightAxesAndUsesCornerVariant()
         {
             GameObject prefab = LoadPrefab();
-            GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+            GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
             BoardDefinition board = CreateBoard(
                 new GridDimensions(6, 5, 1),
                 Array.Empty<BoardCellDefinition>(),
@@ -99,7 +99,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         public void Planner_ResolvesEveryCornerAndJunctionRotation()
         {
             GameObject prefab = LoadPrefab();
-            GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+            GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
 
             AssertTopology(
                 prefab,
@@ -178,7 +178,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         public void TopologyPrefabs_ReuseOriginalMaterialWithoutPaintMarkers()
         {
             GameObject prefab = LoadPrefab();
-            GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+            GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
             Material material = prefab
                 .GetComponentInChildren<Renderer>(true)
                 .sharedMaterial;
@@ -192,7 +192,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         public void CornerPrefab_FillsInsideBendAndMatchesStraightFadeWidth()
         {
             GameObject prefab = LoadPrefab();
-            GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+            GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
             Mesh mesh = placeable.CornerPrefab
                 .GetComponent<MeshFilter>()
                 .sharedMesh;
@@ -233,7 +233,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         public void TJunctionPrefab_CoversThroughRoadAndFadesOnlyMissingSide()
         {
             GameObject prefab = LoadPrefab();
-            GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+            GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
             Mesh mesh = placeable.ThreeWayPrefab
                 .GetComponent<MeshFilter>()
                 .sharedMesh;
@@ -268,7 +268,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         public void Synchronizer_RendersBoardBeforeAlwaysVisiblePrefabArt()
         {
             GameObject prefab = LoadPrefab();
-            GridPlaceable placeable = prefab.GetComponent<GridPlaceable>();
+            GridPlaceableAuthoring placeable = prefab.GetComponent<GridPlaceableAuthoring>();
             Renderer[] prefabRenderers =
                 prefab.GetComponentsInChildren<Renderer>(true);
             BoardDefinition board = CreateBoard(
@@ -281,7 +281,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 },
                 new[] { Placement(1, 0, 0, prefab) },
                 visualize: false);
-            BoardScenePresenter presenter = CreatePresenter(board);
+            BoardView presenter = CreatePresenter(board);
 
             BoardSceneSynchronizer.Synchronize(board);
 
@@ -349,7 +349,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 new GridDimensions(1, 1, 1),
                 new[] { Cell(0, 0, 0, BoardCellFlags.Road) },
                 new[] { Placement(0, 0, 0, prefab) });
-            BoardScenePresenter presenter = CreatePresenter(board);
+            BoardView presenter = CreatePresenter(board);
 
             BoardSceneSynchronizer.Synchronize(board);
             Assert.That(presenter.GeneratedGridPlaceableRoot, Is.Not.Null);
@@ -455,12 +455,12 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             return board;
         }
 
-        private BoardScenePresenter CreatePresenter(BoardDefinition board)
+        private BoardView CreatePresenter(BoardDefinition board)
         {
             GameObject presenterObject =
                 Track(new GameObject("Grid Placeable Test Presenter"));
-            BoardScenePresenter presenter =
-                presenterObject.AddComponent<BoardScenePresenter>();
+            BoardView presenter =
+                presenterObject.AddComponent<BoardView>();
             SetField(presenter, "board", board);
             return presenter;
         }
@@ -470,7 +470,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             GameObject prefab =
                 AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null);
-            Assert.That(prefab.GetComponent<GridPlaceable>(), Is.Not.Null);
+            Assert.That(prefab.GetComponent<GridPlaceableAuthoring>(), Is.Not.Null);
             return prefab;
         }
 
@@ -553,7 +553,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             int expectedVertexCount)
         {
             Assert.That(prefab, Is.Not.Null);
-            Assert.That(prefab.GetComponent<GridPlaceable>(), Is.Null);
+            Assert.That(prefab.GetComponent<GridPlaceableAuthoring>(), Is.Null);
             Assert.That(prefab.GetComponentsInChildren<Collider>(true), Is.Empty);
 
             MeshFilter filter = prefab.GetComponent<MeshFilter>();

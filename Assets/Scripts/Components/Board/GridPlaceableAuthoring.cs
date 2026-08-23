@@ -2,30 +2,8 @@ using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement
 {
-    public enum GridPlaceableRotationMode
-    {
-        Fixed,
-        StraightAlongMatchingNeighbors,
-    }
-
-    public enum GridPlaceableAxis
-    {
-        X,
-        Z,
-    }
-
-    public enum GridPlaceableTopology
-    {
-        Isolated,
-        End,
-        Straight,
-        Corner,
-        ThreeWay,
-        FourWay,
-    }
-
     [DisallowMultipleComponent]
-    public sealed class GridPlaceable : MonoBehaviour
+    public sealed class GridPlaceableAuthoring : MonoBehaviour
     {
         [SerializeField] private string displayName = "Grid Placeable";
         [SerializeField] private Vector3 cellOffset;
@@ -53,27 +31,15 @@ namespace TowerDefense3D.GridPlacement
         public GameObject FourWayPrefab => fourWayPrefab;
         public int RendererSortingOrder => rendererSortingOrder;
 
-        public GameObject GetVisualPrefab(GridPlaceableTopology topology)
-        {
-            GameObject variant;
-            switch (topology)
-            {
-                case GridPlaceableTopology.Corner:
-                    variant = cornerPrefab;
-                    break;
-                case GridPlaceableTopology.ThreeWay:
-                    variant = threeWayPrefab;
-                    break;
-                case GridPlaceableTopology.FourWay:
-                    variant = fourWayPrefab;
-                    break;
-                default:
-                    return gameObject;
-            }
+        public GridPlaceableDefinition Definition =>
+            new GridPlaceableDefinition(
+                gameObject,
+                cornerPrefab,
+                threeWayPrefab,
+                fourWayPrefab,
+                hideAtCornerOrJunction);
 
-            return variant != null || !hideAtCornerOrJunction
-                ? variant != null ? variant : gameObject
-                : null;
-        }
+        public GameObject GetVisualPrefab(GridPlaceableTopology topology) =>
+            Definition.GetVisualPrefab(topology);
     }
 }

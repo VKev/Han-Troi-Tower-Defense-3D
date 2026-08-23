@@ -11,7 +11,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         {
             BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
             GameObject boardRoot = new GameObject("Board Root");
-            GameObject presenterObject = new GameObject("Board Scene Presenter");
+            GameObject viewObject = new GameObject("Board View");
 
             try
             {
@@ -26,11 +26,12 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Assert.That(renderer.enabled, Is.True);
                 Assert.That(collider.enabled, Is.True);
 
-                BoardScenePresenter presenter = presenterObject.AddComponent<BoardScenePresenter>();
-                SetPrivateField(presenter, "board", board);
-                SetPrivateField(presenter, "generatedRoot", boardRoot.transform);
+                BoardView view = viewObject.AddComponent<BoardView>();
+                SetPrivateField(view, "board", board);
+                SetPrivateField(view, "generatedRoot", boardRoot.transform);
 
-                presenter.ApplyVisibility();
+                var boardSystem = new BoardSystem(view);
+                boardSystem.Start();
 
                 Assert.That(renderer.enabled, Is.False);
                 Assert.That(collider.enabled, Is.True);
@@ -43,7 +44,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             }
             finally
             {
-                Object.DestroyImmediate(presenterObject);
+                Object.DestroyImmediate(viewObject);
                 Object.DestroyImmediate(boardRoot);
                 Object.DestroyImmediate(board);
             }

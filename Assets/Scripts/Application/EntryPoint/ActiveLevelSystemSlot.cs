@@ -36,6 +36,16 @@ namespace TowerDefense3D.GameFlow
             activeSystems = null;
         }
 
+        internal void DetachForScopeTeardown(LevelSystemGroup systems)
+        {
+            if (activeSystems == null)
+            {
+                return;
+            }
+
+            Detach(systems);
+        }
+
         public void Tick(float deltaTime)
         {
             activeSystems?.Tick(deltaTime);

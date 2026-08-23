@@ -50,8 +50,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             }
 
             BoardGeometryPlan plan = BoardGeometryPlanner.Create(board);
-            BoardScenePresenter[] presenters =
-                Resources.FindObjectsOfTypeAll<BoardScenePresenter>();
+            BoardView[] presenters =
+                Resources.FindObjectsOfTypeAll<BoardView>();
 
             Undo.IncrementCurrentGroup();
             int undoGroup = Undo.GetCurrentGroup();
@@ -61,7 +61,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             {
                 for (int index = 0; index < presenters.Length; index++)
                 {
-                    BoardScenePresenter presenter = presenters[index];
+                    BoardView presenter = presenters[index];
                     if (!IsLoadedMatch(presenter, board))
                     {
                         continue;
@@ -77,7 +77,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool IsLoadedMatch(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             BoardDefinition board)
         {
             if (presenter == null || presenter.Board != board
@@ -91,7 +91,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static void SynchronizePresenter(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             BoardDefinition board,
             BoardGeometryPlan plan)
         {
@@ -106,7 +106,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool SynchronizeDebugGeometry(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             BoardDefinition board,
             BoardGeometryPlan plan)
         {
@@ -182,7 +182,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool SynchronizeGridPlaceables(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             BoardGeometryPlan plan)
         {
             Transform root = FindOwnedGridPlaceableRoot(presenter);
@@ -258,7 +258,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool HasMatchingGridPlaceables(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             Transform root,
             BoardGeometryPlan plan,
             string signature)
@@ -452,7 +452,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool HasMatchingGeometry(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             Transform root,
             BoardGeometryPlan plan)
         {
@@ -506,7 +506,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             return true;
         }
 
-        private static Transform FindOwnedRoot(BoardScenePresenter presenter)
+        private static Transform FindOwnedRoot(BoardView presenter)
         {
             Transform presenterTransform = presenter.transform;
             Transform assignedRoot = presenter.GeneratedRoot;
@@ -529,7 +529,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static Transform FindOwnedGridPlaceableRoot(
-            BoardScenePresenter presenter)
+            BoardView presenter)
         {
             Transform presenterTransform = presenter.transform;
             Transform assignedRoot =
@@ -821,7 +821,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             return changed;
         }
 
-        private static string ReadGeneratedSignature(BoardScenePresenter presenter)
+        private static string ReadGeneratedSignature(BoardView presenter)
         {
             var serializedPresenter = new SerializedObject(presenter);
             serializedPresenter.Update();
@@ -831,7 +831,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static string ReadGeneratedGridPlaceableSignature(
-            BoardScenePresenter presenter)
+            BoardView presenter)
         {
             var serializedPresenter =
                 new SerializedObject(presenter);
@@ -845,7 +845,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool AssignGeneratedState(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             Transform root,
             string signature)
         {
@@ -879,7 +879,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         private static bool AssignGridPlaceableState(
-            BoardScenePresenter presenter,
+            BoardView presenter,
             Transform root,
             string signature)
         {

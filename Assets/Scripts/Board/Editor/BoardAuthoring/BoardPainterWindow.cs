@@ -71,7 +71,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private bool overlayCellBrushActive;
         private bool cameraFocusAllowed;
         private OverlayPaintMode selectedOverlayMode = OverlayPaintMode.Prefab;
-        private GridPlaceable selectedGridPlaceable;
+        private GridPlaceableAuthoring selectedGridPlaceable;
         private GridCell lastPaintedCell;
         private int gridControlId;
 
@@ -350,10 +350,10 @@ namespace TowerDefense3D.GridPlacement.Editor
         private void DrawGridPlaceablePanel()
         {
             EditorGUI.BeginChangeCheck();
-            GridPlaceable selected = (GridPlaceable)EditorGUILayout.ObjectField(
+            GridPlaceableAuthoring selected = (GridPlaceableAuthoring)EditorGUILayout.ObjectField(
                 "Prefab",
                 selectedGridPlaceable,
-                typeof(GridPlaceable),
+                typeof(GridPlaceableAuthoring),
                 false);
             if (EditorGUI.EndChangeCheck())
             {
@@ -365,7 +365,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (selectedGridPlaceable == null)
             {
                 EditorGUILayout.HelpBox(
-                    "Choose a prefab asset whose root has a GridPlaceable component.",
+                    "Choose a prefab asset whose root has a GridPlaceableAuthoring component.",
                     MessageType.Info);
             }
 
@@ -952,12 +952,12 @@ namespace TowerDefense3D.GridPlacement.Editor
         }
 
         internal static bool IsValidGridPlaceableSelection(
-            GridPlaceable candidate) =>
+            GridPlaceableAuthoring candidate) =>
             candidate != null
             && candidate.transform.parent == null
             && PrefabUtility.IsPartOfPrefabAsset(candidate.gameObject);
 
-        private static GridPlaceable FindFirstGridPlaceable()
+        private static GridPlaceableAuthoring FindFirstGridPlaceable()
         {
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
             for (int index = 0; index < prefabGuids.Length; index++)
@@ -966,8 +966,8 @@ namespace TowerDefense3D.GridPlacement.Editor
                     prefabGuids[index]);
                 GameObject prefab =
                     AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                GridPlaceable candidate =
-                    prefab != null ? prefab.GetComponent<GridPlaceable>() : null;
+                GridPlaceableAuthoring candidate =
+                    prefab != null ? prefab.GetComponent<GridPlaceableAuthoring>() : null;
                 if (IsValidGridPlaceableSelection(candidate))
                 {
                     return candidate;

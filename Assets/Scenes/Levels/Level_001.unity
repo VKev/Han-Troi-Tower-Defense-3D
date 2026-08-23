@@ -727,6 +727,7 @@ GameObject:
   m_Component:
   - component: {fileID: 180353321}
   - component: {fileID: 180353320}
+  - component: {fileID: 180353322}
   m_Layer: 0
   m_Name: Level Context
   m_TagString: Untagged
@@ -766,6 +767,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &180353322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 180353319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54edd1f14bf6c614e88a25bc75a1b258, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TowerDefense3D.Application.Runtime::TowerDefense3D.GameFlow.LevelLifetimeScope
+  parentReference:
+    TypeName:
+  autoRun: 0
+  autoInjectGameObjects: []
 --- !u!1 &200052385
 GameObject:
   m_ObjectHideFlags: 0
@@ -1111,9 +1128,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c0f45e53887f284886aae836cf128f9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.BoardCameraFramer
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GridPlacement.BoardCameraView
   targetCamera: {fileID: 330585545}
-  boardPresenter: {fileID: 1246524274}
+  boardView: {fileID: 1246524274}
   edgePaddingCells: 1
   compositionRectInSafeArea:
     serializedVersion: 2
@@ -4863,11 +4880,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38107d58603a5374eb53ce440795261b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.BoardScenePresenter
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GridPlacement.BoardView
   board: {fileID: 11400000, guid: 8ef56fec42b3a114ab419089870294a7, type: 2}
-  generatedRoot: {fileID: 200052386}
+  generatedRoot: {fileID: 0}
   generatedSignature: 955db63593ea6f8e4d1f51871038a9ac72cb4dce58f5981c79eb1b1ca3ac52a0
-  generatedGridPlaceableRoot: {fileID: 143020418}
+  generatedGridPlaceableRoot: {fileID: 0}
   generatedGridPlaceableSignature: e35e2d09d9fc6c12a21c2fc45f6b8d5be005d40cf84284d07bace1fa0d322a0d
 --- !u!1001 &1246814500
 PrefabInstance:

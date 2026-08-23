@@ -2,6 +2,7 @@
     "name": "TowerDefense3D.GridPlacement.Runtime",
     "rootNamespace": "TowerDefense3D.GridPlacement",
     "references": [
+        "TowerDefense3D.System.Runtime",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],
