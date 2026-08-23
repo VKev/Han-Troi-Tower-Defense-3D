@@ -170,7 +170,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 527752829}
-  - component: {fileID: 527752825}
   - component: {fileID: 527752830}
   - component: {fileID: 527752831}
   m_Layer: 0
@@ -180,18 +179,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &527752825
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 527752824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95289ce2fb66c9b46b768ff602873427, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TowerDefense3D.Mobile.MobileFrameRatePolicy
 --- !u!4 &527752829
 Transform:
   m_ObjectHideFlags: 0
@@ -218,7 +205,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9472fb93659948d68b0b1cebde3817dd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.ApplicationLifetimeScope
+  m_EditorClassIdentifier: TowerDefense3D.Application.Runtime::TowerDefense3D.GameFlow.ApplicationLifetimeScope
   parentReference:
     TypeName: 
   autoRun: 1

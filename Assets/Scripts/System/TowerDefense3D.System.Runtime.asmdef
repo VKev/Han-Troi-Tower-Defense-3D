@@ -1,0 +1,14 @@
+{
+    "name": "TowerDefense3D.System.Runtime",
+    "rootNamespace": "TowerDefense3D",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

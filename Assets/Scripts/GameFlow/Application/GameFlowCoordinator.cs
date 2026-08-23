@@ -1,6 +1,5 @@
 using System;
 using TowerDefense3D.Towers;
-using VContainer.Unity;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -11,9 +10,9 @@ namespace TowerDefense3D.GameFlow
     }
 
     /// <summary>
-    /// Sole application entry point and coordinator for focused application flows.
+    /// Coordinates focused application flows under ApplicationEntryPoint.
     /// </summary>
-    public sealed class GameFlowCoordinator : IStartable, IDisposable
+    public sealed class GameFlowCoordinator
     {
         private readonly IApplicationUIController applicationUi;
         private readonly TowerNetworkManager towerNetworkManager;

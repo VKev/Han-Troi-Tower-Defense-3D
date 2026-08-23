@@ -16,7 +16,6 @@ namespace TowerDefense3D.GameFlow.Editor
         public const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string ApplicationLifetimeScopeTypeName =
             "TowerDefense3D.GameFlow.ApplicationLifetimeScope";
-        private const string MobileFrameRatePolicyTypeName = "TowerDefense3D.Mobile.MobileFrameRatePolicy";
 
         [MenuItem("Tools/Tower Defense/Validate Game Flow")]
         public static void ValidateFromMenu()
@@ -120,13 +119,8 @@ namespace TowerDefense3D.GameFlow.Editor
 
                     RequireExactlyOne<LevelSceneLoader>(scene, "LevelSceneLoader", errors);
                     RequireExactlyOne<ApplicationUIManager>(scene, "ApplicationUIManager", errors);
+                    RequireExactlyOne<SafeAreaView>(scene, "SafeAreaView", errors);
                     RequireExactlyOne<EventSystem>(scene, "EventSystem", errors);
-
-                    int mobilePolicies = CountComponentsByFullName(scene, MobileFrameRatePolicyTypeName);
-                    if (mobilePolicies != 1)
-                    {
-                        errors.Add($"Bootstrap requires exactly one MobileFrameRatePolicy; found {mobilePolicies}.");
-                    }
 
                     int levelContexts = CountComponents<LevelSceneContext>(scene);
                     if (levelContexts != 0)
@@ -153,6 +147,7 @@ namespace TowerDefense3D.GameFlow.Editor
                     RequireExactlyOne<TowerNetworkInputController>(scene, "TowerNetworkInputController", errors);
                     RequireExactlyOne<TowerLinkPresenter>(scene, "TowerLinkPresenter", errors);
                     RequireExactlyOne<TowerProjectilePresenter>(scene, "TowerProjectilePresenter", errors);
+                    RequireExactlyOne<SafeAreaView>(scene, "SafeAreaView", errors);
 
                     int eventSystems = CountComponents<EventSystem>(scene);
                     if (eventSystems != 0)
@@ -165,12 +160,11 @@ namespace TowerDefense3D.GameFlow.Editor
                         ApplicationLifetimeScopeTypeName);
                     int loaders = CountComponents<LevelSceneLoader>(scene);
                     int applicationUiManagers = CountComponents<ApplicationUIManager>(scene);
-                    int mobilePolicies = CountComponentsByFullName(scene, MobileFrameRatePolicyTypeName);
-                    if (lifetimeScopes + loaders + applicationUiManagers + mobilePolicies != 0)
+                    if (lifetimeScopes + loaders + applicationUiManagers != 0)
                     {
                         errors.Add(
                             $"Level {entry.LevelNumber} contains Bootstrap-owned application services "
-                            + $"(scope={lifetimeScopes}, loader={loaders}, appUI={applicationUiManagers}, mobile={mobilePolicies}).");
+                            + $"(scope={lifetimeScopes}, loader={loaders}, appUI={applicationUiManagers}).");
                     }
 
                     LevelSceneContext context = FindFirstComponent<LevelSceneContext>(scene);

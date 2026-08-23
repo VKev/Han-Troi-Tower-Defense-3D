@@ -81,6 +81,11 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
             Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
+            Assert.That(CountLoaded<SafeAreaView>(), Is.EqualTo(1));
+            Assert.That(
+                Application.targetFrameRate,
+                Is.EqualTo(TowerDefense3D.Mobile.FramePacingSystem.TargetFrameRate));
+            Assert.That(QualitySettings.vSyncCount, Is.Zero);
             Assert.That(GetLevelButtonLabel(1), Does.StartWith("Play "));
             Assert.That(GetLevelButtonLabel(2), Does.StartWith("Unlock "));
             yield break;
@@ -166,7 +171,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(selectors[0].Definition, Is.Not.Null);
             Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);
-            Assert.That(manager.GetComponentInChildren<SafeAreaFitter>(true), Is.Not.Null);
+            Assert.That(manager.GetComponentInChildren<SafeAreaView>(true), Is.Not.Null);
         }
 
         private static Button GetCancelPlacementButton(GameplayUIManager manager)

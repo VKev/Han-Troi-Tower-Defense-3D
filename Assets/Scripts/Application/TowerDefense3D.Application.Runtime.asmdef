@@ -1,15 +1,14 @@
 {
-    "name": "TowerDefense3D.GameFlow.Editor",
-    "rootNamespace": "TowerDefense3D.GameFlow.Editor",
+    "name": "TowerDefense3D.Application.Runtime",
+    "rootNamespace": "TowerDefense3D",
     "references": [
+        "TowerDefense3D.System.Runtime",
+        "TowerDefense3D.Components.Runtime",
         "TowerDefense3D.GameFlow.Runtime",
         "TowerDefense3D.GridPlacement.Runtime",
-        "TowerDefense3D.Components.Runtime",
-        "Unity.ugui"
+        "VContainer"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

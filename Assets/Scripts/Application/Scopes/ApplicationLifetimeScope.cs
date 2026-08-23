@@ -1,4 +1,6 @@
 using System;
+using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Mobile;
 using TowerDefense3D.Towers;
 using UnityEngine;
 using VContainer;
@@ -47,7 +49,14 @@ namespace TowerDefense3D.GameFlow
             builder.Register<LevelMenuFlow>(Lifetime.Singleton);
             builder.Register<LevelTransitionFlow>(Lifetime.Singleton);
             builder.Register<SaveRecoveryFlow>(Lifetime.Singleton);
-            builder.RegisterEntryPoint<GameFlowCoordinator>();
+            builder.Register<GameFlowCoordinator>(Lifetime.Singleton);
+            builder.Register<FramePacingSystem>(Lifetime.Singleton);
+            builder.RegisterComponentInHierarchy<SafeAreaView>()
+                .As<ISafeAreaView>();
+            builder.Register<SafeAreaSystem>(Lifetime.Singleton);
+            builder.Register<ApplicationSystemGroup>(Lifetime.Singleton);
+            builder.Register<ActiveLevelSystemSlot>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<ApplicationEntryPoint>();
         }
     }
 }

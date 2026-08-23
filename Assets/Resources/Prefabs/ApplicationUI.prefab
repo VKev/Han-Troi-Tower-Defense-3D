@@ -393,7 +393,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce7822bbb6abff742a6933012ae60a7e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.SafeAreaFitter
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GridPlacement.SafeAreaView
   target: {fileID: 1078669720656269438}
 --- !u!1 &3282206375984452704
 GameObject:

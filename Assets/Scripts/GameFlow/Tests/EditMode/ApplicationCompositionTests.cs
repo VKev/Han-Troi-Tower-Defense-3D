@@ -46,13 +46,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         [Test]
         public void ApplicationComposition_UsesOnePlainCSharpEntryPoint()
         {
-            var applicationStartables = new List<Type>();
-            Type[] runtimeTypes = typeof(GameFlowCoordinator).Assembly.GetTypes();
+            var applicationEntryPoints = new List<Type>();
+            Type[] runtimeTypes = typeof(ApplicationEntryPoint).Assembly.GetTypes();
             for (int index = 0; index < runtimeTypes.Length; index++)
             {
-                if (ImplementsInterface(runtimeTypes[index], "VContainer.Unity.IStartable"))
+                if (ImplementsInterface(runtimeTypes[index], "VContainer.Unity.IAsyncStartable")
+                    || ImplementsInterface(runtimeTypes[index], "VContainer.Unity.IStartable")
+                    || ImplementsInterface(runtimeTypes[index], "VContainer.Unity.ITickable")
+                    || ImplementsInterface(runtimeTypes[index], "VContainer.Unity.ILateTickable"))
                 {
-                    applicationStartables.Add(runtimeTypes[index]);
+                    applicationEntryPoints.Add(runtimeTypes[index]);
                 }
             }
 
@@ -60,8 +63,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 typeof(ApplicationLifetimeScope).BaseType?.FullName,
                 Is.EqualTo("VContainer.Unity.LifetimeScope"));
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameFlowCoordinator)), Is.False);
-            CollectionAssert.AreEqual(new[] { typeof(GameFlowCoordinator) }, applicationStartables);
-            Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(GameFlowCoordinator)), Is.True);
+            CollectionAssert.AreEqual(new[] { typeof(ApplicationEntryPoint) }, applicationEntryPoints);
+            Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(ApplicationEntryPoint)), Is.True);
+            Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(GameFlowCoordinator)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(SaveCoordinator)), Is.False);
         }
 
