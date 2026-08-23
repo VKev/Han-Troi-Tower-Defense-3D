@@ -18,6 +18,7 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerSimulationSystem towerSimulationSystem;
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
+        private readonly GameplayUISystem gameplayUISystem;
 
         public LevelSystemGroup(
             BoardSystem boardSystem,
@@ -28,7 +29,8 @@ namespace TowerDefense3D.GameFlow
             TowerInteractionSystem towerInteractionSystem,
             TowerSimulationSystem towerSimulationSystem,
             TowerLinkPresentationSystem towerLinkPresentationSystem,
-            TowerProjectilePresentationSystem towerProjectilePresentationSystem)
+            TowerProjectilePresentationSystem towerProjectilePresentationSystem,
+            GameplayUISystem gameplayUISystem)
         {
             this.boardSystem = boardSystem;
             this.boardCameraSystem = boardCameraSystem;
@@ -39,6 +41,7 @@ namespace TowerDefense3D.GameFlow
             this.towerSimulationSystem = towerSimulationSystem;
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
+            this.gameplayUISystem = gameplayUISystem;
         }
 
         public void Start()
@@ -49,6 +52,7 @@ namespace TowerDefense3D.GameFlow
             towerNetworkSystem.Start();
             towerLinkPresentationSystem.Start();
             towerProjectilePresentationSystem.Start();
+            gameplayUISystem.Start();
         }
 
         public void Tick(float deltaTime)
@@ -57,6 +61,7 @@ namespace TowerDefense3D.GameFlow
             gridPlacementSystem.Tick();
             towerInteractionSystem.Tick();
             towerSimulationSystem.Tick(deltaTime);
+            gameplayUISystem.RefreshIfDirty();
         }
 
         public void LateTick(float deltaTime)

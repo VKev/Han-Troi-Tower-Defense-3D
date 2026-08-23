@@ -6,7 +6,7 @@ namespace TowerDefense3D.GameFlow
     /// Owns visibility for the placement instructions, selection panel, and cancel control.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlacementHudView : MonoBehaviour
+    public sealed class PlacementHudView : MonoBehaviour, IPlacementHudView
     {
         [SerializeField] private GameObject root;
 

@@ -40,6 +40,12 @@ namespace TowerDefense3D.GameFlow
                 .As<ITowerLinkView>();
             builder.RegisterComponentInHierarchy<TowerProjectilePoolView>()
                 .As<ITowerProjectileViewPool>();
+            builder.RegisterComponentInHierarchy<GameplayUIView>()
+                .As<IGameplayUIView>();
+            builder.RegisterComponentInHierarchy<PlacementHudView>()
+                .As<IPlacementHudView>();
+            builder.RegisterComponentInHierarchy<TowerNetworkHudView>()
+                .As<ITowerNetworkHudView>();
             builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
             builder.RegisterComponentInHierarchy<TowerNetworkSceneAdapter>();
             builder.RegisterInstance(placementView.WorldCamera);
@@ -53,6 +59,8 @@ namespace TowerDefense3D.GameFlow
             builder.Register<TowerSimulationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
+            builder.Register<TowerNetworkHudPresenter>(Lifetime.Scoped);
+            builder.Register<GameplayUISystem>(Lifetime.Scoped);
             builder.Register<LevelSystemGroup>(Lifetime.Scoped);
             builder.RegisterBuildCallback(AttachLevelSystems);
         }
@@ -75,6 +83,8 @@ namespace TowerDefense3D.GameFlow
             GridPlacementView placementView = container.Resolve<GridPlacementView>();
             container.Resolve<GridPlacementPresenter>().Bind(placementSystem, placementView);
             container.Resolve<TowerNetworkSceneAdapter>().Bind(container.Resolve<TowerNetworkSystem>());
+            container.Resolve<GameplayUISystem>()
+                .BindReturnToMenu(container.Resolve<GameFlowCoordinator>().RequestReturnToLevelMenu);
 
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();

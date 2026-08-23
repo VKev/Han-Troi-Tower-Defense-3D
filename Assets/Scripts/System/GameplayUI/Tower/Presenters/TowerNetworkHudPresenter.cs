@@ -4,27 +4,32 @@ using TowerDefense3D.Towers;
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
-    /// Coordinates gameplay HUD input and presentation through the level-scoped tower network adapter.
+    /// Converts tower-network state and HUD commands between the model and its view.
     /// </summary>
-    internal sealed class TowerNetworkHudPresenter
+    public sealed class TowerNetworkHudPresenter
     {
-        private readonly TowerNetworkSceneAdapter towerNetworkAdapter;
-        private readonly TowerNetworkHudView towerNetworkHud;
-        private readonly Action requestReturnToMenu;
+        private readonly TowerNetworkSystem towerNetworkSystem;
+        private readonly ITowerNetworkHudView towerNetworkHud;
+        private Action requestReturnToMenu;
 
         public TowerNetworkHudPresenter(
-            TowerNetworkSceneAdapter towerNetworkAdapter,
-            TowerNetworkHudView towerNetworkHud,
-            Action requestReturnToMenu)
+            TowerNetworkSystem towerNetworkSystem,
+            ITowerNetworkHudView towerNetworkHud)
         {
-            this.towerNetworkAdapter = towerNetworkAdapter;
-            this.towerNetworkHud = towerNetworkHud;
-            this.requestReturnToMenu = requestReturnToMenu;
+            this.towerNetworkSystem = towerNetworkSystem
+                ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
+            this.towerNetworkHud = towerNetworkHud
+                ?? throw new ArgumentNullException(nameof(towerNetworkHud));
+        }
+
+        public void BindReturnToMenu(Action request)
+        {
+            requestReturnToMenu = request ?? throw new ArgumentNullException(nameof(request));
         }
 
         public void Connect()
         {
-            towerNetworkAdapter.StateChanged += Refresh;
+            towerNetworkHud.Initialize();
             towerNetworkHud.TowerDragBegan += HandleTowerDragBegan;
             towerNetworkHud.TowerDragMoved += HandleTowerDragMoved;
             towerNetworkHud.TowerDragEnded += HandleTowerDragEnded;
@@ -33,11 +38,11 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.StartWaveRequested += HandleStartWaveRequested;
             towerNetworkHud.CancelPlacementRequested += HandleCancelPlacement;
             towerNetworkHud.ReturnToMenuRequested += HandleReturnToMenu;
+            towerNetworkHud.Show();
         }
 
-        public void Shutdown()
+        public void Disconnect()
         {
-            towerNetworkAdapter.StateChanged -= Refresh;
             towerNetworkHud.TowerDragBegan -= HandleTowerDragBegan;
             towerNetworkHud.TowerDragMoved -= HandleTowerDragMoved;
             towerNetworkHud.TowerDragEnded -= HandleTowerDragEnded;
@@ -48,27 +53,20 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.ReturnToMenuRequested -= HandleReturnToMenu;
         }
 
-        public void Tick()
-        {
-            if (towerNetworkAdapter.IsRunning)
-            {
-                Refresh();
-            }
-        }
-
         public void Refresh()
         {
-            TowerRuntimeView selectedTower = towerNetworkAdapter.SelectedTower;
+            ITowerRuntimeView selectedTower = towerNetworkSystem.SelectedTower;
             string selectedText = selectedTower == null
                 ? "Selected: None"
-                : $"Selected: {selectedTower.CombatDefinition.Core.DisplayName} ({selectedTower.CombatDefinition.NetworkRole})";
-            string chainText = $"Valid chains: {towerNetworkAdapter.ValidChainCount}"
-                + $"   Towers: {towerNetworkAdapter.RegisteredTowerCount}";
-            string queueText = CreateQueueText(towerNetworkAdapter, selectedTower);
-            string feedbackText = string.IsNullOrWhiteSpace(towerNetworkAdapter.LastFeedback)
+                : $"Selected: {selectedTower.CombatDefinition.Core.DisplayName} "
+                    + $"({selectedTower.CombatDefinition.NetworkRole})";
+            string chainText = $"Valid chains: {towerNetworkSystem.ValidChainCount}"
+                + $"   Towers: {towerNetworkSystem.RegisteredTowerCount}";
+            string queueText = CreateQueueText(towerNetworkSystem, selectedTower);
+            string feedbackText = string.IsNullOrWhiteSpace(towerNetworkSystem.LastFeedback)
                 ? "Place towers, then drag one tower to another."
-                : towerNetworkAdapter.LastFeedback;
-            bool simulationRunning = towerNetworkAdapter.IsRunning;
+                : towerNetworkSystem.LastFeedback;
+            bool simulationRunning = towerNetworkSystem.IsRunning;
 
             towerNetworkHud.Render(new TowerNetworkHudState(
                 selectedText,
@@ -76,8 +74,8 @@ namespace TowerDefense3D.GameFlow
                 queueText,
                 feedbackText,
                 !simulationRunning,
-                selectedTower != null && towerNetworkAdapter.CanEditTopology,
-                towerNetworkAdapter.HasValidChain && !simulationRunning,
+                selectedTower != null && towerNetworkSystem.CanEditTopology,
+                towerNetworkSystem.HasValidChain && !simulationRunning,
                 simulationRunning ? "RUNNING" : "START WAVE",
                 !simulationRunning));
         }
@@ -86,14 +84,14 @@ namespace TowerDefense3D.GameFlow
             TowerCombatDefinition definition,
             TowerPlacementPointerEvent pointerEvent)
         {
-            towerNetworkAdapter.BeginTowerPlacementDrag(
+            towerNetworkSystem.BeginTowerPlacementDrag(
                 definition,
                 pointerEvent.PointerId);
         }
 
         private void HandleTowerDragMoved(TowerPlacementPointerEvent pointerEvent)
         {
-            towerNetworkAdapter.UpdateTowerPlacementDrag(
+            towerNetworkSystem.UpdateTowerPlacementDrag(
                 pointerEvent.PointerId,
                 pointerEvent.ScreenPosition,
                 pointerEvent.IsOverUi);
@@ -101,7 +99,7 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleTowerDragEnded(TowerPlacementPointerEvent pointerEvent)
         {
-            towerNetworkAdapter.EndTowerPlacementDrag(
+            towerNetworkSystem.EndTowerPlacementDrag(
                 pointerEvent.PointerId,
                 pointerEvent.ScreenPosition,
                 pointerEvent.IsOverUi);
@@ -109,41 +107,41 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleTowerDragCanceled(int pointerId)
         {
-            towerNetworkAdapter.CancelTowerPlacementDrag(pointerId);
+            towerNetworkSystem.CancelTowerPlacementDrag(pointerId);
         }
 
         private void HandleCancelPlacement()
         {
-            towerNetworkAdapter.CancelPlacement();
+            towerNetworkSystem.CancelPlacement();
             Refresh();
         }
 
         private void HandleUnlinkRequested()
         {
-            towerNetworkAdapter.TryUnlinkSelected(out _);
+            towerNetworkSystem.TryUnlinkSelected(out _);
         }
 
         private void HandleStartWaveRequested()
         {
-            towerNetworkAdapter.TryStartSimulation(out _);
+            towerNetworkSystem.TryStartSimulation(out _);
         }
 
         private void HandleReturnToMenu()
         {
-            towerNetworkAdapter.CancelPlacement();
+            towerNetworkSystem.CancelPlacement();
             requestReturnToMenu();
         }
 
         private static string CreateQueueText(
-            TowerNetworkSceneAdapter adapter,
-            TowerRuntimeView selectedTower)
+            TowerNetworkSystem system,
+            ITowerRuntimeView selectedTower)
         {
             if (selectedTower == null)
             {
                 return "Queue: select a tower";
             }
 
-            if (!adapter.TryCreateSelectedQueueSummary(out TowerQueueSummary queue))
+            if (!system.TryCreateSelectedQueueSummary(out TowerQueueSummary queue))
             {
                 return "Queue: unavailable";
             }

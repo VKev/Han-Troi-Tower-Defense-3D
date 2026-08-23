@@ -6,10 +6,10 @@ using UnityEngine.UI;
 namespace TowerDefense3D.GameFlow
 {
     [DisallowMultipleComponent]
-    public sealed class TowerNetworkHudView : MonoBehaviour
+    public sealed class TowerNetworkHudView : MonoBehaviour, ITowerNetworkHudView
     {
-        [SerializeField] private TowerPlacementDragButton[] towerDragButtons =
-            Array.Empty<TowerPlacementDragButton>();
+        [SerializeField] private TowerPlacementDragButtonView[] towerDragButtons =
+            Array.Empty<TowerPlacementDragButtonView>();
         [SerializeField] private Button unlinkButton;
         [SerializeField] private Button startWaveButton;
         [SerializeField] private Button cancelPlacementButton;
@@ -34,10 +34,14 @@ namespace TowerDefense3D.GameFlow
 
         public void Initialize()
         {
-            Shutdown();
+            if (isInitialized)
+            {
+                return;
+            }
+
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
-                TowerPlacementDragButton dragButton = towerDragButtons[index];
+                TowerPlacementDragButtonView dragButton = towerDragButtons[index];
                 dragButton.DragBegan += HandleTowerDragBegan;
                 dragButton.DragMoved += HandleTowerDragMoved;
                 dragButton.DragEnded += HandleTowerDragEnded;
@@ -49,7 +53,6 @@ namespace TowerDefense3D.GameFlow
             cancelPlacementButton.onClick.AddListener(HandleCancelPlacementRequested);
             returnToMenuButton.onClick.AddListener(HandleReturnToMenuRequested);
             isInitialized = true;
-            gameObject.SetActive(true);
         }
 
         public void Render(TowerNetworkHudState state)
@@ -88,7 +91,7 @@ namespace TowerDefense3D.GameFlow
 
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
-                TowerPlacementDragButton dragButton = towerDragButtons[index];
+                TowerPlacementDragButtonView dragButton = towerDragButtons[index];
                 dragButton.DragBegan -= HandleTowerDragBegan;
                 dragButton.DragMoved -= HandleTowerDragMoved;
                 dragButton.DragEnded -= HandleTowerDragEnded;

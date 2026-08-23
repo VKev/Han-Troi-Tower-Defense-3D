@@ -158,6 +158,9 @@ namespace TowerDefense3D.GameFlow.Editor
                     RequireExactlyOne<BoardCameraView>(scene, "BoardCameraView", errors);
                     RequireExactlyOne<GameplayInputSource>(scene, "GameplayInputSource", errors);
                     RequireExactlyOne<GridPlacementView>(scene, "GridPlacementView", errors);
+                    RequireExactlyOne<GameplayUIView>(scene, "GameplayUIView", errors);
+                    RequireExactlyOne<PlacementHudView>(scene, "PlacementHudView", errors);
+                    RequireExactlyOne<TowerNetworkHudView>(scene, "TowerNetworkHudView", errors);
                     RequireExactlyOne<TowerInstanceFactory>(scene, "TowerInstanceFactory", errors);
                     RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);
                     RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);

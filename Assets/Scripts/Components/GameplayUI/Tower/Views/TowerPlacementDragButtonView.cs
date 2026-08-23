@@ -6,22 +6,8 @@ using UnityEngine.UI;
 
 namespace TowerDefense3D.GameFlow
 {
-    public readonly struct TowerPlacementPointerEvent
-    {
-        public TowerPlacementPointerEvent(int pointerId, Vector2 screenPosition, bool isOverUi)
-        {
-            PointerId = pointerId;
-            ScreenPosition = screenPosition;
-            IsOverUi = isOverUi;
-        }
-
-        public int PointerId { get; }
-        public Vector2 ScreenPosition { get; }
-        public bool IsOverUi { get; }
-    }
-
     [DisallowMultipleComponent]
-    public sealed class TowerPlacementDragButton : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public sealed class TowerPlacementDragButtonView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         [SerializeField] private Button button;
         [SerializeField] private TowerCombatDefinition definition;

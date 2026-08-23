@@ -29,6 +29,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(owner, Is.Not.Null, $"Gameplay UI prefab is missing at '{GameplayUiPrefabPath}'.");
             view = owner.GetComponentInChildren<TowerNetworkHudView>(true);
             Assert.That(view, Is.Not.Null, "Gameplay UI prefab must author a TowerNetworkHudView.");
+            Assert.That(owner.GetComponent<GameplayUIView>(), Is.Not.Null);
             graphicRaycaster = owner.GetComponent<GraphicRaycaster>();
             Assert.That(graphicRaycaster, Is.Not.Null);
 
@@ -68,8 +69,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(panel.GetComponentsInChildren<Button>(true).Length, Is.EqualTo(catalog.Definitions.Count + 2));
             Assert.That(panel.Find("Tower Buttons").childCount, Is.EqualTo(catalog.Definitions.Count));
             Assert.That(
-                panel.GetComponentsInChildren<TowerPlacementDragButton>(true).Length,
+                panel.GetComponentsInChildren<TowerPlacementDragButtonView>(true).Length,
                 Is.EqualTo(catalog.Definitions.Count));
+            Assert.That(safeArea.Find("Select Tower"), Is.Null);
             Assert.That(panel.Find("Unlink").GetComponent<Button>(), Is.Not.Null);
             Assert.That(panel.Find("Start Wave").GetComponent<Button>(), Is.Not.Null);
 
@@ -167,7 +169,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             eventData = CreatePointerEvent(17, startPosition, firstButton.gameObject);
             ExecuteEvents.Execute(firstButton.gameObject, eventData, ExecuteEvents.beginDragHandler);
-            firstButton.GetComponent<TowerPlacementDragButton>().SetInteractable(false);
+            firstButton.GetComponent<TowerPlacementDragButtonView>().SetInteractable(false);
 
             Assert.That(canceledPointerId, Is.EqualTo(17));
         }

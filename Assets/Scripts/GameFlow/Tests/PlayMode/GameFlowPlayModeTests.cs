@@ -108,9 +108,9 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<LevelSceneContext>(), Is.EqualTo(1));
             AssertTowerNetworkInitialized();
 
-            GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
+            GameplayUIView gameplayUi = FindLoaded<GameplayUIView>();
             Assert.That(gameplayUi, Is.Not.Null);
-            Assert.That(gameplayUi.IsInitialized, Is.True);
+            Assert.That(gameplayUi.IsVisible, Is.True);
             AssertMigratedGameplayUi(gameplayUi, "Level_001_Board");
 
             GetReturnToMenuButton(gameplayUi).onClick.Invoke();
@@ -140,7 +140,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(LevelTwoScenePath));
             AssertTowerNetworkInitialized();
-            GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
+            GameplayUIView gameplayUi = FindLoaded<GameplayUIView>();
             AssertMigratedGameplayUi(gameplayUi, "Level_002_Board");
 
             SaveLoadResult persisted = new LocalSaveRepository(Application.persistentDataPath).Load();
@@ -152,39 +152,37 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         }
 
         private static void AssertMigratedGameplayUi(
-            GameplayUIManager manager,
+            GameplayUIView view,
             string expectedBoardName)
         {
-            Assert.That(manager, Is.Not.Null);
-            GridPlacementPresenter placement = GetPrivateField<GridPlacementPresenter>(
-                manager,
-                "placementPresenter");
-            TowerSelectionButton[] selectors = GetPrivateField<TowerSelectionButton[]>(
-                manager,
-                "towerSelectionButtons");
-            Button cancel = GetCancelPlacementButton(manager);
-            Button returnButton = GetReturnToMenuButton(manager);
+            Assert.That(view, Is.Not.Null);
+            TowerNetworkHudView hud = view.GetComponentInChildren<TowerNetworkHudView>(true);
+            TowerPlacementDragButtonView[] dragButtons =
+                view.GetComponentsInChildren<TowerPlacementDragButtonView>(true);
+            Button cancel = GetCancelPlacementButton(view);
+            Button returnButton = GetReturnToMenuButton(view);
 
-            Assert.That(placement, Is.Not.Null);
+            Assert.That(hud, Is.Not.Null);
+            Assert.That(hud.IsInitialized, Is.True);
             BoardView boardView = UnityEngine.Object.FindFirstObjectByType<BoardView>();
             Assert.That(boardView, Is.Not.Null);
             Assert.That(boardView.Board.name, Is.EqualTo(expectedBoardName));
-            Assert.That(selectors, Has.Length.EqualTo(1));
-            Assert.That(selectors[0].Definition, Is.Not.Null);
+            Assert.That(dragButtons, Has.Length.EqualTo(6));
+            Assert.That(view.transform.Find("Safe Area/Select Tower"), Is.Null);
             Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);
-            Assert.That(manager.GetComponentInChildren<SafeAreaView>(true), Is.Not.Null);
+            Assert.That(view.GetComponentInChildren<SafeAreaView>(true), Is.Not.Null);
         }
 
-        private static Button GetCancelPlacementButton(GameplayUIManager manager)
+        private static Button GetCancelPlacementButton(GameplayUIView view)
         {
-            TowerNetworkHudView hud = GetPrivateField<TowerNetworkHudView>(manager, "towerNetworkHud");
+            TowerNetworkHudView hud = view.GetComponentInChildren<TowerNetworkHudView>(true);
             return GetPrivateField<Button>(hud, "cancelPlacementButton");
         }
 
-        private static Button GetReturnToMenuButton(GameplayUIManager manager)
+        private static Button GetReturnToMenuButton(GameplayUIView view)
         {
-            TowerNetworkHudView hud = GetPrivateField<TowerNetworkHudView>(manager, "towerNetworkHud");
+            TowerNetworkHudView hud = view.GetComponentInChildren<TowerNetworkHudView>(true);
             return GetPrivateField<Button>(hud, "returnToMenuButton");
         }
 
@@ -232,11 +230,16 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             for (int frame = 0; frame < TransitionFrameBudget; frame++)
             {
                 FailIfBlockingError("gameplay scene " + scenePath);
-                GameplayUIManager gameplayUi = FindLoaded<GameplayUIManager>();
+                GameplayUIView gameplayUi = FindLoaded<GameplayUIView>();
+                TowerNetworkHudView hud = gameplayUi != null
+                    ? gameplayUi.GetComponentInChildren<TowerNetworkHudView>(true)
+                    : null;
                 if (IsSceneLoaded(scenePath)
                     && SceneManager.GetActiveScene().path == scenePath
                     && gameplayUi != null
-                    && gameplayUi.IsInitialized)
+                    && gameplayUi.IsVisible
+                    && hud != null
+                    && hud.IsInitialized)
                 {
                     yield break;
                 }

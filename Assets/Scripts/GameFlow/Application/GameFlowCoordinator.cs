@@ -113,7 +113,7 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
-        internal void RequestReturnToLevelMenu()
+        public void RequestReturnToLevelMenu()
         {
             if (State == GameFlowState.Gameplay)
             {
