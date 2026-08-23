@@ -6,7 +6,7 @@ namespace TowerDefense3D.GridPlacement
     /// <summary>
     /// Candidate-only presentation using one combined footprint mesh and one ghost volume.
     /// </summary>
-    public sealed class GridPlacementView : MonoBehaviour
+    public sealed class GridPlacementView : MonoBehaviour, IGridPlacementView
     {
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -17,6 +17,11 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField] private MeshFilter ghostMeshFilter;
         [SerializeField] private MeshRenderer ghostRenderer;
 
+        [Header("World projection")]
+        [SerializeField] private Camera worldCamera;
+        [SerializeField] private LayerMask placementSurfaceMask = ~0;
+        [SerializeField, Min(1f)] private float maxRayDistance = 500f;
+
         [Header("Candidate colors")]
         [SerializeField] private Color validColor = new Color(0.15f, 1f, 0.25f, 0.38f);
         [SerializeField] private Color invalidColor = new Color(1f, 0.15f, 0.12f, 0.38f);
@@ -24,7 +29,6 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, Min(0f)] private float surfaceOffset = 0.025f;
         [SerializeField, Range(0f, 1f)] private float ghostAlphaMultiplier = 0.35f;
 
-        private TowerDefinition towerDefinition;
         private Mesh footprintMesh;
         private Mesh ghostMesh;
         private MaterialPropertyBlock footprintProperties;
@@ -37,29 +41,49 @@ namespace TowerDefense3D.GridPlacement
 
         private void Awake()
         {
+            if (worldCamera == null)
+            {
+                worldCamera = Camera.main;
+            }
+
             EnsureRenderers();
             SetVisible(false);
         }
 
-        public void SetTower(TowerDefinition definition)
+        public Camera WorldCamera => worldCamera;
+
+        public bool TryGetWorldPoint(Vector2 screenPosition, out Vector3 worldPoint)
         {
-            towerDefinition = definition;
-            if (definition == null)
+            if (worldCamera == null)
             {
-                Hide();
+                worldPoint = default;
+                return false;
             }
+
+            Ray ray = worldCamera.ScreenPointToRay(screenPosition);
+            if (!Physics.Raycast(
+                    ray,
+                    out RaycastHit hit,
+                    maxRayDistance,
+                    placementSurfaceMask,
+                    QueryTriggerInteraction.Ignore))
+            {
+                worldPoint = default;
+                return false;
+            }
+
+            worldPoint = hit.point;
+            return true;
         }
 
         public void Show(
-            GridCell anchor,
             TowerFootprint footprint,
             Vector3 footprintBottomCenter,
             float cellSize,
             float heightUnit,
             bool isValid)
         {
-            _ = anchor;
-            if (towerDefinition == null || footprint.Width <= 0 || footprint.Depth <= 0 || footprint.Height <= 0)
+            if (footprint.Width <= 0 || footprint.Depth <= 0 || footprint.Height <= 0)
             {
                 Hide();
                 return;

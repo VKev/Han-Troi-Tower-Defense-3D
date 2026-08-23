@@ -1,3 +1,4 @@
+using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using VContainer;
 using VContainer.Unity;
@@ -18,8 +19,18 @@ namespace TowerDefense3D.GameFlow
                 .As<IBoardView>();
             builder.RegisterComponentInHierarchy<BoardCameraView>()
                 .As<IBoardCameraView>();
+            builder.RegisterComponentInHierarchy<GameplayInputSource>()
+                .As<IGameplayInputSource>();
+            builder.RegisterComponentInHierarchy<GridPlacementView>()
+                .AsSelf()
+                .As<IGridPlacementView>();
+            builder.RegisterComponentInHierarchy<TowerInstanceFactory>()
+                .As<ITowerInstanceFactory>();
+            builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
             builder.Register<BoardSystem>(Lifetime.Scoped);
             builder.Register<BoardCameraSystem>(Lifetime.Scoped);
+            builder.Register<GameplayInputSystem>(Lifetime.Scoped);
+            builder.Register<GridPlacementSystem>(Lifetime.Scoped);
             builder.Register<LevelSystemGroup>(Lifetime.Scoped);
             builder.RegisterBuildCallback(AttachLevelSystems);
         }
@@ -38,6 +49,10 @@ namespace TowerDefense3D.GameFlow
         private void AttachLevelSystems(IObjectResolver container)
         {
             activeLevelSystems = container.Resolve<ActiveLevelSystemSlot>();
+            GridPlacementSystem placementSystem = container.Resolve<GridPlacementSystem>();
+            GridPlacementView placementView = container.Resolve<GridPlacementView>();
+            container.Resolve<GridPlacementPresenter>().Bind(placementSystem, placementView);
+
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();
             activeLevelSystems.Attach(systems);

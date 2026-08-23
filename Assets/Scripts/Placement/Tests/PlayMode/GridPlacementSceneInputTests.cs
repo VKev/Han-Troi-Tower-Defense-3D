@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using TowerDefense3D.GameplayInput;
 using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,37 +32,69 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 boardOrigin != null
                     ? boardOrigin.GetComponent<BoardView>()
                     : null;
+            GridPlacementView placementView =
+                Object.FindFirstObjectByType<GridPlacementView>();
+            TowerInstanceFactory instanceFactory =
+                Object.FindFirstObjectByType<TowerInstanceFactory>();
+            GameplayInputSource inputSource =
+                Object.FindFirstObjectByType<GameplayInputSource>();
 
             Assert.That(controller, Is.Not.Null);
-            controller.Initialize();
-            Assert.That(controller.Occupancy, Is.Not.Null);
-            Assert.That(controller.SelectedTower, Is.Not.Null);
             Assert.That(placedRoot, Is.Not.Null);
             Assert.That(boardOrigin, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(placementView, Is.Not.Null);
+            Assert.That(instanceFactory, Is.Not.Null);
+            Assert.That(inputSource, Is.Not.Null);
             Assert.That(camera, Is.Not.Null);
             Assert.That(placedRoot.transform.childCount, Is.Zero);
+
+            var boardSystem = new BoardSystem(presenter);
+            var inputSystem = new GameplayInputSystem(inputSource);
+            var placementSystem = new GridPlacementSystem(
+                boardSystem,
+                inputSystem,
+                placementView,
+                instanceFactory);
+            boardSystem.Start();
+            inputSystem.Start();
+            controller.Bind(placementSystem, placementView);
+            controller.Initialize();
+
+            Assert.That(controller.Occupancy, Is.Not.Null);
+            Assert.That(controller.SelectedTower, Is.Not.Null);
 
             Mouse mouse = InputSystem.AddDevice<Mouse>();
             Assert.That(
                 TryFindValidPlacementScreenPoint(
                     presenter,
-                    controller,
+                    placementSystem,
                     camera,
                     out Vector2 screenPoint),
                 Is.True,
                 "The authored level needs one visible, non-UI placement point "
                 + "for the selected tower.");
+            Assert.That(
+                placementView.TryGetWorldPoint(screenPoint, out _),
+                Is.True,
+                "The placement view must project the selected screen point onto the authored board.");
 
             Set(mouse.position, screenPoint);
             Press(mouse.leftButton);
             yield return null;
+            inputSystem.Tick();
+            Assert.That(inputSystem.Current.HasPointerInput, Is.True);
+            Assert.That(inputSystem.Current.WasPressed, Is.True);
+            Assert.That(inputSystem.Current.IsPointerOverUi, Is.False);
+            placementSystem.Tick();
 
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.True);
 
             Release(mouse.leftButton);
             yield return null;
+            inputSystem.Tick();
+            placementSystem.Tick();
 
             Assert.That(placedRoot.transform.childCount, Is.EqualTo(1));
             Assert.That(controller.HasCandidate, Is.True);
@@ -69,8 +102,12 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 
             Press(mouse.leftButton);
             yield return null;
+            inputSystem.Tick();
+            placementSystem.Tick();
             Release(mouse.leftButton);
             yield return null;
+            inputSystem.Tick();
+            placementSystem.Tick();
 
             Assert.That(placedRoot.transform.childCount, Is.EqualTo(1));
             Assert.That(controller.HasCandidate, Is.True);
@@ -99,13 +136,34 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 boardOrigin != null
                     ? boardOrigin.GetComponent<BoardView>()
                     : null;
+            GridPlacementView placementView =
+                Object.FindFirstObjectByType<GridPlacementView>();
+            TowerInstanceFactory instanceFactory =
+                Object.FindFirstObjectByType<TowerInstanceFactory>();
+            GameplayInputSource inputSource =
+                Object.FindFirstObjectByType<GameplayInputSource>();
 
             Assert.That(controller, Is.Not.Null);
-            controller.Initialize();
-            Assert.That(controller.SelectedTower, Is.Not.Null);
             Assert.That(placedRoot, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(placementView, Is.Not.Null);
+            Assert.That(instanceFactory, Is.Not.Null);
+            Assert.That(inputSource, Is.Not.Null);
             Assert.That(camera, Is.Not.Null);
+
+            var boardSystem = new BoardSystem(presenter);
+            var inputSystem = new GameplayInputSystem(inputSource);
+            var placementSystem = new GridPlacementSystem(
+                boardSystem,
+                inputSystem,
+                placementView,
+                instanceFactory);
+            boardSystem.Start();
+            inputSystem.Start();
+            controller.Bind(placementSystem, placementView);
+            controller.Initialize();
+
+            Assert.That(controller.SelectedTower, Is.Not.Null);
 
             TowerDefinition placementDefinition = controller.SelectedTower;
             var combatDefinition = ScriptableObject.CreateInstance<GeneratorTowerDefinition>();
@@ -116,7 +174,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Assert.That(
                     TryFindValidPlacementScreenPoint(
                         presenter,
-                        controller,
+                        placementSystem,
                         camera,
                         out Vector2 screenPoint),
                     Is.True);
@@ -165,13 +223,13 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 
         private static bool TryFindValidPlacementScreenPoint(
             BoardView presenter,
-            GridPlacementPresenter controller,
+            GridPlacementSystem placementSystem,
             Camera camera,
             out Vector2 screenPoint)
         {
             BoardDefinition definition = presenter.Board;
             var board = new GridBoard(definition, presenter.transform.position);
-            var validator = new PlacementValidator(board, controller.Occupancy);
+            var validator = new PlacementValidator(board, placementSystem.Occupancy);
             var uiResults = new List<RaycastResult>();
 
             for (int y = 0; y < definition.Dimensions.Height; y++)
@@ -183,7 +241,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                         var cell = new GridCell(x, z, y);
                         if (!validator.Evaluate(
                                 cell,
-                                controller.SelectedTower.Footprint).Succeeded)
+                                placementSystem.SelectedTower.Footprint).Succeeded)
                         {
                             continue;
                         }

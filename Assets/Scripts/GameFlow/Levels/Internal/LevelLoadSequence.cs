@@ -124,17 +124,6 @@ namespace TowerDefense3D.GameFlow
                 yield break;
             }
 
-            var runtimeContext = new LevelSceneRuntimeContext(
-                request.LevelNumber,
-                requestReturnToMenu,
-                towerNetworkManager);
-            if (!context.TryInitialize(runtimeContext, out string initializationError))
-            {
-                yield return bootstrapActivator.CleanupFailedTarget(loadedScene);
-                completion(Fail(LevelTransitionStatus.InitializationFailed, initializationError));
-                yield break;
-            }
-
             string lifetimeScopeError = null;
             try
             {
@@ -152,6 +141,17 @@ namespace TowerDefense3D.GameFlow
             {
                 yield return bootstrapActivator.CleanupFailedTarget(loadedScene);
                 completion(Fail(LevelTransitionStatus.InitializationFailed, lifetimeScopeError));
+                yield break;
+            }
+
+            var runtimeContext = new LevelSceneRuntimeContext(
+                request.LevelNumber,
+                requestReturnToMenu,
+                towerNetworkManager);
+            if (!context.TryInitialize(runtimeContext, out string initializationError))
+            {
+                yield return bootstrapActivator.CleanupFailedTarget(loadedScene);
+                completion(Fail(LevelTransitionStatus.InitializationFailed, initializationError));
                 yield break;
             }
 

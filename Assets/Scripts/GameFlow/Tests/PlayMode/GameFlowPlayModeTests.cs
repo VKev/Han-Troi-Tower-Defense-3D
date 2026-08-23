@@ -165,8 +165,9 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Button returnButton = GetReturnToMenuButton(manager);
 
             Assert.That(placement, Is.Not.Null);
-            Assert.That(GetPrivateField<BoardDefinition>(placement, "boardDefinition").name,
-                Is.EqualTo(expectedBoardName));
+            BoardView boardView = UnityEngine.Object.FindFirstObjectByType<BoardView>();
+            Assert.That(boardView, Is.Not.Null);
+            Assert.That(boardView.Board.name, Is.EqualTo(expectedBoardName));
             Assert.That(selectors, Has.Length.EqualTo(1));
             Assert.That(selectors[0].Definition, Is.Not.Null);
             Assert.That(cancel, Is.Not.Null);

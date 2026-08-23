@@ -5,6 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
 
@@ -155,6 +156,9 @@ namespace TowerDefense3D.GameFlow.Editor
                     ValidateLevelLifetimeScope(scene, entry.LevelNumber, errors);
                     RequireExactlyOne<BoardView>(scene, "BoardView", errors);
                     RequireExactlyOne<BoardCameraView>(scene, "BoardCameraView", errors);
+                    RequireExactlyOne<GameplayInputSource>(scene, "GameplayInputSource", errors);
+                    RequireExactlyOne<GridPlacementView>(scene, "GridPlacementView", errors);
+                    RequireExactlyOne<TowerInstanceFactory>(scene, "TowerInstanceFactory", errors);
                     RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);
                     RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);
                     RequireExactlyOne<TowerSimulationDriver>(scene, "TowerSimulationDriver", errors);
@@ -204,6 +208,8 @@ namespace TowerDefense3D.GameFlow.Editor
 
             GameObject owner = adapter.gameObject;
             if (owner.GetComponent<GridPlacementPresenter>() == null
+                || owner.GetComponent<GameplayInputSource>() == null
+                || owner.GetComponent<TowerInstanceFactory>() == null
                 || owner.GetComponent<TowerSimulationDriver>() == null
                 || owner.GetComponent<TowerNetworkInputController>() == null
                 || owner.GetComponent<TowerLinkPresenter>() == null

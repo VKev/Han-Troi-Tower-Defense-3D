@@ -3922,6 +3922,8 @@ GameObject:
   - component: {fileID: 933105062}
   - component: {fileID: 933105061}
   - component: {fileID: 933105060}
+  - component: {fileID: 933105064}
+  - component: {fileID: 933105063}
   m_Layer: 0
   m_Name: Systems
   m_TagString: Untagged
@@ -3941,15 +3943,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 906192cff37391448af42065414ec289, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.GridPlacement.GridPlacementController
-  boardDefinition: {fileID: 11400000, guid: f52a29c848372b04093cd20b465b00ff, type: 2}
-  boardOrigin: {fileID: 1246524273}
-  worldCamera: {fileID: 330585545}
-  placementSurfaceMask:
-    serializedVersion: 2
-    m_Bits: 55
-  maxRayDistance: 300
-  view: {fileID: 1372048647}
-  placedObjectsRoot: {fileID: 879406992}
   initialTower: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
 --- !u!4 &933105056
 Transform:
@@ -4051,6 +4044,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerNetworkInputController
   selectionRadiusPixels: 96
   linkDragThresholdPixels: 24
+--- !u!114 &933105063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933105054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac67c8475250394798e1924c4a9889b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GridPlacement.TowerInstanceFactory
+  placedObjectsRoot: {fileID: 879406992}
+--- !u!114 &933105064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933105054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29d52b171f321374fbb3a0fd6abc99cf, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameplayInput.GameplayInputSource
 --- !u!1001 &990887907
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5832,6 +5850,11 @@ MonoBehaviour:
   footprintRenderer: {fileID: 1643766892}
   ghostMeshFilter: {fileID: 1936719180}
   ghostRenderer: {fileID: 1936719179}
+  worldCamera: {fileID: 330585545}
+  placementSurfaceMask:
+    serializedVersion: 2
+    m_Bits: 55
+  maxRayDistance: 300
   validColor: {r: 0.15, g: 1, b: 0.25, a: 0.38}
   invalidColor: {r: 1, g: 0.15, b: 0.12, a: 0.38}
   cellInset: 0.06

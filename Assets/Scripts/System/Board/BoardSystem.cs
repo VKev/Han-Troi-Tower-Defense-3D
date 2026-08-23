@@ -21,6 +21,7 @@ namespace TowerDefense3D.GridPlacement
         }
 
         public GridBoard Board { get; }
+        public BoardDefinition Definition => view.Board;
 
         public void Start()
         {

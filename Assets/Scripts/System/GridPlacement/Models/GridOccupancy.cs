@@ -73,8 +73,7 @@ namespace TowerDefense3D.GridPlacement
             int reservedValue = -token;
             for (int i = 0; i < written; i++)
             {
-                TryGetIndex(cells[i], out int index);
-                owners[index] = reservedValue;
+                owners[GetIndex(cells[i])] = reservedValue;
             }
 
             reservation = new PlacementReservation(this, cells, reservedValue);
@@ -90,8 +89,7 @@ namespace TowerDefense3D.GridPlacement
 
             for (int i = 0; i < cells.Length; i++)
             {
-                TryGetIndex(cells[i], out int index);
-                owners[index] = ownerId;
+                owners[GetIndex(cells[i])] = ownerId;
             }
 
             return true;
@@ -101,7 +99,8 @@ namespace TowerDefense3D.GridPlacement
         {
             for (int i = 0; i < cells.Length; i++)
             {
-                if (TryGetIndex(cells[i], out int index) && owners[index] == reservedValue)
+                int index = GetIndex(cells[i]);
+                if (owners[index] == reservedValue)
                 {
                     owners[index] = 0;
                 }
@@ -128,7 +127,7 @@ namespace TowerDefense3D.GridPlacement
         {
             for (int i = 0; i < cells.Length; i++)
             {
-                if (!TryGetIndex(cells[i], out int index) || owners[index] != value)
+                if (owners[GetIndex(cells[i])] != value)
                 {
                     return false;
                 }
@@ -157,10 +156,15 @@ namespace TowerDefense3D.GridPlacement
                 return false;
             }
 
-            index = cell.X
+            index = GetIndex(cell);
+            return true;
+        }
+
+        private int GetIndex(GridCell cell)
+        {
+            return cell.X
                 + (cell.Z * dimensions.Width)
                 + (cell.Y * dimensions.Width * dimensions.Depth);
-            return true;
         }
     }
 }

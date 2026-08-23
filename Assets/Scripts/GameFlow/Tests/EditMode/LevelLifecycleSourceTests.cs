@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
 using NUnit.Framework;
+using TowerDefense3D.GameplayInput;
+using TowerDefense3D.GridPlacement;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,95 +10,89 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 {
     public sealed class LevelLifecycleSourceTests
     {
-        private const string PlacementPresenterTypeName =
-            "TowerDefense3D.GridPlacement.GridPlacementPresenter, "
-            + "TowerDefense3D.GridPlacement.Runtime";
-        private const string BoardDefinitionTypeName =
-            "TowerDefense3D.GridPlacement.BoardDefinition, "
-            + "TowerDefense3D.System.Runtime";
         private const string PlacementPresenterSourcePath =
             "Assets/Scripts/Placement/GridPlacementPresenter.cs";
 
         [Test]
-        public void PlacementPresenter_SourceHasNoSelfStartAndGatesUpdate()
+        public void PlacementPresenter_HasNoUnityFrameLifecycleAndDelegatesToSystem()
         {
             MonoScript sourceAsset = AssetDatabase.LoadAssetAtPath<MonoScript>(
                 PlacementPresenterSourcePath);
 
             Assert.That(sourceAsset, Is.Not.Null);
-            string source = sourceAsset.text.Replace("\r\n", "\n");
-            StringAssert.DoesNotContain("private void Awake()", source);
-            StringAssert.DoesNotContain("private void Start()", source);
-            StringAssert.Contains(
-                "private void Update()\n        {\n            if (!IsInitialized)",
-                source);
+            string source = sourceAsset.text;
+            StringAssert.DoesNotContain("void Awake(", source);
+            StringAssert.DoesNotContain("void Start(", source);
+            StringAssert.DoesNotContain("void Update(", source);
+            StringAssert.Contains("GridPlacementSystem", source);
         }
 
         [Test]
-        public void PlacementPresenter_UsesExplicitIdempotentLifecycleAndSupportsReentry()
+        public void PlacementPresenter_RequiresScopeBindingAndSupportsRebindAfterShutdown()
         {
             GameObject owner = new GameObject("Placement Lifecycle Test");
-            Component controller = CreateConfiguredController(owner, out ScriptableObject boardDefinition);
+            BoardDefinition boardDefinition = ScriptableObject.CreateInstance<BoardDefinition>();
+            GridPlacementPresenter presenter = owner.AddComponent<GridPlacementPresenter>();
+            GridPlacementView view = owner.AddComponent<GridPlacementView>();
+            GridPlacementSystem system = CreatePlacementSystem(boardDefinition, view);
 
             try
             {
-                Assert.That(GetDeclaredLifecycleMethod(controller, "Awake"), Is.Null);
-                Assert.That(GetDeclaredLifecycleMethod(controller, "Start"), Is.Null);
-                Assert.That(GetIsInitialized(controller), Is.False);
-                Assert.That(GetOccupancy(controller), Is.Null);
+                Assert.That(presenter.IsInitialized, Is.False);
+                Assert.Throws<InvalidOperationException>(presenter.Initialize);
 
-                Invoke(controller, "Initialize");
-                object firstOccupancy = GetOccupancy(controller);
-                Assert.That(GetIsInitialized(controller), Is.True);
-                Assert.That(firstOccupancy, Is.Not.Null);
+                presenter.Bind(system, view);
+                presenter.Initialize();
 
-                Invoke(controller, "Initialize");
-                Assert.That(GetOccupancy(controller), Is.SameAs(firstOccupancy));
+                Assert.That(presenter.IsInitialized, Is.True);
+                Assert.That(presenter.Occupancy, Is.SameAs(system.Occupancy));
 
-                Invoke(controller, "Shutdown");
-                Invoke(controller, "Shutdown");
-                Assert.That(GetIsInitialized(controller), Is.False);
-                Assert.That(GetOccupancy(controller), Is.Null);
+                presenter.Shutdown();
+                presenter.Shutdown();
 
-                Invoke(controller, "Initialize");
-                Assert.That(GetIsInitialized(controller), Is.True);
-                object secondOccupancy = GetOccupancy(controller);
-                Assert.That(secondOccupancy, Is.Not.Null);
-                Assert.That(secondOccupancy, Is.Not.SameAs(firstOccupancy));
+                Assert.That(presenter.IsInitialized, Is.False);
+                Assert.That(presenter.Occupancy, Is.Null);
+
+                presenter.Bind(system, view);
+                presenter.Initialize();
+                Assert.That(presenter.IsInitialized, Is.True);
             }
             finally
             {
-                Invoke(controller, "Shutdown");
+                presenter.Shutdown();
                 UnityEngine.Object.DestroyImmediate(boardDefinition);
                 UnityEngine.Object.DestroyImmediate(owner);
             }
         }
 
         [Test]
-        public void PlacementSceneAdapter_DelegatesInitializeShutdownAndReentry()
+        public void PlacementSceneAdapter_UsesTheScopeBoundPresenter()
         {
             GameObject owner = new GameObject("Placement Adapter Test");
-            Component controller = CreateConfiguredController(owner, out ScriptableObject boardDefinition);
+            BoardDefinition boardDefinition = ScriptableObject.CreateInstance<BoardDefinition>();
+            GridPlacementPresenter presenter = owner.AddComponent<GridPlacementPresenter>();
+            GridPlacementView view = owner.AddComponent<GridPlacementView>();
+            GridPlacementSystem system = CreatePlacementSystem(boardDefinition, view);
             GridPlacementSceneAdapter adapter = owner.AddComponent<GridPlacementSceneAdapter>();
-            SetPrivateField(adapter, "placementPresenter", controller);
+            SetPrivateField(adapter, "placementPresenter", presenter);
             var runtimeContext = new LevelSceneRuntimeContext(1, () => { });
 
             try
             {
+                presenter.Bind(system, view);
                 adapter.Initialize(runtimeContext);
-                object firstOccupancy = GetOccupancy(controller);
-                Assert.That(GetIsInitialized(controller), Is.True);
+                adapter.Initialize(runtimeContext);
 
-                adapter.Initialize(runtimeContext);
-                Assert.That(GetOccupancy(controller), Is.SameAs(firstOccupancy));
+                Assert.That(presenter.IsInitialized, Is.True);
+                Assert.That(presenter.Occupancy, Is.SameAs(system.Occupancy));
 
                 adapter.Shutdown();
                 adapter.Shutdown();
-                Assert.That(GetIsInitialized(controller), Is.False);
-                Assert.That(GetOccupancy(controller), Is.Null);
+                Assert.That(presenter.IsInitialized, Is.False);
 
+                presenter.Bind(system, view);
                 adapter.Initialize(runtimeContext);
-                Assert.That(GetIsInitialized(controller), Is.True);
+                Assert.That(presenter.IsInitialized, Is.True);
             }
             finally
             {
@@ -107,9 +103,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void PlacementSceneAdapter_MissingControllerFailsClearly()
+        public void PlacementSceneAdapter_MissingPresenterFailsClearly()
         {
-            GameObject owner = new GameObject("Missing Placement Controller Test");
+            GameObject owner = new GameObject("Missing Placement Presenter Test");
             GridPlacementSceneAdapter adapter = owner.AddComponent<GridPlacementSceneAdapter>();
 
             try
@@ -126,49 +122,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
         }
 
-        private static Component CreateConfiguredController(
-            GameObject owner,
-            out ScriptableObject boardDefinition)
+        private static GridPlacementSystem CreatePlacementSystem(
+            BoardDefinition boardDefinition,
+            GridPlacementView view)
         {
-            Type controllerType = Type.GetType(PlacementPresenterTypeName, true);
-            Type definitionType = Type.GetType(BoardDefinitionTypeName, true);
-            Component controller = owner.AddComponent(controllerType);
-            boardDefinition = ScriptableObject.CreateInstance(definitionType);
-            SetPrivateField(controller, "boardDefinition", boardDefinition);
-            return controller;
-        }
-
-        private static MethodInfo GetDeclaredLifecycleMethod(Component controller, string methodName)
-        {
-            return controller.GetType().GetMethod(
-                methodName,
-                BindingFlags.Instance
-                | BindingFlags.Public
-                | BindingFlags.NonPublic
-                | BindingFlags.DeclaredOnly);
-        }
-
-        private static bool GetIsInitialized(Component controller)
-        {
-            PropertyInfo property = controller.GetType().GetProperty("IsInitialized");
-            Assert.That(property, Is.Not.Null);
-            return (bool)property.GetValue(controller);
-        }
-
-        private static object GetOccupancy(Component controller)
-        {
-            PropertyInfo property = controller.GetType().GetProperty("Occupancy");
-            Assert.That(property, Is.Not.Null);
-            return property.GetValue(controller);
-        }
-
-        private static void Invoke(Component target, string methodName)
-        {
-            MethodInfo method = target.GetType().GetMethod(
-                methodName,
-                BindingFlags.Instance | BindingFlags.Public);
-            Assert.That(method, Is.Not.Null, "Missing public method " + methodName);
-            method.Invoke(target, null);
+            var boardSystem = new BoardSystem(new StubBoardView(boardDefinition));
+            var inputSystem = new GameplayInputSystem(new StubGameplayInputSource());
+            return new GridPlacementSystem(
+                boardSystem,
+                inputSystem,
+                view,
+                new StubTowerInstanceFactory());
         }
 
         private static void SetPrivateField(object target, string fieldName, object value)
@@ -178,6 +142,45 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, "Missing private field " + fieldName);
             field.SetValue(target, value);
+        }
+
+        private sealed class StubBoardView : IBoardView
+        {
+            public StubBoardView(BoardDefinition board)
+            {
+                Board = board;
+            }
+
+            public BoardDefinition Board { get; }
+            public Vector3 WorldOrigin => Vector3.zero;
+
+            public void ApplyVisibility(bool visible)
+            {
+            }
+        }
+
+        private sealed class StubGameplayInputSource : IGameplayInputSource
+        {
+            public GameplayInputSnapshot Capture()
+            {
+                return default;
+            }
+        }
+
+        private sealed class StubTowerInstanceFactory : ITowerInstanceFactory
+        {
+            public bool TryCreate(
+                TowerDefinition definition,
+                Vector3 position,
+                out GameObject instance)
+            {
+                instance = null;
+                return false;
+            }
+
+            public void Destroy(GameObject instance)
+            {
+            }
         }
     }
 }

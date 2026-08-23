@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Mobile;
 using UnityEngine;
@@ -35,14 +36,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(SafeAreaSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(BoardSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(BoardCameraSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameplayInputSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GridPlacementSystem)), Is.False);
         }
 
         [Test]
         public void ActiveLevelSystemSlot_RejectsOverlappingGroupsAndOnlyDetachesItsOwner()
         {
             var slot = new ActiveLevelSystemSlot();
-            var first = new LevelSystemGroup(null, null);
-            var second = new LevelSystemGroup(null, null);
+            var first = new LevelSystemGroup(null, null, null, null);
+            var second = new LevelSystemGroup(null, null, null, null);
 
             slot.Attach(first);
 

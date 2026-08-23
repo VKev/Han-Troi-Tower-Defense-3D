@@ -12,12 +12,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         {
             var root = new GameObject("View Test");
             GridPlacementView view = root.AddComponent<GridPlacementView>();
-            TowerDefinition tower = ScriptableObject.CreateInstance<TowerDefinition>();
             yield return null;
 
-            view.SetTower(tower);
             view.Show(
-                new GridCell(3, 4, 1),
                 new TowerFootprint(2, 3, 2),
                 new Vector3(5f, 1f, 6f),
                 1f,
@@ -38,7 +35,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(renderers[1].enabled, Is.True);
 
             view.Show(
-                new GridCell(4, 5, 1),
                 new TowerFootprint(2, 3, 2),
                 new Vector3(6f, 1f, 7f),
                 1f,
@@ -52,7 +48,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(renderers[1].enabled, Is.False);
 
             Object.Destroy(root);
-            Object.Destroy(tower);
             yield return null;
         }
     }
