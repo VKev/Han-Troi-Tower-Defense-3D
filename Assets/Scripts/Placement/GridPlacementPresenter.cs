@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TowerDefense3D.GridPlacement
 {
     /// <summary>
-    /// Temporary compatibility bridge from existing level adapters to GridPlacementSystem.
+    /// Unity input and placement-view boundary bound directly by LevelLifetimeScope.
     /// </summary>
     public sealed class GridPlacementPresenter : MonoBehaviour
     {
@@ -44,15 +44,6 @@ namespace TowerDefense3D.GridPlacement
             if (initialTower != null)
             {
                 placementSystem.SelectTower(initialTower);
-            }
-        }
-
-        public void Initialize()
-        {
-            if (placementSystem == null)
-            {
-                throw new InvalidOperationException(
-                    "LevelLifetimeScope must bind GridPlacementPresenter before adapters initialize.");
             }
         }
 

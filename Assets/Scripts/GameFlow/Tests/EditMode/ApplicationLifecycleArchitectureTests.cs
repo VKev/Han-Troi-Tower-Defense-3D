@@ -39,6 +39,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameplayInputSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GridPlacementSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameplayUISystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameFlowSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(LevelSceneSystem)), Is.False);
         }
 
         [Test]

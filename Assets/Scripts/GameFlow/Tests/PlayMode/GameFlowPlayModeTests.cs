@@ -21,6 +21,8 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         private const string LevelTwoScenePath = "Assets/Scenes/Levels/Level_002.unity";
         private const string ApplicationLifetimeScopeTypeName =
             "TowerDefense3D.GameFlow.ApplicationLifetimeScope";
+        private const string LevelLifetimeScopeTypeName =
+            "TowerDefense3D.GameFlow.LevelLifetimeScope";
         private const int TransitionFrameBudget = 600;
 
         private string saveRoot;
@@ -78,7 +80,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
-            Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
+            Assert.That(CountLoadedByFullName(LevelLifetimeScopeTypeName), Is.Zero);
             Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
             Assert.That(CountLoaded<SafeAreaView>(), Is.EqualTo(1));
             Assert.That(
@@ -104,7 +106,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<AudioListener>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(CountLoaded<ApplicationUIView>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<LevelSceneContext>(), Is.EqualTo(1));
+            Assert.That(CountLoadedByFullName(LevelLifetimeScopeTypeName), Is.EqualTo(1));
             AssertTowerNetworkInitialized();
 
             GameplayUIView gameplayUi = FindLoaded<GameplayUIView>();
@@ -116,8 +118,8 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             yield return WaitForLevelMenu();
 
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
-            Assert.That(CountLoaded<LevelSceneContext>(), Is.Zero);
-            Assert.That(CountLoaded<TowerNetworkSceneAdapter>(), Is.Zero);
+            Assert.That(CountLoadedByFullName(LevelLifetimeScopeTypeName), Is.Zero);
+            Assert.That(CountLoaded<GridPlacementPresenter>(), Is.Zero);
             Assert.That(CountLoaded<TowerLinkView>(), Is.Zero);
             Assert.That(CountLoaded<TowerProjectilePoolView>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
@@ -187,17 +189,16 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 
         private static void AssertTowerNetworkInitialized()
         {
-            Assert.That(CountLoaded<TowerNetworkSceneAdapter>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<GridPlacementPresenter>(), Is.EqualTo(1));
             Assert.That(CountLoaded<TowerLinkView>(), Is.EqualTo(1));
             Assert.That(CountLoaded<TowerProjectilePoolView>(), Is.EqualTo(1));
 
-            TowerNetworkSceneAdapter adapter = FindLoaded<TowerNetworkSceneAdapter>();
+            GridPlacementPresenter presenter = FindLoaded<GridPlacementPresenter>();
 
-            Assert.That(adapter, Is.Not.Null);
-            Assert.That(adapter.IsInitialized, Is.True);
-            Assert.That(adapter.CanEditTopology, Is.True);
-            Assert.That(adapter.GetComponent<TowerLinkView>(), Is.Not.Null);
-            Assert.That(adapter.GetComponent<TowerProjectilePoolView>(), Is.Not.Null);
+            Assert.That(presenter, Is.Not.Null);
+            Assert.That(presenter.IsInitialized, Is.True);
+            Assert.That(presenter.GetComponent<TowerLinkView>(), Is.Not.Null);
+            Assert.That(presenter.GetComponent<TowerProjectilePoolView>(), Is.Not.Null);
         }
 
         private static IEnumerator WaitForLevelMenu()

@@ -11,7 +11,7 @@ namespace TowerDefense3D.GameFlow
         private readonly SaveSystem saveSystem;
         private readonly ApplicationUISystem applicationUiSystem;
 
-        private GameFlowCoordinator coordinator;
+        private GameFlowSystem gameFlowSystem;
 
         public LevelMenuFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
             ApplicationUISystem applicationUiSystem)
@@ -21,14 +21,14 @@ namespace TowerDefense3D.GameFlow
             this.applicationUiSystem = applicationUiSystem;
         }
 
-        public void Initialize(GameFlowCoordinator coordinator)
+        public void Initialize(GameFlowSystem system)
         {
-            this.coordinator = coordinator;
+            gameFlowSystem = system;
         }
 
         public void Shutdown()
         {
-            coordinator = null;
+            gameFlowSystem = null;
         }
 
         public void Show()
@@ -42,7 +42,7 @@ namespace TowerDefense3D.GameFlow
                 items.Add(new LevelMenuItemState(entry.LevelNumber, entry.DisplayName, isUnlocked, false));
             }
 
-            coordinator.SetState(GameFlowState.LevelMenu);
+            gameFlowSystem.SetState(GameFlowState.LevelMenu);
             applicationUiSystem.HideLoading();
             applicationUiSystem.HideBlockingError();
             applicationUiSystem.SetInputBlocked(false);
@@ -62,13 +62,13 @@ namespace TowerDefense3D.GameFlow
                 Show();
                 if (!writeResult.IsSuccess)
                 {
-                    coordinator.ShowSaveWarning(writeResult.Error);
+                    gameFlowSystem.ShowSaveWarning(writeResult.Error);
                 }
 
                 return;
             }
 
-            coordinator.BeginLevelLoad(new LevelLoadRequest(entry.LevelNumber, entry.ScenePath));
+            gameFlowSystem.BeginLevelLoad(new LevelLoadRequest(entry.LevelNumber, entry.ScenePath));
         }
 
     }

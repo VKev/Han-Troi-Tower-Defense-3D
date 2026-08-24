@@ -1,7 +1,7 @@
+using System;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
-using System;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -9,16 +9,26 @@ using VContainer.Unity;
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
-    /// Child composition root for systems and Unity views owned by one additive level scene.
+    /// Composes one additive level and attaches its explicit system group to the application entry point.
     /// </summary>
+    [DisallowMultipleComponent]
     public sealed class LevelLifetimeScope : LifetimeScope
     {
+        [SerializeField, Min(1)] private int levelNumber = 1;
+
         private ActiveLevelSystemSlot activeLevelSystems;
         private LevelSystemGroup attachedSystems;
+        private GridPlacementPresenter placementPresenter;
+
+        public int LevelNumber => levelNumber;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            LevelSceneContext levelContext = FindSceneComponent<LevelSceneContext>();
+            if (levelNumber <= 0)
+            {
+                throw new InvalidOperationException("LevelLifetimeScope requires a positive authored level number.");
+            }
+
             GridPlacementView placementView = FindSceneComponent<GridPlacementView>();
             if (placementView.WorldCamera == null)
             {
@@ -47,14 +57,13 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterComponentInHierarchy<TowerNetworkHudView>()
                 .As<ITowerNetworkHudView>();
             builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
-            builder.RegisterComponentInHierarchy<TowerNetworkSceneAdapter>();
             builder.RegisterInstance(placementView.WorldCamera);
             builder.Register<BoardSystem>(Lifetime.Scoped);
             builder.Register<BoardCameraSystem>(Lifetime.Scoped);
             builder.Register<GameplayInputSystem>(Lifetime.Scoped);
             builder.Register<GridPlacementSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkSystem>(Lifetime.Scoped)
-                .WithParameter("levelNumber", levelContext.LevelNumber);
+                .WithParameter("levelNumber", levelNumber);
             builder.Register<TowerInteractionSystem>(Lifetime.Scoped);
             builder.Register<TowerSimulationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
@@ -67,24 +76,36 @@ namespace TowerDefense3D.GameFlow
 
         protected override void OnDestroy()
         {
+            ReleaseLevelSystems();
+            base.OnDestroy();
+        }
+
+        internal void ReleaseLevelSystems()
+        {
             if (attachedSystems != null)
             {
                 activeLevelSystems.DetachForScopeTeardown(attachedSystems);
                 attachedSystems = null;
             }
 
-            base.OnDestroy();
+            if (placementPresenter != null)
+            {
+                placementPresenter.Shutdown();
+                placementPresenter = null;
+            }
+
+            DisposeCore();
         }
 
         private void AttachLevelSystems(IObjectResolver container)
         {
             activeLevelSystems = container.Resolve<ActiveLevelSystemSlot>();
+            placementPresenter = container.Resolve<GridPlacementPresenter>();
             GridPlacementSystem placementSystem = container.Resolve<GridPlacementSystem>();
             GridPlacementView placementView = container.Resolve<GridPlacementView>();
-            container.Resolve<GridPlacementPresenter>().Bind(placementSystem, placementView);
-            container.Resolve<TowerNetworkSceneAdapter>().Bind(container.Resolve<TowerNetworkSystem>());
+            placementPresenter.Bind(placementSystem, placementView);
             container.Resolve<GameplayUISystem>()
-                .BindReturnToMenu(container.Resolve<GameFlowCoordinator>().RequestReturnToLevelMenu);
+                .BindReturnToMenu(container.Resolve<GameFlowSystem>().RequestReturnToLevelMenu);
 
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();

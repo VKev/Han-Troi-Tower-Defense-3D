@@ -17,7 +17,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private TowerCatalog towerCatalog;
         private TowerNetworkManager manager;
         private TowerNetworkSystem system;
-        private TowerNetworkSceneAdapter adapter;
 
         [SetUp]
         public void SetUp()
@@ -38,8 +37,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             manager = new TowerNetworkManager(towerCatalog);
             system = new TowerNetworkSystem(manager, placementSystem, 1);
             owner = new GameObject("Tower Network System Test");
-            adapter = owner.AddComponent<TowerNetworkSceneAdapter>();
-            adapter.Bind(system);
         }
 
         [TearDown]
@@ -63,21 +60,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             system.Dispose();
 
             Assert.That(manager.HasLevelSession, Is.False);
-        }
-
-        [Test]
-        public void SceneAdapter_DelegatesStateWithoutOwningSystemTeardown()
-        {
-            system.Start();
-            adapter.Initialize(new LevelSceneRuntimeContext(1, () => { }, manager));
-
-            Assert.That(adapter.IsInitialized, Is.True);
-            Assert.That(adapter.CanEditTopology, Is.True);
-
-            adapter.Shutdown();
-
-            Assert.That(adapter.IsInitialized, Is.False);
-            Assert.That(manager.HasLevelSession, Is.True);
         }
 
         [Test]

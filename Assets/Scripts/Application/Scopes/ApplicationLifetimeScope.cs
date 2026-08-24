@@ -9,26 +9,21 @@ using VContainer.Unity;
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
-    /// Bootstrap composition root for application-owned services and Unity adapters.
+    /// Bootstrap composition root for application systems and Unity integration boundaries.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ApplicationLifetimeScope : LifetimeScope
     {
         [SerializeField] private LevelCatalog levelCatalog;
         [SerializeField] private TowerCatalog towerCatalog;
-        [SerializeField] private LevelSceneLoader levelSceneLoader;
         [SerializeField] private ApplicationUIView applicationUIView;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            if (levelCatalog == null
-                || towerCatalog == null
-                || levelSceneLoader == null
-                || applicationUIView == null)
+            if (levelCatalog == null || towerCatalog == null || applicationUIView == null)
             {
                 throw new InvalidOperationException(
-                    "ApplicationLifetimeScope requires LevelCatalog, TowerCatalog, "
-                    + "LevelSceneLoader, and ApplicationUIView.");
+                    "ApplicationLifetimeScope requires LevelCatalog, TowerCatalog, and ApplicationUIView.");
             }
 
             builder.RegisterInstance(levelCatalog);
@@ -39,12 +34,10 @@ namespace TowerDefense3D.GameFlow
                 Lifetime.Singleton);
             builder.Register<SaveSystem>(Lifetime.Singleton)
                 .WithParameter("applicationVersion", Application.version);
-            builder.Register<ActiveLevelState>(Lifetime.Singleton);
-            builder.Register<BootstrapSceneActivator>(Lifetime.Singleton)
-                .WithParameter("bootstrapScenePath", levelSceneLoader.BootstrapScenePath);
-            builder.Register<LevelUnloadSequence>(Lifetime.Singleton);
-            builder.Register<LevelLoadSequence>(Lifetime.Singleton);
-            builder.RegisterComponent(levelSceneLoader);
+            builder.Register<BootstrapSceneActivator>(Lifetime.Singleton);
+            builder.Register<VContainerLevelSceneGateway>(Lifetime.Singleton)
+                .As<ILevelSceneGateway>();
+            builder.Register<LevelSceneSystem>(Lifetime.Singleton);
             builder.RegisterComponent(applicationUIView)
                 .As<IApplicationUIView>();
             builder.Register<ApplicationUISystem>(Lifetime.Singleton);
@@ -52,7 +45,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<LevelMenuFlow>(Lifetime.Singleton);
             builder.Register<LevelTransitionFlow>(Lifetime.Singleton);
             builder.Register<SaveRecoveryFlow>(Lifetime.Singleton);
-            builder.Register<GameFlowCoordinator>(Lifetime.Singleton);
+            builder.Register<GameFlowSystem>(Lifetime.Singleton);
             builder.Register<FramePacingSystem>(Lifetime.Singleton);
             builder.RegisterComponentInHierarchy<SafeAreaView>()
                 .As<ISafeAreaView>();

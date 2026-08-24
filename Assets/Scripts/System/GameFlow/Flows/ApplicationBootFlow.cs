@@ -9,7 +9,7 @@ namespace TowerDefense3D.GameFlow
         private readonly SaveSystem saveSystem;
         private readonly ApplicationUISystem applicationUiSystem;
 
-        private GameFlowCoordinator coordinator;
+        private GameFlowSystem gameFlowSystem;
 
         public ApplicationBootFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
             ApplicationUISystem applicationUiSystem)
@@ -19,19 +19,19 @@ namespace TowerDefense3D.GameFlow
             this.applicationUiSystem = applicationUiSystem;
         }
 
-        public void Initialize(GameFlowCoordinator coordinator)
+        public void Initialize(GameFlowSystem system)
         {
-            this.coordinator = coordinator;
+            gameFlowSystem = system;
         }
 
         public void Shutdown()
         {
-            coordinator = null;
+            gameFlowSystem = null;
         }
 
         public void Boot()
         {
-            coordinator.SetState(GameFlowState.Booting);
+            gameFlowSystem.SetState(GameFlowState.Booting);
             applicationUiSystem.HideBlockingError();
             applicationUiSystem.HideLevelMenu();
             applicationUiSystem.ShowLoading("Loading progress...");
@@ -46,10 +46,10 @@ namespace TowerDefense3D.GameFlow
             SaveLoadResult loadResult = saveSystem.Initialize();
             if (loadResult.IsSuccess || loadResult.Status == SaveLoadStatus.Missing)
             {
-                coordinator.ShowLevelMenu();
+                gameFlowSystem.ShowLevelMenu();
                 if (!saveSystem.LastWriteResult.IsSuccess)
                 {
-                    coordinator.ShowSaveWarning(saveSystem.LastWriteResult.Error);
+                    gameFlowSystem.ShowSaveWarning(saveSystem.LastWriteResult.Error);
                 }
 
                 return;
@@ -58,9 +58,9 @@ namespace TowerDefense3D.GameFlow
             ShowError(loadResult.Error);
         }
 
-        public void ShowError(string error)
+        private void ShowError(string error)
         {
-            coordinator.SetState(GameFlowState.BlockingError);
+            gameFlowSystem.SetState(GameFlowState.BlockingError);
             applicationUiSystem.HideLoading();
             applicationUiSystem.SetInputBlocked(false);
             string message = string.IsNullOrWhiteSpace(error) ? "Progress could not be loaded." : error;
@@ -76,10 +76,10 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            coordinator.ShowLevelMenu();
+            gameFlowSystem.ShowLevelMenu();
             if (!result.IsSuccess)
             {
-                coordinator.ShowSaveWarning(result.Error);
+                gameFlowSystem.ShowSaveWarning(result.Error);
             }
         }
 

@@ -59,7 +59,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             boardSystem.Start();
             inputSystem.Start();
             controller.Bind(placementSystem, placementView);
-            controller.Initialize();
 
             Assert.That(controller.Occupancy, Is.Not.Null);
             Assert.That(controller.SelectedTower, Is.Not.Null);
@@ -161,7 +160,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             boardSystem.Start();
             inputSystem.Start();
             controller.Bind(placementSystem, placementView);
-            controller.Initialize();
 
             Assert.That(controller.SelectedTower, Is.Not.Null);
 

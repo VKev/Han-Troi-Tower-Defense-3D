@@ -10,15 +10,18 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly FramePacingSystem framePacingSystem;
         private readonly SafeAreaSystem safeAreaSystem;
-        private readonly GameFlowCoordinator gameFlowSystem;
+        private readonly ApplicationUISystem applicationUISystem;
+        private readonly GameFlowSystem gameFlowSystem;
 
         public ApplicationSystemGroup(
             FramePacingSystem framePacingSystem,
             SafeAreaSystem safeAreaSystem,
-            GameFlowCoordinator gameFlowSystem)
+            ApplicationUISystem applicationUISystem,
+            GameFlowSystem gameFlowSystem)
         {
             this.framePacingSystem = framePacingSystem;
             this.safeAreaSystem = safeAreaSystem;
+            this.applicationUISystem = applicationUISystem;
             this.gameFlowSystem = gameFlowSystem;
         }
 
@@ -26,7 +29,16 @@ namespace TowerDefense3D.GameFlow
         {
             framePacingSystem.Start();
             safeAreaSystem.Start();
-            gameFlowSystem.Start();
+            applicationUISystem.Start();
+            try
+            {
+                gameFlowSystem.Start();
+            }
+            catch
+            {
+                applicationUISystem.Dispose();
+                throw;
+            }
         }
 
         public void Tick()
@@ -37,6 +49,7 @@ namespace TowerDefense3D.GameFlow
         public void Shutdown()
         {
             gameFlowSystem.Dispose();
+            applicationUISystem.Dispose();
         }
     }
 }

@@ -1,5 +1,3 @@
-using TowerDefense3D.Towers;
-
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
@@ -7,52 +5,50 @@ namespace TowerDefense3D.GameFlow
     /// </summary>
     public sealed class LevelTransitionFlow
     {
-        private readonly LevelSceneLoader levelSceneLoader;
-        private readonly TowerNetworkManager towerNetworkManager;
+        private readonly LevelSceneSystem levelSceneSystem;
         private readonly ApplicationUISystem applicationUiSystem;
 
-        private GameFlowCoordinator coordinator;
+        private GameFlowSystem gameFlowSystem;
 
-        public LevelTransitionFlow(LevelSceneLoader levelSceneLoader, TowerNetworkManager towerNetworkManager,
+        public LevelTransitionFlow(
+            LevelSceneSystem levelSceneSystem,
             ApplicationUISystem applicationUiSystem)
         {
-            this.levelSceneLoader = levelSceneLoader;
-            this.towerNetworkManager = towerNetworkManager;
+            this.levelSceneSystem = levelSceneSystem;
             this.applicationUiSystem = applicationUiSystem;
         }
 
-        public void Initialize(GameFlowCoordinator coordinator)
+        public void Initialize(GameFlowSystem system)
         {
-            this.coordinator = coordinator;
+            gameFlowSystem = system;
         }
 
         public void Shutdown()
         {
-            coordinator = null;
+            gameFlowSystem = null;
         }
 
         public void BeginLevelLoad(LevelLoadRequest request)
         {
-            coordinator.SetState(GameFlowState.LoadingLevel);
+            gameFlowSystem.SetState(GameFlowState.LoadingLevel);
             applicationUiSystem.HideBlockingError();
             applicationUiSystem.HideLevelMenu();
             applicationUiSystem.ShowLoading($"Loading Level {request.LevelNumber}...");
             applicationUiSystem.SetInputBlocked(true);
-            levelSceneLoader.LoadLevel(request, towerNetworkManager, coordinator.RequestReturnToLevelMenu,
-                result => OnLevelLoadCompleted(request, result));
+            levelSceneSystem.LoadLevel(request, result => OnLevelLoadCompleted(request, result));
         }
 
         public void BeginReturnToLevelMenu()
         {
-            coordinator.SetState(GameFlowState.LoadingLevel);
+            gameFlowSystem.SetState(GameFlowState.LoadingLevel);
             applicationUiSystem.ShowLoading("Returning to Level Menu...");
             applicationUiSystem.SetInputBlocked(true);
-            levelSceneLoader.UnloadActiveLevel(OnReturnToMenuCompleted);
+            levelSceneSystem.UnloadActiveLevel(OnReturnToMenuCompleted);
         }
 
         private void OnLevelLoadCompleted(LevelLoadRequest request, LevelTransitionResult result)
         {
-            if (coordinator == null)
+            if (gameFlowSystem == null)
             {
                 return;
             }
@@ -60,12 +56,12 @@ namespace TowerDefense3D.GameFlow
             applicationUiSystem.HideLoading();
             if (result.IsSuccess)
             {
-                coordinator.SetState(GameFlowState.Gameplay);
+                gameFlowSystem.SetState(GameFlowState.Gameplay);
                 applicationUiSystem.SetInputBlocked(false);
                 return;
             }
 
-            coordinator.SetState(GameFlowState.BlockingError);
+            gameFlowSystem.SetState(GameFlowState.BlockingError);
             applicationUiSystem.SetInputBlocked(false);
             applicationUiSystem.ShowBlockingError(CreateTransitionErrorMessage(result),
                 () => BeginLevelLoad(request), null);
@@ -73,7 +69,7 @@ namespace TowerDefense3D.GameFlow
 
         private void OnReturnToMenuCompleted(LevelTransitionResult result)
         {
-            if (coordinator == null)
+            if (gameFlowSystem == null)
             {
                 return;
             }
@@ -81,11 +77,11 @@ namespace TowerDefense3D.GameFlow
             applicationUiSystem.HideLoading();
             if (result.IsSuccess)
             {
-                coordinator.ShowLevelMenu();
+                gameFlowSystem.ShowLevelMenu();
                 return;
             }
 
-            coordinator.SetState(GameFlowState.BlockingError);
+            gameFlowSystem.SetState(GameFlowState.BlockingError);
             applicationUiSystem.SetInputBlocked(false);
             applicationUiSystem.ShowBlockingError(CreateTransitionErrorMessage(result),
                 BeginReturnToLevelMenu, null);

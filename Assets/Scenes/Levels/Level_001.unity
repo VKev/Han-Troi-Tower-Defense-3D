@@ -726,31 +726,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 180353321}
-  - component: {fileID: 180353320}
   - component: {fileID: 180353322}
   m_Layer: 0
-  m_Name: Level Context
+  m_Name: Level Scope
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &180353320
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 180353319}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa13f6043c0e48efa7b729d09bb19460, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelSceneContext
-  levelNumber: 1
-  participants:
-  - {fileID: 933105057}
-  - {fileID: 933105059}
 --- !u!4 &180353321
 Transform:
   m_ObjectHideFlags: 0
@@ -782,6 +765,7 @@ MonoBehaviour:
     TypeName:
   autoRun: 0
   autoInjectGameObjects: []
+  levelNumber: 1
 --- !u!1 &200052385
 GameObject:
   m_ObjectHideFlags: 0
@@ -3656,8 +3640,6 @@ GameObject:
   m_Component:
   - component: {fileID: 933105056}
   - component: {fileID: 933105055}
-  - component: {fileID: 933105057}
-  - component: {fileID: 933105059}
   - component: {fileID: 933105064}
   - component: {fileID: 933105063}
   - component: {fileID: 933105066}
@@ -3698,31 +3680,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1331288970}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &933105057
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 933105054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fde086410e733d64eb8ddc5f86d5ff1b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.GridPlacementSceneAdapter
-  placementPresenter: {fileID: 933105055}
---- !u!114 &933105059
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 933105054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 658a3fd56af620e4fb5cd223e20abaa8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.TowerNetworkSceneAdapter
 --- !u!114 &933105063
 MonoBehaviour:
   m_ObjectHideFlags: 0

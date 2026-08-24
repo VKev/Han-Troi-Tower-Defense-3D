@@ -4,7 +4,6 @@ using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using TowerDefense3D.GameFlow.Editor;
-using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,9 +11,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 {
     public sealed class GameFlowEditModeTests
     {
-        private const string TowerCatalogPath =
-            "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
-
         private string testRoot;
 
         [SetUp]
@@ -217,20 +213,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public void MissingLevelResult_ShowsRetry_AndDoesNotChangeUnlockProgress()
         {
             LevelCatalog catalog = ScriptableObject.CreateInstance<LevelCatalog>();
-            GameObject loaderOwner = new GameObject("Level Loader Test");
-            LevelSceneLoader loader = loaderOwner.AddComponent<LevelSceneLoader>();
             var save = new SaveSystem(new LocalSaveRepository(testRoot), "test");
             var applicationView = new RecordingApplicationUIView();
             var ui = new ApplicationUISystem(applicationView);
-            TowerNetworkManager towerNetworkManager = CreateTowerNetworkManager();
-            var transitionFlow = new LevelTransitionFlow(loader, towerNetworkManager, ui);
+            var transitionFlow = new LevelTransitionFlow(
+                new LevelSceneSystem(new RecordingLevelSceneGateway()),
+                ui);
             SetCatalogEntries(
                 catalog,
                 new LevelCatalogEntry(1, "Level 1", "Assets/Scenes/Levels/Missing.unity"),
                 new LevelCatalogEntry(2, "Level 2", "Assets/Scenes/Levels/Level_002.unity"));
-            var coordinator = new GameFlowCoordinator(
-                ui,
-                towerNetworkManager,
+            var gameFlowSystem = new GameFlowSystem(
                 new ApplicationBootFlow(catalog, save, ui),
                 new LevelMenuFlow(catalog, save, ui),
                 transitionFlow,
@@ -238,7 +231,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             try
             {
-                coordinator.Start();
+                gameFlowSystem.Start();
                 InvokePrivate(
                     transitionFlow,
                     "OnLevelLoadCompleted",
@@ -248,7 +241,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                         1,
                         "Scene is missing from the player scene list."));
 
-                Assert.That(coordinator.State, Is.EqualTo(GameFlowState.BlockingError));
+                Assert.That(gameFlowSystem.State, Is.EqualTo(GameFlowState.BlockingError));
                 CollectionAssert.AreEqual(new[] { 1 }, save.Progress.CreateSortedSnapshot());
                 Assert.That(applicationView.BlockingErrorMessage, Does.Contain("missing"));
                 Assert.That(applicationView.Retry, Is.Not.Null);
@@ -256,39 +249,63 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
             finally
             {
-                coordinator.Dispose();
-                UnityEngine.Object.DestroyImmediate(loaderOwner);
+                gameFlowSystem.Dispose();
                 UnityEngine.Object.DestroyImmediate(catalog);
             }
         }
 
         [Test]
-        public void LevelSceneContext_InitializesAndShutsDownParticipantsInContractOrder()
+        public void LevelSceneSystem_LoadsAndUnloadsThroughGatewayInOrder()
         {
-            GameObject owner = new GameObject("Level Context Test");
-            LevelSceneContext context = owner.AddComponent<LevelSceneContext>();
-            RecordingParticipant first = owner.AddComponent<RecordingParticipant>();
-            RecordingParticipant second = owner.AddComponent<RecordingParticipant>();
-            SetLevelContext(context, 2, first, second);
+            var gateway = new RecordingLevelSceneGateway();
+            var system = new LevelSceneSystem(gateway);
+            LevelTransitionResult loadResult = default;
+            LevelTransitionResult unloadResult = default;
 
-            try
-            {
-                bool initialized = context.TryInitialize(
-                    new LevelSceneRuntimeContext(2, () => { }),
-                    out string error);
+            system.LoadLevel(
+                new LevelLoadRequest(2, "Assets/Scenes/Levels/Level_002.unity"),
+                result => loadResult = result);
+            system.UnloadActiveLevel(result => unloadResult = result);
 
-                Assert.That(initialized, Is.True, error);
-                Assert.That(first.InitializeCount, Is.EqualTo(1));
-                Assert.That(second.InitializeCount, Is.EqualTo(1));
-                context.Shutdown();
-                Assert.That(first.ShutdownCount, Is.EqualTo(1));
-                Assert.That(second.ShutdownCount, Is.EqualTo(1));
-                Assert.That(context.IsInitialized, Is.False);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(owner);
-            }
+            Assert.That(loadResult.IsSuccess, Is.True, loadResult.Error);
+            Assert.That(unloadResult.IsSuccess, Is.True, unloadResult.Error);
+            CollectionAssert.AreEqual(new[] { "unload:0", "load:2", "unload:2" }, gateway.Operations);
+            Assert.That(system.HasActiveLevel, Is.False);
+        }
+
+        [Test]
+        public void LevelSceneSystem_RejectsInvalidRequestBeforeGatewayStarts()
+        {
+            var gateway = new RecordingLevelSceneGateway();
+            var system = new LevelSceneSystem(gateway);
+            LevelTransitionResult result = default;
+
+            system.LoadLevel(default, observed => result = observed);
+
+            Assert.That(result.Status, Is.EqualTo(LevelTransitionStatus.InvalidLevel));
+            Assert.That(gateway.Operations, Is.Empty);
+            Assert.That(system.IsTransitioning, Is.False);
+        }
+
+        [Test]
+        public void LevelSceneSystem_RejectsRepeatedLoadWhileTransitionIsPending()
+        {
+            var gateway = new RecordingLevelSceneGateway { DelayLoad = true };
+            var system = new LevelSceneSystem(gateway);
+            var request = new LevelLoadRequest(1, "Assets/Scenes/Levels/Level_001.unity");
+            LevelTransitionResult repeatedResult = default;
+
+            system.LoadLevel(request, _ => { });
+            system.LoadLevel(request, result => repeatedResult = result);
+
+            Assert.That(repeatedResult.Status, Is.EqualTo(LevelTransitionStatus.Busy));
+            CollectionAssert.AreEqual(new[] { "unload:0", "load:1" }, gateway.Operations);
+            Assert.That(system.IsTransitioning, Is.True);
+
+            gateway.CompletePendingLoad();
+
+            Assert.That(system.IsTransitioning, Is.False);
+            Assert.That(system.HasActiveLevel, Is.True);
         }
 
         private static void SetCatalogEntries(LevelCatalog catalog, params LevelCatalogEntry[] entries)
@@ -297,19 +314,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 "levels",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             field.SetValue(catalog, new List<LevelCatalogEntry>(entries));
-        }
-
-        private static TowerNetworkManager CreateTowerNetworkManager()
-        {
-            TowerCatalog towerCatalog =
-                AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
-
-            Assert.That(
-                towerCatalog,
-                Is.Not.Null,
-                $"Tower Catalog is missing at '{TowerCatalogPath}'.");
-
-            return new TowerNetworkManager(towerCatalog);
         }
 
         private static void InvokePrivate(object target, string methodName, params object[] arguments)
@@ -321,36 +325,57 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             method.Invoke(target, arguments);
         }
 
-        private static void SetLevelContext(
-            LevelSceneContext context,
-            int levelNumber,
-            params MonoBehaviour[] participants)
+        private sealed class RecordingLevelSceneGateway : ILevelSceneGateway
         {
-            SerializedObject serialized = new SerializedObject(context);
-            serialized.FindProperty("levelNumber").intValue = levelNumber;
-            SerializedProperty participantArray = serialized.FindProperty("participants");
-            participantArray.arraySize = participants.Length;
-            for (int index = 0; index < participants.Length; index++)
+            private LevelLoadRequest pendingRequest;
+            private Action<LevelSceneHandle, LevelTransitionResult> pendingCompletion;
+
+            public List<string> Operations { get; } = new List<string>();
+            public bool DelayLoad { get; set; }
+
+            public void LoadLevel(
+                LevelLoadRequest request,
+                Action<LevelSceneHandle, LevelTransitionResult> completion)
             {
-                participantArray.GetArrayElementAtIndex(index).objectReferenceValue = participants[index];
+                Operations.Add("load:" + request.LevelNumber);
+                if (DelayLoad)
+                {
+                    pendingRequest = request;
+                    pendingCompletion = completion;
+                    return;
+                }
+
+                Complete(request, completion);
             }
 
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private sealed class RecordingParticipant : MonoBehaviour, ILevelSceneParticipant
-        {
-            public int InitializeCount { get; private set; }
-            public int ShutdownCount { get; private set; }
-
-            public void Initialize(LevelSceneRuntimeContext context)
+            public void UnloadLevel(
+                LevelSceneHandle handle,
+                Action<LevelTransitionResult> completion)
             {
-                InitializeCount++;
+                Operations.Add("unload:" + handle.LevelNumber);
+                completion(new LevelTransitionResult(
+                    LevelTransitionStatus.Success,
+                    handle.LevelNumber,
+                    string.Empty));
             }
 
-            public void Shutdown()
+            public void CompletePendingLoad()
             {
-                ShutdownCount++;
+                Action<LevelSceneHandle, LevelTransitionResult> completion = pendingCompletion;
+                pendingCompletion = null;
+                Complete(pendingRequest, completion);
+            }
+
+            private static void Complete(
+                LevelLoadRequest request,
+                Action<LevelSceneHandle, LevelTransitionResult> completion)
+            {
+                completion(
+                    new LevelSceneHandle(request.LevelNumber, request.ScenePath, request.LevelNumber),
+                    new LevelTransitionResult(
+                        LevelTransitionStatus.Success,
+                        request.LevelNumber,
+                        string.Empty));
             }
         }
 

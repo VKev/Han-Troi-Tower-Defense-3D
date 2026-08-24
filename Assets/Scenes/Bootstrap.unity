@@ -171,7 +171,6 @@ GameObject:
   m_Component:
   - component: {fileID: 527752829}
   - component: {fileID: 527752830}
-  - component: {fileID: 527752831}
   m_Layer: 0
   m_Name: Application Systems
   m_TagString: Untagged
@@ -212,21 +211,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   levelCatalog: {fileID: 11400000, guid: 72adb02be7a879645aff871628f24628, type: 2}
   towerCatalog: {fileID: 11400000, guid: 707ff93761f384241a6f582f8f220d55, type: 2}
-  levelSceneLoader: {fileID: 527752831}
   applicationUIView: {fileID: 2997823818241270888}
---- !u!114 &527752831
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 527752824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35caf3d6ff0744149510c73ca1a49473, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelSceneLoader
-  bootstrapScenePath: Assets/Scenes/Bootstrap.unity
 --- !u!114 &734632858
 MonoBehaviour:
   m_ObjectHideFlags: 0

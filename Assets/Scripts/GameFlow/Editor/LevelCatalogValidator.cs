@@ -121,16 +121,9 @@ namespace TowerDefense3D.GameFlow.Editor
                             $"Bootstrap requires exactly one ApplicationLifetimeScope; found {lifetimeScopes}.");
                     }
 
-                    RequireExactlyOne<LevelSceneLoader>(scene, "LevelSceneLoader", errors);
                     RequireExactlyOne<ApplicationUIView>(scene, "ApplicationUIView", errors);
                     RequireExactlyOne<SafeAreaView>(scene, "SafeAreaView", errors);
                     RequireExactlyOne<EventSystem>(scene, "EventSystem", errors);
-
-                    int levelContexts = CountComponents<LevelSceneContext>(scene);
-                    if (levelContexts != 0)
-                    {
-                        errors.Add($"Bootstrap must not contain LevelSceneContext; found {levelContexts}.");
-                    }
 
                     int levelLifetimeScopes = CountComponentsByFullName(scene, LevelLifetimeScopeTypeName);
                     if (levelLifetimeScopes != 0)
@@ -148,10 +141,6 @@ namespace TowerDefense3D.GameFlow.Editor
                 entry.ScenePath,
                 scene =>
                 {
-                    RequireExactlyOne<LevelSceneContext>(
-                        scene,
-                        $"LevelSceneContext for Level {entry.LevelNumber}",
-                        errors);
                     RequireExactlyOneByFullName(scene, LevelLifetimeScopeTypeName, "LevelLifetimeScope", errors);
                     ValidateLevelLifetimeScope(scene, entry.LevelNumber, errors);
                     RequireExactlyOne<BoardView>(scene, "BoardView", errors);
@@ -163,7 +152,6 @@ namespace TowerDefense3D.GameFlow.Editor
                     RequireExactlyOne<TowerNetworkHudView>(scene, "TowerNetworkHudView", errors);
                     RequireExactlyOne<TowerInstanceFactory>(scene, "TowerInstanceFactory", errors);
                     RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);
-                    RequireExactlyOne<TowerNetworkSceneAdapter>(scene, "TowerNetworkSceneAdapter", errors);
                     RequireExactlyOne<TowerLinkView>(scene, "TowerLinkView", errors);
                     RequireExactlyOne<TowerProjectilePoolView>(scene, "TowerProjectilePoolView", errors);
                     RequireExactlyOne<SafeAreaView>(scene, "SafeAreaView", errors);
@@ -177,47 +165,15 @@ namespace TowerDefense3D.GameFlow.Editor
                     int lifetimeScopes = CountComponentsByFullName(
                         scene,
                         ApplicationLifetimeScopeTypeName);
-                    int loaders = CountComponents<LevelSceneLoader>(scene);
                     int applicationUiViews = CountComponents<ApplicationUIView>(scene);
-                    if (lifetimeScopes + loaders + applicationUiViews != 0)
+                    if (lifetimeScopes + applicationUiViews != 0)
                     {
                         errors.Add(
                             $"Level {entry.LevelNumber} contains Bootstrap-owned application services "
-                            + $"(scope={lifetimeScopes}, loader={loaders}, appUI={applicationUiViews}).");
+                            + $"(scope={lifetimeScopes}, appUI={applicationUiViews}).");
                     }
-
-                    LevelSceneContext context = FindFirstComponent<LevelSceneContext>(scene);
-                    if (context != null && context.LevelNumber != entry.LevelNumber)
-                    {
-                        errors.Add(
-                            $"Level {entry.LevelNumber} catalog entry does not match "
-                            + $"authored context {context.LevelNumber}.");
-                    }
-
-                    ValidateTowerNetworkObject(scene, entry.LevelNumber, errors);
                 },
                 errors);
-        }
-
-        private static void ValidateTowerNetworkObject(Scene scene, int levelNumber, List<string> errors)
-        {
-            TowerNetworkSceneAdapter adapter = FindFirstComponent<TowerNetworkSceneAdapter>(scene);
-            if (adapter == null)
-            {
-                return;
-            }
-
-            GameObject owner = adapter.gameObject;
-            if (owner.GetComponent<GridPlacementPresenter>() == null
-                || owner.GetComponent<GameplayInputSource>() == null
-                || owner.GetComponent<TowerInstanceFactory>() == null
-                || owner.GetComponent<TowerLinkView>() == null
-                || owner.GetComponent<TowerProjectilePoolView>() == null)
-            {
-                errors.Add(
-                    $"Level {levelNumber} must keep placement, input, link, and projectile views "
-                    + "together on the TowerNetworkSceneAdapter object.");
-            }
         }
 
         private static void ValidateLevelLifetimeScope(Scene scene, int levelNumber, List<string> errors)
@@ -233,7 +189,15 @@ namespace TowerDefense3D.GameFlow.Editor
             {
                 errors.Add(
                     $"Level {levelNumber} LevelLifetimeScope must disable Auto Run; "
-                    + "LevelLoadSequence owns its parented Build call.");
+                    + "VContainerLevelSceneGateway owns its parented Build call.");
+            }
+
+            SerializedProperty authoredLevelNumber =
+                new SerializedObject(lifetimeScope).FindProperty("levelNumber");
+            if (authoredLevelNumber == null || authoredLevelNumber.intValue != levelNumber)
+            {
+                errors.Add(
+                    $"Level {levelNumber} catalog entry does not match its authored LevelLifetimeScope number.");
             }
         }
 
