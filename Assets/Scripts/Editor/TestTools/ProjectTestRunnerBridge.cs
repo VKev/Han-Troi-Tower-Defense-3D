@@ -25,7 +25,8 @@ namespace TowerDefense3D.Tests.EditMode
             "TowerDefense3D.Enemies.Tests.",
             "TowerDefense3D.GameFlow.Tests.",
             "TowerDefense3D.GridPlacement.Tests.",
-            "TowerDefense3D.Towers.Tests."
+            "TowerDefense3D.Towers.Tests.",
+            "TowerDefense3D.Waves.Tests."
         };
 
         static ProjectTestRunnerBridge()
