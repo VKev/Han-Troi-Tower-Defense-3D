@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a02845355e00b1f4a86aaeabed27f463, type: 3}
+  m_Name: EnemyCatalog
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyCatalog
+  definitions:
+  - {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+  - {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
+  - {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+  - {fileID: 11400000, guid: b111ebd2a63e5374791b768be64fe3ee, type: 2}
+  - {fileID: 11400000, guid: 95175cd02ddf7af4cb6e933188c03abf, type: 2}
+  - {fileID: 11400000, guid: 7de0dab6d0dde6b48b3b15300225797a, type: 2}
+  - {fileID: 11400000, guid: 14f998cb656be094b9f009a48ab36a2f, type: 2}
+  - {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}

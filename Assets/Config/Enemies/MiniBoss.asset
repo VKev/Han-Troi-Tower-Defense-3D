@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1591757b8a62da429e474d85a2c2284, type: 3}
+  m_Name: MiniBoss
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyDefinition
+  stableId: mini-boss
+  displayName: Mini-boss
+  rank: 1
+  baseMaxHealth: 160
+  baseMoveSpeed: 1.2
+  basePhysicalResistance: 25
+  baseMagicResistance: 25
+  elementStatusEffectMultiplier: 1
+  slowStrengthMultiplier: 0.5
+  slowDurationMultiplier: 0.5
+  stunDurationMultiplier: 0.5
+  levitateDurationMultiplier: 0.5
+  pushDistanceMultiplier: 0.25
+  goldOnDeath: 60
+  soulOnDirectHit: 2

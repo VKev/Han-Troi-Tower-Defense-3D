@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1591757b8a62da429e474d85a2c2284, type: 3}
+  m_Name: Armored
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyDefinition
+  stableId: armored
+  displayName: Armored
+  rank: 0
+  baseMaxHealth: 24
+  baseMoveSpeed: 1.7
+  basePhysicalResistance: 60
+  baseMagicResistance: 10
+  elementStatusEffectMultiplier: 1
+  slowStrengthMultiplier: 1
+  slowDurationMultiplier: 1
+  stunDurationMultiplier: 1
+  levitateDurationMultiplier: 1
+  pushDistanceMultiplier: 1
+  goldOnDeath: 18
+  soulOnDirectHit: 1

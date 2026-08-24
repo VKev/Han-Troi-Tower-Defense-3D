@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9935d1041e209449b7272642697ea40, type: 3}
+  m_Name: SummonerBoss
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.SummonerBossEnemyDefinition
+  stableId: summoner-boss
+  displayName: Summoner Boss
+  rank: 2
+  baseMaxHealth: 600
+  baseMoveSpeed: 0.8
+  basePhysicalResistance: 35
+  baseMagicResistance: 35
+  elementStatusEffectMultiplier: 1
+  slowStrengthMultiplier: 0.35
+  slowDurationMultiplier: 0.5
+  stunDurationMultiplier: 1
+  levitateDurationMultiplier: 1
+  pushDistanceMultiplier: 0
+  goldOnDeath: 180
+  soulOnDirectHit: 3
+  summonPhases:
+  - startHealthFraction: 1
+    summonIntervalSeconds: 8
+    entries:
+    - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 2
+  - startHealthFraction: 0.6
+    summonIntervalSeconds: 6
+    entries:
+    - definition: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
+      count: 1
+    - definition: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+      count: 1
+  - startHealthFraction: 0.3
+    summonIntervalSeconds: 4
+    entries:
+    - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 2
+    - definition: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
+      count: 2
+    - definition: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+      count: 2
