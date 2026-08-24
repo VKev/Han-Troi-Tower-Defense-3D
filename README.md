@@ -1,49 +1,19 @@
 # TowerDefense3D
 
-## Project overview
+## Repository layout
 
-TowerDefense3D is a **mobile-first 3D tower-defense game** built with Unity. Touch devices are the primary target; mouse input in the Unity Editor is a development fallback rather than the main interaction model.
-
-Project decisions should therefore preserve these constraints:
-
-- Design gameplay input for touch first, including tap, drag, placement confirmation, and cancellation.
-- Keep controls, placement feedback, and UI readable on small screens and inside device safe areas.
-- Avoid interactions that depend on hover, right-click, or a hardware keyboard.
-- Treat mobile CPU, GPU, memory, battery, thermal limits, and allocation pressure as production constraints.
-- Validate gameplay, presentation, builds, and performance on representative mobile aspect ratios and physical devices before release.
-
-## Project documentation
-
-`Documents/` is the canonical location for human-authored project documents. Store durable, reviewable material here, including:
-
-- Game Design Documents (GDDs).
-- Technical specifications and architecture notes.
-- Approved implementation plans and decision records.
-- Test plans, QA reports, release notes, and operational guides.
-- Research or design references that materially affect the project.
-
-Do not use `Documents/` for generated caches, temporary agent output, Unity-generated files, credentials, or raw chat transcripts. A document should clearly state its status when relevant, such as `Draft`, `Under Review`, `Approved`, or `Superseded`.
-
-## Technical specification workflow
-
-`Documents/TechnicalSpec/` is the canonical location for feature-level technical specifications. Use one English Markdown file per feature with the filename format `<FeatureName>_Technical_Specification.md`.
-
-When the project owner explicitly approves an implementation plan, the responsible agent must:
-
-1. Create or update the feature's technical specification before changing implementation files.
-2. Mark the specification `Approved` only when the project owner explicitly approved the plan. Otherwise keep it `Draft` or `Under Review`.
-3. Record the approved scope, non-goals, architecture and ownership, data and runtime-state contracts, interaction flow, folder and assembly boundaries, serialized integration, compatibility or migration constraints, verification plan, risks, and deferred work.
-4. Implement against the specification. Do not silently expand scope or replace an approved decision; obtain approval for material changes and update the specification before continuing.
-5. After implementation, update the same file with the actual status, validation evidence, known limitations, and any approved deviation from the original plan.
-6. Record consequential AI-assisted decisions in `Documents/AICollaboration/` and keep execution tasks in the project's issue tracker rather than turning the specification into a task list.
-
-Technical specifications are durable project records and should be reviewed and version-controlled according to repository policy.
-
-## Documentation language
-
-All human-authored project documentation must be written in English. This requirement applies to filenames, titles, headings, body text, field labels, tables, captions, and review notes in `Documents/`, as well as documentation files at the repository root.
-
-Non-English names, source phrases, or direct quotations may be retained only when they are necessary for cultural or technical accuracy, and they must include a nearby English explanation.
+```text
+TowerDefense3D/
+├── Assets/
+│   ├── Config/          # Authored ScriptableObject and settings instances
+│   ├── Resources/       # Runtime-loadable prefabs, models, materials, and textures
+│   ├── Scenes/          # Bootstrap, gameplay levels, and test scenes
+│   └── Scripts/         # Project-owned C# source
+├── Builds/              # Ignored local player builds
+├── Documents/           # Game design, technical specifications, and durable project records
+├── Packages/            # Unity package manifest and lock file
+└── ProjectSettings/     # Unity project settings
+```
 
 ## Source layout
 
@@ -51,106 +21,81 @@ Project-owned C# source uses technical boundaries at the root and feature owners
 
 ```text
 Assets/Scripts/
-├── Application/  # VContainer composition, scopes, entry point, and scene-scope integration
-├── System/       # Plain C# game/application logic, state, rules, contracts, and definitions
-├── Components/   # Runtime MonoBehaviour boundaries authored in scenes and prefabs
-├── Editor/       # Editor-only authoring and validation tools
-└── Tests/        # Centralized EditMode and PlayMode tests
+├── Application/         # VContainer composition, entry point, scopes, and scene integration
+│   ├── EntryPoint/
+│   ├── Scenes/
+│   └── Scopes/
+├── System/              # Plain C# systems, rules, state, contracts, and definitions
+│   └── <FeatureName>/
+├── Components/          # MonoBehaviour boundaries authored in scenes and prefabs
+│   └── <FeatureName>/
+├── Editor/              # Editor-only authoring, validation, and project test tools
+│   └── <FeatureName>/
+└── Tests/
+    ├── EditMode/
+    │   └── <FeatureName>/
+    └── PlayMode/
+        └── <FeatureName>/
 ```
+
+### Dependency direction
 
 - `Application` may depend on `Components`, `System`, and VContainer.
-- `Components` may depend on `System`, the Input System, and uGUI. It must not own application or system lifecycle.
-- `System` must not depend on `MonoBehaviour`, `Application`, `Components`, VContainer, Editor APIs, or test assemblies.
-- `Editor` and `Tests` reference only the exact runtime assemblies required by their tools or fixtures.
-- Add responsibility-based subfolders only when current files establish a real ownership boundary; do not create empty layers to match an example.
-- Do not add a shared `Core` folder pre-emptively. Extract a narrowly named shared primitive only after at least two systems have a concrete duplicate requirement.
-- Keep boundary interfaces flat beside their owning system. Do not add a `Ports` folder or an interface solely for naming symmetry or mocking.
-- Preserve stable namespaces during folder-only moves unless a separate approved change changes the namespace contract.
-- Do not store authored ScriptableObject/settings instances or general-purpose loadable assets inside `Assets/Scripts`; see "Shared asset roots" below.
+- `Components` may depend on `System` and Unity runtime APIs. It must not own application or system lifecycle.
+- `System` contains player-build logic but must not depend on `Application`, `Components`, VContainer, `UnityEditor`, or test assemblies.
+- `Editor` may depend on the exact runtime assemblies required by its tools.
+- `Tests` may depend on the exact runtime assemblies required by each fixture.
+- Dependencies must remain one-way and acyclic.
 
-### One source home per responsibility
+### Assembly paths
 
-- Put plain logic under its owning `System/<SystemName>/` folder and Unity-facing runtime code under the matching `Components/<SystemName>/` folder.
-- Keep feature-specific models, rules, definitions, and collaborators inside the owning system instead of creating parallel top-level feature trees.
-- Keep small modules flat. Add `Models`, `Definitions`, `Rules`, `Views`, or `Presenters` only when the files have a real shared role at that level.
-- Use role-revealing postfixes for peers at the same architectural level, such as `*System`, `*View`, `*Presenter`, `*Source`, and `*Factory`.
-- Preserve `.meta` files and GUIDs during moves so scene, prefab, and ScriptableObject references remain intact.
-- Do not add a redundant `Scripts` child beneath any source root.
+| Path | Assembly |
+| --- | --- |
+| `Assets/Scripts/Application/` | `TowerDefense3D.Application.Runtime` |
+| `Assets/Scripts/System/` | `TowerDefense3D.System.Runtime` |
+| `Assets/Scripts/Components/` | `TowerDefense3D.Components.Runtime` |
+| `Assets/Scripts/Editor/` | `TowerDefense3D.Editor` |
+| `Assets/Scripts/Tests/EditMode/` | `TowerDefense3D.EditModeTests` |
+| `Assets/Scripts/Tests/PlayMode/` | `TowerDefense3D.PlayModeTests` |
 
-### Stable filenames and explicit versions
-
-- Use stable, descriptive filenames and `CreateAssetMenu.fileName` values. Do not append opaque balance or iteration labels such as `_V0_3`, `_v2`, `Latest`, or `Final` to ordinary source or asset names.
-- Do not hardcode a balance/revision version merely to identify the current data iteration. Track normal balance evolution in source control and the relevant design documentation.
-- A version identifier is allowed only when it is part of an explicit compatibility or migration contract, such as a save schema or external API. Its owner, supported values, and migration behavior must be clear in code or documentation.
-- Rename versioned assets through Unity's Asset Database and update any literal load paths; preserve GUID-based serialized references.
-
-### Serialized field renames
-
-- Do not use `FormerlySerializedAs` in project-owned source. Prefer the final, descriptive field name so obsolete terminology does not remain hidden in migration attributes.
-- After a direct serialized-field rename, compile in Unity, inspect every affected ScriptableObject, prefab, and scene, restore or confirm the intended value in the Inspector, and save those assets through Unity so they are reserialized under the new field name.
-- Treat the loss of the old serialized key as an intentional data migration. Record and test any non-default value that must be restored; do not assume Unity copied it to the renamed field.
-- If backward compatibility is genuinely required, use an explicit, reviewable Editor or versioned-data migration and remove that migration after its supported window; do not keep the old field name through an attribute.
-
-### C# line wrapping
-
-- Keep method signatures, calls, assignments, declarations, and conditions on one readable line while they remain reasonably short. About 120 characters is a readability target, not a hard limit.
-- Wrap only when a line becomes materially difficult to scan. Break at logical argument or condition groups and indent continuation lines consistently.
-- Do not place every argument, operand, or assignment fragment on a separate line merely because an expression contains several items.
-- Apply formatting cleanup only to files already touched by the current change; do not create unrelated formatting churn.
-
-## Runtime lifecycle ownership
-
-The project uses one VContainer-driven lifecycle entry point for application and system work. Authored Unity objects remain focused boundaries for engine-owned callbacks and serialized references.
+## Asset and document paths
 
 ```text
-Bootstrap [ApplicationLifetimeScope]
-`-- ApplicationEntryPoint [IAsyncStartable, ITickable, ILateTickable, IDisposable]
-    |-- ApplicationSystemGroup
-    `-- ActiveLevelSystemSlot
-        `-- LevelSystemGroup [owned by the active LevelLifetimeScope]
-            |-- Tick: GameplayInputSystem
-            |-- Tick: GridPlacementSystem
-            |-- Tick: TowerInteractionSystem
-            |-- Tick: TowerSimulationSystem
-            |-- Tick: GameplayUISystem.RefreshIfDirty
-            |-- LateTick: TowerLinkPresentationSystem
-            |-- LateTick: TowerProjectilePresentationSystem
-            `-- LateTick: BoardCameraSystem
+Assets/Config/<FeatureName>/       # Authored ScriptableObject/settings instances
+Assets/Resources/Prefabs/          # Runtime-loadable prefabs
+Assets/Resources/Models/           # Runtime-loadable models grouped by asset name
+Assets/Resources/Materials/        # Runtime-loadable materials
+Assets/Resources/Textures/         # Runtime-loadable textures
+Assets/Scenes/Bootstrap.unity      # Persistent application composition scene
+Assets/Scenes/Levels/Level_###.unity
+Assets/Scenes/Tests/               # Test-only scenes
+Documents/GameDesign/              # Game design documents
+Documents/TechnicalSpec/           # Approved or proposed technical specifications
+Documents/AICollaboration/         # Concise AI-assisted decision records
+Builds/                            # Ignored local build output
 ```
 
-- `ApplicationLifetimeScope` is the persistent composition root in `Assets/Scenes/Bootstrap.unity`.
-- Every additive `Level_###` scene owns one child `LevelLifetimeScope`. The level scope constructs one `LevelSystemGroup`, attaches it to `ActiveLevelSystemSlot`, and detaches it before scene unload and scope disposal.
-- `ApplicationEntryPoint` is the only project type that implements VContainer lifecycle interfaces. It calls concrete systems in an explicit, reviewable order; there is no automatic `IEnumerable` registry and no custom PlayerLoop integration.
-- System lifecycle methods are ordinary methods on concrete classes. Do not introduce project-wide tick interfaces, `SystemTickContext`, or a lifecycle `Core` solely to mirror VContainer.
-- Keep object- and engine-owned callbacks on focused `MonoBehaviour` components: `OnEnable`, `OnDisable`, `OnDestroy`, `OnValidate`, pointer/drag callbacks, trigger/collision callbacks, and similar Unity events.
-- A `MonoBehaviour` may gather Unity data or render state, but it must delegate system decisions, simulation, and application state transitions to plain C# systems.
-- Do not expose a mutable `Manager.Instance`, use global container resolution, add an unmanaged `DontDestroyOnLoad` root, or let application services retain objects owned by a disposed level scope.
-- The detailed approved migration, ordering, dependency graph, and verification contract live in `Documents/TechnicalSpec/SystemLifecycle_Technical_Specification.md`.
+## Folder and path rules
 
-## Shared asset roots
+- Put plain gameplay logic in `Assets/Scripts/System/<FeatureName>/` and matching Unity-facing code in `Assets/Scripts/Components/<FeatureName>/`.
+- Keep small features flat. Add responsibility folders such as `Definitions`, `Models`, `Rules`, `Views`, or `Presenters` only when multiple current files share that role.
+- Do not add a redundant `Scripts` child beneath any source root.
+- Do not create a shared `Core`, `Common`, `Helpers`, or `Ports` folder before multiple systems have a concrete shared requirement.
+- Keep boundary interfaces beside the system that owns the requirement unless a real cross-system module justifies another location.
+- Use role-revealing postfixes for peers at the same level, such as `*System`, `*View`, `*Presenter`, `*Source`, and `*Factory`.
+- Store ScriptableObject type definitions in their owning source feature and store authored `.asset` instances under `Assets/Config/<FeatureName>/`.
+- Keep general-purpose loadable assets under the matching `Assets/Resources/<Category>/` folder. Do not create singular alternatives such as `Assets/Resources/Model/`.
+- Use stable descriptive file and asset names. Do not append opaque labels such as `V1`, `V2`, `Latest`, or `Final` unless they are part of an explicit compatibility contract.
+- Preserve `.meta` files and GUIDs when moving Unity files. Update literal `Resources.Load` or `AssetDatabase.LoadAssetAtPath` paths together with the move.
+- Preserve stable namespaces during folder-only moves unless a separately approved change updates the namespace contract.
 
-Two root-level folders under `Assets/` centralize instance data instead of scattering it per feature:
+## C# line wrapping
 
-- `Assets/Config/<FeatureName>/` stores every authored ScriptableObject/settings instance owned by that feature (for example board definitions, tower definitions, level catalogs). Non-feature-specific engine or render-pipeline settings live under a category folder instead, such as `Assets/Config/Rendering/`.
-- `Assets/Resources/<Category>/` stores general-purpose loadable assets (textures, materials, prefabs, models) organized by asset type rather than by feature. Vendor assets that specifically require Unity's `Resources` folder behavior (for example `DOTweenSettings.asset`) also live here at the root; do not relocate a vendor-required entry out of this folder.
-- Assets inside `Assets/TextMesh Pro/Resources/` remain vendor-owned and out of scope for this convention, per the vendor/third-party boundary already in effect for that folder.
-- When code loads one of these assets by a literal string path (`AssetDatabase.LoadAssetAtPath`, `Resources.Load`), update that path alongside any move; a direct serialized-field reference needs no code change since Unity tracks it by GUID.
-- Because the project owner drops new assets into `Assets/Resources/` directly and often, refresh Better Context (`better-context-unity scan` then `agents` then `verify`) before every commit that touches `Assets/Resources/` or `Assets/Config/`, so the generated maps stay accurate for the next agent or session.
-
-## Blender model optimization and Unity import workflow
-
-Apply this workflow whenever Blender or Blender MCP prepares a project-owned 3D model for Unity. The canonical destination is `Assets/Resources/Models/<AssetName>/`; `Models` is plural. Do not create a parallel `Assets/Resources/Model/` convention for new assets.
-
-1. **Confirm the exact Blender target before editing.** Record the active object, selected objects, source asset name, transforms, mesh and triangle counts, material slots, texture images, UV layers, and whether the Blender document is saved. Exclude hidden backups and unrelated objects from export. A Blender or MCP restart can restore unsaved normal edits, so re-audit the live mesh after every reconnect or restart instead of assuming the previous in-memory state survived.
-2. **Capture a non-destructive baseline.** Record geometry and UV hashes together with duplicate vertices, duplicate faces, zero-area faces, loose geometry, boundary or non-manifold edges, custom normals, sharp edges, and modifiers. Keep a hidden backup object or saved source copy before changing normals or topology.
-3. **Clean topology conservatively.** Merge only proven duplicate vertices whose position, UV, material, and corner data are compatible. Remove exact duplicate or degenerate faces and genuinely unused loose geometry. Do not merge UV seams, collapse intentional hard edges, delete uncertain interior surfaces, or decimate an already mobile-sized mesh merely to reduce its count. Any reduction must preserve the gameplay silhouette, material boundaries, and UV mapping and must be visually verified from relevant camera angles.
-4. **Repair shading intentionally.** Preserve explicitly authored hard edges. When imported custom normals or sharp flags are inconsistent, clear only the faulty custom-normal data, enable smooth shading on intended surfaces, and rebuild sharp edges from the model's structure. A 60-degree split angle is the default starting point for stylized mechanical props, but the threshold must be verified visually and adjusted when the asset requires a different curve-to-corner boundary.
-5. **Verify Blender before export.** Confirm that topology and UV hashes are unchanged unless an approved cleanup intentionally changed them. Recheck duplicates, degenerates, manifold state, transforms, materials, and texture links. Inspect the textured model in Material Preview from multiple relevant angles; a Solid viewport check is not texture validation.
-6. **Export a Unity-ready FBX.** Export only the approved target mesh to `Assets/Resources/Models/<AssetName>/<AssetName>.fbx`. Use stable object, mesh, and material names; apply unit scale; use `-Z` forward and `Y` up; bake the axis conversion into static meshes so Unity imports a zero-rotation, Y-up root; export tangents and smoothing information; disable animation export unless the asset actually owns animation. Copy texture dependencies into `<AssetName>.fbm/` and avoid redundant texture copies beside that folder.
-7. **Configure Unity texture importers.** Keep base color textures in sRGB. Import normal textures as `NormalMap` with sRGB disabled. Import metallic, roughness, occlusion, and other data maps with sRGB disabled. Reimport the FBX after texture importer changes and verify that the material references the expected assets inside the same model folder.
-8. **Run round-trip and Unity verification.** Reimport the exported FBX into a temporary Blender context and compare topology counts and UV hashes with the approved source. In Unity, verify zero root rotation, unit scale, Y-up bounds, triangle and UV availability, material and texture links, and a correct asset preview. Confirm `Resources.Load<GameObject>("Models/<AssetName>/<AssetName>")` succeeds, inspect new Console errors, and remove all temporary candidate assets and `.meta` files.
-
-Builds, compilation, and automated tests do not replace visual asset validation. Record the measured topology, UV preservation result, Unity import result, and any intentional deviation when handing off the asset.
+- Keep method signatures, calls, assignments, declarations, and conditions on one readable line while they remain reasonably short. About 120 characters is a readability target, not a hard limit.
+- Wrap only when a line becomes materially difficult to scan.
+- Break at logical argument or condition groups and indent continuation lines consistently.
+- Do not place every argument, operand, or assignment fragment on a separate line merely because an expression contains several items.
+- Apply formatting cleanup only to files already touched by the current change; do not create unrelated formatting churn.
 
 ## Commit message convention
 
@@ -158,8 +103,8 @@ Builds, compilation, and automated tests do not replace visual asset validation.
 - Write the subject in Vietnamese and capitalize only its first letter. Do not use Title Case.
 - Keep established technical keywords, feature names, API names, and product terminology in English when translating them would reduce clarity.
 - Keep the subject concise, imperative, and without a trailing period.
-- Keep the commit message a single-line subject; do not add a body or bullet list.
-- Do not append a `Co-Authored-By` trailer or any other AI-attribution line. The commit author is the project owner's configured Git identity.
+- Keep the commit message as a single-line subject; do not add a body or bullet list.
+- Do not append a `Co-Authored-By` trailer or any other AI-attribution line.
 
 Examples:
 
@@ -168,39 +113,3 @@ feat: Thêm chức năng mới
 fix: Sửa lỗi tương tác
 docs: Cập nhật tài liệu dự án
 ```
-
-## AI collaboration records
-
-`Documents/AICollaboration/` stores concise records of consequential collaboration with AI assistants. These records preserve decisions and validation evidence without copying an entire raw transcript.
-
-Use the filename format:
-
-```text
-AI_Collaboration_Log_<Area>_dd_mm.md
-```
-
-Existing records are available in [`Documents/AICollaboration/`](Documents/AICollaboration/).
-
-Every entry must include:
-
-1. **Problem being addressed** — the problem or uncertainty being addressed.
-2. **Prompt used** — the relevant user prompt, summarized when it contains sensitive or repetitive content.
-3. **Important AI response** — the important recommendation, evidence, or warning returned by the AI.
-4. **Option selected, revised, or rejected** — the option selected, changed, or rejected.
-5. **Rationale** — why that decision was made.
-6. **Implementation or verification result** — the implementation or verification result.
-
-Each log must also record the responsible chat/session ID. When several sessions contribute, identify the responsible session for each entry. Store the session ID rather than a raw transcript or machine-specific transcript path.
-
-## AI-assisted project work
-
-- Follow the applicable instructions in `AGENTS.md` before changing project files.
-- Treat generated maps, indexes, and summaries as navigation aids rather than substitutes for current source, assets, runtime state, compilation, or tests.
-- Keep tool-specific setup, commands, and maintenance procedures in agent instructions or dedicated operational documentation.
-- Record consequential decisions and validation outcomes in `Documents/AICollaboration/`.
-
-## Security and traceability
-
-- Redact API keys, credentials, personal data, and other secrets.
-- Do not mark a plan as approved unless the user or project owner explicitly approved it.
-- Link validation evidence where practical, but keep generated caches and transient setup output out of this documentation hierarchy.
