@@ -1,0 +1,24 @@
+{
+    "name": "TowerDefense3D.PlayModeTests",
+    "rootNamespace": "TowerDefense3D.Tests.PlayMode",
+    "references": [
+        "TowerDefense3D.System.Runtime",
+        "TowerDefense3D.Components.Runtime",
+        "TowerDefense3D.Application.Runtime",
+        "UnityEngine.TestRunner",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,12 +1,16 @@
 {
-    "name": "TowerDefense3D.Application.Runtime",
-    "rootNamespace": "TowerDefense3D",
+    "name": "TowerDefense3D.Editor",
+    "rootNamespace": "TowerDefense3D.Editor",
     "references": [
         "TowerDefense3D.System.Runtime",
         "TowerDefense3D.Components.Runtime",
-        "VContainer"
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.ugui"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

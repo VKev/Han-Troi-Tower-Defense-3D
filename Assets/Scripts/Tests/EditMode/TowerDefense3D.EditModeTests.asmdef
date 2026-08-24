@@ -1,0 +1,27 @@
+{
+    "name": "TowerDefense3D.EditModeTests",
+    "rootNamespace": "TowerDefense3D.Tests.EditMode",
+    "references": [
+        "TowerDefense3D.System.Runtime",
+        "TowerDefense3D.Components.Runtime",
+        "TowerDefense3D.Application.Runtime",
+        "TowerDefense3D.Editor",
+        "VContainer",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
