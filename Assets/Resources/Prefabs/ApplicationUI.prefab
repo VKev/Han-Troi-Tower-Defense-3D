@@ -88,7 +88,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60e3a2f2c3674a0dbb9f8030403e4da6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LoadingScreen
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.LoadingView
   root: {fileID: 545877395637186123}
   messageLabel: {fileID: 6219872366872017444}
 --- !u!1 &864988572090316995
@@ -259,7 +259,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c9dd732fc6a8458fb6b2685082e09b54, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.SaveWarningView
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.SaveWarningView
   root: {fileID: 1257181379001094429}
   messageLabel: {fileID: 3884810816661172220}
   retryButton: {fileID: 3603567340409425883}
@@ -837,7 +837,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cfdc68e1c46c4c9aa125c9320f57904a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.StartNewConfirmation
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.StartNewConfirmationView
   root: {fileID: 3834878550069615593}
   confirmButton: {fileID: 5503866495946560952}
   cancelButton: {fileID: 3990588220333879118}
@@ -1052,7 +1052,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1358b1a1a01d474f87a1a85f2d8c9a27, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelMenuScreen
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.LevelMenuView
   root: {fileID: 4111630129925745326}
   levelButtons:
   - {fileID: 7852197431310836659}
@@ -1225,12 +1225,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a06bfd4a6524590ab3019045476b323, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.BlockingErrorScreen
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.BlockingErrorView
   root: {fileID: 5349571612447739272}
   messageLabel: {fileID: 1286972490215444909}
   retryButton: {fileID: 2751865869422476380}
   startNewButton: {fileID: 6043415013022677018}
-  startNewConfirmation: {fileID: 8709419882331941888}
+  startNewConfirmationView: {fileID: 8709419882331941888}
 --- !u!1 &5385852338044292044
 GameObject:
   m_ObjectHideFlags: 0
@@ -2125,10 +2125,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b99bb19a43f4624b0c452d242953b25, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.ApplicationUIManager
-  levelMenuScreen: {fileID: 4516961176713474803}
-  loadingScreen: {fileID: 7763576146333402473}
-  blockingErrorScreen: {fileID: 5661798934854109212}
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.ApplicationUIView
+  levelMenuView: {fileID: 4516961176713474803}
+  loadingView: {fileID: 7763576146333402473}
+  blockingErrorView: {fileID: 5661798934854109212}
   saveWarningView: {fileID: 2342862865517047801}
   inputBlocker: {fileID: 3282206375984452704}
 --- !u!1 &8448707604121503951
@@ -2501,6 +2501,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7846121203076229056, guid: 65d8ef0de2fab474da309eec3e9c5fd9, type: 3}
+      propertyPath: m_EditorClassIdentifier
+      value: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.LevelButtonView
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2521,7 +2525,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0bae66905c84438186457bec104a9d50, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelButtonView
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.LevelButtonView
 --- !u!1001 &6272137493067578806
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2614,6 +2618,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7846121203076229056, guid: 65d8ef0de2fab474da309eec3e9c5fd9, type: 3}
+      propertyPath: m_EditorClassIdentifier
+      value: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.LevelButtonView
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2629,7 +2637,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0bae66905c84438186457bec104a9d50, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelButtonView
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.LevelButtonView
 --- !u!224 &7209204104915782354 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3676950769664833380, guid: 65d8ef0de2fab474da309eec3e9c5fd9, type: 3}

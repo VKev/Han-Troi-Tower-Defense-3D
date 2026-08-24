@@ -67,6 +67,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(ApplicationEntryPoint)), Is.True);
             Assert.That(typeof(IDisposable).IsAssignableFrom(typeof(GameFlowCoordinator)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(SaveSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(ApplicationUISystem)), Is.False);
         }
 
         [Test]
@@ -76,19 +77,20 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             GameObject levelLoaderOwner = new GameObject("Level Loader Test");
             LevelSceneLoader levelSceneLoader = levelLoaderOwner.AddComponent<LevelSceneLoader>();
             var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
-            var applicationUi = new RecordingApplicationUI();
+            var applicationView = new RecordingApplicationUIView();
+            var applicationUiSystem = new ApplicationUISystem(applicationView);
             GameFlowCoordinator coordinator = CreateGameFlowCoordinator(
                 catalog,
                 saveSystem,
                 CreateTowerNetworkManager(),
                 levelSceneLoader,
-                applicationUi);
+                applicationUiSystem);
 
             try
             {
                 coordinator.Start();
 
-                Assert.That(applicationUi.InitializeCount, Is.EqualTo(1));
+                Assert.That(applicationUiSystem.IsStarted, Is.True);
                 Assert.That(coordinator.State, Is.EqualTo(GameFlowState.BlockingError));
             }
             finally
@@ -98,7 +100,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(catalog);
             }
 
-            Assert.That(applicationUi.ShutdownCount, Is.EqualTo(1));
+            Assert.That(applicationUiSystem.IsStarted, Is.False);
         }
 
         [Test]
@@ -108,15 +110,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             GameObject levelLoaderOwner = new GameObject("Level Loader Startup Failure Test");
             LevelSceneLoader levelSceneLoader = levelLoaderOwner.AddComponent<LevelSceneLoader>();
             var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
-            var applicationUi = new RecordingApplicationUI();
+            var applicationView = new RecordingApplicationUIView();
+            var applicationUiSystem = new ApplicationUISystem(applicationView);
             var expectedFailure = new InvalidOperationException("Expected startup failure.");
-            applicationUi.ThrowOnNextShowLoading(expectedFailure);
+            applicationView.ThrowOnNextShowLoading(expectedFailure);
             GameFlowCoordinator coordinator = CreateGameFlowCoordinator(
                 catalog,
                 saveSystem,
                 CreateTowerNetworkManager(),
                 levelSceneLoader,
-                applicationUi);
+                applicationUiSystem);
 
             try
             {
@@ -124,13 +127,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                     () => coordinator.Start());
 
                 Assert.That(observedFailure, Is.SameAs(expectedFailure));
-                Assert.That(applicationUi.InitializeCount, Is.EqualTo(1));
-                Assert.That(applicationUi.ShutdownCount, Is.EqualTo(1));
+                Assert.That(applicationUiSystem.IsStarted, Is.False);
 
                 coordinator.Start();
 
-                Assert.That(applicationUi.InitializeCount, Is.EqualTo(2));
-                Assert.That(applicationUi.ShutdownCount, Is.EqualTo(1));
+                Assert.That(applicationUiSystem.IsStarted, Is.True);
                 Assert.That(coordinator.State, Is.EqualTo(GameFlowState.BlockingError));
             }
             finally
@@ -140,7 +141,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(catalog);
             }
 
-            Assert.That(applicationUi.ShutdownCount, Is.EqualTo(2));
+            Assert.That(applicationUiSystem.IsStarted, Is.False);
         }
 
         [Test]
@@ -150,19 +151,20 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             GameObject levelLoaderOwner = new GameObject("Level Loader Failed Startup Disposal Test");
             LevelSceneLoader levelSceneLoader = levelLoaderOwner.AddComponent<LevelSceneLoader>();
             var saveSystem = new SaveSystem(new LocalSaveRepository(testRoot), "test");
-            var applicationUi = new RecordingApplicationUI();
-            applicationUi.ThrowOnNextShowLoading(new InvalidOperationException("Expected startup failure."));
+            var applicationView = new RecordingApplicationUIView();
+            var applicationUiSystem = new ApplicationUISystem(applicationView);
+            applicationView.ThrowOnNextShowLoading(new InvalidOperationException("Expected startup failure."));
             GameFlowCoordinator coordinator = CreateGameFlowCoordinator(
                 catalog,
                 saveSystem,
                 CreateTowerNetworkManager(),
                 levelSceneLoader,
-                applicationUi);
+                applicationUiSystem);
 
             try
             {
                 Assert.Throws<InvalidOperationException>(() => coordinator.Start());
-                Assert.That(applicationUi.ShutdownCount, Is.EqualTo(1));
+                Assert.That(applicationUiSystem.IsStarted, Is.False);
             }
             finally
             {
@@ -171,7 +173,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(catalog);
             }
 
-            Assert.That(applicationUi.ShutdownCount, Is.EqualTo(1));
+            Assert.That(applicationUiSystem.IsStarted, Is.False);
         }
 
         [Test]
@@ -192,23 +194,24 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void ApplicationUiManager_DoesNotInitializeFromAwake()
+        public void ApplicationUISystem_ControlsAuthoredViewWithoutMonoLifecycle()
         {
             GameObject owner = PrefabUtility.LoadPrefabContents(ApplicationUiPrefabPath);
-            ApplicationUIManager manager = owner.GetComponent<ApplicationUIManager>();
+            ApplicationUIView view = owner.GetComponent<ApplicationUIView>();
+            var system = new ApplicationUISystem(view);
 
             try
             {
-                Assert.That(manager, Is.Not.Null);
-                Assert.That(manager.IsInitialized, Is.False);
+                Assert.That(view, Is.Not.Null);
+                Assert.That(system.IsStarted, Is.False);
 
-                manager.Initialize();
-                manager.Initialize();
-                Assert.That(manager.IsInitialized, Is.True);
+                system.Start();
+                system.Start();
+                Assert.That(system.IsStarted, Is.True);
 
-                manager.Shutdown();
-                manager.Shutdown();
-                Assert.That(manager.IsInitialized, Is.False);
+                system.Dispose();
+                system.Dispose();
+                Assert.That(system.IsStarted, Is.False);
             }
             finally
             {
@@ -217,19 +220,20 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void ApplicationUiManager_ShutdownToleratesUnityDestructionOrder()
+        public void ApplicationUISystem_DisposeToleratesUnityDestructionOrder()
         {
             GameObject owner = PrefabUtility.LoadPrefabContents(ApplicationUiPrefabPath);
-            ApplicationUIManager manager = owner.GetComponent<ApplicationUIManager>();
-            LevelMenuScreen levelMenu = owner.GetComponentInChildren<LevelMenuScreen>(true);
+            ApplicationUIView view = owner.GetComponent<ApplicationUIView>();
+            LevelMenuView levelMenuView = owner.GetComponentInChildren<LevelMenuView>(true);
+            var system = new ApplicationUISystem(view);
 
             try
             {
-                manager.Initialize();
-                UnityEngine.Object.DestroyImmediate(levelMenu.gameObject);
+                system.Start();
+                UnityEngine.Object.DestroyImmediate(levelMenuView.gameObject);
 
-                Assert.DoesNotThrow(manager.Shutdown);
-                Assert.That(manager.IsInitialized, Is.False);
+                Assert.DoesNotThrow(system.Dispose);
+                Assert.That(system.IsStarted, Is.False);
             }
             finally
             {
@@ -246,9 +250,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             try
             {
-                LevelMenuScreen screen = owner.GetComponentInChildren<LevelMenuScreen>(true);
-                Assert.That(screen, Is.Not.Null);
-                LevelButtonView[] buttons = GetPrivateField<LevelButtonView[]>(screen, "levelButtons");
+                LevelMenuView view = owner.GetComponentInChildren<LevelMenuView>(true);
+                Assert.That(view, Is.Not.Null);
+                LevelButtonView[] buttons = GetPrivateField<LevelButtonView[]>(view, "levelButtons");
                 Assert.That(buttons, Has.Length.EqualTo(catalog.Levels.Count));
                 Assert.That(owner.GetComponentsInChildren<LevelButtonView>(true), Has.Length.EqualTo(buttons.Length));
 
@@ -263,8 +267,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                         isBusy: false));
                 }
 
-                screen.Show(states, _ => { });
-                screen.Show(states, _ => { });
+                view.Show(states, _ => { });
+                view.Show(states, _ => { });
 
                 Assert.That(owner.GetComponentsInChildren<LevelButtonView>(true), Has.Length.EqualTo(buttons.Length));
                 for (int index = 0; index < buttons.Length; index++)
@@ -299,15 +303,15 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             SaveSystem saveSystem,
             TowerNetworkManager towerNetworkManager,
             LevelSceneLoader levelSceneLoader,
-            IApplicationUIController applicationUi)
+            ApplicationUISystem applicationUiSystem)
         {
             return new GameFlowCoordinator(
-                applicationUi,
+                applicationUiSystem,
                 towerNetworkManager,
-                new ApplicationBootFlow(catalog, saveSystem, applicationUi),
-                new LevelMenuFlow(catalog, saveSystem, applicationUi),
-                new LevelTransitionFlow(levelSceneLoader, towerNetworkManager, applicationUi),
-                new SaveRecoveryFlow(saveSystem, applicationUi));
+                new ApplicationBootFlow(catalog, saveSystem, applicationUiSystem),
+                new LevelMenuFlow(catalog, saveSystem, applicationUiSystem),
+                new LevelTransitionFlow(levelSceneLoader, towerNetworkManager, applicationUiSystem),
+                new SaveRecoveryFlow(saveSystem, applicationUiSystem));
         }
 
         private static T GetPrivateField<T>(object target, string fieldName)
@@ -334,26 +338,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             return false;
         }
 
-        private sealed class RecordingApplicationUI : IApplicationUIController
+        private sealed class RecordingApplicationUIView : IApplicationUIView
         {
             private Exception nextShowLoadingException;
-
-            public int InitializeCount { get; private set; }
-            public int ShutdownCount { get; private set; }
 
             public void ThrowOnNextShowLoading(Exception exception)
             {
                 nextShowLoadingException = exception;
             }
 
-            public void Initialize()
+            public void Reset()
             {
-                InitializeCount++;
-            }
-
-            public void Shutdown()
-            {
-                ShutdownCount++;
             }
 
             public void ShowLevelMenu(IReadOnlyList<LevelMenuItemState> levels, Action<int> onLevelSelected)

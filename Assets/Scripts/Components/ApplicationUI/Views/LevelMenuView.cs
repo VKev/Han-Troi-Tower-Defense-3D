@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TowerDefense3D.GameFlow
 {
     [DisallowMultipleComponent]
-    public sealed class LevelMenuScreen : MonoBehaviour
+    public sealed class LevelMenuView : MonoBehaviour
     {
         [SerializeField] private GameObject root;
         [SerializeField] private LevelButtonView[] levelButtons = Array.Empty<LevelButtonView>();
@@ -41,7 +41,7 @@ namespace TowerDefense3D.GameFlow
             if (requiredCount > levelButtons.Length)
             {
                 throw new InvalidOperationException(
-                    $"LevelMenuScreen has {levelButtons.Length} authored level buttons but requires {requiredCount}.");
+                    $"LevelMenuView has {levelButtons.Length} authored level buttons but requires {requiredCount}.");
             }
         }
 

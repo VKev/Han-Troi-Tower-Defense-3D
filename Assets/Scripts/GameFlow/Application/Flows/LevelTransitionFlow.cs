@@ -9,16 +9,16 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly LevelSceneLoader levelSceneLoader;
         private readonly TowerNetworkManager towerNetworkManager;
-        private readonly IApplicationUIController applicationUi;
+        private readonly ApplicationUISystem applicationUiSystem;
 
         private GameFlowCoordinator coordinator;
 
         public LevelTransitionFlow(LevelSceneLoader levelSceneLoader, TowerNetworkManager towerNetworkManager,
-            IApplicationUIController applicationUi)
+            ApplicationUISystem applicationUiSystem)
         {
             this.levelSceneLoader = levelSceneLoader;
             this.towerNetworkManager = towerNetworkManager;
-            this.applicationUi = applicationUi;
+            this.applicationUiSystem = applicationUiSystem;
         }
 
         public void Initialize(GameFlowCoordinator coordinator)
@@ -34,10 +34,10 @@ namespace TowerDefense3D.GameFlow
         public void BeginLevelLoad(LevelLoadRequest request)
         {
             coordinator.SetState(GameFlowState.LoadingLevel);
-            applicationUi.HideBlockingError();
-            applicationUi.HideLevelMenu();
-            applicationUi.ShowLoading($"Loading Level {request.LevelNumber}...");
-            applicationUi.SetInputBlocked(true);
+            applicationUiSystem.HideBlockingError();
+            applicationUiSystem.HideLevelMenu();
+            applicationUiSystem.ShowLoading($"Loading Level {request.LevelNumber}...");
+            applicationUiSystem.SetInputBlocked(true);
             levelSceneLoader.LoadLevel(request, towerNetworkManager, coordinator.RequestReturnToLevelMenu,
                 result => OnLevelLoadCompleted(request, result));
         }
@@ -45,8 +45,8 @@ namespace TowerDefense3D.GameFlow
         public void BeginReturnToLevelMenu()
         {
             coordinator.SetState(GameFlowState.LoadingLevel);
-            applicationUi.ShowLoading("Returning to Level Menu...");
-            applicationUi.SetInputBlocked(true);
+            applicationUiSystem.ShowLoading("Returning to Level Menu...");
+            applicationUiSystem.SetInputBlocked(true);
             levelSceneLoader.UnloadActiveLevel(OnReturnToMenuCompleted);
         }
 
@@ -57,17 +57,17 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            applicationUi.HideLoading();
+            applicationUiSystem.HideLoading();
             if (result.IsSuccess)
             {
                 coordinator.SetState(GameFlowState.Gameplay);
-                applicationUi.SetInputBlocked(false);
+                applicationUiSystem.SetInputBlocked(false);
                 return;
             }
 
             coordinator.SetState(GameFlowState.BlockingError);
-            applicationUi.SetInputBlocked(false);
-            applicationUi.ShowBlockingError(CreateTransitionErrorMessage(result),
+            applicationUiSystem.SetInputBlocked(false);
+            applicationUiSystem.ShowBlockingError(CreateTransitionErrorMessage(result),
                 () => BeginLevelLoad(request), null);
         }
 
@@ -78,7 +78,7 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            applicationUi.HideLoading();
+            applicationUiSystem.HideLoading();
             if (result.IsSuccess)
             {
                 coordinator.ShowLevelMenu();
@@ -86,8 +86,8 @@ namespace TowerDefense3D.GameFlow
             }
 
             coordinator.SetState(GameFlowState.BlockingError);
-            applicationUi.SetInputBlocked(false);
-            applicationUi.ShowBlockingError(CreateTransitionErrorMessage(result),
+            applicationUiSystem.SetInputBlocked(false);
+            applicationUiSystem.ShowBlockingError(CreateTransitionErrorMessage(result),
                 BeginReturnToLevelMenu, null);
         }
 

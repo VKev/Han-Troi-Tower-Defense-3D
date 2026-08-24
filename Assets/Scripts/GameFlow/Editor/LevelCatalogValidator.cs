@@ -122,7 +122,7 @@ namespace TowerDefense3D.GameFlow.Editor
                     }
 
                     RequireExactlyOne<LevelSceneLoader>(scene, "LevelSceneLoader", errors);
-                    RequireExactlyOne<ApplicationUIManager>(scene, "ApplicationUIManager", errors);
+                    RequireExactlyOne<ApplicationUIView>(scene, "ApplicationUIView", errors);
                     RequireExactlyOne<SafeAreaView>(scene, "SafeAreaView", errors);
                     RequireExactlyOne<EventSystem>(scene, "EventSystem", errors);
 
@@ -178,12 +178,12 @@ namespace TowerDefense3D.GameFlow.Editor
                         scene,
                         ApplicationLifetimeScopeTypeName);
                     int loaders = CountComponents<LevelSceneLoader>(scene);
-                    int applicationUiManagers = CountComponents<ApplicationUIManager>(scene);
-                    if (lifetimeScopes + loaders + applicationUiManagers != 0)
+                    int applicationUiViews = CountComponents<ApplicationUIView>(scene);
+                    if (lifetimeScopes + loaders + applicationUiViews != 0)
                     {
                         errors.Add(
                             $"Level {entry.LevelNumber} contains Bootstrap-owned application services "
-                            + $"(scope={lifetimeScopes}, loader={loaders}, appUI={applicationUiManagers}).");
+                            + $"(scope={lifetimeScopes}, loader={loaders}, appUI={applicationUiViews}).");
                     }
 
                     LevelSceneContext context = FindFirstComponent<LevelSceneContext>(scene);

@@ -5,13 +5,13 @@ using UnityEngine.UI;
 namespace TowerDefense3D.GameFlow
 {
     [DisallowMultipleComponent]
-    public sealed class BlockingErrorScreen : MonoBehaviour
+    public sealed class BlockingErrorView : MonoBehaviour
     {
         [SerializeField] private GameObject root;
         [SerializeField] private Text messageLabel;
         [SerializeField] private Button retryButton;
         [SerializeField] private Button startNewButton;
-        [SerializeField] private StartNewConfirmation startNewConfirmation;
+        [SerializeField] private StartNewConfirmationView startNewConfirmationView;
 
         private Action retry;
         private Action startNew;
@@ -43,7 +43,7 @@ namespace TowerDefense3D.GameFlow
         {
             retry = null;
             startNew = null;
-            startNewConfirmation?.Hide();
+            startNewConfirmationView.Hide();
             SetVisible(false);
         }
 
@@ -54,7 +54,7 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleStartNew()
         {
-            startNewConfirmation.Show(startNew);
+            startNewConfirmationView.Show(startNew);
         }
 
         private void SetVisible(bool visible)

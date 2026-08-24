@@ -3,18 +3,12 @@ using TowerDefense3D.Towers;
 
 namespace TowerDefense3D.GameFlow
 {
-    public interface IApplicationUIController : IApplicationUI
-    {
-        void Initialize();
-        void Shutdown();
-    }
-
     /// <summary>
     /// Coordinates focused application flows under ApplicationEntryPoint.
     /// </summary>
     public sealed class GameFlowCoordinator
     {
-        private readonly IApplicationUIController applicationUi;
+        private readonly ApplicationUISystem applicationUiSystem;
         private readonly TowerNetworkManager towerNetworkManager;
         private readonly ApplicationBootFlow applicationBootFlow;
         private readonly LevelMenuFlow levelMenuFlow;
@@ -26,14 +20,14 @@ namespace TowerDefense3D.GameFlow
         public GameFlowState State { get; private set; } = GameFlowState.Booting;
 
         public GameFlowCoordinator(
-            IApplicationUIController applicationUi,
+            ApplicationUISystem applicationUiSystem,
             TowerNetworkManager towerNetworkManager,
             ApplicationBootFlow applicationBootFlow,
             LevelMenuFlow levelMenuFlow,
             LevelTransitionFlow levelTransitionFlow,
             SaveRecoveryFlow saveRecoveryFlow)
         {
-            this.applicationUi = applicationUi;
+            this.applicationUiSystem = applicationUiSystem;
             this.towerNetworkManager = towerNetworkManager;
             this.applicationBootFlow = applicationBootFlow;
             this.levelMenuFlow = levelMenuFlow;
@@ -43,7 +37,7 @@ namespace TowerDefense3D.GameFlow
 
         public void Start()
         {
-            applicationUi.Initialize();
+            applicationUiSystem.Start();
 
             try
             {
@@ -61,7 +55,7 @@ namespace TowerDefense3D.GameFlow
                     levelTransitionFlow.Shutdown();
                     levelMenuFlow.Shutdown();
                     applicationBootFlow.Shutdown();
-                    applicationUi.Shutdown();
+                    applicationUiSystem.Dispose();
                 }
                 catch (Exception rollbackException)
                 {
@@ -87,7 +81,7 @@ namespace TowerDefense3D.GameFlow
             levelTransitionFlow.Shutdown();
             levelMenuFlow.Shutdown();
             applicationBootFlow.Shutdown();
-            applicationUi.Shutdown();
+            applicationUiSystem.Dispose();
         }
 
         internal void SetState(GameFlowState state)

@@ -72,10 +72,9 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         [UnityTest]
         public IEnumerator Boot_ShowsLevelMenu_WithoutAutoLoadingLevel()
         {
-            ApplicationUIManager applicationUi = FindLoaded<ApplicationUIManager>();
+            ApplicationUIView applicationView = FindLoaded<ApplicationUIView>();
 
-            Assert.That(applicationUi, Is.Not.Null);
-            Assert.That(applicationUi.IsInitialized, Is.True);
+            Assert.That(applicationView, Is.Not.Null);
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
@@ -104,7 +103,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<Camera>(), Is.EqualTo(1));
             Assert.That(CountLoaded<AudioListener>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
-            Assert.That(CountLoaded<ApplicationUIManager>(), Is.EqualTo(1));
+            Assert.That(CountLoaded<ApplicationUIView>(), Is.EqualTo(1));
             Assert.That(CountLoaded<LevelSceneContext>(), Is.EqualTo(1));
             AssertTowerNetworkInitialized();
 
@@ -206,11 +205,10 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             for (int frame = 0; frame < TransitionFrameBudget; frame++)
             {
                 FailIfBlockingError("level menu");
-                ApplicationUIManager applicationUi = FindLoaded<ApplicationUIManager>();
+                ApplicationUIView applicationView = FindLoaded<ApplicationUIView>();
                 LevelButtonView levelOne = FindLevelButton(1);
                 LevelButtonView levelTwo = FindLevelButton(2);
-                if (applicationUi != null
-                    && applicationUi.IsInitialized
+                if (applicationView != null
                     && levelOne != null
                     && levelOne.gameObject.activeInHierarchy
                     && levelTwo != null
@@ -269,7 +267,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 
         private static void FailIfBlockingError(string expected)
         {
-            BlockingErrorScreen error = FindLoaded<BlockingErrorScreen>();
+            BlockingErrorView error = FindLoaded<BlockingErrorView>();
             if (error == null || !error.gameObject.activeInHierarchy)
             {
                 return;

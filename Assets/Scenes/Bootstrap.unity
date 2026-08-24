@@ -213,7 +213,7 @@ MonoBehaviour:
   levelCatalog: {fileID: 11400000, guid: 72adb02be7a879645aff871628f24628, type: 2}
   towerCatalog: {fileID: 11400000, guid: 707ff93761f384241a6f582f8f220d55, type: 2}
   levelSceneLoader: {fileID: 527752831}
-  applicationUiManager: {fileID: 2997823818241270888}
+  applicationUIView: {fileID: 2997823818241270888}
 --- !u!114 &527752831
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1164,7 +1164,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b99bb19a43f4624b0c452d242953b25, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.ApplicationUIManager
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.ApplicationUIView
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

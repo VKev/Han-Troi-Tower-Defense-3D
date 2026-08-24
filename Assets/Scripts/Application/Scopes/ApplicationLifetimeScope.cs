@@ -17,18 +17,18 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private LevelCatalog levelCatalog;
         [SerializeField] private TowerCatalog towerCatalog;
         [SerializeField] private LevelSceneLoader levelSceneLoader;
-        [SerializeField] private ApplicationUIManager applicationUiManager;
+        [SerializeField] private ApplicationUIView applicationUIView;
 
         protected override void Configure(IContainerBuilder builder)
         {
             if (levelCatalog == null
                 || towerCatalog == null
                 || levelSceneLoader == null
-                || applicationUiManager == null)
+                || applicationUIView == null)
             {
                 throw new InvalidOperationException(
                     "ApplicationLifetimeScope requires LevelCatalog, TowerCatalog, "
-                    + "LevelSceneLoader, and ApplicationUIManager.");
+                    + "LevelSceneLoader, and ApplicationUIView.");
             }
 
             builder.RegisterInstance(levelCatalog);
@@ -45,8 +45,9 @@ namespace TowerDefense3D.GameFlow
             builder.Register<LevelUnloadSequence>(Lifetime.Singleton);
             builder.Register<LevelLoadSequence>(Lifetime.Singleton);
             builder.RegisterComponent(levelSceneLoader);
-            builder.RegisterComponent(applicationUiManager)
-                .As<IApplicationUIController>();
+            builder.RegisterComponent(applicationUIView)
+                .As<IApplicationUIView>();
+            builder.Register<ApplicationUISystem>(Lifetime.Singleton);
             builder.Register<ApplicationBootFlow>(Lifetime.Singleton);
             builder.Register<LevelMenuFlow>(Lifetime.Singleton);
             builder.Register<LevelTransitionFlow>(Lifetime.Singleton);

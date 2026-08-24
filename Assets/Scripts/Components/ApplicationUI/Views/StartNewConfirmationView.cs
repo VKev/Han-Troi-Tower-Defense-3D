@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace TowerDefense3D.GameFlow
 {
     [DisallowMultipleComponent]
-    public sealed class StartNewConfirmation : MonoBehaviour
+    public sealed class StartNewConfirmationView : MonoBehaviour
     {
         [SerializeField] private GameObject root;
         [SerializeField] private Button confirmButton;

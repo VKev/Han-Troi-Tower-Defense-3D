@@ -7,16 +7,16 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly LevelCatalog levelCatalog;
         private readonly SaveSystem saveSystem;
-        private readonly IApplicationUIController applicationUi;
+        private readonly ApplicationUISystem applicationUiSystem;
 
         private GameFlowCoordinator coordinator;
 
         public ApplicationBootFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
-            IApplicationUIController applicationUi)
+            ApplicationUISystem applicationUiSystem)
         {
             this.levelCatalog = levelCatalog;
             this.saveSystem = saveSystem;
-            this.applicationUi = applicationUi;
+            this.applicationUiSystem = applicationUiSystem;
         }
 
         public void Initialize(GameFlowCoordinator coordinator)
@@ -32,10 +32,10 @@ namespace TowerDefense3D.GameFlow
         public void Boot()
         {
             coordinator.SetState(GameFlowState.Booting);
-            applicationUi.HideBlockingError();
-            applicationUi.HideLevelMenu();
-            applicationUi.ShowLoading("Loading progress...");
-            applicationUi.SetInputBlocked(true);
+            applicationUiSystem.HideBlockingError();
+            applicationUiSystem.HideLevelMenu();
+            applicationUiSystem.ShowLoading("Loading progress...");
+            applicationUiSystem.SetInputBlocked(true);
 
             if (!levelCatalog.TryValidate(out string catalogError))
             {
@@ -61,10 +61,10 @@ namespace TowerDefense3D.GameFlow
         public void ShowError(string error)
         {
             coordinator.SetState(GameFlowState.BlockingError);
-            applicationUi.HideLoading();
-            applicationUi.SetInputBlocked(false);
+            applicationUiSystem.HideLoading();
+            applicationUiSystem.SetInputBlocked(false);
             string message = string.IsNullOrWhiteSpace(error) ? "Progress could not be loaded." : error;
-            applicationUi.ShowBlockingError(message, Boot, StartNewFromError);
+            applicationUiSystem.ShowBlockingError(message, Boot, StartNewFromError);
         }
 
         private void StartNewFromError()

@@ -9,16 +9,16 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly LevelCatalog levelCatalog;
         private readonly SaveSystem saveSystem;
-        private readonly IApplicationUIController applicationUi;
+        private readonly ApplicationUISystem applicationUiSystem;
 
         private GameFlowCoordinator coordinator;
 
         public LevelMenuFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
-            IApplicationUIController applicationUi)
+            ApplicationUISystem applicationUiSystem)
         {
             this.levelCatalog = levelCatalog;
             this.saveSystem = saveSystem;
-            this.applicationUi = applicationUi;
+            this.applicationUiSystem = applicationUiSystem;
         }
 
         public void Initialize(GameFlowCoordinator coordinator)
@@ -43,10 +43,10 @@ namespace TowerDefense3D.GameFlow
             }
 
             coordinator.SetState(GameFlowState.LevelMenu);
-            applicationUi.HideLoading();
-            applicationUi.HideBlockingError();
-            applicationUi.SetInputBlocked(false);
-            applicationUi.ShowLevelMenu(items, HandleLevelSelected);
+            applicationUiSystem.HideLoading();
+            applicationUiSystem.HideBlockingError();
+            applicationUiSystem.SetInputBlocked(false);
+            applicationUiSystem.ShowLevelMenu(items, HandleLevelSelected);
         }
 
         private void HandleLevelSelected(int levelNumber)

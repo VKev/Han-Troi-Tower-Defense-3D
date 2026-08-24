@@ -6,12 +6,12 @@ namespace TowerDefense3D.GameFlow
     public sealed class SaveRecoveryFlow
     {
         private readonly SaveSystem saveSystem;
-        private readonly IApplicationUIController applicationUi;
+        private readonly ApplicationUISystem applicationUiSystem;
 
-        public SaveRecoveryFlow(SaveSystem saveSystem, IApplicationUIController applicationUi)
+        public SaveRecoveryFlow(SaveSystem saveSystem, ApplicationUISystem applicationUiSystem)
         {
             this.saveSystem = saveSystem;
-            this.applicationUi = applicationUi;
+            this.applicationUiSystem = applicationUiSystem;
         }
 
         public void ShowWarning(string error)
@@ -19,7 +19,7 @@ namespace TowerDefense3D.GameFlow
             string message = string.IsNullOrWhiteSpace(error)
                 ? "Progress is unlocked for this session but has not been saved."
                 : error;
-            applicationUi.ShowSaveWarning(message, RetrySave);
+            applicationUiSystem.ShowSaveWarning(message, RetrySave);
         }
 
         private void RetrySave()
@@ -27,7 +27,7 @@ namespace TowerDefense3D.GameFlow
             SaveWriteResult result = saveSystem.RetrySave();
             if (result.IsSuccess)
             {
-                applicationUi.HideSaveWarning();
+                applicationUiSystem.HideSaveWarning();
             }
             else
             {

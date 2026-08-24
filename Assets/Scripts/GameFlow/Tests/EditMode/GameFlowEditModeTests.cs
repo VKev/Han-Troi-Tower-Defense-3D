@@ -220,7 +220,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             GameObject loaderOwner = new GameObject("Level Loader Test");
             LevelSceneLoader loader = loaderOwner.AddComponent<LevelSceneLoader>();
             var save = new SaveSystem(new LocalSaveRepository(testRoot), "test");
-            var ui = new RecordingApplicationUi();
+            var applicationView = new RecordingApplicationUIView();
+            var ui = new ApplicationUISystem(applicationView);
             TowerNetworkManager towerNetworkManager = CreateTowerNetworkManager();
             var transitionFlow = new LevelTransitionFlow(loader, towerNetworkManager, ui);
             SetCatalogEntries(
@@ -249,9 +250,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
                 Assert.That(coordinator.State, Is.EqualTo(GameFlowState.BlockingError));
                 CollectionAssert.AreEqual(new[] { 1 }, save.Progress.CreateSortedSnapshot());
-                Assert.That(ui.BlockingErrorMessage, Does.Contain("missing"));
-                Assert.That(ui.Retry, Is.Not.Null);
-                Assert.That(ui.StartNew, Is.Null);
+                Assert.That(applicationView.BlockingErrorMessage, Does.Contain("missing"));
+                Assert.That(applicationView.Retry, Is.Not.Null);
+                Assert.That(applicationView.StartNew, Is.Null);
             }
             finally
             {
@@ -353,17 +354,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
         }
 
-        private sealed class RecordingApplicationUi : IApplicationUIController
+        private sealed class RecordingApplicationUIView : IApplicationUIView
         {
             public string BlockingErrorMessage { get; private set; }
             public Action Retry { get; private set; }
             public Action StartNew { get; private set; }
 
-            public void Initialize()
-            {
-            }
-
-            public void Shutdown()
+            public void Reset()
             {
             }
 

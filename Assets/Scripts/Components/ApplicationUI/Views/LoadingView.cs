@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace TowerDefense3D.GameFlow
 {
     [DisallowMultipleComponent]
-    public sealed class LoadingScreen : MonoBehaviour
+    public sealed class LoadingView : MonoBehaviour
     {
         [SerializeField] private GameObject root;
         [SerializeField] private Text messageLabel;
