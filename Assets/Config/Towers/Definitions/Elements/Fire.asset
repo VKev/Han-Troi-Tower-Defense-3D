@@ -15,7 +15,7 @@ MonoBehaviour:
   core:
     stableId: fire
     displayName: Fire
-    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    placementDefinition: {fileID: 11400000, guid: 9798d192e5b520f41abe5e78f6e25419, type: 2}
     network:
       inputPortCount: 1
       outputPortCount: 1
