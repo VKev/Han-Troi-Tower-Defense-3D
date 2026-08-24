@@ -7,6 +7,7 @@ using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -92,8 +93,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Is.True,
                 "The placement view must project the selected screen point onto the authored board.");
 
-            InputSystem.QueueDeltaStateEvent(mouse.position, screenPoint);
-            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 1f);
+            QueueMouseState(mouse, screenPoint, isPressed: true);
             yield return null;
             inputSystem.Tick();
             Assert.That(inputSystem.Current.HasPointerInput, Is.True);
@@ -104,7 +104,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.True);
 
-            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 0f);
+            QueueMouseState(mouse, screenPoint, isPressed: false);
             yield return null;
             inputSystem.Tick();
             placementSystem.Tick();
@@ -113,11 +113,11 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.False);
 
-            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 1f);
+            QueueMouseState(mouse, screenPoint, isPressed: true);
             yield return null;
             inputSystem.Tick();
             placementSystem.Tick();
-            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 0f);
+            QueueMouseState(mouse, screenPoint, isPressed: false);
             yield return null;
             inputSystem.Tick();
             placementSystem.Tick();
@@ -276,6 +276,15 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 
             screenPoint = default;
             return false;
+        }
+
+        private static void QueueMouseState(Mouse mouse, Vector2 position, bool isPressed)
+        {
+            MouseState state = new MouseState
+            {
+                position = position
+            }.WithButton(MouseButton.Left, isPressed);
+            InputSystem.QueueStateEvent(mouse, state);
         }
 
         private static bool IsOverUi(
