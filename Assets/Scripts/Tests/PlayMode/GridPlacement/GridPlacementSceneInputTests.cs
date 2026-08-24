@@ -12,8 +12,21 @@ using UnityEngine.TestTools;
 
 namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 {
-    public sealed class GridPlacementSceneInputTests : InputTestFixture
+    public sealed class GridPlacementSceneInputTests
     {
+        private Mouse testMouse;
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (testMouse != null && testMouse.added)
+            {
+                InputSystem.RemoveDevice(testMouse);
+            }
+
+            testMouse = null;
+        }
+
         [UnityTest]
         public IEnumerator EditorMouseRelease_PlacesOnceThenRetainsInvalidCandidate()
         {
@@ -63,7 +76,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.Occupancy, Is.Not.Null);
             Assert.That(controller.SelectedTower, Is.Not.Null);
 
-            Mouse mouse = InputSystem.AddDevice<Mouse>();
+            testMouse = InputSystem.AddDevice<Mouse>();
+            Mouse mouse = testMouse;
             Assert.That(
                 TryFindValidPlacementScreenPoint(
                     presenter,
@@ -78,8 +92,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Is.True,
                 "The placement view must project the selected screen point onto the authored board.");
 
-            Set(mouse.position, screenPoint);
-            Press(mouse.leftButton);
+            InputSystem.QueueDeltaStateEvent(mouse.position, screenPoint);
+            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 1f);
             yield return null;
             inputSystem.Tick();
             Assert.That(inputSystem.Current.HasPointerInput, Is.True);
@@ -90,7 +104,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.True);
 
-            Release(mouse.leftButton);
+            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 0f);
             yield return null;
             inputSystem.Tick();
             placementSystem.Tick();
@@ -99,11 +113,11 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.False);
 
-            Press(mouse.leftButton);
+            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 1f);
             yield return null;
             inputSystem.Tick();
             placementSystem.Tick();
-            Release(mouse.leftButton);
+            InputSystem.QueueDeltaStateEvent(mouse.leftButton, 0f);
             yield return null;
             inputSystem.Tick();
             placementSystem.Tick();
