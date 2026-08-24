@@ -95,6 +95,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
         }
 
+#pragma warning disable CS0067 // Interface events are intentionally unused by this focused stub.
         private sealed class TowerNetworkHudViewStub : ITowerNetworkHudView
         {
             public event Action<TowerCombatDefinition, TowerPlacementPointerEvent> TowerDragBegan;
@@ -132,6 +133,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 ReturnToMenuRequested?.Invoke();
             }
         }
+#pragma warning restore CS0067
 
         private sealed class BoardViewStub : IBoardView
         {
