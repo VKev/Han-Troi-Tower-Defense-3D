@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using TowerDefense3D.Towers;
+using UnityEditor;
 using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement.Tests.EditMode
@@ -207,6 +209,81 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
 
             occupancy.ReleaseOwner(42);
             Assert.That(occupancy.IsOccupied(anchor), Is.False);
+        }
+
+        [TestCase(
+            "Assets/Config/GridPlacement/GeneratorTower.asset",
+            "Assets/Config/Towers/Definitions/Sources/Generator.asset")]
+        [TestCase(
+            "Assets/Config/GridPlacement/FireTower.asset",
+            "Assets/Config/Towers/Definitions/Elements/Fire.asset")]
+        [TestCase(
+            "Assets/Config/GridPlacement/WaterTower.asset",
+            "Assets/Config/Towers/Definitions/Elements/Water.asset")]
+        [TestCase(
+            "Assets/Config/GridPlacement/WindTower.asset",
+            "Assets/Config/Towers/Definitions/Elements/Wind.asset")]
+        [TestCase(
+            "Assets/Config/GridPlacement/EarthTower.asset",
+            "Assets/Config/Towers/Definitions/Elements/Earth.asset")]
+        [TestCase(
+            "Assets/Config/GridPlacement/SoulNexusTower.asset",
+            "Assets/Config/Towers/Definitions/Sinks/SoulNexus.asset")]
+        public void TowerInstanceFactory_GroundsAuthoredTowerAndCentersProjectileOrigin(
+            string placementDefinitionPath,
+            string combatDefinitionPath)
+        {
+            var factoryOwner = new GameObject("Tower Instance Factory Test");
+            var placedRoot = new GameObject("Placed Towers Test");
+            GameObject instance = null;
+
+            try
+            {
+                TowerDefinition placementDefinition = AssetDatabase.LoadAssetAtPath<TowerDefinition>(
+                    placementDefinitionPath);
+                TowerCombatDefinition combatDefinition = AssetDatabase.LoadAssetAtPath<TowerCombatDefinition>(
+                    combatDefinitionPath);
+                Assert.That(placementDefinition, Is.Not.Null);
+                Assert.That(combatDefinition, Is.Not.Null);
+
+                TowerInstanceFactory factory = factoryOwner.AddComponent<TowerInstanceFactory>();
+                SetField(factory, "placedObjectsRoot", placedRoot.transform);
+                var placementPosition = new Vector3(3f, 4f, 5f);
+
+                Assert.That(factory.TryCreate(placementDefinition, placementPosition, out instance), Is.True);
+
+                Bounds bounds = CalculateCombinedBounds(instance);
+                TowerRuntimeView runtimeView = instance.GetComponent<TowerRuntimeView>();
+                Assert.That(runtimeView, Is.Not.Null);
+                runtimeView.Configure(combatDefinition);
+
+                Assert.That(bounds.min.y, Is.EqualTo(placementPosition.y).Within(0.001f));
+                Assert.That(Vector3.Distance(runtimeView.ProjectileOrigin, bounds.center), Is.LessThan(0.001f));
+                Assert.That(instance.transform.position.x, Is.EqualTo(placementPosition.x).Within(0.001f));
+                Assert.That(instance.transform.position.z, Is.EqualTo(placementPosition.z).Within(0.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+                Object.DestroyImmediate(factoryOwner);
+                Object.DestroyImmediate(placedRoot);
+            }
+        }
+
+        private static Bounds CalculateCombinedBounds(GameObject instance)
+        {
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
+            Assert.That(renderers, Is.Not.Empty);
+            Bounds bounds = renderers[0].bounds;
+            for (int index = 1; index < renderers.Length; index++)
+            {
+                if (renderers[index].enabled)
+                {
+                    bounds.Encapsulate(renderers[index].bounds);
+                }
+            }
+
+            return bounds;
         }
 
         private BoardDefinition CreateBoard(

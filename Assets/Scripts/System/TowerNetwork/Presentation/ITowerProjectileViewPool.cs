@@ -8,8 +8,9 @@ namespace TowerDefense3D.Towers
         int InactiveViewCount { get; }
 
         void Initialize();
-        void Show(long projectileId, ProjectilePayloadKind payloadKind, Vector3 position);
+        void Show(long projectileId, GameObject projectilePrefab, Vector3 position);
         void Release(long projectileId);
+        void AdvanceReleaseDelays(float deltaTime);
         void Clear();
     }
 }

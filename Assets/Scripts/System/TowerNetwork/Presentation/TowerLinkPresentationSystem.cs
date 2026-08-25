@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Waves;
 
 namespace TowerDefense3D.Towers
 {
@@ -13,6 +14,7 @@ namespace TowerDefense3D.Towers
         private readonly TowerNetworkManager manager;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly TowerInteractionSystem interactionSystem;
+        private readonly IWaveSystem waveSystem;
         private readonly ITowerLinkView view;
         private readonly List<TowerLinkViewItem> visibleLinks = new List<TowerLinkViewItem>();
 
@@ -20,6 +22,7 @@ namespace TowerDefense3D.Towers
             TowerNetworkManager manager,
             TowerNetworkSystem towerNetworkSystem,
             TowerInteractionSystem interactionSystem,
+            IWaveSystem waveSystem,
             ITowerLinkView view)
         {
             this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
@@ -27,6 +30,7 @@ namespace TowerDefense3D.Towers
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.interactionSystem = interactionSystem
                 ?? throw new ArgumentNullException(nameof(interactionSystem));
+            this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
             this.view = view ?? throw new ArgumentNullException(nameof(view));
         }
 
@@ -50,8 +54,14 @@ namespace TowerDefense3D.Towers
 
         private void RefreshLinks()
         {
-            IReadOnlyList<TowerLinkSnapshot> links = manager.CreateLinkSnapshot();
             visibleLinks.Clear();
+            if (waveSystem.IsRunning)
+            {
+                view.RenderLinks(visibleLinks);
+                return;
+            }
+
+            IReadOnlyList<TowerLinkSnapshot> links = manager.CreateLinkSnapshot();
 
             for (int index = 0; index < links.Count; index++)
             {

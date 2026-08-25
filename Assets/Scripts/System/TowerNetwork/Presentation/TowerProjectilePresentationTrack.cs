@@ -8,11 +8,20 @@ namespace TowerDefense3D.Towers
         private Vector3 previousPosition;
         private Vector3 currentPosition;
 
-        private TowerProjectilePresentationTrack(TowerProjectileSnapshot snapshot)
+        private TowerProjectilePresentationTrack(
+            TowerProjectileSnapshot snapshot,
+            GameObject projectilePrefab)
         {
+            if (projectilePrefab == null)
+            {
+                throw new ArgumentNullException(nameof(projectilePrefab));
+            }
+
             ProjectileId = snapshot.ProjectileId;
+            Source = snapshot.Source;
             Target = snapshot.Target;
             Payload = snapshot.Payload;
+            ProjectilePrefab = projectilePrefab;
             LaunchDelayTicks = snapshot.LaunchDelayTicks;
             IsRetiring = false;
             ReleaseAfterRender = false;
@@ -21,16 +30,20 @@ namespace TowerDefense3D.Towers
         }
 
         public long ProjectileId { get; private set; }
+        public TowerNodeId Source { get; private set; }
         public TowerNodeId Target { get; private set; }
         public ProjectilePayload Payload { get; private set; }
+        public GameObject ProjectilePrefab { get; private set; }
         public int LaunchDelayTicks { get; private set; }
         public bool IsRetiring { get; private set; }
         public bool ReleaseAfterRender { get; private set; }
         public bool IsVisible => LaunchDelayTicks == 0 || IsRetiring;
 
-        public static TowerProjectilePresentationTrack Create(TowerProjectileSnapshot snapshot)
+        public static TowerProjectilePresentationTrack Create(
+            TowerProjectileSnapshot snapshot,
+            GameObject projectilePrefab)
         {
-            return new TowerProjectilePresentationTrack(snapshot);
+            return new TowerProjectilePresentationTrack(snapshot, projectilePrefab);
         }
 
         public void Advance(TowerProjectileSnapshot snapshot)
@@ -39,6 +52,13 @@ namespace TowerDefense3D.Towers
             {
                 throw new ArgumentException(
                     "A presentation track cannot change projectile identity.",
+                    nameof(snapshot));
+            }
+
+            if (!snapshot.Source.Equals(Source))
+            {
+                throw new ArgumentException(
+                    "A presentation track cannot change projectile source.",
                     nameof(snapshot));
             }
 

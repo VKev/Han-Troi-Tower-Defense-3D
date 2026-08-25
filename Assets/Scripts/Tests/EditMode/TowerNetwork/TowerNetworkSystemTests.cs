@@ -72,6 +72,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(generatorView.IsRegistered, Is.True);
             Assert.That(manager.TryGetNodeSpec(generatorView.NodeId, out TowerRuntimeSpec spec), Is.True);
             Assert.That(spec.Family, Is.EqualTo(TowerFamily.Generator));
+            Assert.That(manager.TryGetNodePosition(generatorView.NodeId, out TowerWorldPosition position), Is.True);
+            Assert.That(position.X, Is.EqualTo(generatorView.ProjectileOrigin.x).Within(0.001f));
+            Assert.That(position.Y, Is.EqualTo(generatorView.ProjectileOrigin.y).Within(0.001f));
+            Assert.That(position.Z, Is.EqualTo(generatorView.ProjectileOrigin.z).Within(0.001f));
             Assert.That(system.TryGetTowerView(generatorView.NodeId, out ITowerRuntimeView registered), Is.True);
             Assert.That(registered, Is.SameAs(generatorView));
         }

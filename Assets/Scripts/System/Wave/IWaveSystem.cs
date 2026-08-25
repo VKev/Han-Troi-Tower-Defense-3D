@@ -7,6 +7,8 @@ namespace TowerDefense3D.Waves
     {
         event Action StateChanged;
 
+        bool IsRunning { get; }
+
         WaveState CreateState();
         IReadOnlyList<EnemySpawnBatchDefinition> GetNextWavePreview();
         bool TryStartWave(out string error);

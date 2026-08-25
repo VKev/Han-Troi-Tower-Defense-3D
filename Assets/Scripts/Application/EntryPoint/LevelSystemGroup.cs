@@ -73,7 +73,7 @@ namespace TowerDefense3D.GameFlow
         public void LateTick(float deltaTime)
         {
             towerLinkPresentationSystem.LateTick();
-            towerProjectilePresentationSystem.LateTick();
+            towerProjectilePresentationSystem.LateTick(deltaTime);
             enemyPresentationSystem.LateTick(gameplaySimulationSystem.InterpolationAlpha);
             boardCameraSystem.LateTick();
         }

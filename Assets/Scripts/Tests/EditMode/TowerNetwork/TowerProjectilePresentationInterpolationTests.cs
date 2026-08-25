@@ -6,10 +6,25 @@ namespace TowerDefense3D.Towers.Tests.EditMode
 {
     public sealed class TowerProjectilePresentationInterpolationTests
     {
+        private GameObject projectilePrefab;
+
+        [SetUp]
+        public void SetUp()
+        {
+            projectilePrefab = new GameObject("Projectile Prefab");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            UnityEngine.Object.DestroyImmediate(projectilePrefab);
+        }
+
         [Test]
         public void Track_InterpolatesOnlyBetweenAdjacentSimulationTicks()
         {
-            TowerProjectilePresentationTrack track = TowerProjectilePresentationTrack.Create(Snapshot(0f));
+            TowerProjectilePresentationTrack track =
+                TowerProjectilePresentationTrack.Create(Snapshot(0f), projectilePrefab);
 
             track.Advance(Snapshot(1f));
 
@@ -21,7 +36,8 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         [Test]
         public void Track_CatchUpKeepsOnlyTheFinalAdjacentPair()
         {
-            TowerProjectilePresentationTrack track = TowerProjectilePresentationTrack.Create(Snapshot(0f));
+            TowerProjectilePresentationTrack track =
+                TowerProjectilePresentationTrack.Create(Snapshot(0f), projectilePrefab);
 
             track.Advance(Snapshot(1f));
             track.Advance(Snapshot(2f));
@@ -33,7 +49,8 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         [Test]
         public void Track_DelayedProjectileStaysHiddenUntilLaunchStarts()
         {
-            TowerProjectilePresentationTrack track = TowerProjectilePresentationTrack.Create(Snapshot(0f, 1));
+            TowerProjectilePresentationTrack track =
+                TowerProjectilePresentationTrack.Create(Snapshot(0f, 1), projectilePrefab);
 
             Assert.That(track.IsVisible, Is.False);
 
@@ -46,7 +63,8 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         [Test]
         public void Track_RetirementRendersTargetBeforeRelease()
         {
-            TowerProjectilePresentationTrack track = TowerProjectilePresentationTrack.Create(Snapshot(0.5f));
+            TowerProjectilePresentationTrack track =
+                TowerProjectilePresentationTrack.Create(Snapshot(0.5f), projectilePrefab);
 
             track.BeginRetirement(new TowerWorldPosition(1f, 0f, 0f));
 
@@ -63,10 +81,21 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         [Test]
         public void Track_RejectsAChangedProjectileIdentity()
         {
-            TowerProjectilePresentationTrack track = TowerProjectilePresentationTrack.Create(Snapshot(0f));
+            TowerProjectilePresentationTrack track =
+                TowerProjectilePresentationTrack.Create(Snapshot(0f), projectilePrefab);
             TowerProjectileSnapshot anotherProjectile = Snapshot(1f, 0, 2L);
 
             Assert.Throws<ArgumentException>(() => track.Advance(anotherProjectile));
+        }
+
+        [Test]
+        public void Track_PreservesSourceProjectilePrefab()
+        {
+            TowerProjectilePresentationTrack track =
+                TowerProjectilePresentationTrack.Create(Snapshot(0f), projectilePrefab);
+
+            Assert.That(track.Source, Is.EqualTo(new TowerNodeId(1)));
+            Assert.That(track.ProjectilePrefab, Is.SameAs(projectilePrefab));
         }
 
         private static TowerProjectileSnapshot Snapshot(float x, int launchDelayTicks = 0, long projectileId = 1L)

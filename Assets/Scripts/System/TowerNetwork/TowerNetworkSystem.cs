@@ -251,7 +251,7 @@ namespace TowerDefense3D.Towers
             }
 
             runtimeView.Configure(combatDefinition);
-            Vector3 position = runtimeView.WorldPosition;
+            Vector3 position = runtimeView.ProjectileOrigin;
             TowerNodeId nodeId = manager.RegisterTower(
                 combatDefinition,
                 new TowerWorldPosition(position.x, position.y, position.z));

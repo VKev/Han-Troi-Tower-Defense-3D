@@ -16,6 +16,7 @@ MonoBehaviour:
     stableId: generator
     displayName: Generator
     placementDefinition: {fileID: 11400000, guid: 4633e2abd6ec1794c9fedfe77696b2ab, type: 2}
+    projectilePrefab: {fileID: 6931362497009039896, guid: ea7579228542a7a4185546a889a3c90d, type: 3}
     network:
       inputPortCount: 0
       outputPortCount: 1

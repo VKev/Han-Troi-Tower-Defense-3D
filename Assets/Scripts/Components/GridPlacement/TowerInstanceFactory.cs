@@ -28,6 +28,7 @@ namespace TowerDefense3D.GridPlacement
                     position,
                     definition.Prefab.transform.rotation,
                     placedObjectsRoot);
+                AlignRendererBottomWithSurface(instance, position.y);
                 return true;
             }
             catch (Exception exception)
@@ -41,6 +42,37 @@ namespace TowerDefense3D.GridPlacement
         public void Destroy(GameObject instance)
         {
             UnityEngine.Object.Destroy(instance);
+        }
+
+        private static void AlignRendererBottomWithSurface(GameObject instance, float surfaceY)
+        {
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
+            bool hasBounds = false;
+            Bounds combinedBounds = default;
+
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Renderer renderer = renderers[index];
+                if (!renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    combinedBounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    combinedBounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            if (hasBounds)
+            {
+                instance.transform.position += Vector3.up * (surfaceY - combinedBounds.min.y);
+            }
         }
     }
 }

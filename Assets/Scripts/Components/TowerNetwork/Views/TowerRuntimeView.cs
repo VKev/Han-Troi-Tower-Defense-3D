@@ -9,6 +9,7 @@ namespace TowerDefense3D.Towers
         private TowerCombatDefinition combatDefinition;
         private TowerNodeId nodeId;
         private Vector3 localPresentationAnchor;
+        private Vector3 localProjectileOrigin;
 
         public event Action<ITowerRuntimeView> Destroyed;
 
@@ -16,8 +17,8 @@ namespace TowerDefense3D.Towers
         public TowerNodeId NodeId => nodeId;
         public bool IsConfigured => combatDefinition != null;
         public bool IsRegistered => nodeId.IsValid;
-        public Vector3 WorldPosition => transform.position;
         public Vector3 PresentationAnchor => transform.TransformPoint(localPresentationAnchor);
+        public Vector3 ProjectileOrigin => transform.TransformPoint(localProjectileOrigin);
 
         public void Configure(TowerCombatDefinition definition)
         {
@@ -32,7 +33,7 @@ namespace TowerDefense3D.Towers
             }
 
             combatDefinition = definition;
-            localPresentationAnchor = CalculateLocalPresentationAnchor();
+            CalculateLocalAnchors();
         }
 
         public void BindNode(TowerNodeId registeredNodeId)
@@ -60,7 +61,7 @@ namespace TowerDefense3D.Towers
             nodeId = default;
         }
 
-        private Vector3 CalculateLocalPresentationAnchor()
+        private void CalculateLocalAnchors()
         {
             Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
             bool hasBounds = false;
@@ -85,10 +86,14 @@ namespace TowerDefense3D.Towers
                 }
             }
 
-            Vector3 worldAnchor = hasBounds
+            Vector3 worldPresentationAnchor = hasBounds
                 ? new Vector3(combinedBounds.center.x, combinedBounds.max.y + 0.2f, combinedBounds.center.z)
                 : transform.position + Vector3.up;
-            return transform.InverseTransformPoint(worldAnchor);
+            Vector3 worldProjectileOrigin = hasBounds
+                ? combinedBounds.center
+                : transform.position + Vector3.up;
+            localPresentationAnchor = transform.InverseTransformPoint(worldPresentationAnchor);
+            localProjectileOrigin = transform.InverseTransformPoint(worldProjectileOrigin);
         }
 
         private void OnDestroy()

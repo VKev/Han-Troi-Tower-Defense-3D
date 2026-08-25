@@ -16,6 +16,7 @@ MonoBehaviour:
     stableId: wind
     displayName: Wind
     placementDefinition: {fileID: 11400000, guid: 4a949440cd2a5cd43b9fc04fd2a83a64, type: 2}
+    projectilePrefab: {fileID: 5621757413702188953, guid: 129fbe41a28f2944aa8705e83fe4a69b, type: 3}
     network:
       inputPortCount: 1
       outputPortCount: 1

@@ -38,6 +38,20 @@ namespace TowerDefense3D.Towers
                 errors.Add($"{core.StableId}: Placement Definition is required.");
             }
 
+            if (requirePlacementDefinition &&
+                definition.NetworkRole != TowerNetworkRole.Sink &&
+                core.ProjectilePrefab == null)
+            {
+                errors.Add($"{core.StableId}: Projectile Prefab is required.");
+            }
+
+            if (requirePlacementDefinition &&
+                definition.NetworkRole == TowerNetworkRole.Sink &&
+                core.ProjectilePrefab != null)
+            {
+                errors.Add($"{core.StableId}: Sink towers cannot author a Projectile Prefab.");
+            }
+
             ValidateNetwork(definition, core.Network, errors);
             ValidateThroughput(definition, core.Throughput, errors);
             ValidateEconomy(core.Economy, errors);

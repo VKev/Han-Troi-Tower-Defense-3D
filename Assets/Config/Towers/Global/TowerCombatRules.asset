@@ -17,8 +17,7 @@ MonoBehaviour:
   maximumLinkRangeMeters: 12
   normalQueueCapacity: 3
   minimumProcessIntervalSeconds: 0.15
-  projectileSpeedMetersPerSecond: 10
-  projectileCollisionRadiusMeters: 0.18
+  projectileSpeedMetersPerSecond: 20
   startingGold: 250
   sellRefundFraction: 0.7
   normalWaveReward: 100
@@ -26,3 +25,4 @@ MonoBehaviour:
   maximumTierThreeElementTowers: 2
   minimumEffectiveDefense: 0
   defenseResolutionOrder: 000000000100000002000000030000000400000005000000
+  simulationTickSeconds: 0.05

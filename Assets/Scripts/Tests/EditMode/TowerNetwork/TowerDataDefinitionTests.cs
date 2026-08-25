@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using TowerDefense3D.GridPlacement;
 using UnityEngine;
 
 namespace TowerDefense3D.Towers.Tests.EditMode
@@ -41,6 +42,20 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                     Is.Empty,
                     definition.Family.ToString());
             }
+        }
+
+        [Test]
+        public void ProducingDefinition_RequiresProjectilePrefabWithAuthoredReferences()
+        {
+            GeneratorTowerDefinition generator = Create<GeneratorTowerDefinition>();
+            TowerDefinition placementDefinition = Create<TowerDefinition>();
+            SetField(generator.Core, "placementDefinition", placementDefinition);
+
+            string combined = string.Join(
+                " | ",
+                TowerDataValidator.CollectErrors(generator));
+
+            StringAssert.Contains("Projectile Prefab is required", combined);
         }
 
         [Test]

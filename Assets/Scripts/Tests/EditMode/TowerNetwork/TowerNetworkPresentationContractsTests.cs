@@ -55,17 +55,42 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
-        public void ProjectileView_UsesOnlyRendererPresentationAndResetsForPool()
+        public void RuntimeView_UsesRendererCenterForProjectileOrigin()
+        {
+            var owner = new GameObject("Tower Runtime Anchor Test");
+            var definition = ScriptableObject.CreateInstance<GeneratorTowerDefinition>();
+            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visual.transform.SetParent(owner.transform, false);
+            visual.transform.localPosition = new Vector3(0f, 2f, 0f);
+            visual.transform.localScale = new Vector3(2f, 4f, 2f);
+
+            try
+            {
+                owner.transform.position = new Vector3(3f, 4f, 5f);
+                TowerRuntimeView view = owner.AddComponent<TowerRuntimeView>();
+                view.Configure(definition);
+                Renderer renderer = visual.GetComponent<Renderer>();
+
+                Assert.That(Vector3.Distance(view.ProjectileOrigin, renderer.bounds.center), Is.LessThan(0.001f));
+                Assert.That(view.PresentationAnchor.y, Is.EqualTo(renderer.bounds.max.y + 0.2f).Within(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
+        [Test]
+        public void ProjectileView_ReplaysAuthoredVfxAndResetsForPool()
         {
             var owner = new GameObject("Tower Projectile View Test");
-            Shader shader = Shader.Find("Sprites/Default");
-            Assert.That(shader, Is.Not.Null);
-            var material = new Material(shader);
+            ParticleSystem particles = owner.AddComponent<ParticleSystem>();
 
             try
             {
                 TowerProjectileView view = owner.AddComponent<TowerProjectileView>();
-                view.Initialize(material);
+                view.Initialize();
                 var snapshot = new TowerProjectileSnapshot(
                     9,
                     new TowerNodeId(1),
@@ -78,7 +103,7 @@ namespace TowerDefense3D.Towers.Tests.EditMode
 
                 Assert.That(view.ProjectileId, Is.EqualTo(9));
                 Assert.That(view.transform.position, Is.EqualTo(new Vector3(3f, 4f, 5f)));
-                Assert.That(view.GetComponent<LineRenderer>(), Is.Not.Null);
+                Assert.That(particles.isPlaying, Is.True);
                 Assert.That(view.GetComponent<Collider>(), Is.Null);
 
                 view.ResetForPool();
@@ -88,7 +113,119 @@ namespace TowerDefense3D.Towers.Tests.EditMode
             finally
             {
                 UnityEngine.Object.DestroyImmediate(owner);
-                UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
+        public void ProjectilePool_UsesRequestedPrefabAndReusesItsView()
+        {
+            var owner = new GameObject("Tower Projectile Pool Test");
+            var projectilePrefab = new GameObject("Projectile Prefab");
+            projectilePrefab.AddComponent<ParticleSystem>();
+
+            try
+            {
+                TowerProjectilePoolView pool = owner.AddComponent<TowerProjectilePoolView>();
+                pool.Initialize();
+                pool.Show(1L, projectilePrefab, new Vector3(1f, 2f, 3f));
+
+                TowerProjectileView first = owner.GetComponentInChildren<TowerProjectileView>(true);
+                Assert.That(first, Is.Not.Null);
+                Assert.That(first.ProjectileId, Is.EqualTo(1L));
+                Assert.That(first.transform.position, Is.EqualTo(new Vector3(1f, 2f, 3f)));
+                Assert.That(pool.ActiveViewCount, Is.EqualTo(1));
+
+                pool.Release(1L);
+                Assert.That(pool.ActiveViewCount, Is.Zero);
+                Assert.That(pool.InactiveViewCount, Is.EqualTo(1));
+
+                pool.Show(2L, projectilePrefab, Vector3.one);
+                TowerProjectileView second = owner.GetComponentInChildren<TowerProjectileView>(true);
+                Assert.That(second, Is.SameAs(first));
+                Assert.That(second.ProjectileId, Is.EqualTo(2L));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+                UnityEngine.Object.DestroyImmediate(projectilePrefab);
+            }
+        }
+
+        [Test]
+        public void ProjectilePool_PositionUpdateKeepsVfxPlayingAndFacesTravelDirection()
+        {
+            var owner = new GameObject("Tower Projectile Pool Position Test");
+            var projectilePrefab = new GameObject("Projectile Prefab");
+            projectilePrefab.AddComponent<ParticleSystem>();
+
+            try
+            {
+                TowerProjectilePoolView pool = owner.AddComponent<TowerProjectilePoolView>();
+                pool.Initialize();
+                pool.Show(1L, projectilePrefab, Vector3.zero);
+
+                TowerProjectileView view = owner.GetComponentInChildren<TowerProjectileView>(true);
+                ParticleSystem particles = view.GetComponent<ParticleSystem>();
+                particles.Simulate(0.25f, true, false);
+                float elapsedTime = particles.time;
+                var nextPosition = new Vector3(1f, 2f, 3f);
+                Vector3 travelDirection = nextPosition.normalized;
+
+                pool.Show(1L, projectilePrefab, nextPosition);
+
+                Assert.That(view.transform.position, Is.EqualTo(nextPosition));
+                Assert.That(Vector3.Dot(view.transform.forward, travelDirection), Is.GreaterThan(0.999f));
+                Assert.That(elapsedTime, Is.GreaterThan(0f));
+                Assert.That(particles.time, Is.EqualTo(elapsedTime).Within(0.001f));
+
+                Quaternion travelRotation = view.transform.rotation;
+                pool.Show(1L, projectilePrefab, nextPosition);
+                Assert.That(Quaternion.Angle(view.transform.rotation, travelRotation), Is.LessThan(0.001f));
+
+                pool.Release(1L);
+                Assert.That(Quaternion.Angle(view.transform.localRotation, Quaternion.identity), Is.LessThan(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+                UnityEngine.Object.DestroyImmediate(projectilePrefab);
+            }
+        }
+
+        [Test]
+        public void ProjectilePool_WaitsForAuthoredTrailBeforeReusingView()
+        {
+            var owner = new GameObject("Tower Projectile Trail Pool Test");
+            var projectilePrefab = new GameObject("Projectile Prefab");
+            projectilePrefab.AddComponent<ParticleSystem>();
+            TrailRenderer trail = projectilePrefab.AddComponent<TrailRenderer>();
+            trail.time = 0.25f;
+
+            try
+            {
+                TowerProjectilePoolView pool = owner.AddComponent<TowerProjectilePoolView>();
+                pool.Initialize();
+                pool.Show(1L, projectilePrefab, Vector3.zero);
+
+                TowerProjectileView view = owner.GetComponentInChildren<TowerProjectileView>(true);
+                pool.Show(1L, projectilePrefab, Vector3.one);
+                pool.Release(1L);
+
+                Assert.That(pool.ActiveViewCount, Is.Zero);
+                Assert.That(pool.InactiveViewCount, Is.Zero);
+                Assert.That(view.gameObject.activeSelf, Is.True);
+
+                pool.AdvanceReleaseDelays(0.2f);
+                Assert.That(view.gameObject.activeSelf, Is.True);
+
+                pool.AdvanceReleaseDelays(0.06f);
+                Assert.That(pool.InactiveViewCount, Is.EqualTo(1));
+                Assert.That(view.gameObject.activeSelf, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+                UnityEngine.Object.DestroyImmediate(projectilePrefab);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.Simulation;
+using UnityEngine;
 
 namespace TowerDefense3D.Towers
 {
@@ -42,7 +43,7 @@ namespace TowerDefense3D.Towers
             isStarted = true;
         }
 
-        public void LateTick()
+        public void LateTick(float deltaTime)
         {
             if (!manager.IsRunning)
             {
@@ -50,6 +51,7 @@ namespace TowerDefense3D.Towers
                 return;
             }
 
+            viewPool.AdvanceReleaseDelays(deltaTime);
             RenderPresentation(simulationSystem.InterpolationAlpha);
         }
 
@@ -84,7 +86,10 @@ namespace TowerDefense3D.Towers
                 }
                 else
                 {
-                    presentationTracks.Add(snapshot.ProjectileId, TowerProjectilePresentationTrack.Create(snapshot));
+                    GameObject projectilePrefab = ResolveProjectilePrefab(snapshot.Source);
+                    presentationTracks.Add(
+                        snapshot.ProjectileId,
+                        TowerProjectilePresentationTrack.Create(snapshot, projectilePrefab));
                 }
             }
 
@@ -140,7 +145,7 @@ namespace TowerDefense3D.Towers
 
                 viewPool.Show(
                     track.ProjectileId,
-                    track.Payload.Kind,
+                    track.ProjectilePrefab,
                     track.CalculateRenderedPosition(interpolationAlpha));
                 activeProjectileIds.Add(pair.Key);
 
@@ -174,6 +179,25 @@ namespace TowerDefense3D.Towers
             }
 
             presentationTracks.Remove(projectileId);
+        }
+
+        private GameObject ResolveProjectilePrefab(TowerNodeId source)
+        {
+            if (!manager.TryGetNodeSpec(source, out TowerRuntimeSpec spec))
+            {
+                throw new InvalidOperationException(
+                    $"Projectile source '{source}' is not registered.");
+            }
+
+            if (!manager.Catalog.TryGet(spec.Family, out TowerCombatDefinition definition) ||
+                definition.Core == null ||
+                definition.Core.ProjectilePrefab == null)
+            {
+                throw new InvalidOperationException(
+                    $"Tower family '{spec.Family}' requires an authored Projectile Prefab.");
+            }
+
+            return definition.Core.ProjectilePrefab;
         }
 
         private void HandleStepCompleted(long completedStep)

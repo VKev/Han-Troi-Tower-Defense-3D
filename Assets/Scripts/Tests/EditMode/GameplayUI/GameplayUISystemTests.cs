@@ -152,6 +152,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             public event Action StateChanged;
 
+            public bool IsRunning => false;
+
             public WaveState CreateState()
             {
                 return new WaveState(

@@ -5,76 +5,117 @@ namespace TowerDefense3D.Towers
     [DisallowMultipleComponent]
     public sealed class TowerProjectileView : MonoBehaviour
     {
-        private LineRenderer lineRenderer;
+        private const float MinimumTravelDistance = 0.001f;
+        private ParticleSystem[] particleSystems;
+        private TrailRenderer[] trailRenderers;
+        private Quaternion authoredLocalRotation;
+        private float retirementDelaySeconds;
+        private bool isInitialized;
 
         public long ProjectileId { get; private set; }
 
-        public void Initialize(Material sharedMaterial)
+        public void Initialize()
         {
-            lineRenderer = GetComponent<LineRenderer>();
-            if (lineRenderer == null)
+            particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+            trailRenderers = GetComponentsInChildren<TrailRenderer>(true);
+            authoredLocalRotation = transform.localRotation;
+
+            for (int index = 0; index < particleSystems.Length; index++)
             {
-                lineRenderer = gameObject.AddComponent<LineRenderer>();
+                ParticleSystem.MainModule main = particleSystems[index].main;
+                main.stopAction = ParticleSystemStopAction.None;
             }
 
-            lineRenderer.sharedMaterial = sharedMaterial;
-            lineRenderer.useWorldSpace = false;
-            lineRenderer.loop = false;
-            lineRenderer.positionCount = 2;
-            lineRenderer.widthMultiplier = 0.18f;
-            lineRenderer.numCapVertices = 4;
-            lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            lineRenderer.receiveShadows = false;
-            lineRenderer.SetPosition(0, new Vector3(0f, -0.08f, 0f));
-            lineRenderer.SetPosition(1, new Vector3(0f, 0.08f, 0f));
-            gameObject.SetActive(false);
+            for (int index = 0; index < trailRenderers.Length; index++)
+            {
+                trailRenderers[index].autodestruct = false;
+                retirementDelaySeconds = Mathf.Max(retirementDelaySeconds, trailRenderers[index].time);
+            }
+
+            isInitialized = true;
+            ResetForPool();
         }
 
         public void Show(TowerProjectileSnapshot snapshot)
         {
             Show(
                 snapshot.ProjectileId,
-                snapshot.Payload.Kind,
                 new Vector3(snapshot.Position.X, snapshot.Position.Y, snapshot.Position.Z));
         }
 
-        public void Show(long projectileId, ProjectilePayloadKind payloadKind, Vector3 renderedPosition)
+        public void Show(long projectileId, Vector3 renderedPosition)
         {
+            EnsureInitialized();
             ProjectileId = projectileId;
             transform.position = renderedPosition;
-            Color color = GetPayloadColor(payloadKind);
-            lineRenderer.startColor = color;
-            lineRenderer.endColor = color;
+            transform.localRotation = authoredLocalRotation;
+
+            ClearTrails();
             gameObject.SetActive(true);
+            for (int index = 0; index < particleSystems.Length; index++)
+            {
+                particleSystems[index].Clear(false);
+                particleSystems[index].Play(false);
+            }
+        }
+
+        internal void SetPosition(Vector3 renderedPosition)
+        {
+            EnsureInitialized();
+            Vector3 travelDirection = renderedPosition - transform.position;
+            if (travelDirection.sqrMagnitude >= MinimumTravelDistance * MinimumTravelDistance)
+            {
+                Quaternion authoredWorldRotation = transform.parent != null
+                    ? transform.parent.rotation * authoredLocalRotation
+                    : authoredLocalRotation;
+                Vector3 authoredWorldForward = authoredWorldRotation * Vector3.forward;
+                transform.rotation =
+                    Quaternion.FromToRotation(authoredWorldForward, travelDirection.normalized)
+                    * authoredWorldRotation;
+            }
+
+            transform.position = renderedPosition;
+        }
+
+        internal float BeginRetirement()
+        {
+            EnsureInitialized();
+            for (int index = 0; index < particleSystems.Length; index++)
+            {
+                particleSystems[index].Stop(false, ParticleSystemStopBehavior.StopEmitting);
+            }
+
+            return retirementDelaySeconds;
         }
 
         public void ResetForPool()
         {
+            EnsureInitialized();
             ProjectileId = 0L;
-            transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            if (lineRenderer != null)
+            for (int index = 0; index < particleSystems.Length; index++)
             {
-                lineRenderer.startColor = Color.white;
-                lineRenderer.endColor = Color.white;
+                particleSystems[index].Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
+            ClearTrails();
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = authoredLocalRotation;
             gameObject.SetActive(false);
         }
 
-        private static Color GetPayloadColor(ProjectilePayloadKind kind)
+        private void ClearTrails()
         {
-            switch (kind)
+            for (int index = 0; index < trailRenderers.Length; index++)
             {
-                case ProjectilePayloadKind.Fire:
-                    return new Color(1f, 0.24f, 0.08f, 1f);
-                case ProjectilePayloadKind.Water:
-                    return new Color(0.1f, 0.55f, 1f, 1f);
-                case ProjectilePayloadKind.Wind:
-                    return new Color(0.35f, 1f, 0.65f, 1f);
-                case ProjectilePayloadKind.Earth:
-                    return new Color(0.72f, 0.42f, 0.16f, 1f);
-                default:
-                    return new Color(1f, 0.92f, 0.38f, 1f);
+                trailRenderers[index].Clear();
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (!isInitialized)
+            {
+                Initialize();
             }
         }
     }
