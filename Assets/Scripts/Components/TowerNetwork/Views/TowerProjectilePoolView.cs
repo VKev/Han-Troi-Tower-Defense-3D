@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Components.Core;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -182,7 +183,7 @@ namespace TowerDefense3D.Towers
         {
             if (view != null)
             {
-                DestroyRuntimeObject(view.gameObject);
+                RuntimeObjectDestroyer.Destroy(view.gameObject);
             }
         }
 
@@ -196,24 +197,6 @@ namespace TowerDefense3D.Towers
 
             poolsByPrefab.Clear();
         }
-
-        private static void DestroyRuntimeObject(UnityEngine.Object target)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(target);
-            }
-            else
-            {
-                DestroyImmediate(target);
-            }
-        }
-
         private readonly struct ActiveProjectileView
         {
             public ActiveProjectileView(

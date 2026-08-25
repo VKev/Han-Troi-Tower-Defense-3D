@@ -1,3 +1,4 @@
+using TowerDefense3D.Components.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -289,25 +290,8 @@ namespace TowerDefense3D.GridPlacement
 
         private void OnDestroy()
         {
-            DestroyRuntimeMesh(footprintMesh);
-            DestroyRuntimeMesh(ghostMesh);
-        }
-
-        private static void DestroyRuntimeMesh(Mesh mesh)
-        {
-            if (mesh == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(mesh);
-            }
-            else
-            {
-                DestroyImmediate(mesh);
-            }
+            RuntimeObjectDestroyer.Destroy(footprintMesh);
+            RuntimeObjectDestroyer.Destroy(ghostMesh);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Components.Core;
 using UnityEngine;
 
 namespace TowerDefense3D.Towers
@@ -69,7 +70,7 @@ namespace TowerDefense3D.Towers
             {
                 if (!visibleSources.Contains(pair.Key))
                 {
-                    DestroyRuntimeObject(pair.Value.gameObject);
+                    RuntimeObjectDestroyer.Destroy(pair.Value.gameObject);
                     removedSources.Add(pair.Key);
                 }
             }
@@ -112,7 +113,7 @@ namespace TowerDefense3D.Towers
             {
                 if (line != null)
                 {
-                    DestroyRuntimeObject(line.gameObject);
+                    RuntimeObjectDestroyer.Destroy(line.gameObject);
                 }
             }
 
@@ -142,24 +143,7 @@ namespace TowerDefense3D.Towers
         private void OnDestroy()
         {
             Clear();
-            DestroyRuntimeObject(lineMaterial);
-        }
-
-        private static void DestroyRuntimeObject(UnityEngine.Object target)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(target);
-            }
-            else
-            {
-                DestroyImmediate(target);
-            }
+            RuntimeObjectDestroyer.Destroy(lineMaterial);
         }
     }
 }
