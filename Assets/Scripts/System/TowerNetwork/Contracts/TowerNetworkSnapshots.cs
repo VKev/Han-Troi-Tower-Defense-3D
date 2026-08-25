@@ -73,6 +73,31 @@ namespace TowerDefense3D.Towers
         public int LaunchDelayTicks { get; }
     }
 
+    public readonly struct TowerProjectileMotionSnapshot
+    {
+        public TowerProjectileMotionSnapshot(
+            long projectileId,
+            TowerWorldPosition previousPosition,
+            TowerWorldPosition position,
+            ProjectilePayload payload)
+        {
+            if (projectileId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(projectileId));
+            }
+
+            ProjectileId = projectileId;
+            PreviousPosition = previousPosition;
+            Position = position;
+            Payload = payload;
+        }
+
+        public long ProjectileId { get; }
+        public TowerWorldPosition PreviousPosition { get; }
+        public TowerWorldPosition Position { get; }
+        public ProjectilePayload Payload { get; }
+    }
+
     public readonly struct TowerInputPortSnapshot
     {
         public TowerInputPortSnapshot(
