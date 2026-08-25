@@ -23,6 +23,7 @@ namespace TowerDefense3D.Enemies
         [Header("Base Stats")]
         [SerializeField, Min(0.01f)] private float baseMaxHealth = 16f;
         [SerializeField, Min(0.01f)] private float baseMoveSpeed = 2f;
+        [SerializeField, Min(0.01f)] private float baseHitRadius = 0.35f;
         [SerializeField, Min(0f)] private float basePhysicalResistance;
         [SerializeField, Min(0f)] private float baseMagicResistance;
 
@@ -43,6 +44,7 @@ namespace TowerDefense3D.Enemies
         public EnemyRank Rank => rank;
         public float BaseMaxHealth => baseMaxHealth;
         public float BaseMoveSpeed => baseMoveSpeed;
+        public float BaseHitRadius => baseHitRadius;
         public float BasePhysicalResistance => basePhysicalResistance;
         public float BaseMagicResistance => baseMagicResistance;
         public float ElementStatusEffectMultiplier => elementStatusEffectMultiplier;
@@ -66,9 +68,9 @@ namespace TowerDefense3D.Enemies
                 errors.Add($"{name}: Display Name is required.");
             }
 
-            if (baseMaxHealth <= 0f || baseMoveSpeed <= 0f)
+            if (baseMaxHealth <= 0f || baseMoveSpeed <= 0f || baseHitRadius <= 0f)
             {
-                errors.Add($"{name}: Base Max Health and Base Move Speed must be greater than zero.");
+                errors.Add($"{name}: Base Max Health, Base Move Speed and Base Hit Radius must be greater than zero.");
             }
 
             if (basePhysicalResistance < 0f || baseMagicResistance < 0f)

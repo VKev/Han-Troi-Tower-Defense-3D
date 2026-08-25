@@ -218,6 +218,12 @@ namespace TowerDefense3D.Towers
             return succeeded;
         }
 
+        public void StopSimulation()
+        {
+            manager.StopSimulation();
+            ReportFeedback("Tower simulation stopped.");
+        }
+
         public bool TryCreateSelectedQueueSummary(out TowerQueueSummary summary)
         {
             if (selectedTower == null)
