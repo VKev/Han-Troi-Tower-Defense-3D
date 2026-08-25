@@ -28,8 +28,6 @@ namespace TowerDefense3D.GridPlacement
         public GridOccupancy Occupancy => placementSystem?.Occupancy;
         public bool IsInitialized => placementSystem != null;
 
-        public event Action<TowerPlacementRecord> TowerPlaced;
-
         public void Bind(GridPlacementSystem system, GridPlacementView view)
         {
             if (placementSystem != null)
@@ -150,34 +148,6 @@ namespace TowerDefense3D.GridPlacement
             }
 
             runtimeView.Configure(selectedCombatDefinition);
-            PublishTowerPlaced(
-                new TowerPlacementRecord(
-                    selectedCombatDefinition,
-                    placement.Definition,
-                    runtimeView,
-                    placement.Anchor,
-                    placement.OwnerId));
-        }
-
-        private void PublishTowerPlaced(TowerPlacementRecord placement)
-        {
-            Delegate[] handlers = TowerPlaced?.GetInvocationList();
-            if (handlers == null)
-            {
-                return;
-            }
-
-            for (int index = 0; index < handlers.Length; index++)
-            {
-                try
-                {
-                    ((Action<TowerPlacementRecord>)handlers[index])(placement);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception, this);
-                }
-            }
         }
     }
 }

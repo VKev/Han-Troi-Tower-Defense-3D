@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
@@ -13,12 +14,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
     public sealed class GameplayUISystemTests
     {
         private const string BoardPath = "Assets/Config/GridPlacement/Level_001_Board.asset";
+        private const string EnemyPath = "Assets/Config/Enemies/Basic.asset";
         private const string TowerCatalogPath = "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
 
         [Test]
-        public void RefreshIfDirty_RefreshesOncePerTowerStateChangeAndRoutesViewCommands()
+        public void RefreshIfDirty_RefreshesForLocalStateEventsAndRoutesViewCommands()
         {
             TowerNetworkSystem towerNetworkSystem = CreateTowerNetworkSystem();
+            var enemySystem = new EnemySystem(
+                new RoadPath(new[] { Vector3.zero, Vector3.forward }));
+            EnemyDefinition enemyDefinition = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(EnemyPath);
+            Assert.That(enemyDefinition, Is.Not.Null);
             var gameplayView = new GameplayViewStub();
             var placementHudView = new PlacementHudViewStub();
             var towerHudView = new TowerNetworkHudViewStub();
@@ -32,7 +38,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 towerNetworkSystem,
                 presenter,
                 waveSystem,
-                wavePresenter);
+                wavePresenter,
+                enemySystem);
             int returnRequestCount = 0;
             gameplayUISystem.BindReturnToMenu(() => returnRequestCount++);
 
@@ -60,6 +67,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(waveHudView.RenderCount, Is.EqualTo(3));
 
+            enemySystem.Spawn(enemyDefinition);
+            gameplayUISystem.RefreshIfDirty();
+
+            Assert.That(waveHudView.RenderCount, Is.EqualTo(4));
+
             towerHudView.RequestReturnToMenu();
 
             Assert.That(returnRequestCount, Is.EqualTo(1));
@@ -68,7 +80,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             towerNetworkSystem.ReportFeedback("Ignored after disposal.");
             gameplayUISystem.RefreshIfDirty();
 
-            Assert.That(towerHudView.RenderCount, Is.EqualTo(3));
+            Assert.That(towerHudView.RenderCount, Is.EqualTo(4));
             towerNetworkSystem.Dispose();
         }
 

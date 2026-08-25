@@ -5,26 +5,6 @@ using UnityEngine;
 
 namespace TowerDefense3D.Enemies
 {
-    public readonly struct ProjectileHitResult
-    {
-        public ProjectileHitResult(
-            long projectileId,
-            long enemyId,
-            float damage,
-            bool killed)
-        {
-            ProjectileId = projectileId;
-            EnemyId = enemyId;
-            Damage = damage;
-            Killed = killed;
-        }
-
-        public long ProjectileId { get; }
-        public long EnemyId { get; }
-        public float Damage { get; }
-        public bool Killed { get; }
-    }
-
     public sealed class ProjectileHitSystem
     {
         private const float ProjectileHitRadius = 0.2f;
@@ -47,8 +27,6 @@ namespace TowerDefense3D.Enemies
                 ?? throw new ArgumentNullException(nameof(towerNetworkManager));
             this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
         }
-
-        public event Action<ProjectileHitResult> ProjectileHit;
 
         public void Step()
         {
@@ -113,12 +91,7 @@ namespace TowerDefense3D.Enemies
                     projectile.Payload.Damage,
                     projectile.Payload.DamageType,
                     enemy.Definition);
-                bool killed = enemySystem.ApplyDamage(enemy.Id, damage);
-                ProjectileHit?.Invoke(new ProjectileHitResult(
-                    projectile.ProjectileId,
-                    enemy.Id,
-                    damage,
-                    killed));
+                enemySystem.ApplyDamage(enemy.Id, damage);
             }
         }
 

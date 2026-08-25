@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.Towers;
 using TowerDefense3D.Waves;
 
@@ -15,6 +16,7 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerNetworkHudPresenter towerNetworkHudPresenter;
         private readonly IWaveSystem waveSystem;
         private readonly WaveHudPresenter waveHudPresenter;
+        private readonly EnemySystem enemySystem;
 
         private bool isDirty;
         private bool isStarted;
@@ -25,7 +27,8 @@ namespace TowerDefense3D.GameFlow
             TowerNetworkSystem towerNetworkSystem,
             TowerNetworkHudPresenter towerNetworkHudPresenter,
             IWaveSystem waveSystem,
-            WaveHudPresenter waveHudPresenter)
+            WaveHudPresenter waveHudPresenter,
+            EnemySystem enemySystem)
         {
             this.gameplayView = gameplayView ?? throw new ArgumentNullException(nameof(gameplayView));
             this.placementHudView = placementHudView ?? throw new ArgumentNullException(nameof(placementHudView));
@@ -36,6 +39,7 @@ namespace TowerDefense3D.GameFlow
             this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
             this.waveHudPresenter = waveHudPresenter
                 ?? throw new ArgumentNullException(nameof(waveHudPresenter));
+            this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
         }
 
         public void BindReturnToMenu(Action requestReturnToMenu)
@@ -51,6 +55,9 @@ namespace TowerDefense3D.GameFlow
             waveHudPresenter.Connect();
             towerNetworkSystem.StateChanged += MarkDirty;
             waveSystem.StateChanged += MarkDirty;
+            enemySystem.EnemySpawned += MarkDirty;
+            enemySystem.EnemyKilled += MarkDirty;
+            enemySystem.EnemyLeaked += MarkDirty;
             isStarted = true;
             isDirty = true;
         }
@@ -77,11 +84,19 @@ namespace TowerDefense3D.GameFlow
             isStarted = false;
             towerNetworkSystem.StateChanged -= MarkDirty;
             waveSystem.StateChanged -= MarkDirty;
+            enemySystem.EnemySpawned -= MarkDirty;
+            enemySystem.EnemyKilled -= MarkDirty;
+            enemySystem.EnemyLeaked -= MarkDirty;
             towerNetworkHudPresenter.Disconnect();
             waveHudPresenter.Disconnect();
         }
 
         private void MarkDirty()
+        {
+            isDirty = true;
+        }
+
+        private void MarkDirty(EnemySnapshot _)
         {
             isDirty = true;
         }

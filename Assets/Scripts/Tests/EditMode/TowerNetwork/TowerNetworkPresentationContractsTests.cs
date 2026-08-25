@@ -228,37 +228,5 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(projectilePrefab);
             }
         }
-
-        [Test]
-        public void PlacementRecord_PreservesCombatAndPlacementIdentity()
-        {
-            var owner = new GameObject("Tower Placement Record Test");
-            var combatDefinition = ScriptableObject.CreateInstance<GeneratorTowerDefinition>();
-            var placementDefinition = ScriptableObject.CreateInstance<TowerDefinition>();
-
-            try
-            {
-                TowerRuntimeView view = owner.AddComponent<TowerRuntimeView>();
-                view.Configure(combatDefinition);
-                var record = new TowerPlacementRecord(
-                    combatDefinition,
-                    placementDefinition,
-                    view,
-                    new GridCell(2, 3, 1),
-                    11);
-
-                Assert.That(record.CombatDefinition, Is.SameAs(combatDefinition));
-                Assert.That(record.PlacementDefinition, Is.SameAs(placementDefinition));
-                Assert.That(record.RuntimeView, Is.SameAs(view));
-                Assert.That(record.Anchor, Is.EqualTo(new GridCell(2, 3, 1)));
-                Assert.That(record.OwnerId, Is.EqualTo(11));
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(owner);
-                UnityEngine.Object.DestroyImmediate(combatDefinition);
-                UnityEngine.Object.DestroyImmediate(placementDefinition);
-            }
-        }
     }
 }
