@@ -9,7 +9,7 @@ namespace TowerDefense3D.Towers
         private readonly List<ProjectileState> activeProjectiles = new List<ProjectileState>();
         private long nextProjectileId = 1L;
 
-        public event Action<TowerProjectileSnapshot> ProjectileCreated;
+        internal event Action<TowerProjectileSnapshot> ProjectileCreated;
 
         public int ProjectileCount => activeProjectiles.Count;
 
@@ -97,6 +97,7 @@ namespace TowerDefense3D.Towers
         {
             activeProjectiles.Clear();
             nextProjectileId = 1L;
+            ClearProjectileSpawnPlan();
         }
 
         private static TowerProjectileSnapshot CreateProjectileSnapshot(ProjectileState projectile)
@@ -134,23 +135,45 @@ namespace TowerDefense3D.Towers
 
             int firstProjectileIndex = activeProjectiles.Count;
             long firstProjectileId = nextProjectileId;
+            int firstSpawnOrderIndex = nextProjectileSpawnOrderIndex;
 
             try
             {
                 for (int projectileIndex = 0; projectileIndex < spec.OutputProjectileCount; projectileIndex++)
                 {
                     int launchDelayTicks = checked(projectileIndex * spec.SequenceSpacingTicks);
-
-                    activeProjectiles.Add(new ProjectileState(
-                        nextProjectileId,
-                        source.Id,
-                        link.Target,
-                        link.TargetInputPort,
-                        source.Position,
-                        spec.OutputPayload,
-                        launchDelayTicks));
-
-                    nextProjectileId++;
+                    if (usesProjectileSpawnPlan)
+                    {
+                        TowerProjectileSpawnOrder order = TakeNextProjectileSpawnOrder();
+                        ValidateProjectileSpawnOrder(
+                            order,
+                            source,
+                            link,
+                            spec.OutputPayload,
+                            launchDelayTicks);
+                        TowerProjectileSnapshot projectile = order.Projectile;
+                        activeProjectiles.Add(new ProjectileState(
+                            projectile.ProjectileId,
+                            projectile.Source,
+                            projectile.Target,
+                            link.TargetInputPort,
+                            projectile.Position,
+                            projectile.Payload,
+                            projectile.LaunchDelayTicks));
+                        nextProjectileId = projectile.ProjectileId + 1L;
+                    }
+                    else
+                    {
+                        activeProjectiles.Add(new ProjectileState(
+                            nextProjectileId,
+                            source.Id,
+                            link.Target,
+                            link.TargetInputPort,
+                            source.Position,
+                            spec.OutputPayload,
+                            launchDelayTicks));
+                        nextProjectileId++;
+                    }
                 }
 
             }
@@ -164,6 +187,7 @@ namespace TowerDefense3D.Towers
 
                 target.InputBuffer.CancelReservation(link.TargetInputPort, reservationCount);
                 nextProjectileId = firstProjectileId;
+                nextProjectileSpawnOrderIndex = firstSpawnOrderIndex;
                 throw;
             }
 
@@ -173,6 +197,31 @@ namespace TowerDefense3D.Towers
             }
 
             return true;
+        }
+
+        private void ValidateProjectileSpawnOrder(
+            TowerProjectileSpawnOrder order,
+            NodeState source,
+            LinkState link,
+            ProjectilePayload payload,
+            int launchDelayTicks)
+        {
+            TowerProjectileSnapshot projectile = order.Projectile;
+            if (order.SpawnTick != CurrentTick
+                || projectile.ProjectileId != nextProjectileId
+                || !projectile.Source.Equals(source.Id)
+                || !projectile.Target.Equals(link.Target)
+                || projectile.Position.X != source.Position.X
+                || projectile.Position.Y != source.Position.Y
+                || projectile.Position.Z != source.Position.Z
+                || projectile.LaunchDelayTicks != launchDelayTicks
+                || projectile.Payload.Kind != payload.Kind
+                || projectile.Payload.Damage != payload.Damage
+                || projectile.Payload.DamageType != payload.DamageType)
+            {
+                throw new InvalidOperationException(
+                    $"Projectile plan diverged at tick {CurrentTick} for tower {source.Id}.");
+            }
         }
     }
 }

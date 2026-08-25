@@ -81,6 +81,63 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
+        public void ProjectileSpawnPlan_IsCompleteBeforeRuntimePlayback()
+        {
+            GenerationFixture fixture = CreateRunningFixture();
+
+            IReadOnlyList<TowerProjectileSpawnOrder> plan =
+                fixture.Manager.EnsureProjectileSpawnPlanThrough(60L);
+
+            Assert.That(fixture.Manager.CurrentTick, Is.Zero);
+            Assert.That(fixture.Manager.ProjectileCount, Is.Zero);
+            Assert.That(plan.Count, Is.EqualTo(3));
+            Assert.That(plan[0].SpawnTick, Is.EqualTo(20L));
+            Assert.That(plan[1].SpawnTick, Is.EqualTo(40L));
+            Assert.That(plan[2].SpawnTick, Is.EqualTo(60L));
+            Assert.That(plan[0].Projectile.ProjectileId, Is.EqualTo(1L));
+            Assert.That(plan[1].Projectile.ProjectileId, Is.EqualTo(2L));
+            Assert.That(plan[2].Projectile.ProjectileId, Is.EqualTo(3L));
+
+            StepTicks(fixture.Manager, 60);
+
+            IReadOnlyList<TowerProjectileSnapshot> activeProjectiles =
+                fixture.Manager.CreateProjectileSnapshot();
+            Assert.That(activeProjectiles.Count, Is.EqualTo(1));
+            Assert.That(activeProjectiles[0].ProjectileId, Is.EqualTo(3L));
+            Assert.That(activeProjectiles[0].Position.X, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void ProjectileSpawnPlan_ExtendsWithoutChangingRuntimePlayback()
+        {
+            GenerationFixture fixture = CreateRunningFixture();
+
+            IReadOnlyList<TowerProjectileSpawnOrder> initialPlan =
+                fixture.Manager.EnsureProjectileSpawnPlanThrough(40L);
+
+            StepTicks(fixture.Manager, 25);
+
+            IReadOnlyList<TowerProjectileSpawnOrder> extendedPlan =
+                fixture.Manager.EnsureProjectileSpawnPlanThrough(60L);
+
+            Assert.That(initialPlan.Count, Is.EqualTo(2));
+            Assert.That(extendedPlan.Count, Is.EqualTo(3));
+            Assert.That(extendedPlan[0].SpawnTick, Is.EqualTo(20L));
+            Assert.That(extendedPlan[0].Projectile.ProjectileId, Is.EqualTo(1L));
+            Assert.That(extendedPlan[1].SpawnTick, Is.EqualTo(40L));
+            Assert.That(extendedPlan[1].Projectile.ProjectileId, Is.EqualTo(2L));
+            Assert.That(extendedPlan[2].SpawnTick, Is.EqualTo(60L));
+            Assert.That(extendedPlan[2].Projectile.ProjectileId, Is.EqualTo(3L));
+
+            StepTicks(fixture.Manager, 35);
+
+            IReadOnlyList<TowerProjectileSnapshot> activeProjectiles =
+                fixture.Manager.CreateProjectileSnapshot();
+            Assert.That(activeProjectiles.Count, Is.EqualTo(1));
+            Assert.That(activeProjectiles[0].ProjectileId, Is.EqualTo(3L));
+        }
+
+        [Test]
         public void NexusConsumption_ReleasesCapacityForLaterGeneratorProjectiles()
         {
             GenerationFixture fixture = CreateRunningFixture();

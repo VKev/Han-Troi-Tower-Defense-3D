@@ -27,6 +27,8 @@ namespace TowerDefense3D.Enemies
         private readonly HashSet<long> activeProjectileIds = new HashSet<long>();
         private readonly List<long> staleProjectileIds = new List<long>();
         private IReadOnlyList<WaveSpawnOrder> currentWavePlan = Array.Empty<WaveSpawnOrder>();
+        private IReadOnlyList<TowerProjectileSpawnOrder> projectileSpawnPlan =
+            Array.Empty<TowerProjectileSpawnOrder>();
         private bool requiresTrajectoryRebuild;
         private bool isDisposed;
 
@@ -47,7 +49,6 @@ namespace TowerDefense3D.Enemies
                 ProjectileHitRadius);
 
             waveSystem.WavePlanCreated += HandleWavePlanCreated;
-            towerNetworkManager.ProjectileCreated += HandleProjectileCreated;
             enemySystem.EnemySpawned += HandleEnemySpawned;
             enemySystem.EnemyKilled += HandleEnemyRemoved;
             enemySystem.EnemyLeaked += HandleEnemyRemoved;
@@ -67,6 +68,7 @@ namespace TowerDefense3D.Enemies
         public void Reset()
         {
             currentWavePlan = Array.Empty<WaveSpawnOrder>();
+            projectileSpawnPlan = Array.Empty<TowerProjectileSpawnOrder>();
             enemyTrajectories.Clear();
             scheduledHitsByTick.Clear();
             projectileEndIdsByTick.Clear();
@@ -88,7 +90,6 @@ namespace TowerDefense3D.Enemies
 
             isDisposed = true;
             waveSystem.WavePlanCreated -= HandleWavePlanCreated;
-            towerNetworkManager.ProjectileCreated -= HandleProjectileCreated;
             enemySystem.EnemySpawned -= HandleEnemySpawned;
             enemySystem.EnemyKilled -= HandleEnemyRemoved;
             enemySystem.EnemyLeaked -= HandleEnemyRemoved;
@@ -100,19 +101,8 @@ namespace TowerDefense3D.Enemies
             Reset();
             currentWavePlan = plan;
             AddEnemyTrajectories(planner.CreateWaveEnemyTrajectories(plan));
-        }
-
-        private void HandleProjectileCreated(TowerProjectileSnapshot projectile)
-        {
-            ProjectileTrajectoryPlan trajectory = CreateProjectileTrajectory(
-                projectile,
-                towerNetworkManager.CurrentTick);
-            AddProjectileEnd(trajectory);
-
-            foreach (EnemyTrajectoryPlan enemyTrajectory in enemyTrajectories.Values)
-            {
-                ScheduleHit(trajectory, enemyTrajectory);
-            }
+            EnsureProjectileSpawnPlan(towerNetworkManager.CurrentTick);
+            RebuildProjectileHitSchedule(towerNetworkManager.CurrentTick);
         }
 
         private void HandleEnemySpawned(EnemySnapshot snapshot)
@@ -137,7 +127,25 @@ namespace TowerDefense3D.Enemies
             CreateRemainingEnemySeeds(currentTick);
             enemyTrajectories.Clear();
             AddEnemyTrajectories(planner.CreateEnemyTrajectories(enemySeeds));
+            EnsureProjectileSpawnPlan(currentTick);
+            RebuildProjectileHitSchedule(currentTick);
+            requiresTrajectoryRebuild = false;
+        }
 
+        private void EnsureProjectileSpawnPlan(long currentTick)
+        {
+            long planEndTick = currentTick;
+            foreach (EnemyTrajectoryPlan trajectory in enemyTrajectories.Values)
+            {
+                planEndTick = Math.Max(planEndTick, trajectory.LastMovementTick);
+            }
+
+            projectileSpawnPlan =
+                towerNetworkManager.EnsureProjectileSpawnPlanThrough(planEndTick);
+        }
+
+        private void RebuildProjectileHitSchedule(long currentTick)
+        {
             towerNetworkManager.CopyProjectileSnapshotTo(projectileSnapshots);
             scheduledHitsByTick.Clear();
             projectileEndIdsByTick.Clear();
@@ -145,17 +153,31 @@ namespace TowerDefense3D.Enemies
 
             for (int index = 0; index < projectileSnapshots.Count; index++)
             {
-                ProjectileTrajectoryPlan trajectory = CreateProjectileTrajectory(
-                    projectileSnapshots[index],
-                    currentTick);
-                AddProjectileEnd(trajectory);
-                foreach (EnemyTrajectoryPlan enemyTrajectory in enemyTrajectories.Values)
-                {
-                    ScheduleHit(trajectory, enemyTrajectory);
-                }
+                AddProjectileTrajectory(projectileSnapshots[index], currentTick);
             }
 
-            requiresTrajectoryRebuild = false;
+            for (int index = 0; index < projectileSpawnPlan.Count; index++)
+            {
+                TowerProjectileSpawnOrder order = projectileSpawnPlan[index];
+                if (order.SpawnTick > currentTick)
+                {
+                    AddProjectileTrajectory(order.Projectile, order.SpawnTick);
+                }
+            }
+        }
+
+        private void AddProjectileTrajectory(
+            TowerProjectileSnapshot projectile,
+            long creationTick)
+        {
+            ProjectileTrajectoryPlan trajectory = CreateProjectileTrajectory(
+                projectile,
+                creationTick);
+            AddProjectileEnd(trajectory);
+            foreach (EnemyTrajectoryPlan enemyTrajectory in enemyTrajectories.Values)
+            {
+                ScheduleHit(trajectory, enemyTrajectory);
+            }
         }
 
         private void CreateRemainingEnemySeeds(long currentTick)

@@ -102,10 +102,19 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < states.Count; index++)
             {
                 EnemyTrajectoryState state = states[index];
+                long lastMovementTick = state.FirstMovementTick;
+                if (state.Segments.Count > 0)
+                {
+                    lastMovementTick = Math.Max(
+                        lastMovementTick,
+                        SecondsToTick(state.Segments[state.Segments.Count - 1].EndTimeSeconds));
+                }
+
                 trajectories[index] = new EnemyTrajectoryPlan(
                     state.EnemyId,
                     state.Definition.BaseHitRadius,
                     state.FirstMovementTick,
+                    lastMovementTick,
                     state.Segments);
             }
 
@@ -368,17 +377,20 @@ namespace TowerDefense3D.Enemies
             long enemyId,
             float hitRadius,
             long firstMovementTick,
+            long lastMovementTick,
             IReadOnlyList<TimedTrajectorySegment> segments)
         {
             EnemyId = enemyId;
             HitRadius = hitRadius;
             FirstMovementTick = firstMovementTick;
+            LastMovementTick = lastMovementTick;
             Segments = segments;
         }
 
         public long EnemyId { get; }
         public float HitRadius { get; }
         public long FirstMovementTick { get; }
+        public long LastMovementTick { get; }
         public IReadOnlyList<TimedTrajectorySegment> Segments { get; }
     }
 
