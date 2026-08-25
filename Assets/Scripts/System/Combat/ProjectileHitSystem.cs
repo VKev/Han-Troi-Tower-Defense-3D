@@ -108,6 +108,7 @@ namespace TowerDefense3D.Enemies
                 }
 
                 hitEnemyIds.Add(motion.EnemyId);
+                enemySystem.RevealFromDirectHit(enemy.Id);
                 float damage = EnemyDamageResolver.Resolve(
                     projectile.Payload.Damage,
                     projectile.Payload.DamageType,

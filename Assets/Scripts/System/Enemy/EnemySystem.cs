@@ -12,6 +12,7 @@ namespace TowerDefense3D.Enemies
             new Dictionary<long, EnemyInstance>();
         private readonly List<EnemyMotionSnapshot> motionSnapshots =
             new List<EnemyMotionSnapshot>();
+        private readonly List<PendingSummon> pendingSummons = new List<PendingSummon>();
         private long nextEnemyId = 1L;
 
         public EnemySystem(RoadPath roadPath)
@@ -33,6 +34,7 @@ namespace TowerDefense3D.Enemies
         public void Step(float stepSeconds)
         {
             motionSnapshots.Clear();
+            pendingSummons.Clear();
             for (int index = activeEnemies.Count - 1; index >= 0; index--)
             {
                 EnemyInstance enemy = activeEnemies[index];
@@ -42,6 +44,8 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
+                UpdateReveal(enemy, stepSeconds);
+                QueueBossSummons(enemy, stepSeconds);
                 enemy.PreviousPosition = enemy.Position;
                 float speedMultiplier = 1f + FindStrongestSpeedBonus(enemy);
                 float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * stepSeconds;
@@ -65,6 +69,8 @@ namespace TowerDefense3D.Enemies
                     enemy.Position,
                     enemy.Definition.BaseHitRadius));
             }
+
+            SpawnPendingSummons();
         }
 
         public bool TryGetEnemy(long enemyId, out EnemyInstance enemy)
@@ -88,6 +94,15 @@ namespace TowerDefense3D.Enemies
             enemiesById.Remove(enemyId);
             EnemyKilled?.Invoke(CreateSnapshot(enemy));
             return true;
+        }
+
+        public void RevealFromDirectHit(long enemyId)
+        {
+            EnemyInstance enemy = enemiesById[enemyId];
+            if (enemy.Definition is StealthEnemyDefinition stealth)
+            {
+                enemy.RevealRemainingSeconds = stealth.RevealDurationSeconds;
+            }
         }
 
         public void CopyMotionSnapshotsTo(List<EnemyMotionSnapshot> destination)
@@ -114,16 +129,19 @@ namespace TowerDefense3D.Enemies
             activeEnemies.Clear();
             enemiesById.Clear();
             motionSnapshots.Clear();
+            pendingSummons.Clear();
             nextEnemyId = 1L;
         }
 
         private EnemyInstance SpawnAt(
             EnemyDefinition definition,
             Vector3 position,
-            int targetPointIndex)
+            int targetPointIndex,
+            bool isSummoned = false)
         {
             var enemy = new EnemyInstance(nextEnemyId++, definition, position)
             {
+                IsSummoned = isSummoned,
                 TargetPointIndex = targetPointIndex
             };
             activeEnemies.Add(enemy);
@@ -143,7 +161,8 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < activeEnemies.Count; index++)
             {
                 EnemyInstance source = activeEnemies[index];
-                if (!source.IsAlive
+                if (ReferenceEquals(source, target)
+                    || !source.IsAlive
                     || !(source.Definition is SpeedSupportEnemyDefinition support))
                 {
                     continue;
@@ -166,6 +185,77 @@ namespace TowerDefense3D.Enemies
             return strongestBonus;
         }
 
+        private void QueueBossSummons(EnemyInstance boss, float stepSeconds)
+        {
+            if (!(boss.Definition is SummonerBossEnemyDefinition definition))
+            {
+                return;
+            }
+
+            int phaseIndex = FindSummonPhase(definition, boss.HealthFraction);
+            if (phaseIndex != boss.SummonPhaseIndex)
+            {
+                boss.SummonPhaseIndex = phaseIndex;
+                boss.SummonElapsedSeconds = 0f;
+            }
+
+            SummonerBossEnemyDefinition.SummonPhase phase = definition.SummonPhases[phaseIndex];
+            boss.SummonElapsedSeconds += stepSeconds;
+            while (boss.SummonElapsedSeconds >= phase.SummonIntervalSeconds)
+            {
+                boss.SummonElapsedSeconds -= phase.SummonIntervalSeconds;
+                for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+                {
+                    SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
+                    for (int count = 0; count < entry.Count; count++)
+                    {
+                        pendingSummons.Add(new PendingSummon(
+                            entry.Definition,
+                            boss.Position,
+                            boss.TargetPointIndex));
+                    }
+                }
+            }
+        }
+
+        private void SpawnPendingSummons()
+        {
+            for (int index = 0; index < pendingSummons.Count; index++)
+            {
+                PendingSummon summon = pendingSummons[index];
+                SpawnAt(
+                    summon.Definition,
+                    summon.Position,
+                    summon.TargetPointIndex,
+                    isSummoned: true);
+            }
+        }
+
+        private static int FindSummonPhase(
+            SummonerBossEnemyDefinition definition,
+            float healthFraction)
+        {
+            int selectedPhase = 0;
+            for (int index = 1; index < definition.SummonPhases.Count; index++)
+            {
+                if (healthFraction > definition.SummonPhases[index].StartHealthFraction)
+                {
+                    break;
+                }
+
+                selectedPhase = index;
+            }
+
+            return selectedPhase;
+        }
+
+        private static void UpdateReveal(EnemyInstance enemy, float stepSeconds)
+        {
+            enemy.RevealRemainingSeconds = Mathf.Max(
+                0f,
+                enemy.RevealRemainingSeconds - stepSeconds);
+        }
+
         private static EnemySnapshot CreateSnapshot(EnemyInstance enemy)
         {
             return new EnemySnapshot(
@@ -173,7 +263,26 @@ namespace TowerDefense3D.Enemies
                 enemy.Definition,
                 enemy.PreviousPosition,
                 enemy.Position,
-                enemy.Health);
+                enemy.Health,
+                enemy.IsHidden,
+                enemy.IsSummoned);
+        }
+
+        private readonly struct PendingSummon
+        {
+            public PendingSummon(
+                EnemyDefinition definition,
+                Vector3 position,
+                int targetPointIndex)
+            {
+                Definition = definition;
+                Position = position;
+                TargetPointIndex = targetPointIndex;
+            }
+
+            public EnemyDefinition Definition { get; }
+            public Vector3 Position { get; }
+            public int TargetPointIndex { get; }
         }
     }
 }

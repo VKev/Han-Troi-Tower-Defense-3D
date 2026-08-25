@@ -10,7 +10,8 @@ namespace TowerDefense3D.Enemies
         public void Bind(EnemySnapshot enemy)
         {
             EnemyId = enemy.EnemyId;
-            gameObject.name = $"Enemy {enemy.EnemyId} - {enemy.Definition.DisplayName}";
+            string prefix = enemy.IsSummoned ? "Summoned Enemy" : "Enemy";
+            gameObject.name = $"{prefix} {enemy.EnemyId} - {enemy.Definition.DisplayName}";
             transform.position = enemy.Position;
             gameObject.SetActive(true);
         }

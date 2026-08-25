@@ -27,6 +27,12 @@ namespace TowerDefense3D.Enemies
         public Vector3 Position { get; internal set; }
         public Vector3 PreviousPosition { get; internal set; }
         public bool IsAlive => Health > 0f;
+        public bool IsSummoned { get; internal set; }
+        public bool IsHidden => Definition is StealthEnemyDefinition
+            && RevealRemainingSeconds <= 0f;
+        public float RevealRemainingSeconds { get; internal set; }
         internal int TargetPointIndex { get; set; }
+        internal int SummonPhaseIndex { get; set; } = -1;
+        internal float SummonElapsedSeconds { get; set; }
     }
 }
