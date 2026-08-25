@@ -115,6 +115,7 @@ namespace TowerDefense3D.Towers
         [SerializeField] private string displayName;
         [SerializeField] private TowerDefinition placementDefinition;
         [SerializeField] private GameObject projectilePrefab;
+        [SerializeField] private GameObject hitEffectPrefab;
         [SerializeField] private TowerNetworkProfile network;
         [SerializeField] private TowerThroughputProfile throughput;
         [SerializeField] private TowerEconomyProfile economy;
@@ -137,6 +138,7 @@ namespace TowerDefense3D.Towers
         public string DisplayName => displayName;
         public TowerDefinition PlacementDefinition => placementDefinition;
         public GameObject ProjectilePrefab => projectilePrefab;
+        public GameObject HitEffectPrefab => hitEffectPrefab;
         public TowerNetworkProfile Network => network;
         public TowerThroughputProfile Throughput => throughput;
         public TowerEconomyProfile Economy => economy;

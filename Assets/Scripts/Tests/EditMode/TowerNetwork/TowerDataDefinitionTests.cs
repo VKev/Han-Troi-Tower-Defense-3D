@@ -45,7 +45,7 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
-        public void ProducingDefinition_RequiresProjectilePrefabWithAuthoredReferences()
+        public void ProducingDefinition_RequiresProjectileAndHitEffectPrefabs()
         {
             GeneratorTowerDefinition generator = Create<GeneratorTowerDefinition>();
             TowerDefinition placementDefinition = Create<TowerDefinition>();
@@ -56,6 +56,7 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                 TowerDataValidator.CollectErrors(generator));
 
             StringAssert.Contains("Projectile Prefab is required", combined);
+            StringAssert.Contains("Hit Effect Prefab is required", combined);
         }
 
         [Test]

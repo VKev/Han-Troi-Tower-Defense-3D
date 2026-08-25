@@ -9,6 +9,7 @@ namespace TowerDefense3D.Towers
 
         void Initialize();
         void Show(long projectileId, GameObject projectilePrefab, Vector3 position);
+        void PlayHitEffect(GameObject hitEffectPrefab, Vector3 position);
         void Release(long projectileId);
         void AdvanceReleaseDelays(float deltaTime);
         void Clear();

@@ -95,6 +95,27 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             }
         }
 
+        [Test]
+        public void AssignImpactGroups_MergesNearbyHitsAndKeepsDistantLaneHit()
+        {
+            ProjectileHitPlanner planner = CreatePlanner();
+            ProjectilePayload payload = CreateProjectile().Payload;
+            var hits = new List<ScheduledProjectileHit>
+            {
+                new ScheduledProjectileHit(1L, 1L, 0.5f, 10L, payload, Vector3.zero),
+                new ScheduledProjectileHit(1L, 2L, 0.55f, 11L, payload, new Vector3(0.5f, 0f, 0f)),
+                new ScheduledProjectileHit(1L, 3L, 0.56f, 11L, payload, new Vector3(3f, 0f, 0f))
+            };
+
+            planner.AssignImpactGroups(
+                hits,
+                new Dictionary<long, ProjectileImpactHistory>());
+
+            Assert.That(hits[0].ImpactGroupId, Is.Positive);
+            Assert.That(hits[1].ImpactGroupId, Is.EqualTo(hits[0].ImpactGroupId));
+            Assert.That(hits[2].ImpactGroupId, Is.Not.EqualTo(hits[0].ImpactGroupId));
+        }
+
         private static ProjectileHitPlanner CreatePlanner()
         {
             var road = new RoadPath(new[]

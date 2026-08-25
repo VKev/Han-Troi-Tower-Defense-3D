@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.Simulation;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace TowerDefense3D.Towers
         private readonly List<TowerProjectileSnapshot> snapshotBuffer = new List<TowerProjectileSnapshot>();
         private readonly List<long> pendingProjectileIds = new List<long>();
         private readonly TowerNetworkManager manager;
+        private readonly ProjectileHitSystem projectileHitSystem;
         private readonly GameplaySimulationSystem simulationSystem;
         private readonly ITowerProjectileViewPool viewPool;
 
@@ -24,10 +26,13 @@ namespace TowerDefense3D.Towers
 
         public TowerProjectilePresentationSystem(
             TowerNetworkManager manager,
+            ProjectileHitSystem projectileHitSystem,
             GameplaySimulationSystem simulationSystem,
             ITowerProjectileViewPool viewPool)
         {
             this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            this.projectileHitSystem = projectileHitSystem
+                ?? throw new ArgumentNullException(nameof(projectileHitSystem));
             this.simulationSystem = simulationSystem ?? throw new ArgumentNullException(nameof(simulationSystem));
             this.viewPool = viewPool ?? throw new ArgumentNullException(nameof(viewPool));
         }
@@ -39,6 +44,7 @@ namespace TowerDefense3D.Towers
         {
             viewPool.Initialize();
             manager.StateChanged += HandleManagerStateChanged;
+            projectileHitSystem.ProjectileImpacted += HandleProjectileImpacted;
             simulationSystem.StepCompleted += HandleStepCompleted;
             isStarted = true;
         }
@@ -60,6 +66,7 @@ namespace TowerDefense3D.Towers
             if (isStarted)
             {
                 manager.StateChanged -= HandleManagerStateChanged;
+                projectileHitSystem.ProjectileImpacted -= HandleProjectileImpacted;
                 simulationSystem.StepCompleted -= HandleStepCompleted;
                 isStarted = false;
             }
@@ -183,21 +190,40 @@ namespace TowerDefense3D.Towers
 
         private GameObject ResolveProjectilePrefab(TowerNodeId source)
         {
+            return ResolveCoreProfile(source).ProjectilePrefab;
+        }
+
+        private GameObject ResolveHitEffectPrefab(TowerNodeId source)
+        {
+            return ResolveCoreProfile(source).HitEffectPrefab;
+        }
+
+        private TowerCoreProfile ResolveCoreProfile(TowerNodeId source)
+        {
             if (!manager.TryGetNodeSpec(source, out TowerRuntimeSpec spec))
             {
                 throw new InvalidOperationException(
                     $"Projectile source '{source}' is not registered.");
             }
 
-            if (!manager.Catalog.TryGet(spec.Family, out TowerCombatDefinition definition) ||
-                definition.Core == null ||
-                definition.Core.ProjectilePrefab == null)
+            if (!manager.Catalog.TryGet(spec.Family, out TowerCombatDefinition definition)
+                || definition.Core == null
+                || definition.Core.ProjectilePrefab == null
+                || definition.Core.HitEffectPrefab == null)
             {
                 throw new InvalidOperationException(
-                    $"Tower family '{spec.Family}' requires an authored Projectile Prefab.");
+                    $"Tower family '{spec.Family}' requires authored projectile VFX prefabs.");
             }
 
-            return definition.Core.ProjectilePrefab;
+            return definition.Core;
+        }
+
+        private void HandleProjectileImpacted(ProjectileImpactEvent impact)
+        {
+            TowerProjectilePresentationTrack track = presentationTracks[impact.ProjectileId];
+            viewPool.PlayHitEffect(
+                ResolveHitEffectPrefab(track.Source),
+                impact.Position);
         }
 
         private void HandleStepCompleted(long completedStep)

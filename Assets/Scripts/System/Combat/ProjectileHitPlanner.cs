@@ -9,6 +9,8 @@ namespace TowerDefense3D.Enemies
     internal sealed class ProjectileHitPlanner
     {
         private const double TickBoundaryTolerance = 0.000001d;
+        private const float ImpactMergeDistanceMeters = 1.25f;
+        private const long ImpactMergeWindowTicks = 4L;
         private readonly RoadPath roadPath;
         private readonly float tickSeconds;
         private readonly float projectileSpeedMetersPerSecond;
@@ -192,6 +194,7 @@ namespace TowerDefense3D.Enemies
                 scheduledHit = new ScheduledProjectileHit(
                     projectile.ProjectileId,
                     enemy.EnemyId,
+                    hitTimeSeconds,
                     hitTick,
                     projectile.Payload,
                     projectile.Motion.Evaluate(hitTimeSeconds));
@@ -202,9 +205,65 @@ namespace TowerDefense3D.Enemies
             return false;
         }
 
+        public void AssignImpactGroups(
+            List<ScheduledProjectileHit> hits,
+            IReadOnlyDictionary<long, ProjectileImpactHistory> impactHistory)
+        {
+            hits.Sort(CompareScheduledHits);
+
+            long projectileId = 0L;
+            int currentImpactGroupId = 0;
+            int nextImpactGroupId = 1;
+            bool hasPreviousImpact = false;
+            ProjectileImpactHistory previousImpact = default;
+
+            for (int index = 0; index < hits.Count; index++)
+            {
+                ScheduledProjectileHit hit = hits[index];
+                if (hit.ProjectileId != projectileId)
+                {
+                    projectileId = hit.ProjectileId;
+                    currentImpactGroupId = 0;
+                    hasPreviousImpact = impactHistory.TryGetValue(
+                        projectileId,
+                        out previousImpact);
+                }
+
+                if (!hasPreviousImpact || !ShouldMergeImpact(previousImpact, hit))
+                {
+                    currentImpactGroupId = nextImpactGroupId++;
+                    previousImpact = new ProjectileImpactHistory(hit.HitTick, hit.Position);
+                    hasPreviousImpact = true;
+                }
+
+                hits[index] = hit.WithImpactGroupId(currentImpactGroupId);
+            }
+        }
+
         public long GetFirstMovementTick(float spawnTimeSeconds)
         {
             return Math.Max(1L, SecondsToTick(spawnTimeSeconds));
+        }
+
+        private static bool ShouldMergeImpact(
+            ProjectileImpactHistory previousImpact,
+            ScheduledProjectileHit hit)
+        {
+            float deltaX = hit.Position.x - previousImpact.Position.x;
+            float deltaZ = hit.Position.z - previousImpact.Position.z;
+            float distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+            return hit.HitTick - previousImpact.Tick <= ImpactMergeWindowTicks
+                && distanceSquared <= ImpactMergeDistanceMeters * ImpactMergeDistanceMeters;
+        }
+
+        private static int CompareScheduledHits(
+            ScheduledProjectileHit left,
+            ScheduledProjectileHit right)
+        {
+            int projectileOrder = left.ProjectileId.CompareTo(right.ProjectileId);
+            return projectileOrder != 0
+                ? projectileOrder
+                : left.HitTimeSeconds.CompareTo(right.HitTimeSeconds);
         }
 
         private void Advance(EnemyTrajectoryState state, long currentTick)
@@ -422,21 +481,51 @@ namespace TowerDefense3D.Enemies
         public ScheduledProjectileHit(
             long projectileId,
             long enemyId,
+            float hitTimeSeconds,
             long hitTick,
             ProjectilePayload payload,
-            Vector3 position)
+            Vector3 position,
+            int impactGroupId = 0)
         {
             ProjectileId = projectileId;
             EnemyId = enemyId;
+            HitTimeSeconds = hitTimeSeconds;
             HitTick = hitTick;
             Payload = payload;
             Position = position;
+            ImpactGroupId = impactGroupId;
         }
 
         public long ProjectileId { get; }
         public long EnemyId { get; }
+        public float HitTimeSeconds { get; }
         public long HitTick { get; }
         public ProjectilePayload Payload { get; }
+        public Vector3 Position { get; }
+        public int ImpactGroupId { get; }
+
+        public ScheduledProjectileHit WithImpactGroupId(int impactGroupId)
+        {
+            return new ScheduledProjectileHit(
+                ProjectileId,
+                EnemyId,
+                HitTimeSeconds,
+                HitTick,
+                Payload,
+                Position,
+                impactGroupId);
+        }
+    }
+
+    internal readonly struct ProjectileImpactHistory
+    {
+        public ProjectileImpactHistory(long tick, Vector3 position)
+        {
+            Tick = tick;
+            Position = position;
+        }
+
+        public long Tick { get; }
         public Vector3 Position { get; }
     }
 }

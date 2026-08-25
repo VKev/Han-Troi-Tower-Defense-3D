@@ -17,6 +17,7 @@ MonoBehaviour:
     displayName: Earth
     placementDefinition: {fileID: 11400000, guid: f923262c19cc19c448712d9f7ea9f942, type: 2}
     projectilePrefab: {fileID: 6906424632852591523, guid: 1d63746ad3a363b46bc1bc0ef73c3c87, type: 3}
+    hitEffectPrefab: {fileID: 22031714721033633, guid: 87ad15a38deeaef4fba0607bf15e28ed, type: 3}
     network:
       inputPortCount: 1
       outputPortCount: 1

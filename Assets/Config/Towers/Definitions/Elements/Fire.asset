@@ -17,6 +17,7 @@ MonoBehaviour:
     displayName: Fire
     placementDefinition: {fileID: 11400000, guid: 9798d192e5b520f41abe5e78f6e25419, type: 2}
     projectilePrefab: {fileID: 4902678909351950094, guid: 672c45d0e90bf7344b3acbad9573f6be, type: 3}
+    hitEffectPrefab: {fileID: 3255251309738561020, guid: c3e2cd3ad268ba4409a0bb82fe54bc9c, type: 3}
     network:
       inputPortCount: 1
       outputPortCount: 1

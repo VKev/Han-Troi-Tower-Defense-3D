@@ -228,5 +228,40 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(projectilePrefab);
             }
         }
+
+        [Test]
+        public void ProjectilePool_ReusesCompletedHitEffect()
+        {
+            var owner = new GameObject("Tower Hit Effect Pool Test");
+            var hitEffectPrefab = new GameObject("Hit Effect Prefab");
+            hitEffectPrefab.AddComponent<ParticleSystem>();
+
+            try
+            {
+                TowerProjectilePoolView pool = owner.AddComponent<TowerProjectilePoolView>();
+                pool.Initialize();
+                pool.PlayHitEffect(hitEffectPrefab, new Vector3(1f, 2f, 3f));
+
+                TowerProjectileHitView first = owner.GetComponentInChildren<TowerProjectileHitView>(true);
+                Assert.That(first, Is.Not.Null);
+                Assert.That(first.transform.position, Is.EqualTo(new Vector3(1f, 2f, 3f)));
+                Assert.That(pool.ActiveHitEffectCount, Is.EqualTo(1));
+
+                pool.AdvanceReleaseDelays(100f);
+
+                Assert.That(pool.ActiveHitEffectCount, Is.Zero);
+                Assert.That(pool.InactiveHitEffectCount, Is.EqualTo(1));
+
+                pool.PlayHitEffect(hitEffectPrefab, Vector3.one);
+                TowerProjectileHitView second = owner.GetComponentInChildren<TowerProjectileHitView>(true);
+                Assert.That(second, Is.SameAs(first));
+                Assert.That(second.transform.position, Is.EqualTo(Vector3.one));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+                UnityEngine.Object.DestroyImmediate(hitEffectPrefab);
+            }
+        }
     }
 }

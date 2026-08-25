@@ -46,10 +46,17 @@ namespace TowerDefense3D.Towers
             }
 
             if (requirePlacementDefinition &&
-                definition.NetworkRole == TowerNetworkRole.Sink &&
-                core.ProjectilePrefab != null)
+                definition.NetworkRole != TowerNetworkRole.Sink &&
+                core.HitEffectPrefab == null)
             {
-                errors.Add($"{core.StableId}: Sink towers cannot author a Projectile Prefab.");
+                errors.Add($"{core.StableId}: Hit Effect Prefab is required.");
+            }
+
+            if (requirePlacementDefinition &&
+                definition.NetworkRole == TowerNetworkRole.Sink &&
+                (core.ProjectilePrefab != null || core.HitEffectPrefab != null))
+            {
+                errors.Add($"{core.StableId}: Sink towers cannot author projectile VFX prefabs.");
             }
 
             ValidateNetwork(definition, core.Network, errors);

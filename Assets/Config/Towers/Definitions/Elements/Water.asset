@@ -17,6 +17,7 @@ MonoBehaviour:
     displayName: Water
     placementDefinition: {fileID: 11400000, guid: d5c550c7adb652c4d9858dfac0d0a4b3, type: 2}
     projectilePrefab: {fileID: 6049655604910014065, guid: a7fe36109ecba6048952173544c540c7, type: 3}
+    hitEffectPrefab: {fileID: 1609328114105750331, guid: f320159488663ce4385002c073e1719b, type: 3}
     network:
       inputPortCount: 1
       outputPortCount: 1

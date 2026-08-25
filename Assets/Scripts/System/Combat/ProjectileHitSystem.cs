@@ -20,6 +20,11 @@ namespace TowerDefense3D.Enemies
             new Dictionary<long, List<long>>();
         private readonly Dictionary<long, HashSet<long>> hitEnemyIdsByProjectile =
             new Dictionary<long, HashSet<long>>();
+        private readonly List<ScheduledProjectileHit> scheduledHitBuffer =
+            new List<ScheduledProjectileHit>();
+        private readonly HashSet<int> presentedImpactGroupIds = new HashSet<int>();
+        private readonly Dictionary<long, ProjectileImpactHistory> lastPresentedImpacts =
+            new Dictionary<long, ProjectileImpactHistory>();
         private readonly List<EnemySnapshot> enemySnapshots = new List<EnemySnapshot>();
         private readonly List<TowerProjectileSnapshot> projectileSnapshots =
             new List<TowerProjectileSnapshot>();
@@ -31,6 +36,8 @@ namespace TowerDefense3D.Enemies
             Array.Empty<TowerProjectileSpawnOrder>();
         private bool requiresTrajectoryRebuild;
         private bool isDisposed;
+
+        internal event Action<ProjectileImpactEvent> ProjectileImpacted;
 
         public ProjectileHitSystem(
             TowerNetworkManager towerNetworkManager,
@@ -73,6 +80,9 @@ namespace TowerDefense3D.Enemies
             scheduledHitsByTick.Clear();
             projectileEndIdsByTick.Clear();
             hitEnemyIdsByProjectile.Clear();
+            scheduledHitBuffer.Clear();
+            presentedImpactGroupIds.Clear();
+            lastPresentedImpacts.Clear();
             enemySnapshots.Clear();
             projectileSnapshots.Clear();
             enemySeeds.Clear();
@@ -149,6 +159,8 @@ namespace TowerDefense3D.Enemies
             towerNetworkManager.CopyProjectileSnapshotTo(projectileSnapshots);
             scheduledHitsByTick.Clear();
             projectileEndIdsByTick.Clear();
+            scheduledHitBuffer.Clear();
+            presentedImpactGroupIds.Clear();
             PruneProjectileHitHistory();
 
             for (int index = 0; index < projectileSnapshots.Count; index++)
@@ -164,6 +176,8 @@ namespace TowerDefense3D.Enemies
                     AddProjectileTrajectory(order.Projectile, order.SpawnTick);
                 }
             }
+
+            BuildScheduledHitPlan();
         }
 
         private void AddProjectileTrajectory(
@@ -259,15 +273,7 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
-            if (!scheduledHitsByTick.TryGetValue(
-                hit.HitTick,
-                out List<ScheduledProjectileHit> hits))
-            {
-                hits = new List<ScheduledProjectileHit>();
-                scheduledHitsByTick.Add(hit.HitTick, hits);
-            }
-
-            hits.Add(hit);
+            scheduledHitBuffer.Add(hit);
         }
 
         private void ResolveScheduledHits(long currentTick)
@@ -294,6 +300,12 @@ namespace TowerDefense3D.Enemies
                 }
 
                 ApplyHit(hit.Payload, enemy);
+                if (ShouldPresentImpact(hit))
+                {
+                    ProjectileImpacted?.Invoke(new ProjectileImpactEvent(
+                        hit.ProjectileId,
+                        hit.Position));
+                }
             }
 
             scheduledHitsByTick.Remove(currentTick);
@@ -323,6 +335,7 @@ namespace TowerDefense3D.Enemies
             {
                 long projectileId = projectileIds[index];
                 hitEnemyIdsByProjectile.Remove(projectileId);
+                lastPresentedImpacts.Remove(projectileId);
             }
 
             projectileEndIdsByTick.Remove(currentTick);
@@ -361,6 +374,40 @@ namespace TowerDefense3D.Enemies
             enemySystem.ApplyDamage(enemy.Id, damage);
         }
 
+        private void BuildScheduledHitPlan()
+        {
+            planner.AssignImpactGroups(scheduledHitBuffer, lastPresentedImpacts);
+            for (int index = 0; index < scheduledHitBuffer.Count; index++)
+            {
+                AddScheduledHit(scheduledHitBuffer[index]);
+            }
+        }
+
+        private void AddScheduledHit(ScheduledProjectileHit hit)
+        {
+            if (!scheduledHitsByTick.TryGetValue(
+                hit.HitTick,
+                out List<ScheduledProjectileHit> hits))
+            {
+                hits = new List<ScheduledProjectileHit>();
+                scheduledHitsByTick.Add(hit.HitTick, hits);
+            }
+
+            hits.Add(hit);
+        }
+
+        private bool ShouldPresentImpact(ScheduledProjectileHit hit)
+        {
+            if (hit.ImpactGroupId == 0 || !presentedImpactGroupIds.Add(hit.ImpactGroupId))
+            {
+                return false;
+            }
+
+            lastPresentedImpacts[hit.ProjectileId] =
+                new ProjectileImpactHistory(hit.HitTick, hit.Position);
+            return true;
+        }
+
         private HashSet<long> GetHitEnemyIds(long projectileId)
         {
             if (!hitEnemyIdsByProjectile.TryGetValue(
@@ -373,5 +420,6 @@ namespace TowerDefense3D.Enemies
 
             return hitEnemyIds;
         }
+
     }
 }
