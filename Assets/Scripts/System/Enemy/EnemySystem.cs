@@ -10,8 +10,8 @@ namespace TowerDefense3D.Enemies
         private readonly List<EnemyInstance> activeEnemies = new List<EnemyInstance>();
         private readonly Dictionary<long, EnemyInstance> enemiesById =
             new Dictionary<long, EnemyInstance>();
-        private readonly List<EnemyMotionSnapshot> motionSnapshots =
-            new List<EnemyMotionSnapshot>();
+        private readonly Dictionary<long, float> speedBonusesByEnemyId =
+            new Dictionary<long, float>();
         private readonly List<PendingSummon> pendingSummons = new List<PendingSummon>();
         private long nextEnemyId = 1L;
 
@@ -28,13 +28,37 @@ namespace TowerDefense3D.Enemies
 
         public EnemyInstance Spawn(EnemyDefinition definition)
         {
-            return SpawnAt(definition, roadPath.Start, 1);
+            return SpawnAt(ReserveEnemyId(), definition, roadPath.Start, 1);
+        }
+
+        internal EnemyInstance Spawn(long enemyId, EnemyDefinition definition)
+        {
+            return SpawnAt(enemyId, definition, roadPath.Start, 1);
+        }
+
+        internal long ReserveEnemyId()
+        {
+            if (nextEnemyId == long.MaxValue)
+            {
+                throw new InvalidOperationException("Enemy identifier range has been exhausted.");
+            }
+
+            return nextEnemyId++;
         }
 
         public void Step(float stepSeconds)
         {
-            motionSnapshots.Clear();
             pendingSummons.Clear();
+            speedBonusesByEnemyId.Clear();
+            for (int index = 0; index < activeEnemies.Count; index++)
+            {
+                EnemyInstance enemy = activeEnemies[index];
+                if (enemy.IsAlive)
+                {
+                    speedBonusesByEnemyId.Add(enemy.Id, FindStrongestSpeedBonus(enemy));
+                }
+            }
+
             for (int index = activeEnemies.Count - 1; index >= 0; index--)
             {
                 EnemyInstance enemy = activeEnemies[index];
@@ -47,7 +71,7 @@ namespace TowerDefense3D.Enemies
                 UpdateReveal(enemy, stepSeconds);
                 QueueBossSummons(enemy, stepSeconds);
                 enemy.PreviousPosition = enemy.Position;
-                float speedMultiplier = 1f + FindStrongestSpeedBonus(enemy);
+                float speedMultiplier = 1f + speedBonusesByEnemyId[enemy.Id];
                 float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * stepSeconds;
                 Vector3 position = enemy.Position;
                 int targetPointIndex = enemy.TargetPointIndex;
@@ -63,11 +87,6 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
-                motionSnapshots.Add(new EnemyMotionSnapshot(
-                    enemy.Id,
-                    enemy.PreviousPosition,
-                    enemy.Position,
-                    enemy.Definition.BaseHitRadius));
             }
 
             SpawnPendingSummons();
@@ -105,12 +124,6 @@ namespace TowerDefense3D.Enemies
             }
         }
 
-        public void CopyMotionSnapshotsTo(List<EnemyMotionSnapshot> destination)
-        {
-            destination.Clear();
-            destination.AddRange(motionSnapshots);
-        }
-
         public void CopySnapshotsTo(List<EnemySnapshot> destination)
         {
             destination.Clear();
@@ -128,18 +141,19 @@ namespace TowerDefense3D.Enemies
         {
             activeEnemies.Clear();
             enemiesById.Clear();
-            motionSnapshots.Clear();
+            speedBonusesByEnemyId.Clear();
             pendingSummons.Clear();
             nextEnemyId = 1L;
         }
 
         private EnemyInstance SpawnAt(
+            long enemyId,
             EnemyDefinition definition,
             Vector3 position,
             int targetPointIndex,
             bool isSummoned = false)
         {
-            var enemy = new EnemyInstance(nextEnemyId++, definition, position)
+            var enemy = new EnemyInstance(enemyId, definition, position)
             {
                 IsSummoned = isSummoned,
                 TargetPointIndex = targetPointIndex
@@ -224,6 +238,7 @@ namespace TowerDefense3D.Enemies
             {
                 PendingSummon summon = pendingSummons[index];
                 SpawnAt(
+                    ReserveEnemyId(),
                     summon.Definition,
                     summon.Position,
                     summon.TargetPointIndex,

@@ -6,36 +6,34 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
     public sealed class TrajectoryHitCalculatorTests
     {
         [Test]
-        public void IntersectsXZ_DetectsCrossingBetweenTicks()
+        public void TryFindFirstIntersectionTimeXZ_ReturnsEarliestContactTime()
         {
-            bool hit = TrajectoryHitCalculator.IntersectsXZ(
+            bool hit = TrajectoryHitCalculator.TryFindFirstIntersectionTimeXZ(
                 new Vector3(-1f, 10f, 0f),
-                new Vector3(1f, 10f, 0f),
+                Vector3.right * 2f,
                 new Vector3(0f, -10f, -1f),
-                new Vector3(0f, -10f, 1f),
-                0.1f);
+                Vector3.forward * 2f,
+                1f,
+                0.1f,
+                out float intersectionTime);
 
             Assert.That(hit, Is.True);
+            Assert.That(intersectionTime, Is.EqualTo(0.46464f).Within(0.0001f));
         }
 
         [Test]
-        public void IntersectsXZ_IgnoresHeightButRejectsSeparatedTrajectories()
+        public void TryFindFirstIntersectionTimeXZ_RejectsContactAfterInterval()
         {
-            bool heightOnlyDifference = TrajectoryHitCalculator.IntersectsXZ(
+            bool hit = TrajectoryHitCalculator.TryFindFirstIntersectionTimeXZ(
                 Vector3.zero,
                 Vector3.right,
-                Vector3.up * 100f,
-                Vector3.right + Vector3.up * 100f,
-                0.1f);
-            bool separated = TrajectoryHitCalculator.IntersectsXZ(
+                Vector3.right * 2f,
                 Vector3.zero,
-                Vector3.right,
-                Vector3.forward * 2f,
-                Vector3.right + Vector3.forward * 2f,
-                0.1f);
+                1f,
+                0.1f,
+                out _);
 
-            Assert.That(heightOnlyDifference, Is.True);
-            Assert.That(separated, Is.False);
+            Assert.That(hit, Is.False);
         }
     }
 }

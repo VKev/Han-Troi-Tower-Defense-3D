@@ -4,26 +4,55 @@ namespace TowerDefense3D.Enemies
 {
     public static class TrajectoryHitCalculator
     {
-        public static bool IntersectsXZ(
-            Vector3 projectileStart,
-            Vector3 projectileEnd,
-            Vector3 enemyStart,
-            Vector3 enemyEnd,
-            float combinedRadius)
+        public static bool TryFindFirstIntersectionTimeXZ(
+            Vector3 firstPosition,
+            Vector3 firstVelocity,
+            Vector3 secondPosition,
+            Vector3 secondVelocity,
+            float durationSeconds,
+            float combinedRadius,
+            out float intersectionTimeSeconds)
         {
-            Vector2 relativeStart = new Vector2(
-                projectileStart.x - enemyStart.x,
-                projectileStart.z - enemyStart.z);
-            Vector2 relativeDelta = new Vector2(
-                (projectileEnd.x - projectileStart.x) - (enemyEnd.x - enemyStart.x),
-                (projectileEnd.z - projectileStart.z) - (enemyEnd.z - enemyStart.z));
+            Vector2 relativePosition = new Vector2(
+                firstPosition.x - secondPosition.x,
+                firstPosition.z - secondPosition.z);
+            Vector2 relativeVelocity = new Vector2(
+                firstVelocity.x - secondVelocity.x,
+                firstVelocity.z - secondVelocity.z);
+            double radiusSquared = combinedRadius * combinedRadius;
+            double constant = relativePosition.sqrMagnitude - radiusSquared;
+            if (constant <= 0d)
+            {
+                intersectionTimeSeconds = 0f;
+                return true;
+            }
 
-            float relativeLengthSquared = relativeDelta.sqrMagnitude;
-            float closestTime = relativeLengthSquared <= float.Epsilon
-                ? 0f
-                : Mathf.Clamp01(-Vector2.Dot(relativeStart, relativeDelta) / relativeLengthSquared);
-            Vector2 closestOffset = relativeStart + relativeDelta * closestTime;
-            return closestOffset.sqrMagnitude <= combinedRadius * combinedRadius;
+            double quadratic = relativeVelocity.sqrMagnitude;
+            if (quadratic <= double.Epsilon)
+            {
+                intersectionTimeSeconds = 0f;
+                return false;
+            }
+
+            double linear = 2d * Vector2.Dot(relativePosition, relativeVelocity);
+            double discriminant = linear * linear - 4d * quadratic * constant;
+            if (discriminant < 0d)
+            {
+                intersectionTimeSeconds = 0f;
+                return false;
+            }
+
+            double squareRoot = System.Math.Sqrt(discriminant);
+            double entryTime = (-linear - squareRoot) / (2d * quadratic);
+            double exitTime = (-linear + squareRoot) / (2d * quadratic);
+            if (exitTime < 0d || entryTime > durationSeconds)
+            {
+                intersectionTimeSeconds = 0f;
+                return false;
+            }
+
+            intersectionTimeSeconds = (float)System.Math.Max(0d, entryTime);
+            return intersectionTimeSeconds <= durationSeconds;
         }
     }
 }

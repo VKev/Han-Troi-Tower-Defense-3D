@@ -39,6 +39,7 @@ namespace TowerDefense3D.Waves
         }
 
         public event Action StateChanged;
+        public event Action<IReadOnlyList<WaveSpawnOrder>> WavePlanCreated;
 
         public WavePhase Phase => stateMachine.CurrentState;
         public bool IsRunning => Phase == WavePhase.Running;
@@ -84,9 +85,10 @@ namespace TowerDefense3D.Waves
                 return false;
             }
 
-            currentPlan = spawnPlanner.CreatePlan(schedule, nextWaveIndex);
+            currentPlan = AssignEnemyIds(spawnPlanner.CreatePlan(schedule, nextWaveIndex));
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
+            WavePlanCreated?.Invoke(currentPlan);
             stateMachine.TransitionTo(WavePhase.Running);
             SpawnDueEnemies();
             StateChanged?.Invoke();
@@ -139,9 +141,22 @@ namespace TowerDefense3D.Waves
             while (nextSpawnIndex < currentPlan.Count
                 && currentPlan[nextSpawnIndex].TimeSeconds <= elapsedSeconds)
             {
-                enemySystem.Spawn(currentPlan[nextSpawnIndex].Enemy);
+                WaveSpawnOrder order = currentPlan[nextSpawnIndex];
+                enemySystem.Spawn(order.EnemyId, order.Enemy);
                 nextSpawnIndex++;
             }
+        }
+
+        private IReadOnlyList<WaveSpawnOrder> AssignEnemyIds(
+            IReadOnlyList<WaveSpawnOrder> plan)
+        {
+            var assignedPlan = new WaveSpawnOrder[plan.Count];
+            for (int index = 0; index < plan.Count; index++)
+            {
+                assignedPlan[index] = plan[index].WithEnemyId(enemySystem.ReserveEnemyId());
+            }
+
+            return assignedPlan;
         }
 
         private static bool CanTransition(WavePhase currentPhase, WavePhase nextPhase)

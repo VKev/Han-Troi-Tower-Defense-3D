@@ -1,120 +1,355 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.Towers;
-using UnityEngine;
+using TowerDefense3D.Waves;
 
 namespace TowerDefense3D.Enemies
 {
-    public sealed class ProjectileHitSystem
+    public sealed class ProjectileHitSystem : IDisposable
     {
         private const float ProjectileHitRadius = 0.2f;
         private readonly TowerNetworkManager towerNetworkManager;
         private readonly EnemySystem enemySystem;
-        private readonly List<TowerProjectileMotionSnapshot> projectileMotions =
-            new List<TowerProjectileMotionSnapshot>();
-        private readonly List<EnemyMotionSnapshot> enemyMotions =
-            new List<EnemyMotionSnapshot>();
+        private readonly WaveSystem waveSystem;
+        private readonly ProjectileHitPlanner planner;
+        private readonly Dictionary<long, EnemyTrajectoryPlan> enemyTrajectories =
+            new Dictionary<long, EnemyTrajectoryPlan>();
+        private readonly Dictionary<long, List<ScheduledProjectileHit>> scheduledHitsByTick =
+            new Dictionary<long, List<ScheduledProjectileHit>>();
+        private readonly Dictionary<long, List<long>> projectileEndIdsByTick =
+            new Dictionary<long, List<long>>();
         private readonly Dictionary<long, HashSet<long>> hitEnemyIdsByProjectile =
             new Dictionary<long, HashSet<long>>();
-        private readonly HashSet<long> movingProjectileIds = new HashSet<long>();
-        private readonly List<long> finishedProjectileIds = new List<long>();
+        private readonly List<EnemySnapshot> enemySnapshots = new List<EnemySnapshot>();
+        private readonly List<TowerProjectileSnapshot> projectileSnapshots =
+            new List<TowerProjectileSnapshot>();
+        private readonly List<EnemyTrajectorySeed> enemySeeds = new List<EnemyTrajectorySeed>();
+        private readonly HashSet<long> activeProjectileIds = new HashSet<long>();
+        private readonly List<long> staleProjectileIds = new List<long>();
+        private IReadOnlyList<WaveSpawnOrder> currentWavePlan = Array.Empty<WaveSpawnOrder>();
+        private bool requiresTrajectoryRebuild;
+        private bool isDisposed;
 
         public ProjectileHitSystem(
             TowerNetworkManager towerNetworkManager,
-            EnemySystem enemySystem)
+            EnemySystem enemySystem,
+            WaveSystem waveSystem,
+            RoadPath roadPath)
         {
             this.towerNetworkManager = towerNetworkManager
                 ?? throw new ArgumentNullException(nameof(towerNetworkManager));
             this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
+            this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
+            planner = new ProjectileHitPlanner(
+                roadPath,
+                towerNetworkManager.TickSeconds,
+                towerNetworkManager.ProjectileSpeedMetersPerSecond,
+                ProjectileHitRadius);
+
+            waveSystem.WavePlanCreated += HandleWavePlanCreated;
+            towerNetworkManager.ProjectileCreated += HandleProjectileCreated;
+            enemySystem.EnemySpawned += HandleEnemySpawned;
+            enemySystem.EnemyKilled += HandleEnemyRemoved;
+            enemySystem.EnemyLeaked += HandleEnemyRemoved;
         }
 
         public void Step()
         {
-            towerNetworkManager.CopyProjectileMotionSnapshotTo(projectileMotions);
-            enemySystem.CopyMotionSnapshotsTo(enemyMotions);
-            movingProjectileIds.Clear();
-
-            for (int projectileIndex = 0;
-                 projectileIndex < projectileMotions.Count;
-                 projectileIndex++)
+            long currentTick = towerNetworkManager.CurrentTick;
+            ResolveScheduledHits(currentTick);
+            ReleaseFinishedProjectilePlans(currentTick);
+            if (requiresTrajectoryRebuild)
             {
-                TowerProjectileMotionSnapshot projectile = projectileMotions[projectileIndex];
-                movingProjectileIds.Add(projectile.ProjectileId);
-                if (!hitEnemyIdsByProjectile.TryGetValue(
-                    projectile.ProjectileId,
-                    out HashSet<long> hitEnemyIds))
-                {
-                    hitEnemyIds = new HashSet<long>();
-                    hitEnemyIdsByProjectile.Add(projectile.ProjectileId, hitEnemyIds);
-                }
-
-                ResolveProjectileHits(projectile, hitEnemyIds);
+                RebuildFutureTrajectories(currentTick);
             }
-
-            RemoveFinishedProjectiles();
         }
 
         public void Reset()
         {
-            projectileMotions.Clear();
-            enemyMotions.Clear();
+            currentWavePlan = Array.Empty<WaveSpawnOrder>();
+            enemyTrajectories.Clear();
+            scheduledHitsByTick.Clear();
+            projectileEndIdsByTick.Clear();
             hitEnemyIdsByProjectile.Clear();
-            movingProjectileIds.Clear();
-            finishedProjectileIds.Clear();
+            enemySnapshots.Clear();
+            projectileSnapshots.Clear();
+            enemySeeds.Clear();
+            activeProjectileIds.Clear();
+            staleProjectileIds.Clear();
+            requiresTrajectoryRebuild = false;
         }
 
-        private void ResolveProjectileHits(
-            TowerProjectileMotionSnapshot projectile,
-            ISet<long> hitEnemyIds)
+        public void Dispose()
         {
-            Vector3 projectileStart = ToVector3(projectile.PreviousPosition);
-            Vector3 projectileEnd = ToVector3(projectile.Position);
-
-            for (int enemyIndex = 0; enemyIndex < enemyMotions.Count; enemyIndex++)
+            if (isDisposed)
             {
-                EnemyMotionSnapshot motion = enemyMotions[enemyIndex];
-                if (hitEnemyIds.Contains(motion.EnemyId)
-                    || !enemySystem.TryGetEnemy(motion.EnemyId, out EnemyInstance enemy)
-                    || !TrajectoryHitCalculator.IntersectsXZ(
-                        projectileStart,
-                        projectileEnd,
-                        motion.PreviousPosition,
-                        motion.Position,
-                        ProjectileHitRadius + motion.HitRadius))
+                return;
+            }
+
+            isDisposed = true;
+            waveSystem.WavePlanCreated -= HandleWavePlanCreated;
+            towerNetworkManager.ProjectileCreated -= HandleProjectileCreated;
+            enemySystem.EnemySpawned -= HandleEnemySpawned;
+            enemySystem.EnemyKilled -= HandleEnemyRemoved;
+            enemySystem.EnemyLeaked -= HandleEnemyRemoved;
+            Reset();
+        }
+
+        private void HandleWavePlanCreated(IReadOnlyList<WaveSpawnOrder> plan)
+        {
+            Reset();
+            currentWavePlan = plan;
+            AddEnemyTrajectories(planner.CreateWaveEnemyTrajectories(plan));
+        }
+
+        private void HandleProjectileCreated(TowerProjectileSnapshot projectile)
+        {
+            ProjectileTrajectoryPlan trajectory = CreateProjectileTrajectory(
+                projectile,
+                towerNetworkManager.CurrentTick);
+            AddProjectileEnd(trajectory);
+
+            foreach (EnemyTrajectoryPlan enemyTrajectory in enemyTrajectories.Values)
+            {
+                ScheduleHit(trajectory, enemyTrajectory);
+            }
+        }
+
+        private void HandleEnemySpawned(EnemySnapshot snapshot)
+        {
+            if (!enemyTrajectories.ContainsKey(snapshot.EnemyId))
+            {
+                requiresTrajectoryRebuild = true;
+            }
+        }
+
+        private void HandleEnemyRemoved(EnemySnapshot snapshot)
+        {
+            enemyTrajectories.Remove(snapshot.EnemyId);
+            if (snapshot.Definition is SpeedSupportEnemyDefinition)
+            {
+                requiresTrajectoryRebuild = true;
+            }
+        }
+
+        private void RebuildFutureTrajectories(long currentTick)
+        {
+            CreateRemainingEnemySeeds(currentTick);
+            enemyTrajectories.Clear();
+            AddEnemyTrajectories(planner.CreateEnemyTrajectories(enemySeeds));
+
+            towerNetworkManager.CopyProjectileSnapshotTo(projectileSnapshots);
+            scheduledHitsByTick.Clear();
+            projectileEndIdsByTick.Clear();
+            PruneProjectileHitHistory();
+
+            for (int index = 0; index < projectileSnapshots.Count; index++)
+            {
+                ProjectileTrajectoryPlan trajectory = CreateProjectileTrajectory(
+                    projectileSnapshots[index],
+                    currentTick);
+                AddProjectileEnd(trajectory);
+                foreach (EnemyTrajectoryPlan enemyTrajectory in enemyTrajectories.Values)
+                {
+                    ScheduleHit(trajectory, enemyTrajectory);
+                }
+            }
+
+            requiresTrajectoryRebuild = false;
+        }
+
+        private void CreateRemainingEnemySeeds(long currentTick)
+        {
+            enemySeeds.Clear();
+            enemySystem.CopySnapshotsTo(enemySnapshots);
+            for (int index = 0; index < enemySnapshots.Count; index++)
+            {
+                EnemySnapshot snapshot = enemySnapshots[index];
+                if (!enemySystem.TryGetEnemy(snapshot.EnemyId, out EnemyInstance enemy))
                 {
                     continue;
                 }
 
-                hitEnemyIds.Add(motion.EnemyId);
-                enemySystem.RevealFromDirectHit(enemy.Id);
-                float damage = EnemyDamageResolver.Resolve(
-                    projectile.Payload.Damage,
-                    projectile.Payload.DamageType,
-                    enemy.Definition);
-                enemySystem.ApplyDamage(enemy.Id, damage);
+                enemySeeds.Add(new EnemyTrajectorySeed(
+                    enemy.Id,
+                    enemy.Definition,
+                    enemy.Position,
+                    enemy.TargetPointIndex,
+                    currentTick + 1L));
+            }
+
+            for (int index = 0; index < currentWavePlan.Count; index++)
+            {
+                WaveSpawnOrder order = currentWavePlan[index];
+                long firstMovementTick = planner.GetFirstMovementTick(order.TimeSeconds);
+                if (firstMovementTick <= currentTick)
+                {
+                    continue;
+                }
+
+                enemySeeds.Add(new EnemyTrajectorySeed(
+                    order.EnemyId,
+                    order.Enemy,
+                    planner.RoadStart,
+                    1,
+                    firstMovementTick));
             }
         }
 
-        private void RemoveFinishedProjectiles()
+        private ProjectileTrajectoryPlan CreateProjectileTrajectory(
+            TowerProjectileSnapshot projectile,
+            long creationTick)
         {
-            finishedProjectileIds.Clear();
+            if (!towerNetworkManager.TryGetNodePosition(
+                projectile.Target,
+                out TowerWorldPosition targetPosition))
+            {
+                throw new InvalidOperationException(
+                    $"Projectile target '{projectile.Target}' is not registered.");
+            }
+
+            return planner.CreateProjectileTrajectory(projectile, targetPosition, creationTick);
+        }
+
+        private void AddEnemyTrajectories(IReadOnlyList<EnemyTrajectoryPlan> trajectories)
+        {
+            for (int index = 0; index < trajectories.Count; index++)
+            {
+                EnemyTrajectoryPlan trajectory = trajectories[index];
+                enemyTrajectories.Add(trajectory.EnemyId, trajectory);
+            }
+        }
+
+        private void ScheduleHit(
+            ProjectileTrajectoryPlan projectile,
+            EnemyTrajectoryPlan enemy)
+        {
+            if (hitEnemyIdsByProjectile.TryGetValue(
+                projectile.ProjectileId,
+                out HashSet<long> hitEnemyIds)
+                && hitEnemyIds.Contains(enemy.EnemyId))
+            {
+                return;
+            }
+
+            if (!planner.TryCreateScheduledHit(projectile, enemy, out ScheduledProjectileHit hit))
+            {
+                return;
+            }
+
+            if (!scheduledHitsByTick.TryGetValue(
+                hit.HitTick,
+                out List<ScheduledProjectileHit> hits))
+            {
+                hits = new List<ScheduledProjectileHit>();
+                scheduledHitsByTick.Add(hit.HitTick, hits);
+            }
+
+            hits.Add(hit);
+        }
+
+        private void ResolveScheduledHits(long currentTick)
+        {
+            if (!scheduledHitsByTick.TryGetValue(
+                currentTick,
+                out List<ScheduledProjectileHit> hits))
+            {
+                return;
+            }
+
+            for (int index = 0; index < hits.Count; index++)
+            {
+                ScheduledProjectileHit hit = hits[index];
+                if (!enemySystem.TryGetEnemy(hit.EnemyId, out EnemyInstance enemy))
+                {
+                    continue;
+                }
+
+                HashSet<long> hitEnemyIds = GetHitEnemyIds(hit.ProjectileId);
+                if (!hitEnemyIds.Add(hit.EnemyId))
+                {
+                    continue;
+                }
+
+                ApplyHit(hit.Payload, enemy);
+            }
+
+            scheduledHitsByTick.Remove(currentTick);
+        }
+
+        private void AddProjectileEnd(ProjectileTrajectoryPlan projectile)
+        {
+            if (!projectileEndIdsByTick.TryGetValue(
+                projectile.LastMovementTick,
+                out List<long> projectileIds))
+            {
+                projectileIds = new List<long>();
+                projectileEndIdsByTick.Add(projectile.LastMovementTick, projectileIds);
+            }
+
+            projectileIds.Add(projectile.ProjectileId);
+        }
+
+        private void ReleaseFinishedProjectilePlans(long currentTick)
+        {
+            if (!projectileEndIdsByTick.TryGetValue(currentTick, out List<long> projectileIds))
+            {
+                return;
+            }
+
+            for (int index = 0; index < projectileIds.Count; index++)
+            {
+                long projectileId = projectileIds[index];
+                hitEnemyIdsByProjectile.Remove(projectileId);
+            }
+
+            projectileEndIdsByTick.Remove(currentTick);
+        }
+
+        private void PruneProjectileHitHistory()
+        {
+            activeProjectileIds.Clear();
+            for (int index = 0; index < projectileSnapshots.Count; index++)
+            {
+                activeProjectileIds.Add(projectileSnapshots[index].ProjectileId);
+            }
+
+            staleProjectileIds.Clear();
             foreach (long projectileId in hitEnemyIdsByProjectile.Keys)
             {
-                if (!movingProjectileIds.Contains(projectileId))
+                if (!activeProjectileIds.Contains(projectileId))
                 {
-                    finishedProjectileIds.Add(projectileId);
+                    staleProjectileIds.Add(projectileId);
                 }
             }
 
-            for (int index = 0; index < finishedProjectileIds.Count; index++)
+            for (int index = 0; index < staleProjectileIds.Count; index++)
             {
-                hitEnemyIdsByProjectile.Remove(finishedProjectileIds[index]);
+                hitEnemyIdsByProjectile.Remove(staleProjectileIds[index]);
             }
         }
 
-        private static Vector3 ToVector3(TowerWorldPosition position)
+        private void ApplyHit(ProjectilePayload payload, EnemyInstance enemy)
         {
-            return new Vector3(position.X, position.Y, position.Z);
+            enemySystem.RevealFromDirectHit(enemy.Id);
+            float damage = EnemyDamageResolver.Resolve(
+                payload.Damage,
+                payload.DamageType,
+                enemy.Definition);
+            enemySystem.ApplyDamage(enemy.Id, damage);
+        }
+
+        private HashSet<long> GetHitEnemyIds(long projectileId)
+        {
+            if (!hitEnemyIdsByProjectile.TryGetValue(
+                projectileId,
+                out HashSet<long> hitEnemyIds))
+            {
+                hitEnemyIds = new HashSet<long>();
+                hitEnemyIdsByProjectile.Add(projectileId, hitEnemyIds);
+            }
+
+            return hitEnemyIds;
         }
     }
 }
