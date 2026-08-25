@@ -11,7 +11,6 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private TowerPlacementDragButtonView[] towerDragButtons =
             Array.Empty<TowerPlacementDragButtonView>();
         [SerializeField] private Button unlinkButton;
-        [SerializeField] private Button startWaveButton;
         [SerializeField] private Button cancelPlacementButton;
         [SerializeField] private Button returnToMenuButton;
         [SerializeField] private Text selectedText;
@@ -26,7 +25,6 @@ namespace TowerDefense3D.GameFlow
         public event Action<TowerPlacementPointerEvent> TowerDragEnded;
         public event Action<int> TowerDragCanceled;
         public event Action UnlinkRequested;
-        public event Action StartWaveRequested;
         public event Action CancelPlacementRequested;
         public event Action ReturnToMenuRequested;
 
@@ -49,7 +47,6 @@ namespace TowerDefense3D.GameFlow
             }
 
             unlinkButton.onClick.AddListener(HandleUnlinkRequested);
-            startWaveButton.onClick.AddListener(HandleStartWaveRequested);
             cancelPlacementButton.onClick.AddListener(HandleCancelPlacementRequested);
             returnToMenuButton.onClick.AddListener(HandleReturnToMenuRequested);
             isInitialized = true;
@@ -62,9 +59,7 @@ namespace TowerDefense3D.GameFlow
             queueText.text = state.QueueText;
             feedbackText.text = state.FeedbackText;
             unlinkButton.interactable = state.UnlinkEnabled;
-            startWaveButton.interactable = state.StartWaveEnabled;
             cancelPlacementButton.interactable = state.CancelPlacementEnabled;
-            SetButtonLabel(startWaveButton, state.StartWaveText);
 
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
@@ -99,7 +94,6 @@ namespace TowerDefense3D.GameFlow
             }
 
             unlinkButton.onClick.RemoveListener(HandleUnlinkRequested);
-            startWaveButton.onClick.RemoveListener(HandleStartWaveRequested);
             cancelPlacementButton.onClick.RemoveListener(HandleCancelPlacementRequested);
             returnToMenuButton.onClick.RemoveListener(HandleReturnToMenuRequested);
             isInitialized = false;
@@ -132,11 +126,6 @@ namespace TowerDefense3D.GameFlow
             UnlinkRequested?.Invoke();
         }
 
-        private void HandleStartWaveRequested()
-        {
-            StartWaveRequested?.Invoke();
-        }
-
         private void HandleCancelPlacementRequested()
         {
             CancelPlacementRequested?.Invoke();
@@ -147,9 +136,5 @@ namespace TowerDefense3D.GameFlow
             ReturnToMenuRequested?.Invoke();
         }
 
-        private static void SetButtonLabel(Button button, string label)
-        {
-            button.GetComponentInChildren<Text>(true).text = label;
-        }
     }
 }

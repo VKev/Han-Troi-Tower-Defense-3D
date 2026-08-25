@@ -1,7 +1,10 @@
 using System;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Simulation;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Waves;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -15,6 +18,7 @@ namespace TowerDefense3D.GameFlow
     public sealed class LevelLifetimeScope : LifetimeScope
     {
         [SerializeField, Min(1)] private int levelNumber = 1;
+        [SerializeField] private WaveScheduleDefinition waveSchedule;
 
         private ActiveLevelSystemSlot activeLevelSystems;
         private LevelSystemGroup attachedSystems;
@@ -27,6 +31,11 @@ namespace TowerDefense3D.GameFlow
             if (levelNumber <= 0)
             {
                 throw new InvalidOperationException("LevelLifetimeScope requires a positive authored level number.");
+            }
+
+            if (waveSchedule == null)
+            {
+                throw new InvalidOperationException("LevelLifetimeScope requires an authored Wave Schedule.");
             }
 
             GridPlacementView placementView = FindSceneComponent<GridPlacementView>();
@@ -56,19 +65,35 @@ namespace TowerDefense3D.GameFlow
                 .As<IPlacementHudView>();
             builder.RegisterComponentInHierarchy<TowerNetworkHudView>()
                 .As<ITowerNetworkHudView>();
+            builder.RegisterComponentInHierarchy<WaveHudView>()
+                .As<IWaveHudView>();
+            builder.RegisterComponentInHierarchy<EnemyViewPool>()
+                .As<IEnemyViewPool>();
             builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
             builder.RegisterInstance(placementView.WorldCamera);
+            builder.RegisterInstance(waveSchedule);
             builder.Register<BoardSystem>(Lifetime.Scoped);
+            builder.Register<RoadPath>(
+                resolver => RoadPathFactory.Create(resolver.Resolve<BoardSystem>()),
+                Lifetime.Scoped);
             builder.Register<BoardCameraSystem>(Lifetime.Scoped);
             builder.Register<GameplayInputSystem>(Lifetime.Scoped);
             builder.Register<GridPlacementSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkSystem>(Lifetime.Scoped)
                 .WithParameter("levelNumber", levelNumber);
             builder.Register<TowerInteractionSystem>(Lifetime.Scoped);
-            builder.Register<TowerSimulationSystem>(Lifetime.Scoped);
+            builder.Register<EnemySystem>(Lifetime.Scoped);
+            builder.Register<WaveSpawnPlanner>(Lifetime.Scoped);
+            builder.Register<WaveSystem>(Lifetime.Scoped)
+                .AsSelf()
+                .As<IWaveSystem>();
+            builder.Register<ProjectileHitSystem>(Lifetime.Scoped);
+            builder.Register<GameplaySimulationSystem>(Lifetime.Scoped);
+            builder.Register<EnemyPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkHudPresenter>(Lifetime.Scoped);
+            builder.Register<WaveHudPresenter>(Lifetime.Scoped);
             builder.Register<GameplayUISystem>(Lifetime.Scoped);
             builder.Register<LevelSystemGroup>(Lifetime.Scoped);
             builder.RegisterBuildCallback(AttachLevelSystems);

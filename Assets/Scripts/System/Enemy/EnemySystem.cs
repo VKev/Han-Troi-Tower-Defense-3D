@@ -171,6 +171,7 @@ namespace TowerDefense3D.Enemies
             return new EnemySnapshot(
                 enemy.Id,
                 enemy.Definition,
+                enemy.PreviousPosition,
                 enemy.Position,
                 enemy.Health);
         }

@@ -5,7 +5,7 @@ using TowerDefense3D.Towers;
 
 namespace TowerDefense3D.Waves
 {
-    public sealed class WaveSystem
+    public sealed class WaveSystem : IWaveSystem
     {
         private readonly WaveScheduleDefinition schedule;
         private readonly EnemySystem enemySystem;
@@ -50,7 +50,8 @@ namespace TowerDefense3D.Waves
                 Phase,
                 CurrentWaveNumber,
                 WaveCount,
-                enemySystem.LivingCount);
+                enemySystem.LivingCount,
+                Phase == WavePhase.Preparation && towerNetworkSystem.HasValidChain);
         }
 
         public IReadOnlyList<EnemySpawnBatchDefinition> GetNextWavePreview()

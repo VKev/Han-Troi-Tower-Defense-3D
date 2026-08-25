@@ -84,15 +84,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public void RenderAndButtons_ExposeNetworkActionsAndSimulationGate()
         {
             bool unlinkRequested = false;
-            bool startWaveRequested = false;
             view.UnlinkRequested += () => unlinkRequested = true;
-            view.StartWaveRequested += () => startWaveRequested = true;
             view.Initialize();
 
             Transform panel = view.transform;
             Button firstTowerButton = panel.Find("Tower Buttons").GetChild(0).GetComponent<Button>();
             Button unlinkButton = panel.Find("Unlink").GetComponent<Button>();
-            Button startWaveButton = panel.Find("Start Wave").GetComponent<Button>();
             var state = new TowerNetworkHudState(
                 "Selected: Generator",
                 "Valid chains: 1",
@@ -100,25 +97,19 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 "Ready.",
                 towerSelectionEnabled: false,
                 unlinkEnabled: true,
-                startWaveEnabled: true,
-                startWaveText: "RUNNING",
                 cancelPlacementEnabled: true);
 
             view.Render(state);
 
             Assert.That(firstTowerButton.interactable, Is.False);
             Assert.That(unlinkButton.interactable, Is.True);
-            Assert.That(startWaveButton.interactable, Is.True);
-            Assert.That(startWaveButton.GetComponentInChildren<Text>().text, Is.EqualTo("RUNNING"));
             Assert.That(panel.Find("Selected Status").GetComponent<Text>().text, Is.EqualTo("Selected: Generator"));
             Assert.That(panel.Find("Chain Status").GetComponent<Text>().text, Is.EqualTo("Valid chains: 1"));
 
             firstTowerButton.onClick.Invoke();
             unlinkButton.onClick.Invoke();
-            startWaveButton.onClick.Invoke();
 
             Assert.That(unlinkRequested, Is.True);
-            Assert.That(startWaveRequested, Is.True);
         }
 
         [Test]

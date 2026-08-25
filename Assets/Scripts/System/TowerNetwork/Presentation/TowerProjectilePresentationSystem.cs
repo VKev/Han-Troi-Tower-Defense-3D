@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Simulation;
 
 namespace TowerDefense3D.Towers
 {
@@ -15,14 +16,14 @@ namespace TowerDefense3D.Towers
         private readonly List<TowerProjectileSnapshot> snapshotBuffer = new List<TowerProjectileSnapshot>();
         private readonly List<long> pendingProjectileIds = new List<long>();
         private readonly TowerNetworkManager manager;
-        private readonly TowerSimulationSystem simulationSystem;
+        private readonly GameplaySimulationSystem simulationSystem;
         private readonly ITowerProjectileViewPool viewPool;
 
         private bool isStarted;
 
         public TowerProjectilePresentationSystem(
             TowerNetworkManager manager,
-            TowerSimulationSystem simulationSystem,
+            GameplaySimulationSystem simulationSystem,
             ITowerProjectileViewPool viewPool)
         {
             this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
@@ -37,7 +38,7 @@ namespace TowerDefense3D.Towers
         {
             viewPool.Initialize();
             manager.StateChanged += HandleManagerStateChanged;
-            simulationSystem.TickCompleted += HandleTickCompleted;
+            simulationSystem.StepCompleted += HandleStepCompleted;
             isStarted = true;
         }
 
@@ -57,7 +58,7 @@ namespace TowerDefense3D.Towers
             if (isStarted)
             {
                 manager.StateChanged -= HandleManagerStateChanged;
-                simulationSystem.TickCompleted -= HandleTickCompleted;
+                simulationSystem.StepCompleted -= HandleStepCompleted;
                 isStarted = false;
             }
 
@@ -175,9 +176,9 @@ namespace TowerDefense3D.Towers
             presentationTracks.Remove(projectileId);
         }
 
-        private void HandleTickCompleted(long completedTick)
+        private void HandleStepCompleted(long completedStep)
         {
-            _ = completedTick;
+            _ = completedStep;
             CaptureSimulationState();
         }
 

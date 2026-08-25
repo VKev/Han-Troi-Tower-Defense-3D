@@ -9,8 +9,6 @@ namespace TowerDefense3D.GameFlow
             string feedbackText,
             bool towerSelectionEnabled,
             bool unlinkEnabled,
-            bool startWaveEnabled,
-            string startWaveText,
             bool cancelPlacementEnabled)
         {
             SelectedText = selectedText;
@@ -19,8 +17,6 @@ namespace TowerDefense3D.GameFlow
             FeedbackText = feedbackText;
             TowerSelectionEnabled = towerSelectionEnabled;
             UnlinkEnabled = unlinkEnabled;
-            StartWaveEnabled = startWaveEnabled;
-            StartWaveText = startWaveText;
             CancelPlacementEnabled = cancelPlacementEnabled;
         }
 
@@ -30,8 +26,6 @@ namespace TowerDefense3D.GameFlow
         public string FeedbackText { get; }
         public bool TowerSelectionEnabled { get; }
         public bool UnlinkEnabled { get; }
-        public bool StartWaveEnabled { get; }
-        public string StartWaveText { get; }
         public bool CancelPlacementEnabled { get; }
     }
 }

@@ -1,5 +1,7 @@
+using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Simulation;
 using TowerDefense3D.Towers;
 
 namespace TowerDefense3D.GameFlow
@@ -15,7 +17,8 @@ namespace TowerDefense3D.GameFlow
         private readonly GridPlacementSystem gridPlacementSystem;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly TowerInteractionSystem towerInteractionSystem;
-        private readonly TowerSimulationSystem towerSimulationSystem;
+        private readonly GameplaySimulationSystem gameplaySimulationSystem;
+        private readonly EnemyPresentationSystem enemyPresentationSystem;
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
         private readonly GameplayUISystem gameplayUISystem;
@@ -27,7 +30,8 @@ namespace TowerDefense3D.GameFlow
             GridPlacementSystem gridPlacementSystem,
             TowerNetworkSystem towerNetworkSystem,
             TowerInteractionSystem towerInteractionSystem,
-            TowerSimulationSystem towerSimulationSystem,
+            GameplaySimulationSystem gameplaySimulationSystem,
+            EnemyPresentationSystem enemyPresentationSystem,
             TowerLinkPresentationSystem towerLinkPresentationSystem,
             TowerProjectilePresentationSystem towerProjectilePresentationSystem,
             GameplayUISystem gameplayUISystem)
@@ -38,7 +42,8 @@ namespace TowerDefense3D.GameFlow
             this.gridPlacementSystem = gridPlacementSystem;
             this.towerNetworkSystem = towerNetworkSystem;
             this.towerInteractionSystem = towerInteractionSystem;
-            this.towerSimulationSystem = towerSimulationSystem;
+            this.gameplaySimulationSystem = gameplaySimulationSystem;
+            this.enemyPresentationSystem = enemyPresentationSystem;
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
             this.gameplayUISystem = gameplayUISystem;
@@ -52,6 +57,7 @@ namespace TowerDefense3D.GameFlow
             towerNetworkSystem.Start();
             towerLinkPresentationSystem.Start();
             towerProjectilePresentationSystem.Start();
+            enemyPresentationSystem.Start();
             gameplayUISystem.Start();
         }
 
@@ -60,7 +66,7 @@ namespace TowerDefense3D.GameFlow
             gameplayInputSystem.Tick();
             gridPlacementSystem.Tick();
             towerInteractionSystem.Tick();
-            towerSimulationSystem.Tick(deltaTime);
+            gameplaySimulationSystem.Tick(deltaTime);
             gameplayUISystem.RefreshIfDirty();
         }
 
@@ -68,6 +74,7 @@ namespace TowerDefense3D.GameFlow
         {
             towerLinkPresentationSystem.LateTick();
             towerProjectilePresentationSystem.LateTick();
+            enemyPresentationSystem.LateTick(gameplaySimulationSystem.InterpolationAlpha);
             boardCameraSystem.LateTick();
         }
     }
