@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Core;
 
 namespace TowerDefense3D.Towers
 {
@@ -34,7 +35,7 @@ namespace TowerDefense3D.Towers
                 throw new ArgumentNullException(nameof(definition));
             }
 
-            if (float.IsNaN(tickSeconds) || float.IsInfinity(tickSeconds) || tickSeconds <= 0f)
+            if (!FiniteNumber.IsFinite(tickSeconds) || tickSeconds <= 0f)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(tickSeconds), "Simulation tick must be finite and positive.");
@@ -64,7 +65,7 @@ namespace TowerDefense3D.Towers
 
         private static int ConvertPositiveSecondsToTicks(float seconds, float tickSeconds)
         {
-            if (float.IsNaN(seconds) || float.IsInfinity(seconds) || seconds <= 0f)
+            if (!FiniteNumber.IsFinite(seconds) || seconds <= 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(seconds), "Duration must be finite and positive.");
             }
@@ -126,7 +127,7 @@ namespace TowerDefense3D.Towers
 
         private static int ConvertNonNegativeSecondsToTicks(float seconds, float tickSeconds)
         {
-            if (float.IsNaN(seconds) || float.IsInfinity(seconds) || seconds < 0f)
+            if (!FiniteNumber.IsFinite(seconds) || seconds < 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(seconds), "Spacing must be finite and non-negative.");
             }

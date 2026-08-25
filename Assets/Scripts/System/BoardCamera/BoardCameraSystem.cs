@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Core;
 using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement
@@ -286,8 +287,8 @@ namespace TowerDefense3D.GridPlacement
         }
 
         private static bool IsValidPixelRect(Rect rect) =>
-            IsFinite(rect.xMin) && IsFinite(rect.yMin)
-            && IsFinite(rect.width) && IsFinite(rect.height)
+            FiniteNumber.IsFinite(rect.xMin) && FiniteNumber.IsFinite(rect.yMin)
+            && FiniteNumber.IsFinite(rect.width) && FiniteNumber.IsFinite(rect.height)
             && rect.width > 0f && rect.height > 0f;
 
         private static bool IsValidNormalizedRect(Rect rect) =>
@@ -295,14 +296,15 @@ namespace TowerDefense3D.GridPlacement
             && rect.xMin >= 0f && rect.yMin >= 0f
             && rect.xMax <= 1f && rect.yMax <= 1f;
 
-        private static bool IsFinite(float value) =>
-            !float.IsNaN(value) && !float.IsInfinity(value);
-
         private static bool IsFinite(Vector3 value) =>
-            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+            FiniteNumber.IsFinite(value.x)
+            && FiniteNumber.IsFinite(value.y)
+            && FiniteNumber.IsFinite(value.z);
 
         private static bool IsFinite(Quaternion value) =>
-            IsFinite(value.x) && IsFinite(value.y)
-            && IsFinite(value.z) && IsFinite(value.w);
+            FiniteNumber.IsFinite(value.x)
+            && FiniteNumber.IsFinite(value.y)
+            && FiniteNumber.IsFinite(value.z)
+            && FiniteNumber.IsFinite(value.w);
     }
 }

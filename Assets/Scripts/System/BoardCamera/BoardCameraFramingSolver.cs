@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Core;
 using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement
@@ -125,9 +126,9 @@ namespace TowerDefense3D.GridPlacement
         {
             plane = default;
             if (board == null || boardOrigin == null
-                || !IsFinite(board.CellSize) || board.CellSize <= 0f
-                || !IsFinite(board.HeightUnit) || board.HeightUnit <= 0f
-                || !IsFinite(edgePaddingCells) || edgePaddingCells < 0f
+                || !FiniteNumber.IsFinite(board.CellSize) || board.CellSize <= 0f
+                || !FiniteNumber.IsFinite(board.HeightUnit) || board.HeightUnit <= 0f
+                || !FiniteNumber.IsFinite(edgePaddingCells) || edgePaddingCells < 0f
                 || !LowestBoardLevelBoundsCalculator.TryCalculate(
                     board,
                     out LowestBoardLevelBounds fullBounds))
@@ -165,9 +166,6 @@ namespace TowerDefense3D.GridPlacement
                 boardOrigin.TransformPoint(new Vector3(minX, levelY, maxZ)));
             return true;
         }
-
-        private static bool IsFinite(float value) =>
-            !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
     public static class BoardCameraFramingSolver
@@ -242,7 +240,7 @@ namespace TowerDefense3D.GridPlacement
                 distance = Mathf.Max(distance, nearClipPlane - depth);
             }
 
-            if (!IsFinite(distance))
+            if (!FiniteNumber.IsFinite(distance))
             {
                 return false;
             }
@@ -251,9 +249,9 @@ namespace TowerDefense3D.GridPlacement
                 - forward * distance
                 - right * (centerHorizontalSlope * distance)
                 - up * (centerVerticalSlope * distance);
-            return IsFinite(cameraPosition.x)
-                && IsFinite(cameraPosition.y)
-                && IsFinite(cameraPosition.z);
+            return FiniteNumber.IsFinite(cameraPosition.x)
+                && FiniteNumber.IsFinite(cameraPosition.y)
+                && FiniteNumber.IsFinite(cameraPosition.z);
         }
 
         private static bool HasValidInputs(
@@ -261,25 +259,22 @@ namespace TowerDefense3D.GridPlacement
             float aspect,
             float nearClipPlane,
             Rect safeViewportRect) =>
-            IsFinite(verticalFieldOfView)
+            FiniteNumber.IsFinite(verticalFieldOfView)
             && verticalFieldOfView > 0f
             && verticalFieldOfView < 179f
-            && IsFinite(aspect)
+            && FiniteNumber.IsFinite(aspect)
             && aspect > 0f
-            && IsFinite(nearClipPlane)
+            && FiniteNumber.IsFinite(nearClipPlane)
             && nearClipPlane > 0f
-            && IsFinite(safeViewportRect.xMin)
-            && IsFinite(safeViewportRect.xMax)
-            && IsFinite(safeViewportRect.yMin)
-            && IsFinite(safeViewportRect.yMax)
+            && FiniteNumber.IsFinite(safeViewportRect.xMin)
+            && FiniteNumber.IsFinite(safeViewportRect.xMax)
+            && FiniteNumber.IsFinite(safeViewportRect.yMin)
+            && FiniteNumber.IsFinite(safeViewportRect.yMax)
             && safeViewportRect.xMin >= 0f
             && safeViewportRect.yMin >= 0f
             && safeViewportRect.xMax <= 1f
             && safeViewportRect.yMax <= 1f
             && safeViewportRect.width > 0f
             && safeViewportRect.height > 0f;
-
-        private static bool IsFinite(float value) =>
-            !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

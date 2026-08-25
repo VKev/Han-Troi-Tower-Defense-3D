@@ -13,7 +13,7 @@ namespace TowerDefense3D.Core
 
         public FixedStepClock(float stepSeconds)
         {
-            if (float.IsNaN(stepSeconds) || float.IsInfinity(stepSeconds) || stepSeconds <= 0f)
+            if (!FiniteNumber.IsFinite(stepSeconds) || stepSeconds <= 0f)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(stepSeconds), "Step duration must be finite and positive.");
@@ -28,8 +28,7 @@ namespace TowerDefense3D.Core
 
         public int Advance(float deltaTimeSeconds, Action step)
         {
-            if (float.IsNaN(deltaTimeSeconds) || float.IsInfinity(deltaTimeSeconds)
-                || deltaTimeSeconds < 0f)
+            if (!FiniteNumber.IsFinite(deltaTimeSeconds) || deltaTimeSeconds < 0f)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(deltaTimeSeconds), "Frame delta time must be finite and non-negative.");

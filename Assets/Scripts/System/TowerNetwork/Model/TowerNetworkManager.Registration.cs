@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Core;
 
 namespace TowerDefense3D.Towers
 {
@@ -122,17 +123,13 @@ namespace TowerDefense3D.Towers
 
         private static void ValidatePosition(TowerWorldPosition position)
         {
-            if (!IsFinite(position.X) || !IsFinite(position.Y) || !IsFinite(position.Z))
+            if (!FiniteNumber.IsFinite(position.X)
+                || !FiniteNumber.IsFinite(position.Y)
+                || !FiniteNumber.IsFinite(position.Z))
             {
                 throw new ArgumentException("Tower position must contain finite coordinates.", nameof(position));
             }
         }
-
-        private static bool IsFinite(float value)
-        {
-            return !float.IsNaN(value) && !float.IsInfinity(value);
-        }
-
         private void RequireEditableSession()
         {
             if (!HasLevelSession)

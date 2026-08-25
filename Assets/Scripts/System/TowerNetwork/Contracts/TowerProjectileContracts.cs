@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Core;
 
 namespace TowerDefense3D.Towers
 {
@@ -15,7 +16,7 @@ namespace TowerDefense3D.Towers
     {
         public ProjectilePayload(ProjectilePayloadKind kind, float damage, DamageType damageType)
         {
-            if (float.IsNaN(damage) || float.IsInfinity(damage) || damage < 0f)
+            if (!FiniteNumber.IsFinite(damage) || damage < 0f)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(damage), "Projectile damage must be finite and non-negative.");
