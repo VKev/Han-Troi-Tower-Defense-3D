@@ -323,3 +323,53 @@ Armored clips. `Armored.asset` references that prefab directly and authors the m
 Unity imported the replacement model, prefab, and controller without compile errors. Authored catalog validation was included in
 the complete EditMode `282/282` and PlayMode `14/14` passes. The old ToyWarrior asset path is removed as part of the same local
 feature commit, and no remote push was performed.
+
+## Entry 9 — Extract proven Core mechanisms and remove duplicate runtime infrastructure
+
+**Responsible session:** `01a02a90-cb3e-7523-97dd-8f9f705f3685`
+
+### Problem being addressed
+
+After the lifecycle and Wave/Enemy migration, the source contained three manually encoded feature state models, two fixed-step
+accumulators, repeated finite-number checks, repeated Unity object-destruction branches, and several local events with no
+subscriber. The project owner clarified that `System/Core` belongs only to System code and that Components must have a separate
+Core for shared Unity-facing mechanisms.
+
+### Prompt used
+
+The project owner approved the audited Core refactor plan, required feature-level local commits, asked for impossible or redundant
+conditions and events to be removed while touching the relevant code, and requested an AI collaboration log update. Event Bus and
+Pool Manager were to be added only if current source proved a real shared need.
+
+### Important AI response
+
+The implementation introduced a minimal generic `StateMachine<TState>` with feature-owned transition rules for GameFlow, Wave,
+and Tower Network. `FixedStepClock` moved into `System/Core/Simulation` and became the only frame-to-step accumulator for the
+ordered Wave, Tower, Enemy, and projectile-hit simulation. A scalar `FiniteNumber` utility replaced repeated `NaN` and infinity
+checks, while `Components/Core/Lifecycle/RuntimeObjectDestroyer` centralized the Unity play/edit destruction policy without
+leaking Unity APIs into System Core.
+
+### Option selected, revised, or rejected
+
+- **Selected:** separate `System/Core` and `Components/Core` ownership with no new assembly definition.
+- **Selected:** feature-owned transition graphs over a small reusable state-machine mechanism.
+- **Selected:** one fixed-step clock and one explicit gameplay simulation order.
+- **Selected:** direct local enemy lifecycle events for HUD dirtiness.
+- **Removed:** the unused Tower-only simulation driver, its duplicate accumulator, unused Wave start/end events, the unused
+  projectile-hit event DTO, and the unused placement-presenter record event.
+- **Rejected:** a global Event Bus, generic Pool Manager, state Enter/Exit hooks, hierarchical states, and speculative Core
+  folders.
+
+### Rationale
+
+The extracted mechanisms now have concrete reuse or coordinate multiple current systems, while feature policy remains beside its
+owner. Blocking invalid transitions makes impossible flow paths visible during development. Direct local events remain easier to
+trace than a global bus, and feature-specific Enemy and projectile pools retain different keys, release timing, and presentation
+contracts.
+
+### Implementation or verification result
+
+Commits `1d8f66d`, `2253316`, `7eb6c6c`, `420b6eb`, and `2ed3da9` respectively standardized gameplay state transitions,
+consolidated fixed-step simulation, centralized finite-number checks, shared Unity object destruction, and removed unused local
+event infrastructure. The final Unity verification passed EditMode `290/290` and PlayMode `14/14` with zero Console errors.
+No Player build or remote push was performed.

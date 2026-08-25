@@ -26,8 +26,14 @@ Assets/Scripts/
 │   ├── Scenes/
 │   └── Scopes/
 ├── System/              # Plain C# systems, rules, state, contracts, and definitions
+│   ├── Core/            # Proven mechanisms shared by multiple System features
+│   │   ├── Numerics/
+│   │   ├── Simulation/
+│   │   └── StateMachine/
 │   └── <FeatureName>/
 ├── Components/          # MonoBehaviour boundaries authored in scenes and prefabs
+│   ├── Core/            # Unity-facing mechanisms shared by multiple component features
+│   │   └── Lifecycle/
 │   └── <FeatureName>/
 ├── Editor/              # Editor-only authoring, validation, and project test tools
 │   └── <FeatureName>/
@@ -80,7 +86,9 @@ Builds/                            # Ignored local build output
 - Put plain gameplay logic in `Assets/Scripts/System/<FeatureName>/` and matching Unity-facing code in `Assets/Scripts/Components/<FeatureName>/`.
 - Keep small features flat. Add responsibility folders such as `Definitions`, `Models`, `Rules`, `Views`, or `Presenters` only when multiple current files share that role.
 - Do not add a redundant `Scripts` child beneath any source root.
-- Do not create a shared `Core`, `Common`, `Helpers`, or `Ports` folder before multiple systems have a concrete shared requirement.
+- Put only proven cross-feature plain C# mechanisms in `System/Core`; Core must not depend on a gameplay feature.
+- Put only proven cross-feature Unity-facing mechanisms in `Components/Core`; gameplay rules remain in `System` features.
+- Do not create speculative `Common`, `Helpers`, `Ports`, or additional `Core` folders without multiple concrete consumers.
 - Keep boundary interfaces beside the system that owns the requirement unless a real cross-system module justifies another location.
 - Use role-revealing postfixes for peers at the same level, such as `*System`, `*View`, `*Presenter`, `*Source`, and `*Factory`.
 - Store ScriptableObject type definitions in their owning source feature and store authored `.asset` instances under `Assets/Config/<FeatureName>/`.
