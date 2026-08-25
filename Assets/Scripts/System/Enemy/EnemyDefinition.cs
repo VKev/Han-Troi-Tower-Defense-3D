@@ -76,6 +76,14 @@ namespace TowerDefense3D.Enemies
             {
                 errors.Add($"{name}: View Prefab is required.");
             }
+            else
+            {
+                Animator animator = viewPrefab.GetComponent<Animator>();
+                if (animator == null || animator.runtimeAnimatorController == null)
+                {
+                    errors.Add($"{name}: View Prefab requires an Animator with a Runtime Animator Controller.");
+                }
+            }
 
             if (baseMaxHealth <= 0f || baseMoveSpeed <= 0f || baseHitRadius <= 0f)
             {

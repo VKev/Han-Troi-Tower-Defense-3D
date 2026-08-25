@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using TowerDefense3D.Enemies;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies.Tests.EditMode
@@ -9,6 +10,10 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
     public sealed class EnemyDataDefinitionTests
     {
         private const string CatalogPath = "Assets/Config/Enemies/EnemyCatalog.asset";
+        private const string LocomotionControllerPath =
+            "Assets/Resources/Animations/Enemies/EnemyLocomotion.controller";
+        private const string BasicOverrideControllerPath =
+            "Assets/Resources/Animations/Enemies/BasicEnemy.overrideController";
 
         [Test]
         public void ApprovedEnemyCatalog_ContainsEightValidDefinitions()
@@ -63,11 +68,50 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                     definition.ViewPrefab.GetComponent<EnemyView>(),
                     Is.Not.Null,
                     $"{definition.StableId} View Prefab must have EnemyView on its root.");
+                Animator animator = definition.ViewPrefab.GetComponent<Animator>();
+                Assert.That(animator, Is.Not.Null, $"{definition.StableId} View Prefab must have an Animator.");
+                Assert.That(
+                    animator.runtimeAnimatorController,
+                    Is.Not.Null,
+                    $"{definition.StableId} View Prefab must have an Animator Controller.");
                 Assert.That(
                     viewPrefabs.Add(definition.ViewPrefab),
                     Is.True,
                     $"{definition.StableId} must use its own View Prefab.");
             }
+        }
+
+        [Test]
+        public void ApprovedEnemyAnimationAssets_UseSharedLocomotionContract()
+        {
+            AnimatorController locomotionController =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(LocomotionControllerPath);
+            AnimatorOverrideController basicOverride =
+                AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(BasicOverrideControllerPath);
+
+            Assert.That(locomotionController, Is.Not.Null);
+            Assert.That(basicOverride, Is.Not.Null);
+            Assert.That(basicOverride.runtimeAnimatorController, Is.SameAs(locomotionController));
+            Assert.That(basicOverride["EnemyIdle"].name, Is.EqualTo("Idle"));
+            Assert.That(basicOverride["EnemyMove"].name, Is.EqualTo("Walking"));
+            Assert.That(locomotionController.parameters, Has.Exactly(1).Matches<AnimatorControllerParameter>(
+                parameter => parameter.name == "IsMoving" && parameter.type == AnimatorControllerParameterType.Bool));
+
+            AnimatorStateMachine stateMachine = locomotionController.layers[0].stateMachine;
+            Assert.That(stateMachine.defaultState.name, Is.EqualTo("Idle"));
+            Assert.That(stateMachine.states, Has.Exactly(1).Matches<ChildAnimatorState>(
+                childState => childState.state.name == "Idle"));
+            Assert.That(stateMachine.states, Has.Exactly(1).Matches<ChildAnimatorState>(
+                childState => childState.state.name == "Move"));
+
+            EnemyCatalog catalog = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(CatalogPath);
+            GameObject basicPrefab = Get(catalog, "basic").ViewPrefab;
+            Animator basicAnimator = basicPrefab.GetComponent<Animator>();
+            Assert.That(basicPrefab.name, Is.EqualTo("BasicEnemy"));
+            Assert.That(basicAnimator.runtimeAnimatorController, Is.SameAs(basicOverride));
+            Assert.That(basicAnimator.avatar, Is.Not.Null);
+            Assert.That(basicAnimator.avatar.isValid, Is.True);
+            Assert.That(basicAnimator.avatar.isHuman, Is.True);
         }
 
         private static EnemyDefinition Get(EnemyCatalog catalog, string stableId)
