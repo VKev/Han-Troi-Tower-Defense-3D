@@ -22,9 +22,11 @@ namespace TowerDefense3D.Tests.EditMode
 
         private static readonly string[] OwnedTestNamespaces =
         {
+            "TowerDefense3D.Core.Tests.",
             "TowerDefense3D.Enemies.Tests.",
             "TowerDefense3D.GameFlow.Tests.",
             "TowerDefense3D.GridPlacement.Tests.",
+            "TowerDefense3D.Simulation.Tests.",
             "TowerDefense3D.Towers.Tests.",
             "TowerDefense3D.Waves.Tests."
         };

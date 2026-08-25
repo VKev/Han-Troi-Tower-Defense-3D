@@ -25,7 +25,7 @@ namespace TowerDefense3D.Towers
             }
 
             ResetTransientSimulationState();
-            IsRunning = true;
+            phaseMachine.TransitionTo(TowerNetworkPhase.Running);
             PublishStateChanged();
             error = string.Empty;
             return true;
@@ -38,8 +38,8 @@ namespace TowerDefense3D.Towers
                 return;
             }
 
-            IsRunning = false;
             ResetTransientSimulationState();
+            phaseMachine.TransitionTo(TowerNetworkPhase.Preparation);
             PublishStateChanged();
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Core;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Towers;
 
@@ -11,6 +12,8 @@ namespace TowerDefense3D.Waves
         private readonly EnemySystem enemySystem;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly WaveSpawnPlanner spawnPlanner;
+        private readonly StateMachine<WavePhase> stateMachine =
+            new StateMachine<WavePhase>(WavePhase.Preparation, CanTransition);
         private IReadOnlyList<WaveSpawnOrder> currentPlan = Array.Empty<WaveSpawnOrder>();
         private int nextWaveIndex;
         private int nextSpawnIndex;
@@ -39,7 +42,7 @@ namespace TowerDefense3D.Waves
         public event Action<int> WaveStarted;
         public event Action<int> WaveEnded;
 
-        public WavePhase Phase { get; private set; } = WavePhase.Preparation;
+        public WavePhase Phase => stateMachine.CurrentState;
         public bool IsRunning => Phase == WavePhase.Running;
         public int WaveCount => schedule.Waves.Count;
         public int CurrentWaveNumber => Math.Min(nextWaveIndex + 1, WaveCount);
@@ -86,7 +89,7 @@ namespace TowerDefense3D.Waves
             currentPlan = spawnPlanner.CreatePlan(schedule, nextWaveIndex);
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
-            Phase = WavePhase.Running;
+            stateMachine.TransitionTo(WavePhase.Running);
             SpawnDueEnemies();
             WaveStarted?.Invoke(nextWaveIndex + 1);
             StateChanged?.Invoke();
@@ -116,9 +119,10 @@ namespace TowerDefense3D.Waves
             int completedWaveNumber = nextWaveIndex + 1;
             towerNetworkSystem.StopSimulation();
             nextWaveIndex++;
-            Phase = nextWaveIndex >= schedule.Waves.Count
-                ? WavePhase.Victory
-                : WavePhase.Preparation;
+            stateMachine.TransitionTo(
+                nextWaveIndex >= schedule.Waves.Count
+                    ? WavePhase.Victory
+                    : WavePhase.Preparation);
             WaveEnded?.Invoke(completedWaveNumber);
             StateChanged?.Invoke();
         }
@@ -131,7 +135,7 @@ namespace TowerDefense3D.Waves
             nextWaveIndex = 0;
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
-            Phase = WavePhase.Preparation;
+            stateMachine.TransitionTo(WavePhase.Preparation);
             StateChanged?.Invoke();
         }
 
@@ -145,6 +149,22 @@ namespace TowerDefense3D.Waves
             }
 
             StateChanged?.Invoke();
+        }
+
+        private static bool CanTransition(WavePhase currentPhase, WavePhase nextPhase)
+        {
+            switch (currentPhase)
+            {
+                case WavePhase.Preparation:
+                    return nextPhase == WavePhase.Running;
+                case WavePhase.Running:
+                    return nextPhase == WavePhase.Preparation
+                        || nextPhase == WavePhase.Victory;
+                case WavePhase.Victory:
+                    return nextPhase == WavePhase.Preparation;
+                default:
+                    return false;
+            }
         }
     }
 }

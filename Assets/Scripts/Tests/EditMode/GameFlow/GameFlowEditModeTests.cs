@@ -232,6 +232,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             try
             {
                 gameFlowSystem.Start();
+                InvokePrivate(gameFlowSystem, "SetState", GameFlowState.LoadingLevel);
                 InvokePrivate(
                     transitionFlow,
                     "OnLevelLoadCompleted",

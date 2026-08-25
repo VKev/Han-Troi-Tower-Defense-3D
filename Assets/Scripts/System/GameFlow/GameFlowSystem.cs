@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Core;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -11,10 +12,12 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelMenuFlow levelMenuFlow;
         private readonly LevelTransitionFlow levelTransitionFlow;
         private readonly SaveRecoveryFlow saveRecoveryFlow;
+        private readonly StateMachine<GameFlowState> stateMachine =
+            new StateMachine<GameFlowState>(GameFlowState.Booting, CanTransition);
 
         private bool isStarted;
 
-        public GameFlowState State { get; private set; } = GameFlowState.Booting;
+        public GameFlowState State => stateMachine.CurrentState;
 
         public GameFlowSystem(
             ApplicationBootFlow applicationBootFlow,
@@ -74,7 +77,7 @@ namespace TowerDefense3D.GameFlow
 
         internal void SetState(GameFlowState state)
         {
-            State = state;
+            stateMachine.TransitionTo(state);
         }
 
         internal void ShowLevelMenu()
@@ -101,6 +104,30 @@ namespace TowerDefense3D.GameFlow
         internal void ShowSaveWarning(string error)
         {
             saveRecoveryFlow.ShowWarning(error);
+        }
+
+        private static bool CanTransition(GameFlowState currentState, GameFlowState nextState)
+        {
+            switch (currentState)
+            {
+                case GameFlowState.Booting:
+                    return nextState == GameFlowState.LevelMenu
+                        || nextState == GameFlowState.BlockingError;
+                case GameFlowState.LevelMenu:
+                    return nextState == GameFlowState.LoadingLevel;
+                case GameFlowState.LoadingLevel:
+                    return nextState == GameFlowState.Gameplay
+                        || nextState == GameFlowState.LevelMenu
+                        || nextState == GameFlowState.BlockingError;
+                case GameFlowState.Gameplay:
+                    return nextState == GameFlowState.LoadingLevel;
+                case GameFlowState.BlockingError:
+                    return nextState == GameFlowState.Booting
+                        || nextState == GameFlowState.LevelMenu
+                        || nextState == GameFlowState.LoadingLevel;
+                default:
+                    return false;
+            }
         }
     }
 }

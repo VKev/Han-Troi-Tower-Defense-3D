@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Core;
 
 namespace TowerDefense3D.Towers
 {
@@ -13,6 +14,8 @@ namespace TowerDefense3D.Towers
         private readonly float projectileSpeedMetersPerSecond;
         private readonly float maximumLinkRangeMeters;
         private readonly TowerCatalog catalog;
+        private readonly StateMachine<TowerNetworkPhase> phaseMachine =
+            new StateMachine<TowerNetworkPhase>(TowerNetworkPhase.Inactive, CanTransition);
 
         private int nextNodeId = 1;
         private int activeLevelNumber;
@@ -48,10 +51,11 @@ namespace TowerDefense3D.Towers
         public float TickSeconds => tickSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
         public float MaximumLinkRangeMeters => maximumLinkRangeMeters;
-        public bool HasLevelSession => activeLevelNumber > 0;
+        public bool HasLevelSession => Phase != TowerNetworkPhase.Inactive;
         public int ActiveLevelNumber => activeLevelNumber;
         public int NodeCount => nodes.Count;
-        public bool IsRunning { get; private set; }
+        public TowerNetworkPhase Phase => phaseMachine.CurrentState;
+        public bool IsRunning => Phase == TowerNetworkPhase.Running;
         public long CurrentTick { get; private set; }
 
         public void BeginLevelSession(int levelNumber)
@@ -68,6 +72,7 @@ namespace TowerDefense3D.Towers
 
             ClearAllRuntimeState();
             activeLevelNumber = levelNumber;
+            phaseMachine.TransitionTo(TowerNetworkPhase.Preparation);
             PublishStateChanged();
         }
 
@@ -80,12 +85,12 @@ namespace TowerDefense3D.Towers
 
             ClearAllRuntimeState();
             activeLevelNumber = 0;
+            phaseMachine.TransitionTo(TowerNetworkPhase.Inactive);
             PublishStateChanged();
         }
 
         private void ClearAllRuntimeState()
         {
-            IsRunning = false;
             CurrentTick = 0L;
             ClearProjectileRuntimeState();
             nodesInValidChains.Clear();
@@ -99,6 +104,25 @@ namespace TowerDefense3D.Towers
         private void PublishStateChanged()
         {
             StateChanged?.Invoke();
+        }
+
+        private static bool CanTransition(
+            TowerNetworkPhase currentPhase,
+            TowerNetworkPhase nextPhase)
+        {
+            switch (currentPhase)
+            {
+                case TowerNetworkPhase.Inactive:
+                    return nextPhase == TowerNetworkPhase.Preparation;
+                case TowerNetworkPhase.Preparation:
+                    return nextPhase == TowerNetworkPhase.Running
+                        || nextPhase == TowerNetworkPhase.Inactive;
+                case TowerNetworkPhase.Running:
+                    return nextPhase == TowerNetworkPhase.Preparation
+                        || nextPhase == TowerNetworkPhase.Inactive;
+                default:
+                    return false;
+            }
         }
     }
 }
