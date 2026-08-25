@@ -8,19 +8,43 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
     public sealed class EnemyViewTests
     {
         [UnityTest]
-        public IEnumerator Render_MovementOnXZPlaneTurnsViewAndPreservesAuthoredOffset()
+        public IEnumerator Render_FirstMovementFacesTravelDirection()
         {
             var viewObject = new GameObject("Enemy View");
-            viewObject.transform.localRotation = Quaternion.Euler(0f, 35f, 0f);
-            Quaternion authoredOffset = viewObject.transform.localRotation;
+            viewObject.transform.localRotation = Quaternion.Euler(0f, 175f, 0f);
             EnemyView view = viewObject.AddComponent<EnemyView>();
             yield return null;
 
             EnemySnapshot enemy = Snapshot(Vector3.zero, new Vector3(1f, 5f, 0f));
             view.Render(enemy, 1f);
 
-            Quaternion expectedRotation = Quaternion.LookRotation(Vector3.right, Vector3.up) * authoredOffset;
+            Quaternion expectedRotation = Quaternion.LookRotation(Vector3.right, Vector3.up);
             Assert.That(Quaternion.Angle(viewObject.transform.rotation, expectedRotation), Is.LessThan(0.01f));
+
+            Object.Destroy(viewObject);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Render_DirectionChangeTurnsGradually()
+        {
+            var viewObject = new GameObject("Enemy View");
+            EnemyView view = viewObject.AddComponent<EnemyView>();
+            yield return null;
+
+            view.Render(Snapshot(Vector3.zero, Vector3.forward), 1f);
+            Quaternion initialRotation = viewObject.transform.rotation;
+            Quaternion targetRotation = Quaternion.LookRotation(Vector3.right, Vector3.up);
+            float fullTurnAngle = Quaternion.Angle(initialRotation, targetRotation);
+            yield return null;
+
+            view.Render(Snapshot(Vector3.zero, Vector3.right), 1f);
+
+            float completedTurnAngle = Quaternion.Angle(initialRotation, viewObject.transform.rotation);
+            float remainingTurnAngle = Quaternion.Angle(viewObject.transform.rotation, targetRotation);
+            Assert.That(completedTurnAngle, Is.GreaterThan(0f));
+            Assert.That(completedTurnAngle, Is.LessThan(fullTurnAngle));
+            Assert.That(remainingTurnAngle, Is.GreaterThan(0f));
 
             Object.Destroy(viewObject);
             yield return null;

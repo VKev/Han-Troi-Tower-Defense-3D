@@ -6,17 +6,19 @@ namespace TowerDefense3D.Enemies
     [RequireComponent(typeof(Animator))]
     public sealed class EnemyView : MonoBehaviour
     {
+        private const float TurnSpeedDegreesPerSecond = 360f;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
 
         private Animator animator;
-        private Quaternion authoredRotationOffset;
+        private Quaternion spawnLocalRotation;
+        private bool hasFacingDirection;
 
         public long EnemyId { get; private set; }
 
         private void Awake()
         {
             animator = GetComponent<Animator>();
-            authoredRotationOffset = transform.localRotation;
+            spawnLocalRotation = transform.localRotation;
         }
 
         public void Bind(EnemySnapshot enemy)
@@ -25,7 +27,8 @@ namespace TowerDefense3D.Enemies
             string prefix = enemy.IsSummoned ? "Summoned Enemy" : "Enemy";
             gameObject.name = $"{prefix} {enemy.EnemyId} - {enemy.Definition.DisplayName}";
             transform.position = enemy.Position;
-            transform.localRotation = authoredRotationOffset;
+            transform.localRotation = spawnLocalRotation;
+            hasFacingDirection = false;
             gameObject.SetActive(true);
             SetMoving(true);
         }
@@ -44,13 +47,25 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
-            transform.rotation = Quaternion.LookRotation(movement, Vector3.up) * authoredRotationOffset;
+            Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.up);
+            if (!hasFacingDirection)
+            {
+                transform.rotation = targetRotation;
+                hasFacingDirection = true;
+                return;
+            }
+
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation,
+                targetRotation,
+                TurnSpeedDegreesPerSecond * Time.deltaTime);
         }
 
         public void Release()
         {
             SetMoving(false);
             EnemyId = 0L;
+            hasFacingDirection = false;
             gameObject.SetActive(false);
         }
 
