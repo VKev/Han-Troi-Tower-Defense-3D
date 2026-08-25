@@ -1,0 +1,124 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &5250789722055861099
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.48
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.48
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.48
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 18.98
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.89
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 29.78
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.043793757
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.9990406
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -185.02
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: m_Name
+      value: ArmoredEnemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 5558608132283043915, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: cd160c8aba4e3a74ca71c45ed4b84a1e, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4952335581977300543}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5075015233479592700}
+  m_SourcePrefab: {fileID: 100100000, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+--- !u!1 &4908893629078330938 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 6741ac5efde65c949bc38b16121af71b, type: 3}
+  m_PrefabInstance: {fileID: 5250789722055861099}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &4952335581977300543
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4908893629078330938}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 22100000, guid: 1a54cf5ae3efdd048a3866f0455ebc2a, type: 2}
+  m_CullingMode: 1
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5075015233479592700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4908893629078330938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49dc218059e8ad143942117e0b7efa7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemyView
