@@ -73,3 +73,32 @@ Files changed: `Assets/TheVayuputra/ToonShader/Shader/ToonShader.shader` and `As
 Verified live via Unity MCP against the connected `6000.3.21f1` Editor: confirmed the project's actual cascade/shadow settings and keyword state before diagnosing (rather than assuming), and confirmed `AssetDatabase.Refresh` compiled both shader files with zero new Console errors/warnings after the edit. A `Unity_SceneView_CaptureMultiAngleSceneView` capture of `BigRock` in `Level_001` after the fix showed correct, unbroken toon shading and self-shadowing from all four angles (Iso/Front/Top/Right), matching the project owner's original screenshot's rock at a stable framing.
 
 Known limitation: reproducing the exact "dolly across a specific cascade boundary" comparison from the project owner's four zoom screenshots was not scripted in this session (the available Scene View capture tool auto-frames the target rather than accepting an explicit camera distance), so the fix was verified by compilation correctness and by matching URP's own documented per-fragment convention, not by a pixel-diffed before/after at a controlled distance. The project owner should re-check by zooming across the previously-affected range (roughly 6–27 world units from camera) in both Scene View and Play Mode to confirm the shape no longer jumps.
+
+## Entry 3 — Apply material Tiling and Offset in both toon shaders
+
+**Responsible session:** `01a02a90-cb3e-7523-97dd-8f9f705f3685`
+
+### Problem being addressed
+
+Changing the Base Map Tiling or Offset in a toon material had no visible effect because both shader variants sampled the raw
+mesh UV and never applied Unity's generated `_BaseMap_ST` transform.
+
+### Prompt used
+
+The project owner asked to fix Tiling and Offset in the toon shader.
+
+### Important AI response
+
+Both the base and outline variants now declare `_BaseMap_ST` in `UnityPerMaterial` and pass mesh UV through
+`TRANSFORM_TEX(input.uv, _BaseMap)` before sampling. This follows Unity's standard material texture transform path and keeps
+the two shader variants consistent.
+
+### Option selected, revised, or rejected
+
+- **Selected:** use Unity's built-in `_BaseMap_ST` convention and `TRANSFORM_TEX` macro.
+- **Rejected:** custom duplicate Tiling/Offset properties or per-material scripts.
+
+### Implementation or verification result
+
+Commit `176a9f2` updated `ToonShader.shader` and `ToonShaderOutline.shader`. Unity compiled the shaders without errors; the
+change remains local and was not pushed.

@@ -261,3 +261,65 @@ Level 001 completed Wave 1 and returned Enemy views to the pool; Level 002 loade
 reference, the final verification passed EditMode `266/266`, PlayMode `12/12`, and reported zero Console errors. One PlayMode
 mouse-input test failed once at `HasPointerInput` and passed on immediate rerun; follow-up `TowerDefense3D-abmh` records that
 flakiness. `TowerDefense3D-dobs` and the Meshy issue `TowerDefense3D-b7wk` are closed. No Player build or remote push occurred.
+
+## Entry 7 — Rotate enemy presentation along each road segment
+
+**Responsible session:** `01a02a90-cb3e-7523-97dd-8f9f705f3685`
+
+### Problem being addressed
+
+Enemy views moved through road corners but retained their spawn orientation, so the model slid sideways after changing road
+direction.
+
+### Prompt used
+
+The project owner reported that enemies did not rotate when turning at road corners.
+
+### Important AI response
+
+`EnemyView` now derives a horizontal movement vector from the current and previous simulation snapshots. A non-zero vector
+drives `Quaternion.LookRotation`, multiplied by the prefab's authored rotation offset so imported models keep their intended
+forward-axis correction. Stationary snapshots retain the last valid facing direction.
+
+### Option selected, revised, or rejected
+
+- **Selected:** rotate presentation from fixed-step snapshot motion on XZ.
+- **Selected:** preserve the prefab's authored local rotation as an import offset.
+- **Rejected:** adding colliders, NavMesh steering, or another per-enemy lifecycle method.
+
+### Implementation or verification result
+
+Commit `d71d12b` added the runtime correction and a PlayMode test covering a road turn. The change remained inside enemy
+presentation; deterministic road progress and movement ownership were unchanged.
+
+## Entry 8 — Give Armored its own animated prefab
+
+**Responsible session:** `01a02a90-cb3e-7523-97dd-8f9f705f3685`
+
+### Problem being addressed
+
+Enemy definitions need their own visual prefabs because roster members use different models. Armored still referenced the old
+shared ToyWarrior asset instead of an Armored-owned prefab and animation override.
+
+### Prompt used
+
+The project owner requested one prefab per enemy type, supplied the Armored model/avatar information, and asked that the shared
+Idle and Move animation contract remain extensible for enemy-specific animations later.
+
+### Important AI response
+
+The Armored model assets were moved under the Armored feature folder with their Unity metadata preserved where applicable. A
+dedicated `ArmoredEnemy.prefab` and `ArmoredEnemy.overrideController` now map the shared Idle and Move states to the imported
+Armored clips. `Armored.asset` references that prefab directly and authors the model's `0.35` hit radius.
+
+### Option selected, revised, or rejected
+
+- **Selected:** one prefab and one override controller per enemy visual identity.
+- **Selected:** keep Idle and Move as the shared Animator contract while allowing later controllers to add special states.
+- **Rejected:** choosing a prefab by enemy type in code or keeping every enemy on the old shared model.
+
+### Implementation or verification result
+
+Unity imported the replacement model, prefab, and controller without compile errors. Authored catalog validation was included in
+the complete EditMode `282/282` and PlayMode `14/14` passes. The old ToyWarrior asset path is removed as part of the same local
+feature commit, and no remote push was performed.
