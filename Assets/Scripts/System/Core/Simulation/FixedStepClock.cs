@@ -1,6 +1,6 @@
 using System;
 
-namespace TowerDefense3D.Simulation
+namespace TowerDefense3D.Core
 {
     /// <summary>
     /// Converts frame time into deterministic fixed simulation steps.
