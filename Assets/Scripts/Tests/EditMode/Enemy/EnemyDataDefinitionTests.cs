@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using TowerDefense3D.Enemies;
 using UnityEditor;
+using UnityEngine;
 
 namespace TowerDefense3D.Enemies.Tests.EditMode
 {
@@ -45,6 +47,27 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(summonerBoss.SummonPhases[0].StartHealthFraction, Is.EqualTo(1f));
             Assert.That(summonerBoss.SummonPhases[1].StartHealthFraction, Is.EqualTo(0.6f));
             Assert.That(summonerBoss.SummonPhases[2].StartHealthFraction, Is.EqualTo(0.3f));
+        }
+
+        [Test]
+        public void ApprovedEnemyCatalog_UsesOneValidViewPrefabPerDefinition()
+        {
+            EnemyCatalog catalog = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(CatalogPath);
+            var viewPrefabs = new HashSet<GameObject>();
+
+            Assert.That(catalog, Is.Not.Null);
+            foreach (EnemyDefinition definition in catalog.Definitions)
+            {
+                Assert.That(definition.ViewPrefab, Is.Not.Null, definition.StableId);
+                Assert.That(
+                    definition.ViewPrefab.GetComponent<EnemyView>(),
+                    Is.Not.Null,
+                    $"{definition.StableId} View Prefab must have EnemyView on its root.");
+                Assert.That(
+                    viewPrefabs.Add(definition.ViewPrefab),
+                    Is.True,
+                    $"{definition.StableId} must use its own View Prefab.");
+            }
         }
 
         private static EnemyDefinition Get(EnemyCatalog catalog, string stableId)

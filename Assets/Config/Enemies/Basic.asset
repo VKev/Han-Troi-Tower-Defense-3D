@@ -15,6 +15,7 @@ MonoBehaviour:
   stableId: basic
   displayName: Basic
   rank: 0
+  viewPrefab: {fileID: 3125936180037268728, guid: a3515c91a8b832f4d8400f307b38cc16, type: 3}
   baseMaxHealth: 16
   baseMoveSpeed: 2
   basePhysicalResistance: 0

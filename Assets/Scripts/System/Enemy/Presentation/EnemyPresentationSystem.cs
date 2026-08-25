@@ -20,7 +20,6 @@ namespace TowerDefense3D.Enemies
 
         public void Start()
         {
-            viewPool.Initialize();
             enemySystem.EnemySpawned += HandleEnemySpawned;
             enemySystem.EnemyKilled += HandleEnemyRemoved;
             enemySystem.EnemyLeaked += HandleEnemyRemoved;

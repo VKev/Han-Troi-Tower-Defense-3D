@@ -20,6 +20,9 @@ namespace TowerDefense3D.Enemies
         [SerializeField] private string displayName = "Basic";
         [SerializeField] private EnemyRank rank;
 
+        [Header("Presentation")]
+        [SerializeField] private GameObject viewPrefab;
+
         [Header("Base Stats")]
         [SerializeField, Min(0.01f)] private float baseMaxHealth = 16f;
         [SerializeField, Min(0.01f)] private float baseMoveSpeed = 2f;
@@ -42,6 +45,7 @@ namespace TowerDefense3D.Enemies
         public string StableId => stableId;
         public string DisplayName => displayName;
         public EnemyRank Rank => rank;
+        public GameObject ViewPrefab => viewPrefab;
         public float BaseMaxHealth => baseMaxHealth;
         public float BaseMoveSpeed => baseMoveSpeed;
         public float BaseHitRadius => baseHitRadius;
@@ -66,6 +70,11 @@ namespace TowerDefense3D.Enemies
             if (string.IsNullOrWhiteSpace(displayName))
             {
                 errors.Add($"{name}: Display Name is required.");
+            }
+
+            if (viewPrefab == null)
+            {
+                errors.Add($"{name}: View Prefab is required.");
             }
 
             if (baseMaxHealth <= 0f || baseMoveSpeed <= 0f || baseHitRadius <= 0f)

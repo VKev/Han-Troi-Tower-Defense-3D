@@ -15,6 +15,7 @@ MonoBehaviour:
   stableId: armored
   displayName: Armored
   rank: 0
+  viewPrefab: {fileID: 3125936180037268728, guid: 17b5a5fa360050646b905cfb249334a2, type: 3}
   baseMaxHealth: 24
   baseMoveSpeed: 1.7
   basePhysicalResistance: 60

@@ -4226,8 +4226,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f150ffa79e2a2c64e9d16e818fd7845c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemyViewPool
-  prefab: {fileID: 1828723332130406245, guid: 96d6f001ce68b664cb367e774e3bedd4, type: 3}
-  prewarmCount: 24
 --- !u!1 &1127546518
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,48 +6,29 @@ namespace TowerDefense3D.Enemies
     [DisallowMultipleComponent]
     public sealed class EnemyViewPool : MonoBehaviour, IEnemyViewPool
     {
-        [SerializeField] private EnemyView prefab;
-        [SerializeField, Min(0)] private int prewarmCount = 24;
-        private readonly Dictionary<long, EnemyView> activeViews =
-            new Dictionary<long, EnemyView>();
-        private readonly Stack<EnemyView> availableViews = new Stack<EnemyView>();
-        private bool isInitialized;
-
-        public void Initialize()
-        {
-            if (isInitialized)
-            {
-                return;
-            }
-
-            if (prefab == null)
-            {
-                throw new MissingReferenceException("EnemyViewPool requires an EnemyView prefab.");
-            }
-
-            for (int index = 0; index < prewarmCount; index++)
-            {
-                availableViews.Push(CreateView());
-            }
-
-            isInitialized = true;
-        }
+        private readonly Dictionary<long, ActiveEnemyView> activeViews =
+            new Dictionary<long, ActiveEnemyView>();
+        private readonly Dictionary<EnemyDefinition, Stack<EnemyView>> availableViews =
+            new Dictionary<EnemyDefinition, Stack<EnemyView>>();
 
         public void Spawn(EnemySnapshot enemy)
         {
-            EnemyView view = availableViews.Count > 0
-                ? availableViews.Pop()
-                : CreateView();
-            activeViews.Add(enemy.EnemyId, view);
+            Stack<EnemyView> definitionViews = GetAvailableViews(enemy.Definition);
+            EnemyView view = definitionViews.Count > 0
+                ? definitionViews.Pop()
+                : CreateView(enemy.Definition);
+            activeViews.Add(
+                enemy.EnemyId,
+                new ActiveEnemyView(enemy.Definition, view));
             view.Bind(enemy);
         }
 
         public void Despawn(long enemyId)
         {
-            EnemyView view = activeViews[enemyId];
+            ActiveEnemyView activeView = activeViews[enemyId];
             activeViews.Remove(enemyId);
-            view.Release();
-            availableViews.Push(view);
+            activeView.View.Release();
+            GetAvailableViews(activeView.Definition).Push(activeView.View);
         }
 
         public void Render(
@@ -57,26 +38,63 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < enemies.Count; index++)
             {
                 EnemySnapshot enemy = enemies[index];
-                activeViews[enemy.EnemyId].Render(enemy, interpolationAlpha);
+                activeViews[enemy.EnemyId].View.Render(enemy, interpolationAlpha);
             }
         }
 
         public void ReleaseAll()
         {
-            foreach (EnemyView view in activeViews.Values)
+            foreach (ActiveEnemyView activeView in activeViews.Values)
             {
-                view.Release();
-                availableViews.Push(view);
+                activeView.View.Release();
+                GetAvailableViews(activeView.Definition).Push(activeView.View);
             }
 
             activeViews.Clear();
         }
 
-        private EnemyView CreateView()
+        private Stack<EnemyView> GetAvailableViews(EnemyDefinition definition)
         {
-            EnemyView view = Instantiate(prefab, transform);
+            if (!availableViews.TryGetValue(definition, out Stack<EnemyView> views))
+            {
+                views = new Stack<EnemyView>();
+                availableViews.Add(definition, views);
+            }
+
+            return views;
+        }
+
+        private EnemyView CreateView(EnemyDefinition definition)
+        {
+            if (definition.ViewPrefab == null)
+            {
+                throw new MissingReferenceException(
+                    $"Enemy '{definition.DisplayName}' requires a View Prefab.");
+            }
+
+            GameObject instance = Instantiate(definition.ViewPrefab, transform);
+            EnemyView view = instance.GetComponent<EnemyView>();
+            if (view == null)
+            {
+                Destroy(instance);
+                throw new MissingComponentException(
+                    $"Enemy View Prefab '{definition.ViewPrefab.name}' must have an EnemyView on its root.");
+            }
+
             view.Release();
             return view;
+        }
+
+        private readonly struct ActiveEnemyView
+        {
+            public ActiveEnemyView(EnemyDefinition definition, EnemyView view)
+            {
+                Definition = definition;
+                View = view;
+            }
+
+            public EnemyDefinition Definition { get; }
+            public EnemyView View { get; }
         }
     }
 }

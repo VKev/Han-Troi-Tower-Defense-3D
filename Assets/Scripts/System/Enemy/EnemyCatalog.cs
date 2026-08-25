@@ -33,6 +33,7 @@ namespace TowerDefense3D.Enemies
         {
             var errors = new List<string>();
             var stableIds = new HashSet<string>(StringComparer.Ordinal);
+            var viewPrefabs = new HashSet<GameObject>();
 
             for (int index = 0; index < definitions.Count; index++)
             {
@@ -47,6 +48,12 @@ namespace TowerDefense3D.Enemies
                 if (!string.IsNullOrWhiteSpace(definition.StableId) && !stableIds.Add(definition.StableId))
                 {
                     errors.Add($"Duplicate Enemy Stable Id '{definition.StableId}'.");
+                }
+
+                if (definition.ViewPrefab != null && !viewPrefabs.Add(definition.ViewPrefab))
+                {
+                    errors.Add(
+                        $"Enemy View Prefab '{definition.ViewPrefab.name}' is assigned to multiple definitions.");
                 }
             }
 

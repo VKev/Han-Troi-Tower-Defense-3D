@@ -15,6 +15,7 @@ MonoBehaviour:
   stableId: shortcut-builder
   displayName: Shortcut Builder
   rank: 0
+  viewPrefab: {fileID: 3125936180037268728, guid: 3b3f8630351cbbe4db81f883b3c6144c, type: 3}
   baseMaxHealth: 20
   baseMoveSpeed: 1.8
   basePhysicalResistance: 10
