@@ -40,6 +40,7 @@ Shader "TheVayuputra/ToonShader"
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
             CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
                 float4 _BaseColor;
                 float _ShadeThreshold;
                 float _ShadeSoftness;
@@ -82,7 +83,7 @@ Shader "TheVayuputra/ToonShader"
                 output.positionWS = posInput.positionWS;
                 output.normalWS = normInput.normalWS;
                 output.viewDirWS = GetCameraPositionWS() - posInput.positionWS;
-                output.uv = input.uv;
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
 
                 output.fogCoord = ComputeFogFactor(posInput.positionCS.z);
 
