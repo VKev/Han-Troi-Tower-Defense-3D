@@ -25,8 +25,8 @@ namespace TowerDefense3D.GridPlacement
         private float observedNearClip;
         private float observedPadding;
         private bool observedOrthographic;
-        private Vector3 observedCameraLocalPositionOffset;
-        private Vector3 observedCameraLocalRotationOffsetEuler;
+        private Vector3 observedCameraPositionOffset;
+        private Vector3 observedCameraRotationOffsetEuler;
         private Vector3 observedAuthoredBaseRotationEuler;
         private Vector3 observedBoardPosition;
         private Quaternion observedBoardRotation;
@@ -94,8 +94,8 @@ namespace TowerDefense3D.GridPlacement
             Transform boardOrigin = view.BoardOrigin;
             if (targetCamera == null || board == null || boardOrigin == null
                 || targetCamera.orthographic
-                || !IsFinite(view.CameraLocalPositionOffset)
-                || !TryGetFramingRotation(out rotation))
+                || !IsFinite(board.CameraPositionOffset)
+                || !TryGetFramingRotation(board, out rotation))
             {
                 return false;
             }
@@ -134,7 +134,7 @@ namespace TowerDefense3D.GridPlacement
                 return false;
             }
 
-            position = fittedPosition + rotation * view.CameraLocalPositionOffset;
+            position = fittedPosition + rotation * board.CameraPositionOffset;
             return IsFinite(position);
         }
 
@@ -187,8 +187,6 @@ namespace TowerDefense3D.GridPlacement
             if (!hasObservedInputs
                 || observedPadding != view.EdgePaddingCells
                 || observedCompositionRect != view.CompositionRectInSafeArea
-                || observedCameraLocalPositionOffset != view.CameraLocalPositionOffset
-                || observedCameraLocalRotationOffsetEuler != view.CameraLocalRotationOffsetEuler
                 || observedAuthoredBaseRotationEuler != view.AuthoredBaseRotationEuler)
             {
                 return true;
@@ -205,6 +203,8 @@ namespace TowerDefense3D.GridPlacement
             return observedBoard != board
                 || observedMaxCameraGridXSpan != board.MaxCameraGridXSpan
                 || observedMaxCameraGridYSpan != board.MaxCameraGridYSpan
+                || observedCameraPositionOffset != board.CameraPositionOffset
+                || observedCameraRotationOffsetEuler != board.CameraRotationOffsetEuler
                 || observedPixelRect != camera.pixelRect
                 || observedSafeArea != view.ScreenSafeArea
                 || observedAspect != camera.aspect
@@ -228,8 +228,12 @@ namespace TowerDefense3D.GridPlacement
                 : 0;
             observedPadding = view.EdgePaddingCells;
             observedCompositionRect = view.CompositionRectInSafeArea;
-            observedCameraLocalPositionOffset = view.CameraLocalPositionOffset;
-            observedCameraLocalRotationOffsetEuler = view.CameraLocalRotationOffsetEuler;
+            observedCameraPositionOffset = observedBoard != null
+                ? observedBoard.CameraPositionOffset
+                : Vector3.zero;
+            observedCameraRotationOffsetEuler = observedBoard != null
+                ? observedBoard.CameraRotationOffsetEuler
+                : Vector3.zero;
             observedAuthoredBaseRotationEuler = view.AuthoredBaseRotationEuler;
             observedSafeArea = view.ScreenSafeArea;
 
@@ -265,17 +269,19 @@ namespace TowerDefense3D.GridPlacement
             return view.HasAuthoredBaseRotation && IsFinite(view.AuthoredBaseRotationEuler);
         }
 
-        private bool TryGetFramingRotation(out Quaternion rotation)
+        private bool TryGetFramingRotation(
+            BoardDefinition board,
+            out Quaternion rotation)
         {
             rotation = Quaternion.identity;
             if (!EnsureAuthoredBaseRotation()
-                || !IsFinite(view.CameraLocalRotationOffsetEuler))
+                || !IsFinite(board.CameraRotationOffsetEuler))
             {
                 return false;
             }
 
             rotation = Quaternion.Euler(view.AuthoredBaseRotationEuler)
-                * Quaternion.Euler(view.CameraLocalRotationOffsetEuler);
+                * Quaternion.Euler(board.CameraRotationOffsetEuler);
             return IsFinite(rotation);
         }
 

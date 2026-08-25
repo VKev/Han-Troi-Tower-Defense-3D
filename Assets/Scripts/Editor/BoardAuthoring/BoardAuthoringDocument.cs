@@ -13,6 +13,8 @@ namespace TowerDefense3D.GridPlacement.Editor
         private const string HeightUnitProperty = "heightUnit";
         private const string MaxCameraGridXSpanProperty = "maxCameraGridXSpan";
         private const string MaxCameraGridYSpanProperty = "maxCameraGridYSpan";
+        private const string CameraPositionOffsetProperty = "cameraPositionOffset";
+        private const string CameraRotationOffsetEulerProperty = "cameraRotationOffsetEuler";
         private const string CellsProperty = "cells";
         private const string GridPlaceablesProperty = "gridPlaceables";
 
@@ -33,6 +35,8 @@ namespace TowerDefense3D.GridPlacement.Editor
         public float HeightUnit { get; private set; }
         public int MaxCameraGridXSpan { get; private set; }
         public int MaxCameraGridYSpan { get; private set; }
+        public Vector3 CameraPositionOffset { get; private set; }
+        public Vector3 CameraRotationOffsetEuler { get; private set; }
         public int DuplicateCoordinateCount { get; private set; }
         public int SerializedNoneEntryCount { get; private set; }
         public int DuplicateGridPlaceableCoordinateCount { get; private set; }
@@ -60,6 +64,10 @@ namespace TowerDefense3D.GridPlacement.Editor
             MaxCameraGridYSpan = Mathf.Max(
                 0,
                 serialized.FindProperty(MaxCameraGridYSpanProperty).intValue);
+            CameraPositionOffset =
+                serialized.FindProperty(CameraPositionOffsetProperty).vector3Value;
+            CameraRotationOffsetEuler =
+                serialized.FindProperty(CameraRotationOffsetEulerProperty).vector3Value;
 
             SerializedProperty serializedCells = serialized.FindProperty(CellsProperty);
             for (int i = 0; i < serializedCells.arraySize; i++)
@@ -223,6 +231,14 @@ namespace TowerDefense3D.GridPlacement.Editor
         {
             MaxCameraGridXSpan = Mathf.Max(0, maxCameraGridXSpan);
             MaxCameraGridYSpan = Mathf.Max(0, maxCameraGridYSpan);
+        }
+
+        public void SetCameraOffsets(
+            Vector3 positionOffset,
+            Vector3 rotationOffsetEuler)
+        {
+            CameraPositionOffset = positionOffset;
+            CameraRotationOffsetEuler = rotationOffsetEuler;
         }
 
         public int CountCellsOutside(GridDimensions dimensions)
@@ -435,6 +451,10 @@ namespace TowerDefense3D.GridPlacement.Editor
             serialized.FindProperty(HeightUnitProperty).floatValue = HeightUnit;
             serialized.FindProperty(MaxCameraGridXSpanProperty).intValue = MaxCameraGridXSpan;
             serialized.FindProperty(MaxCameraGridYSpanProperty).intValue = MaxCameraGridYSpan;
+            serialized.FindProperty(CameraPositionOffsetProperty).vector3Value =
+                CameraPositionOffset;
+            serialized.FindProperty(CameraRotationOffsetEulerProperty).vector3Value =
+                CameraRotationOffsetEuler;
 
             List<KeyValuePair<GridCell, BoardCellFlags>> ordered = GetOrderedCells();
             SerializedProperty serializedCells = serialized.FindProperty(CellsProperty);

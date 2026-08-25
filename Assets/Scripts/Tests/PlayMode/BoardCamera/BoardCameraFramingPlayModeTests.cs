@@ -453,7 +453,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator CameraSystem_AuthoredOffsetsPersistWhenProjectionChanges()
+        public IEnumerator CameraSystem_BoardOffsetsPersistWhenProjectionChanges()
         {
             BoardDefinition board = ScriptableObject.CreateInstance<BoardDefinition>();
             SetField(board, "dimensions", new GridDimensions(12, 8, 1));
@@ -490,13 +490,13 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             SetField(framer, "targetCamera", camera);
             SetField(framer, "boardView", presenter);
 
-            var localPositionOffset = new Vector3(1.5f, 0.25f, -1f);
-            var localRotationOffset = new Vector3(2f, 6f, 0f);
+            var positionOffset = new Vector3(1.5f, 0.25f, -1f);
+            var rotationOffset = new Vector3(2f, 6f, 0f);
             SetField(
-                framer,
-                "cameraLocalRotationOffsetEuler",
-                localRotationOffset);
-            SetField(framer, "cameraLocalPositionOffset", Vector3.zero);
+                board,
+                "cameraRotationOffsetEuler",
+                rotationOffset);
+            SetField(board, "cameraPositionOffset", Vector3.zero);
 
             var cameraSystem = new BoardCameraSystem(framer);
             Assert.That(
@@ -505,9 +505,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                     out Quaternion expectedRotation),
                 Is.True);
             SetField(
-                framer,
-                "cameraLocalPositionOffset",
-                localPositionOffset);
+                board,
+                "cameraPositionOffset",
+                positionOffset);
             Assert.That(
                 cameraSystem.TryCalculatePose(
                     out Vector3 offsetPosition,
@@ -516,7 +516,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(
                 Quaternion.Angle(
                     expectedRotation,
-                    baseRotation * Quaternion.Euler(localRotationOffset)),
+                    baseRotation * Quaternion.Euler(rotationOffset)),
                 Is.LessThan(0.0001f));
             Assert.That(
                 Quaternion.Angle(offsetRotation, expectedRotation),
@@ -524,7 +524,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(
                 Vector3.Distance(
                     offsetPosition - fittedPosition,
-                    expectedRotation * localPositionOffset),
+                    expectedRotation * positionOffset),
                 Is.LessThan(0.0001f));
 
             cameraObject.SetActive(true);

@@ -14,10 +14,6 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, Min(0f)] private float edgePaddingCells = 1f;
         [SerializeField] private Rect compositionRectInSafeArea =
             new Rect(0.05f, 0.08f, 0.9f, 0.84f);
-        [Tooltip("Applied after automatic framing in the Camera's local right, up, and forward axes.")]
-        [SerializeField] private Vector3 cameraLocalPositionOffset;
-        [Tooltip("Local Euler delta applied to the captured authored Camera rotation before framing.")]
-        [SerializeField] private Vector3 cameraLocalRotationOffsetEuler;
         [SerializeField, HideInInspector] private Vector3 authoredBaseRotationEuler;
         [SerializeField, HideInInspector] private bool hasAuthoredBaseRotation;
 
@@ -27,8 +23,6 @@ namespace TowerDefense3D.GridPlacement
         public Transform BoardOrigin => boardView != null ? boardView.transform : null;
         public float EdgePaddingCells => edgePaddingCells;
         public Rect CompositionRectInSafeArea => compositionRectInSafeArea;
-        public Vector3 CameraLocalPositionOffset => cameraLocalPositionOffset;
-        public Vector3 CameraLocalRotationOffsetEuler => cameraLocalRotationOffsetEuler;
         public Vector3 AuthoredBaseRotationEuler => authoredBaseRotationEuler;
         public bool HasAuthoredBaseRotation => hasAuthoredBaseRotation;
         public bool UseRuntimeSafeArea => Application.isPlaying;
@@ -45,8 +39,6 @@ namespace TowerDefense3D.GridPlacement
         {
             edgePaddingCells = Mathf.Max(0f, edgePaddingCells);
             compositionRectInSafeArea = SanitizeCompositionRect(compositionRectInSafeArea);
-            cameraLocalPositionOffset = SanitizeVector(cameraLocalPositionOffset);
-            cameraLocalRotationOffsetEuler = SanitizeVector(cameraLocalRotationOffsetEuler);
 
             if (!hasAuthoredBaseRotation || !IsFinite(authoredBaseRotationEuler))
             {
@@ -91,12 +83,6 @@ namespace TowerDefense3D.GridPlacement
 
             return Rect.MinMaxRect(minX, minY, maxX, maxY);
         }
-
-        private static Vector3 SanitizeVector(Vector3 value) =>
-            new Vector3(
-                IsFinite(value.x) ? value.x : 0f,
-                IsFinite(value.y) ? value.y : 0f,
-                IsFinite(value.z) ? value.z : 0f);
 
         private static bool IsFinite(float value) =>
             !float.IsNaN(value) && !float.IsInfinity(value);

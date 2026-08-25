@@ -412,7 +412,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         }
 
         [Test]
-        public void Synchronizer_AppliesCameraLocalPositionAndRotationOffsets()
+        public void Synchronizer_AppliesBoardCameraPositionAndRotationOffsets()
         {
             BoardDefinition board = CreateBoard(
                 new GridDimensions(6, 4, 1),
@@ -444,12 +444,12 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             SetField(framer, "targetCamera", camera);
             SetField(framer, "boardView", presenter);
             SetField(
-                framer,
-                "cameraLocalPositionOffset",
+                board,
+                "cameraPositionOffset",
                 new Vector3(1f, 0.5f, -1.5f));
             SetField(
-                framer,
-                "cameraLocalRotationOffsetEuler",
+                board,
+                "cameraRotationOffsetEuler",
                 new Vector3(3f, 8f, 0f));
 
             var cameraSystem = new BoardCameraSystem(framer);

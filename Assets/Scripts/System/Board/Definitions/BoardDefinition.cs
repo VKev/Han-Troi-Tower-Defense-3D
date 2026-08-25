@@ -13,6 +13,10 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField] private bool visualizeInScene = true;
         [SerializeField, Min(0)] private int maxCameraGridXSpan = 0;
         [SerializeField, Min(0)] private int maxCameraGridYSpan = 0;
+        [Tooltip("Applied after automatic framing in the Camera's right, up, and forward axes.")]
+        [SerializeField] private Vector3 cameraPositionOffset;
+        [Tooltip("Euler delta applied to the authored Camera rotation before framing.")]
+        [SerializeField] private Vector3 cameraRotationOffsetEuler;
         [SerializeField] private BoardCellDefinition[] cells = Array.Empty<BoardCellDefinition>();
         [SerializeField] private GridPlaceablePlacement[] gridPlaceables =
             Array.Empty<GridPlaceablePlacement>();
@@ -23,6 +27,8 @@ namespace TowerDefense3D.GridPlacement
         public bool VisualizeInScene => visualizeInScene;
         public int MaxCameraGridXSpan => maxCameraGridXSpan;
         public int MaxCameraGridYSpan => maxCameraGridYSpan;
+        public Vector3 CameraPositionOffset => cameraPositionOffset;
+        public Vector3 CameraRotationOffsetEuler => cameraRotationOffsetEuler;
         public IReadOnlyList<BoardCellDefinition> Cells => cells;
         public IReadOnlyList<GridPlaceablePlacement> GridPlaceables => gridPlaceables;
     }

@@ -62,6 +62,8 @@ namespace TowerDefense3D.GridPlacement.Editor
         private float pendingHeightUnit = 1f;
         private int pendingMaxCameraGridXSpan;
         private int pendingMaxCameraGridYSpan;
+        private Vector3 pendingCameraPositionOffset;
+        private Vector3 pendingCameraRotationOffsetEuler;
         private float visualCellSize = 32f;
         private bool strokeActive;
         private bool strokeChanged;
@@ -229,6 +231,23 @@ namespace TowerDefense3D.GridPlacement.Editor
                 EditorGUILayout.LabelField(
                     "0 = Unlimited. Grid Y maps to world Z.",
                     EditorStyles.wordWrappedMiniLabel);
+
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Camera Offsets", EditorStyles.boldLabel);
+                pendingCameraPositionOffset = EditorGUILayout.Vector3Field(
+                    "Position Offset",
+                    pendingCameraPositionOffset);
+                pendingCameraRotationOffsetEuler = EditorGUILayout.Vector3Field(
+                    "Rotation Offset",
+                    pendingCameraRotationOffsetEuler);
+                if (GUILayout.Button("Apply Camera Offsets"))
+                {
+                    document.SetCameraOffsets(
+                        pendingCameraPositionOffset,
+                        pendingCameraRotationOffsetEuler);
+                    document.Commit("Change Camera Offsets");
+                    SyncPendingValues();
+                }
             }
         }
 
@@ -991,6 +1010,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             pendingHeightUnit = document.HeightUnit;
             pendingMaxCameraGridXSpan = document.MaxCameraGridXSpan;
             pendingMaxCameraGridYSpan = document.MaxCameraGridYSpan;
+            pendingCameraPositionOffset = document.CameraPositionOffset;
+            pendingCameraRotationOffsetEuler = document.CameraRotationOffsetEuler;
         }
 
         private void HandleUndoRedo()
