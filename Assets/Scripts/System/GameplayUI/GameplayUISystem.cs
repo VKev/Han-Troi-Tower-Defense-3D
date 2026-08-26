@@ -1,5 +1,6 @@
 using System;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Waves;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -12,6 +13,8 @@ namespace TowerDefense3D.GameFlow
         private readonly IPlacementHudView placementHudView;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly TowerNetworkHudPresenter towerNetworkHudPresenter;
+        private readonly IWaveSystem waveSystem;
+        private readonly WaveHudPresenter waveHudPresenter;
 
         private bool isDirty;
         private bool isStarted;
@@ -20,7 +23,9 @@ namespace TowerDefense3D.GameFlow
             IGameplayUIView gameplayView,
             IPlacementHudView placementHudView,
             TowerNetworkSystem towerNetworkSystem,
-            TowerNetworkHudPresenter towerNetworkHudPresenter)
+            TowerNetworkHudPresenter towerNetworkHudPresenter,
+            IWaveSystem waveSystem,
+            WaveHudPresenter waveHudPresenter)
         {
             this.gameplayView = gameplayView ?? throw new ArgumentNullException(nameof(gameplayView));
             this.placementHudView = placementHudView ?? throw new ArgumentNullException(nameof(placementHudView));
@@ -28,6 +33,9 @@ namespace TowerDefense3D.GameFlow
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.towerNetworkHudPresenter = towerNetworkHudPresenter
                 ?? throw new ArgumentNullException(nameof(towerNetworkHudPresenter));
+            this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
+            this.waveHudPresenter = waveHudPresenter
+                ?? throw new ArgumentNullException(nameof(waveHudPresenter));
         }
 
         public void BindReturnToMenu(Action requestReturnToMenu)
@@ -40,7 +48,9 @@ namespace TowerDefense3D.GameFlow
             gameplayView.Show();
             placementHudView.Show();
             towerNetworkHudPresenter.Connect();
+            waveHudPresenter.Connect();
             towerNetworkSystem.StateChanged += MarkDirty;
+            waveSystem.StateChanged += MarkDirty;
             isStarted = true;
             isDirty = true;
         }
@@ -54,6 +64,7 @@ namespace TowerDefense3D.GameFlow
 
             isDirty = false;
             towerNetworkHudPresenter.Refresh();
+            waveHudPresenter.Refresh();
         }
 
         public void Dispose()
@@ -65,7 +76,9 @@ namespace TowerDefense3D.GameFlow
 
             isStarted = false;
             towerNetworkSystem.StateChanged -= MarkDirty;
+            waveSystem.StateChanged -= MarkDirty;
             towerNetworkHudPresenter.Disconnect();
+            waveHudPresenter.Disconnect();
         }
 
         private void MarkDirty()

@@ -15,7 +15,7 @@ MonoBehaviour:
   core:
     stableId: earth
     displayName: Earth
-    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    placementDefinition: {fileID: 11400000, guid: f923262c19cc19c448712d9f7ea9f942, type: 2}
     network:
       inputPortCount: 1
       outputPortCount: 1

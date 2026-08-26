@@ -56,7 +56,13 @@ main path while retaining checks for actual Unity, asynchronous, save-I/O, autho
 
 ### Implementation or verification result
 
-The project owner explicitly approved the plan on 24 August 2026 and authorized implementation plus local feature commits.
-The nine-path dirty worktree was confirmed unchanged as the baseline, Unity MCP resolved the exact TowerDefense3D project and
-reported the Editor idle outside Play Mode, and Bead `TowerDefense3D-fetc` was claimed. Implementation and validation evidence
-will be appended after the migration; no remote push or sync is authorized.
+The migration completed through nine local feature commits: `75d4260` (application lifecycle), `c6533fc` (Board and Camera),
+`6b089b1` (Gameplay Input and Grid Placement), `59741dc` (Tower Network), `ce6288d` (Gameplay UI MVP), `8866356` (Save),
+`71cd142` (Application UI MVP), `41c9720` (GameFlow and level scenes), and `7ea1036` (final source and assembly layout).
+
+The final source root contains only `Application`, `System`, `Components`, `Editor`, and `Tests`. The dependency graph uses six
+assembly definitions and no assembly-reference bridge. `ApplicationEntryPoint` is the sole project-owned VContainer lifecycle
+entry point; level systems are explicitly ordered and dispatched through `ActiveLevelSystemSlot` and `LevelSystemGroup`.
+Bootstrap and both authored levels had no missing scripts or missing references at the migration gate. Unity compiled cleanly,
+the final EditMode suite passed `249/249`, and PlayMode passed `12/12`. A Player or Android build was deliberately skipped at
+the project owner's request. Dirty baseline assets remained outside the feature commits, and no remote push or sync occurred.

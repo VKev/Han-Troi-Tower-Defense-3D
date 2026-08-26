@@ -12,7 +12,9 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _METALLICSPECGLOSSMAP
+  - _NORMALMAP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -25,7 +27,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: e02ea7d76f3c1a54c855ae200b07ef48, type: 3}
+        m_Texture: {fileID: 2800000, guid: 5231b3ab1f972a343ac1166063449056, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -102,14 +104,14 @@ Material:
     - _GlossThreshold: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Metallic: 0
+    - _Metallic: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ShadeSoftness: 0.04
     - _ShadeThreshold: 0.5
-    - _Smoothness: 0
+    - _Smoothness: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -119,7 +121,7 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.4716981, g: 0.3915984, b: 0.35154855, a: 1}
+    - _BaseColor: {r: 0.52201253, g: 0.49593663, b: 0.4350104, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _GlossTint: {r: 1, g: 1, b: 1, a: 1}

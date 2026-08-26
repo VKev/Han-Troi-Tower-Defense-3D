@@ -15,6 +15,7 @@ MonoBehaviour:
   stableId: stealth
   displayName: Stealth
   rank: 0
+  viewPrefab: {fileID: 3125936180037268728, guid: 5aafbd68b8be9064ab63ae5a74ccdacc, type: 3}
   baseMaxHealth: 16
   baseMoveSpeed: 2
   basePhysicalResistance: 5

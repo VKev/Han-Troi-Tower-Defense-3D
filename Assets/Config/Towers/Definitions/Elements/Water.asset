@@ -15,7 +15,7 @@ MonoBehaviour:
   core:
     stableId: water
     displayName: Water
-    placementDefinition: {fileID: 11400000, guid: d73a97ccedf95ed4aa062398e83a5db5, type: 2}
+    placementDefinition: {fileID: 11400000, guid: d5c550c7adb652c4d9858dfac0d0a4b3, type: 2}
     network:
       inputPortCount: 1
       outputPortCount: 1

@@ -562,7 +562,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         }
 
         [Test]
-        public void Framer_AppliesCameraLocalOffsetsToSolvedPose()
+        public void Framer_AppliesBoardCameraOffsetsToSolvedPose()
         {
             BoardDefinition board = CreateBoard(
                 new GridDimensions(8, 6, 1),
@@ -591,16 +591,16 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 cameraObject.AddComponent<BoardCameraView>();
             SetField(framer, "targetCamera", camera);
             SetField(framer, "boardView", presenter);
-            var localPositionOffset = new Vector3(1.25f, -0.5f, -2f);
-            var localRotationOffset = new Vector3(3f, 7f, 1f);
+            var positionOffset = new Vector3(1.25f, -0.5f, -2f);
+            var rotationOffset = new Vector3(3f, 7f, 1f);
             SetField(
-                framer,
-                "cameraLocalPositionOffset",
-                localPositionOffset);
+                board,
+                "cameraPositionOffset",
+                positionOffset);
             SetField(
-                framer,
-                "cameraLocalRotationOffsetEuler",
-                localRotationOffset);
+                board,
+                "cameraRotationOffsetEuler",
+                rotationOffset);
 
             var cameraSystem = new BoardCameraSystem(framer);
 
@@ -611,7 +611,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 Is.True);
 
             Quaternion expectedRotation =
-                baseRotation * Quaternion.Euler(localRotationOffset);
+                baseRotation * Quaternion.Euler(rotationOffset);
             Assert.That(
                 Quaternion.Angle(actualRotation, expectedRotation),
                 Is.LessThan(0.0001f));
@@ -633,7 +633,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     out Vector3 fittedPosition),
                 Is.True);
             Vector3 expectedPosition =
-                fittedPosition + expectedRotation * localPositionOffset;
+                fittedPosition + expectedRotation * positionOffset;
             Assert.That(
                 Vector3.Distance(actualPosition, expectedPosition),
                 Is.LessThan(0.0001f));

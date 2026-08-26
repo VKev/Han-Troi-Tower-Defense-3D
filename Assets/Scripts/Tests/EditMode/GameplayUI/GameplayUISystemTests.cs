@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Waves;
 using UnityEditor;
 using UnityEngine;
 
@@ -21,11 +23,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var placementHudView = new PlacementHudViewStub();
             var towerHudView = new TowerNetworkHudViewStub();
             var presenter = new TowerNetworkHudPresenter(towerNetworkSystem, towerHudView);
+            var waveSystem = new WaveSystemStub();
+            var waveHudView = new WaveHudViewStub();
+            var wavePresenter = new WaveHudPresenter(waveSystem, waveHudView);
             var gameplayUISystem = new GameplayUISystem(
                 gameplayView,
                 placementHudView,
                 towerNetworkSystem,
-                presenter);
+                presenter,
+                waveSystem,
+                wavePresenter);
             int returnRequestCount = 0;
             gameplayUISystem.BindReturnToMenu(() => returnRequestCount++);
 
@@ -39,12 +46,19 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(towerHudView.InitializeCount, Is.EqualTo(1));
             Assert.That(towerHudView.ShowCount, Is.EqualTo(1));
             Assert.That(towerHudView.RenderCount, Is.EqualTo(1));
+            Assert.That(waveHudView.ShowCount, Is.EqualTo(1));
+            Assert.That(waveHudView.RenderCount, Is.EqualTo(1));
 
             towerNetworkSystem.ReportFeedback("Network changed.");
             gameplayUISystem.RefreshIfDirty();
 
             Assert.That(towerHudView.RenderCount, Is.EqualTo(2));
             Assert.That(towerHudView.LastState.FeedbackText, Is.EqualTo("Network changed."));
+
+            waveSystem.PublishStateChanged();
+            gameplayUISystem.RefreshIfDirty();
+
+            Assert.That(waveHudView.RenderCount, Is.EqualTo(3));
 
             towerHudView.RequestReturnToMenu();
 
@@ -54,7 +68,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             towerNetworkSystem.ReportFeedback("Ignored after disposal.");
             gameplayUISystem.RefreshIfDirty();
 
-            Assert.That(towerHudView.RenderCount, Is.EqualTo(2));
+            Assert.That(towerHudView.RenderCount, Is.EqualTo(3));
             towerNetworkSystem.Dispose();
         }
 
@@ -103,7 +117,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public event Action<TowerPlacementPointerEvent> TowerDragEnded;
             public event Action<int> TowerDragCanceled;
             public event Action UnlinkRequested;
-            public event Action StartWaveRequested;
             public event Action CancelPlacementRequested;
             public event Action ReturnToMenuRequested;
 
@@ -134,6 +147,64 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
         }
 #pragma warning restore CS0067
+
+        private sealed class WaveSystemStub : IWaveSystem
+        {
+            public event Action StateChanged;
+
+            public WaveState CreateState()
+            {
+                return new WaveState(
+                    WavePhase.Preparation,
+                    currentWaveNumber: 1,
+                    waveCount: 1,
+                    livingEnemyCount: 0,
+                    canStartWave: false);
+            }
+
+            public IReadOnlyList<EnemySpawnBatchDefinition> GetNextWavePreview()
+            {
+                return Array.Empty<EnemySpawnBatchDefinition>();
+            }
+
+            public bool TryStartWave(out string error)
+            {
+                error = "Not configured.";
+                return false;
+            }
+
+            public void PublishStateChanged()
+            {
+                StateChanged?.Invoke();
+            }
+        }
+
+        private sealed class WaveHudViewStub : IWaveHudView
+        {
+            public event Action StartWaveRequested
+            {
+                add { }
+                remove { }
+            }
+
+            public int RenderCount { get; private set; }
+            public int ShowCount { get; private set; }
+
+            public void Initialize()
+            {
+            }
+
+            public void Render(WaveHudState state)
+            {
+                _ = state;
+                RenderCount++;
+            }
+
+            public void Show()
+            {
+                ShowCount++;
+            }
+        }
 
         private sealed class BoardViewStub : IBoardView
         {

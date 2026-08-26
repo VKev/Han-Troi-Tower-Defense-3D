@@ -35,7 +35,6 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.TowerDragEnded += HandleTowerDragEnded;
             towerNetworkHud.TowerDragCanceled += HandleTowerDragCanceled;
             towerNetworkHud.UnlinkRequested += HandleUnlinkRequested;
-            towerNetworkHud.StartWaveRequested += HandleStartWaveRequested;
             towerNetworkHud.CancelPlacementRequested += HandleCancelPlacement;
             towerNetworkHud.ReturnToMenuRequested += HandleReturnToMenu;
             towerNetworkHud.Show();
@@ -48,7 +47,6 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.TowerDragEnded -= HandleTowerDragEnded;
             towerNetworkHud.TowerDragCanceled -= HandleTowerDragCanceled;
             towerNetworkHud.UnlinkRequested -= HandleUnlinkRequested;
-            towerNetworkHud.StartWaveRequested -= HandleStartWaveRequested;
             towerNetworkHud.CancelPlacementRequested -= HandleCancelPlacement;
             towerNetworkHud.ReturnToMenuRequested -= HandleReturnToMenu;
         }
@@ -75,8 +73,6 @@ namespace TowerDefense3D.GameFlow
                 feedbackText,
                 !simulationRunning,
                 selectedTower != null && towerNetworkSystem.CanEditTopology,
-                towerNetworkSystem.HasValidChain && !simulationRunning,
-                simulationRunning ? "RUNNING" : "START WAVE",
                 !simulationRunning));
         }
 
@@ -119,11 +115,6 @@ namespace TowerDefense3D.GameFlow
         private void HandleUnlinkRequested()
         {
             towerNetworkSystem.TryUnlinkSelected(out _);
-        }
-
-        private void HandleStartWaveRequested()
-        {
-            towerNetworkSystem.TryStartSimulation(out _);
         }
 
         private void HandleReturnToMenu()

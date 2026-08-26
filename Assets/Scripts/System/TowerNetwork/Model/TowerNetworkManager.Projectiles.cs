@@ -7,6 +7,8 @@ namespace TowerDefense3D.Towers
     {
 
         private readonly List<ProjectileState> activeProjectiles = new List<ProjectileState>();
+        private readonly List<TowerProjectileMotionSnapshot> projectileMotionSnapshots =
+            new List<TowerProjectileMotionSnapshot>();
         private long nextProjectileId = 1L;
 
         public int ProjectileCount => activeProjectiles.Count;
@@ -42,8 +44,21 @@ namespace TowerDefense3D.Towers
             }
         }
 
+        public void CopyProjectileMotionSnapshotTo(
+            List<TowerProjectileMotionSnapshot> destination)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            destination.Clear();
+            destination.AddRange(projectileMotionSnapshots);
+        }
+
         private void StepActiveProjectiles()
         {
+            projectileMotionSnapshots.Clear();
             float travelDistancePerTick = projectileSpeedMetersPerSecond * tickSeconds;
             int projectileIndex = 0;
 
@@ -59,9 +74,15 @@ namespace TowerDefense3D.Towers
                 }
 
                 NodeState target = nodes[projectile.Target];
+                TowerWorldPosition previousPosition = projectile.Position;
 
                 projectile.Position = TowerWorldPosition.MoveTowards(
                     projectile.Position, target.Position, travelDistancePerTick);
+                projectileMotionSnapshots.Add(new TowerProjectileMotionSnapshot(
+                    projectile.ProjectileId,
+                    previousPosition,
+                    projectile.Position,
+                    projectile.Payload));
 
                 if (!HasReachedTarget(projectile.Position, target.Position))
                 {
@@ -95,6 +116,7 @@ namespace TowerDefense3D.Towers
         private void ClearProjectileRuntimeState()
         {
             activeProjectiles.Clear();
+            projectileMotionSnapshots.Clear();
             nextProjectileId = 1L;
         }
 

@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Mobile;
+using TowerDefense3D.Simulation;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -38,6 +40,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(BoardCameraSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameplayInputSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GridPlacementSystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(EnemySystem)), Is.False);
+            Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameplaySimulationSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameplayUISystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(GameFlowSystem)), Is.False);
             Assert.That(typeof(MonoBehaviour).IsAssignableFrom(typeof(LevelSceneSystem)), Is.False);
@@ -47,8 +51,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public void ActiveLevelSystemSlot_RejectsOverlappingGroupsAndOnlyDetachesItsOwner()
         {
             var slot = new ActiveLevelSystemSlot();
-            var first = new LevelSystemGroup(null, null, null, null, null, null, null, null, null, null);
-            var second = new LevelSystemGroup(null, null, null, null, null, null, null, null, null, null);
+            var first = new LevelSystemGroup(
+                null, null, null, null, null, null, null, null, null, null, null);
+            var second = new LevelSystemGroup(
+                null, null, null, null, null, null, null, null, null, null, null);
 
             slot.Attach(first);
 

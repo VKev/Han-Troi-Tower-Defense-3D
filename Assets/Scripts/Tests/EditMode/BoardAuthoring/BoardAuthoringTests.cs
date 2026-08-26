@@ -390,6 +390,34 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         }
 
         [Test]
+        public void SetCameraOffsets_CommitsSerializedValues()
+        {
+            BoardDefinition definition = CreateTransientBoard(
+                new GridDimensions(3, 3, 2),
+                Array.Empty<BoardCellDefinition>());
+            var document = new BoardAuthoringDocument(definition);
+            var positionOffset = new Vector3(1f, -0.5f, 2f);
+            var rotationOffset = new Vector3(3f, 15f, -2f);
+
+            document.SetCameraOffsets(positionOffset, rotationOffset);
+            document.Commit("Apply camera offsets");
+
+            Assert.That(document.CameraPositionOffset, Is.EqualTo(positionOffset));
+            Assert.That(document.CameraRotationOffsetEuler, Is.EqualTo(rotationOffset));
+            Assert.That(definition.CameraPositionOffset, Is.EqualTo(positionOffset));
+            Assert.That(definition.CameraRotationOffsetEuler, Is.EqualTo(rotationOffset));
+
+            var serialized = new SerializedObject(definition);
+            serialized.UpdateIfRequiredOrScript();
+            Assert.That(
+                serialized.FindProperty("cameraPositionOffset").vector3Value,
+                Is.EqualTo(positionOffset));
+            Assert.That(
+                serialized.FindProperty("cameraRotationOffsetEuler").vector3Value,
+                Is.EqualTo(rotationOffset));
+        }
+
+        [Test]
         public void CameraGridSpans_CommitSupportsUndoRedo()
         {
             BoardDefinition definition = CreateTemporaryAsset(
