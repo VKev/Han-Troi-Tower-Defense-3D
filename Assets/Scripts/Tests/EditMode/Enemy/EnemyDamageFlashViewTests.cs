@@ -6,7 +6,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 {
     public sealed class EnemyDamageFlashViewTests
     {
-        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int DamageFlashColor = Shader.PropertyToID("_DamageFlashColor");
+        private static readonly int DamageFlashAmount = Shader.PropertyToID("_DamageFlashAmount");
 
         private GameObject viewObject;
         private EnemyDefinition definition;
@@ -37,6 +38,20 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             damageFlashView.Render(CreateSnapshot(definition.BaseMaxHealth - 1f), 0f);
 
             Assert.That(GetRenderedColor(), Is.EqualTo(Color.white));
+            Assert.That(GetRenderedAmount(), Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void DamageFlashShader_DefinesOverlayProperties()
+        {
+            Shader shader = Shader.Find("TheVayuputra/ToonShader");
+            Assert.That(shader, Is.Not.Null);
+            var material = new Material(shader);
+
+            Assert.That(material.HasProperty(DamageFlashColor), Is.True);
+            Assert.That(material.HasProperty(DamageFlashAmount), Is.True);
+
+            Object.DestroyImmediate(material);
         }
 
         [Test]
@@ -48,6 +63,18 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             damageFlashView.Render(CreateSnapshot(halfHealth - 1f), 0f);
 
             Assert.That(GetRenderedColor(), Is.EqualTo(new Color(1f, 0.5f, 0.5f, 1f)));
+        }
+
+        [Test]
+        public void Render_ActiveFlash_FadesOverlayAmount()
+        {
+            damageFlashView.Bind(CreateSnapshot(definition.BaseMaxHealth));
+            EnemySnapshot damaged = CreateSnapshot(definition.BaseMaxHealth - 1f);
+            damageFlashView.Render(damaged, 0f);
+
+            damageFlashView.Render(damaged, 0.09f);
+
+            Assert.That(GetRenderedAmount(), Is.EqualTo(0.5f).Within(0.001f));
         }
 
         [Test]
@@ -96,7 +123,14 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         {
             var properties = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(properties);
-            return properties.GetColor(BaseColor);
+            return properties.GetColor(DamageFlashColor);
+        }
+
+        private float GetRenderedAmount()
+        {
+            var properties = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(properties);
+            return properties.GetFloat(DamageFlashAmount);
         }
     }
 }

@@ -5,14 +5,16 @@ namespace TowerDefense3D.Enemies
     [DisallowMultipleComponent]
     public sealed class EnemyDamageFlashView : MonoBehaviour
     {
-        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int DamageFlashColor = Shader.PropertyToID("_DamageFlashColor");
+        private static readonly int DamageFlashAmount = Shader.PropertyToID("_DamageFlashAmount");
 
-        [SerializeField, Min(0.01f)] private float damageFlashDurationSeconds = 0.1f;
+        [SerializeField, Min(0.01f)] private float damageFlashDurationSeconds = 0.18f;
         [SerializeField] private Color fullHealthDamageColor = Color.white;
         [SerializeField] private Color lowHealthDamageColor = Color.red;
 
         private Renderer[] renderers;
         private MaterialPropertyBlock properties;
+        private Color renderedDamageFlashColor;
         private float renderedHealth;
         private float damageFlashRemainingSeconds;
 
@@ -36,10 +38,11 @@ namespace TowerDefense3D.Enemies
             if (enemy.Health < renderedHealth)
             {
                 float preDamageHealthFraction = Mathf.Clamp01(renderedHealth / enemy.Definition.BaseMaxHealth);
-                ApplyColor(Color.Lerp(
+                renderedDamageFlashColor = Color.Lerp(
                     lowHealthDamageColor,
                     fullHealthDamageColor,
-                    preDamageHealthFraction));
+                    preDamageHealthFraction);
+                ApplyFlash(renderedDamageFlashColor, 1f);
                 damageFlashRemainingSeconds = damageFlashDurationSeconds;
                 renderedHealth = enemy.Health;
                 return;
@@ -55,6 +58,12 @@ namespace TowerDefense3D.Enemies
                 {
                     Clear();
                 }
+                else
+                {
+                    ApplyFlash(
+                        renderedDamageFlashColor,
+                        damageFlashRemainingSeconds / damageFlashDurationSeconds);
+                }
             }
         }
 
@@ -66,9 +75,10 @@ namespace TowerDefense3D.Enemies
             Clear();
         }
 
-        private void ApplyColor(Color color)
+        private void ApplyFlash(Color color, float amount)
         {
-            properties.SetColor(BaseColor, color);
+            properties.SetColor(DamageFlashColor, color);
+            properties.SetFloat(DamageFlashAmount, amount);
             for (int index = 0; index < renderers.Length; index++)
             {
                 renderers[index].SetPropertyBlock(properties);

@@ -4,6 +4,8 @@ Shader "TheVayuputra/ToonShader"
     {
         [MainTexture] _BaseMap ("Texture", 2D) = "white" {}
         [MainColor] _BaseColor ("Color", Color) = (0.5,0.5,0.5,1)
+        [HideInInspector] _DamageFlashColor ("Damage Flash Color", Color) = (1,1,1,1)
+        [HideInInspector] _DamageFlashAmount ("Damage Flash Amount", Range(0, 1)) = 0
 
         _ShadeThreshold ("Shade Threshold", Range(0, 1)) = 0.5
         _ShadeSoftness ("Shade Softness", Range(0, 1)) = 0.04
@@ -48,6 +50,11 @@ Shader "TheVayuputra/ToonShader"
                 float _GlossSoftness;
                 float4 _GlossTint;
             CBUFFER_END
+
+            UNITY_INSTANCING_BUFFER_START(EnemyInstanceProperties)
+                UNITY_DEFINE_INSTANCED_PROP(float4, _DamageFlashColor)
+                UNITY_DEFINE_INSTANCED_PROP(float, _DamageFlashAmount)
+            UNITY_INSTANCING_BUFFER_END(EnemyInstanceProperties)
 
             struct Attributes
             {
@@ -125,6 +132,13 @@ Shader "TheVayuputra/ToonShader"
                 float3 ambient = SampleSH(N) * _BaseColor.rgb * baseMap;
 
                 float3 finalColor = diffuse + ambient + specular;
+                float3 damageFlashColor = UNITY_ACCESS_INSTANCED_PROP(
+                    EnemyInstanceProperties,
+                    _DamageFlashColor).rgb;
+                float damageFlashAmount = UNITY_ACCESS_INSTANCED_PROP(
+                    EnemyInstanceProperties,
+                    _DamageFlashAmount);
+                finalColor = lerp(finalColor, damageFlashColor, saturate(damageFlashAmount));
                 finalColor = MixFog(finalColor, input.fogCoord);
 
                 return float4(finalColor, 1.0);

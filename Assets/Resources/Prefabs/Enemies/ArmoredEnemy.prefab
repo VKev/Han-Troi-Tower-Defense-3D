@@ -137,6 +137,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4621ee2005372ae41a81afe8a07e37a1, type: 3}
   m_Name:
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemyDamageFlashView
-  damageFlashDurationSeconds: 0.1
+  damageFlashDurationSeconds: 0.18
   fullHealthDamageColor: {r: 1, g: 1, b: 1, a: 1}
   lowHealthDamageColor: {r: 1, g: 0, b: 0, a: 1}
