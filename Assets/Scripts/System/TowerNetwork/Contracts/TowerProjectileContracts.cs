@@ -1,5 +1,6 @@
 using System;
 using TowerDefense3D.Core;
+using TowerDefense3D.Enemies;
 
 namespace TowerDefense3D.Towers
 {
@@ -23,13 +24,38 @@ namespace TowerDefense3D.Towers
             }
 
             Kind = kind;
-            Damage = damage;
+            DamageChannels = DamageChannels.From(damage, damageType);
             DamageType = damageType;
         }
 
+        public ProjectilePayload(
+            ProjectilePayloadKind kind,
+            DamageChannels damageChannels)
+        {
+            Kind = kind;
+            DamageChannels = damageChannels;
+            DamageType = GetPrimaryDamageType(damageChannels);
+        }
+
         public ProjectilePayloadKind Kind { get; }
-        public float Damage { get; }
+        public DamageChannels DamageChannels { get; }
+        public float Damage => DamageChannels.Total;
         public DamageType DamageType { get; }
+
+        private static DamageType GetPrimaryDamageType(DamageChannels damage)
+        {
+            if (damage.Physical > 0f)
+            {
+                return DamageType.Physical;
+            }
+
+            if (damage.Magic > 0f)
+            {
+                return DamageType.Magic;
+            }
+
+            return DamageType.True;
+        }
     }
 
     public readonly struct ProjectileQueueEntry

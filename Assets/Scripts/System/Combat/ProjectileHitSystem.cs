@@ -367,11 +367,10 @@ namespace TowerDefense3D.Enemies
         private void ApplyHit(ProjectilePayload payload, EnemyInstance enemy)
         {
             enemySystem.RevealFromDirectHit(enemy.Id);
-            float damage = EnemyDamageResolver.Resolve(
-                payload.Damage,
-                payload.DamageType,
+            ResolvedDamage damage = EnemyDamageResolver.Resolve(
+                payload.DamageChannels,
                 enemy.Definition);
-            enemySystem.ApplyDamage(enemy.Id, damage);
+            enemySystem.ApplyDamage(enemy.Id, damage.Total);
         }
 
         private void BuildScheduledHitPlan()

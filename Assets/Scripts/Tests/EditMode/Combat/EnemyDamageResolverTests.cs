@@ -14,8 +14,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         {
             enemy = ScriptableObject.CreateInstance<EnemyDefinition>();
             var serialized = new SerializedObject(enemy);
-            serialized.FindProperty("basePhysicalResistance").floatValue = 0.25f;
-            serialized.FindProperty("baseMagicResistance").floatValue = 0.5f;
+            serialized.FindProperty("basePhysicalResistance").floatValue = 25f;
+            serialized.FindProperty("baseMagicResistance").floatValue = 50f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -44,15 +44,28 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 100f,
                 DamageType.Physical,
                 enemy,
-                -2f);
+                -125f);
             float cappedDefenseDamage = EnemyDamageResolver.Resolve(
                 100f,
                 DamageType.Physical,
                 enemy,
-                2f);
+                100f);
 
             Assert.That(vulnerableDamage, Is.EqualTo(200f).Within(0.0001f));
             Assert.That(cappedDefenseDamage, Is.EqualTo(10f).Within(0.0001f));
+        }
+
+        [Test]
+        public void Resolve_ResolvesPhysicalAndMagicFromOneDefenseSnapshot()
+        {
+            ResolvedDamage result = EnemyDamageResolver.Resolve(
+                new DamageChannels(100f, 100f, 5f),
+                enemy);
+
+            Assert.That(result.Physical, Is.EqualTo(75f).Within(0.0001f));
+            Assert.That(result.Magic, Is.EqualTo(50f).Within(0.0001f));
+            Assert.That(result.True, Is.EqualTo(5f));
+            Assert.That(result.Total, Is.EqualTo(130f).Within(0.0001f));
         }
     }
 }
