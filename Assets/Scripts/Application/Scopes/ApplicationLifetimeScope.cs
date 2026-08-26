@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Mobile;
 using TowerDefense3D.Towers;
@@ -16,18 +17,28 @@ namespace TowerDefense3D.GameFlow
     {
         [SerializeField] private LevelCatalog levelCatalog;
         [SerializeField] private TowerCatalog towerCatalog;
+        [SerializeField] private ElementReactionCatalog elementReactionCatalog;
         [SerializeField] private ApplicationUIView applicationUIView;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            if (levelCatalog == null || towerCatalog == null || applicationUIView == null)
+            if (levelCatalog == null || towerCatalog == null || elementReactionCatalog == null
+                || applicationUIView == null)
             {
                 throw new InvalidOperationException(
-                    "ApplicationLifetimeScope requires LevelCatalog, TowerCatalog, and ApplicationUIView.");
+                    "ApplicationLifetimeScope requires LevelCatalog, TowerCatalog, ElementReactionCatalog, " +
+                    "and ApplicationUIView.");
+            }
+
+            var reactionErrors = elementReactionCatalog.CollectValidationErrors();
+            if (reactionErrors.Count > 0)
+            {
+                throw new InvalidOperationException(string.Join("\n", reactionErrors));
             }
 
             builder.RegisterInstance(levelCatalog);
             builder.RegisterInstance(towerCatalog);
+            builder.RegisterInstance(elementReactionCatalog);
             builder.Register<TowerNetworkManager>(Lifetime.Singleton);
             builder.Register<ISaveRepository>(
                 _ => new LocalSaveRepository(Application.persistentDataPath),

@@ -211,6 +211,7 @@ MonoBehaviour:
   autoInjectGameObjects: []
   levelCatalog: {fileID: 11400000, guid: 72adb02be7a879645aff871628f24628, type: 2}
   towerCatalog: {fileID: 11400000, guid: 707ff93761f384241a6f582f8f220d55, type: 2}
+  elementReactionCatalog: {fileID: 11400000, guid: 10b92111702120c40bd09173ae469ebd, type: 2}
   applicationUIView: {fileID: 2997823818241270888}
 --- !u!114 &734632858
 MonoBehaviour:

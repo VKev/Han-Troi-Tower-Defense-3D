@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68e9eecde07b31a4fa58668ae722c852, type: 3}
+  m_Name: FireEarth_PureRewrite
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.ElementReactionDefinition
+  reactionId: 8
+  displayName: "Pure Th\u1ED5/L\u1EEDa"
+  firstElement: 0
+  secondElement: 3
+  physicalDamage: 0
+  magicDamage: 0
+  radiusMeters: 0
+  burnDamagePerTick: 0
+  burnTickIntervalSeconds: 0
+  burnDurationSeconds: 0
+  slowStrengthFraction: 0
+  slowDurationSeconds: 0
+  pushDistanceMeters: 0
+  physicalResistanceReductionPoints: 0
+  magicResistanceReductionPoints: 0
+  resistanceReductionDurationSeconds: 0
+  createsField: 0
