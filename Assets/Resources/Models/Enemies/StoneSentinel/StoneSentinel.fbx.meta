@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 8328d1b54a14d6342a45d07cd7a84d91
+guid: cedb8cc85214daa44b24982e58ae76bd
 ModelImporter:
   serializedVersion: 24300
   internalIDToNameTable: []
@@ -7,8 +7,8 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: material
-    second: {fileID: 2100000, guid: f502915976a8c8f45a6ce5a70cb391be, type: 2}
+      name: StoneSentinel
+    second: {fileID: 2100000, guid: 1a0c5fda0a350cc42a47e68e47440c38, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -37,11 +37,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: UniRigArmature|Idle
-      takeName: UniRigArmature|Idle
-      internalID: -3880307596601543962
+      name: StoneSentinel|Idle
+      takeName: StoneSentinel|Idle
+      internalID: 7530345238228159014
       firstFrame: 0
-      lastFrame: 60
+      lastFrame: 299
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -66,11 +66,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: UniRigArmature|Walk
-      takeName: UniRigArmature|Walk
-      internalID: 9154281955725797518
+      name: StoneSentinel|Walk
+      takeName: StoneSentinel|Walk
+      internalID: -2326893232385344705
       firstFrame: 0
-      lastFrame: 30
+      lastFrame: 36
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

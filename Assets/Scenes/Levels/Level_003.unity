@@ -1251,6 +1251,7 @@ MonoBehaviour:
   autoRun: 0
   autoInjectGameObjects: []
   levelNumber: 3
+  waveSchedule: {fileID: 0}
 --- !u!1001 &197966365
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2075,8 +2076,6 @@ MonoBehaviour:
     y: 0.08
     width: 0.9
     height: 0.84
-  cameraLocalPositionOffset: {x: 0, y: -0.5, z: 0}
-  cameraLocalRotationOffsetEuler: {x: 0, y: 0, z: 0}
   authoredBaseRotationEuler: {x: 81.87003, y: 0, z: 0}
   hasAuthoredBaseRotation: 1
 --- !u!1001 &331138041
@@ -11265,7 +11264,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 2176773628767250038, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}

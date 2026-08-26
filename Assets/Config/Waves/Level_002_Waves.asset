@@ -52,10 +52,6 @@ MonoBehaviour:
       startTimeSeconds: 0
       spawnWindowSeconds: 8
   - spawnBatches:
-    - enemy: {fileID: 11400000, guid: 7de0dab6d0dde6b48b3b15300225797a, type: 2}
-      count: 2
-      startTimeSeconds: 1
-      spawnWindowSeconds: 4
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 8
       startTimeSeconds: 0

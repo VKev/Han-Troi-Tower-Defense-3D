@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SummonerBossEnemy
+  m_Controller: {fileID: 9100000, guid: 3a80e89544fb4064292f97f62971969d, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: 3200abe6835d7f240954a74626bdd4b5, type: 2}
+    m_OverrideClip: {fileID: -5728417765987449537, guid: 3cc7aa9ad4fae6f478ce8f3e79f0b859, type: 3}
+  - m_OriginalClip: {fileID: 7400000, guid: 7050b48c6499a97458fba0d2e42468cf, type: 2}
+    m_OverrideClip: {fileID: 9148639487011674250, guid: 3cc7aa9ad4fae6f478ce8f3e79f0b859, type: 3}

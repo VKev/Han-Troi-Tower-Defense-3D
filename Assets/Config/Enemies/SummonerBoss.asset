@@ -15,9 +15,10 @@ MonoBehaviour:
   stableId: summoner-boss
   displayName: Summoner Boss
   rank: 2
-  viewPrefab: {fileID: 3125936180037268728, guid: e24877cd2a2b1734195b44cb5ea043c7, type: 3}
+  viewPrefab: {fileID: 6883415940259301562, guid: 1d980e33de5cb7643b1094a93e32d6f8, type: 3}
   baseMaxHealth: 600
   baseMoveSpeed: 0.8
+  baseHitRadius: 0.35
   basePhysicalResistance: 35
   baseMagicResistance: 35
   elementStatusEffectMultiplier: 1

@@ -15,9 +15,10 @@ MonoBehaviour:
   stableId: mini-boss
   displayName: Mini-boss
   rank: 1
-  viewPrefab: {fileID: 3125936180037268728, guid: bd373c881e98e2549ac26970d1e7376a, type: 3}
+  viewPrefab: {fileID: 3159256691750910483, guid: e42c511f63426bd49aff5c41fef80cdf, type: 3}
   baseMaxHealth: 160
   baseMoveSpeed: 1.2
+  baseHitRadius: 0.35
   basePhysicalResistance: 25
   baseMagicResistance: 25
   elementStatusEffectMultiplier: 1

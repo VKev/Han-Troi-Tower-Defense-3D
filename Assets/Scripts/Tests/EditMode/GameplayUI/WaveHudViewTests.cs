@@ -42,7 +42,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             view.Initialize();
             view.Render(new WaveHudState(
                 "START WAVE 2/8",
-                "Next: 2x Shortcut Builder [SHORTCUT]",
+                "Next: 2x Speed Support [SPEED AURA]",
                 startWaveEnabled: true));
 
             Transform panel = owner.transform.Find("Safe Area/Tower Network HUD");
@@ -53,7 +53,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(
                 button.GetComponentInChildren<Text>().text,
                 Is.EqualTo("START WAVE 2/8"));
-            Assert.That(preview.text, Does.Contain("[SHORTCUT]"));
+            Assert.That(preview.text, Does.Contain("[SPEED AURA]"));
 
             button.onClick.Invoke();
 

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 8328d1b54a14d6342a45d07cd7a84d91
+guid: fb6bd04cfe0358749b691fed773c1837
 ModelImporter:
   serializedVersion: 24300
   internalIDToNameTable: []
@@ -8,7 +8,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: material
-    second: {fileID: 2100000, guid: f502915976a8c8f45a6ce5a70cb391be, type: 2}
+    second: {fileID: 2100000, guid: c4435862877ee9e4e8c17d961865ec60, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -37,11 +37,40 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
+      name: UniRigArmature|Crow
+      takeName: UniRigArmature|Crow
+      internalID: 8263823738353209811
+      firstFrame: 0
+      lastFrame: 60
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: UniRigArmature|Idle
       takeName: UniRigArmature|Idle
       internalID: -3880307596601543962
       firstFrame: 0
-      lastFrame: 60
+      lastFrame: 48
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -70,7 +99,7 @@ ModelImporter:
       takeName: UniRigArmature|Walk
       internalID: 9154281955725797518
       firstFrame: 0
-      lastFrame: 30
+      lastFrame: 24
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

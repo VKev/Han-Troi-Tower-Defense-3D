@@ -100,11 +100,6 @@ namespace TowerDefense3D.GameFlow
 
         private static string GetWarning(EnemyDefinition enemy)
         {
-            if (enemy is ShortcutBuilderEnemyDefinition)
-            {
-                return " [SHORTCUT]";
-            }
-
             if (enemy is SpeedSupportEnemyDefinition)
             {
                 return " [SPEED AURA]";

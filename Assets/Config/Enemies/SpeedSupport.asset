@@ -15,9 +15,10 @@ MonoBehaviour:
   stableId: speed-support
   displayName: Speed Support
   rank: 0
-  viewPrefab: {fileID: 3125936180037268728, guid: 8935bdf8f43f4194c9dffd844b164892, type: 3}
+  viewPrefab: {fileID: 7777708168483902492, guid: 411654595bf60cf409b3563c038b8ba1, type: 3}
   baseMaxHealth: 14
   baseMoveSpeed: 1.9
+  baseHitRadius: 0.35
   basePhysicalResistance: 5
   baseMagicResistance: 5
   elementStatusEffectMultiplier: 1

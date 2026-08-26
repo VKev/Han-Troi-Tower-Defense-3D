@@ -16,21 +16,19 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             "Assets/Resources/Animations/Enemies/BasicEnemy.overrideController";
 
         [Test]
-        public void ApprovedEnemyCatalog_ContainsEightValidDefinitions()
+        public void ApprovedEnemyCatalog_ContainsSevenValidDefinitions()
         {
             EnemyCatalog catalog = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(CatalogPath);
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.CollectValidationErrors(), Is.Empty);
-            Assert.That(catalog.Definitions, Has.Count.EqualTo(8));
+            Assert.That(catalog.Definitions, Has.Count.EqualTo(7));
 
             EnemyDefinition basic = Get(catalog, "basic");
             EnemyDefinition armored = Get(catalog, "armored");
             EnemyDefinition magicResistant = Get(catalog, "magic-resistant");
             StealthEnemyDefinition stealth = Get<StealthEnemyDefinition>(catalog, "stealth");
             SpeedSupportEnemyDefinition speedSupport = Get<SpeedSupportEnemyDefinition>(catalog, "speed-support");
-            ShortcutBuilderEnemyDefinition shortcutBuilder =
-                Get<ShortcutBuilderEnemyDefinition>(catalog, "shortcut-builder");
             EnemyDefinition miniBoss = Get(catalog, "mini-boss");
             SummonerBossEnemyDefinition summonerBoss =
                 Get<SummonerBossEnemyDefinition>(catalog, "summoner-boss");
@@ -44,7 +42,6 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(stealth.RevealDurationSeconds, Is.EqualTo(2f));
             Assert.That(speedSupport.RegularSpeedBonusFraction, Is.EqualTo(0.25f));
             Assert.That(speedSupport.MiniBossSpeedBonusFraction, Is.EqualTo(0.10f));
-            Assert.That(shortcutBuilder.ChannelDurationSeconds, Is.EqualTo(2.5f));
             Assert.That(miniBoss.PushDistanceMultiplier, Is.EqualTo(0.25f));
             Assert.That(summonerBoss.Rank, Is.EqualTo(EnemyRank.Boss));
             Assert.That(summonerBoss.PushDistanceMultiplier, Is.Zero);
@@ -93,7 +90,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(basicOverride, Is.Not.Null);
             Assert.That(basicOverride.runtimeAnimatorController, Is.SameAs(locomotionController));
             Assert.That(basicOverride["EnemyIdle"].name, Is.EqualTo("Idle"));
-            Assert.That(basicOverride["EnemyMove"].name, Is.EqualTo("Walking"));
+            Assert.That(basicOverride["EnemyMove"].name, Is.EqualTo("Walk"));
             Assert.That(locomotionController.parameters, Has.Exactly(1).Matches<AnimatorControllerParameter>(
                 parameter => parameter.name == "IsMoving" && parameter.type == AnimatorControllerParameterType.Bool));
 
@@ -111,7 +108,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(basicAnimator.runtimeAnimatorController, Is.SameAs(basicOverride));
             Assert.That(basicAnimator.avatar, Is.Not.Null);
             Assert.That(basicAnimator.avatar.isValid, Is.True);
-            Assert.That(basicAnimator.avatar.isHuman, Is.True);
+            Assert.That(basicAnimator.avatar.isHuman, Is.False);
         }
 
         private static EnemyDefinition Get(EnemyCatalog catalog, string stableId)
