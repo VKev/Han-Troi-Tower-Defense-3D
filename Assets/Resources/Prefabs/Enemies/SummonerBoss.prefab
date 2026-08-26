@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1386353425757970810}
   - component: {fileID: 1828723332130406245}
   - component: {fileID: 6213390362310925826}
+  - component: {fileID: 8102420702315983292}
   m_Layer: 0
   m_Name: SummonerBoss
   m_TagString: Untagged
@@ -126,3 +127,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &8102420702315983292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3125936180037268728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4621ee2005372ae41a81afe8a07e37a1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemyElementStatusView
+  fireColor: {r: 1, g: 0.25, b: 0.05, a: 1}
+  waterColor: {r: 0.1, g: 0.55, b: 1, a: 1}
+  windColor: {r: 0.2, g: 1, b: 0.45, a: 1}
+  earthColor: {r: 0.8, g: 0.55, b: 0.15, a: 1}
+  reactionCooldownColor: {r: 1, g: 1, b: 1, a: 1}

@@ -4,12 +4,14 @@ namespace TowerDefense3D.Enemies
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
+    [RequireComponent(typeof(EnemyElementStatusView))]
     public sealed class EnemyView : MonoBehaviour
     {
         private const float TurnSpeedDegreesPerSecond = 360f;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
 
         private Animator animator;
+        private EnemyElementStatusView elementStatusView;
         private Quaternion spawnLocalRotation;
         private bool hasFacingDirection;
 
@@ -18,6 +20,7 @@ namespace TowerDefense3D.Enemies
         private void Awake()
         {
             animator = GetComponent<Animator>();
+            elementStatusView = GetComponent<EnemyElementStatusView>();
             spawnLocalRotation = transform.localRotation;
         }
 
@@ -31,10 +34,12 @@ namespace TowerDefense3D.Enemies
             hasFacingDirection = false;
             gameObject.SetActive(true);
             SetMoving(true);
+            GetElementStatusView().Render(enemy.ElementState);
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
         {
+            GetElementStatusView().Render(enemy.ElementState);
             transform.position = Vector3.Lerp(
                 enemy.PreviousPosition,
                 enemy.Position,
@@ -64,6 +69,7 @@ namespace TowerDefense3D.Enemies
         public void Release()
         {
             SetMoving(false);
+            GetElementStatusView().Release();
             EnemyId = 0L;
             hasFacingDirection = false;
             gameObject.SetActive(false);
@@ -76,6 +82,16 @@ namespace TowerDefense3D.Enemies
             {
                 targetAnimator.SetBool(IsMoving, value);
             }
+        }
+
+        private EnemyElementStatusView GetElementStatusView()
+        {
+            if (elementStatusView == null)
+            {
+                elementStatusView = GetComponent<EnemyElementStatusView>();
+            }
+
+            return elementStatusView;
         }
     }
 }
