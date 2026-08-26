@@ -18,7 +18,7 @@ MonoBehaviour:
   viewPrefab: {fileID: 4335825930434105279, guid: 8462596efaaeab6438481e013751921e, type: 3}
   baseMaxHealth: 16
   baseMoveSpeed: 2
-  baseHitRadius: 0.35
+  baseHitRadius: 1.0877
   basePhysicalResistance: 0
   baseMagicResistance: 0
   elementStatusEffectMultiplier: 1

@@ -4,14 +4,14 @@ namespace TowerDefense3D.Enemies
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
-    [RequireComponent(typeof(EnemyElementStatusView))]
+    [RequireComponent(typeof(EnemyDamageFlashView))]
     public sealed class EnemyView : MonoBehaviour
     {
         private const float TurnSpeedDegreesPerSecond = 360f;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
 
         private Animator animator;
-        private EnemyElementStatusView elementStatusView;
+        private EnemyDamageFlashView damageFlashView;
         private Quaternion spawnLocalRotation;
         private bool hasFacingDirection;
 
@@ -20,7 +20,7 @@ namespace TowerDefense3D.Enemies
         private void Awake()
         {
             animator = GetComponent<Animator>();
-            elementStatusView = GetComponent<EnemyElementStatusView>();
+            damageFlashView = GetComponent<EnemyDamageFlashView>();
             spawnLocalRotation = transform.localRotation;
         }
 
@@ -34,12 +34,12 @@ namespace TowerDefense3D.Enemies
             hasFacingDirection = false;
             gameObject.SetActive(true);
             SetMoving(true);
-            GetElementStatusView().Render(enemy.ElementState);
+            GetDamageFlashView().Bind(enemy);
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
         {
-            GetElementStatusView().Render(enemy.ElementState);
+            GetDamageFlashView().Render(enemy, Time.deltaTime);
             transform.position = Vector3.Lerp(
                 enemy.PreviousPosition,
                 enemy.Position,
@@ -69,7 +69,7 @@ namespace TowerDefense3D.Enemies
         public void Release()
         {
             SetMoving(false);
-            GetElementStatusView().Release();
+            GetDamageFlashView().Release();
             EnemyId = 0L;
             hasFacingDirection = false;
             gameObject.SetActive(false);
@@ -84,14 +84,14 @@ namespace TowerDefense3D.Enemies
             }
         }
 
-        private EnemyElementStatusView GetElementStatusView()
+        private EnemyDamageFlashView GetDamageFlashView()
         {
-            if (elementStatusView == null)
+            if (damageFlashView == null)
             {
-                elementStatusView = GetComponent<EnemyElementStatusView>();
+                damageFlashView = GetComponent<EnemyDamageFlashView>();
             }
 
-            return elementStatusView;
+            return damageFlashView;
         }
     }
 }
