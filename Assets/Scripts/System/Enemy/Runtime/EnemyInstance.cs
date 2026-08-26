@@ -31,6 +31,10 @@ namespace TowerDefense3D.Enemies
         public bool IsHidden => Definition is StealthEnemyDefinition
             && RevealRemainingSeconds <= 0f;
         public float RevealRemainingSeconds { get; internal set; }
+        public EnemyElementState ElementState { get; internal set; }
+        public float SlowFraction { get; internal set; }
+        public float PhysicalResistanceReductionPoints { get; internal set; }
+        public float MagicResistanceReductionPoints { get; internal set; }
         internal int TargetPointIndex { get; set; }
         internal int SummonPhaseIndex { get; set; } = -1;
         internal float SummonElapsedSeconds { get; set; }

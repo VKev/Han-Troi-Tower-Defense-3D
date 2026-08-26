@@ -11,7 +11,8 @@ namespace TowerDefense3D.Enemies
             Vector3 position,
             float health,
             bool isHidden,
-            bool isSummoned)
+            bool isSummoned,
+            EnemyElementState elementState = default)
         {
             EnemyId = enemyId;
             Definition = definition;
@@ -20,6 +21,7 @@ namespace TowerDefense3D.Enemies
             Health = health;
             IsHidden = isHidden;
             IsSummoned = isSummoned;
+            ElementState = elementState;
         }
 
         public long EnemyId { get; }
@@ -29,5 +31,6 @@ namespace TowerDefense3D.Enemies
         public float Health { get; }
         public bool IsHidden { get; }
         public bool IsSummoned { get; }
+        public EnemyElementState ElementState { get; }
     }
 }

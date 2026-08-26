@@ -46,6 +46,58 @@ namespace TowerDefense3D.Enemies
             return nextEnemyId++;
         }
 
+        internal void SpawnPlannedSummon(PlannedEnemySpawn spawn)
+        {
+            long enemyId = ReserveEnemyId();
+            if (enemyId != spawn.EnemyId)
+            {
+                throw new InvalidOperationException(
+                    $"Planned summon expected Enemy {spawn.EnemyId}, but reserved {enemyId}.");
+            }
+
+            SpawnAt(
+                enemyId,
+                spawn.Definition,
+                spawn.Position,
+                spawn.TargetPointIndex,
+                isSummoned: true);
+        }
+
+        internal void ApplyPlannedFrame(PlannedEnemyFrame frame)
+        {
+            EnemyInstance enemy = enemiesById[frame.EnemyId];
+            enemy.PreviousPosition = frame.PreviousPosition;
+            enemy.Position = frame.Position;
+            enemy.Health = frame.Health;
+            enemy.RevealRemainingSeconds = frame.RevealRemainingSeconds;
+            enemy.TargetPointIndex = frame.TargetPointIndex;
+            enemy.ElementState = new EnemyElementState(
+                frame.ElementPhase,
+                frame.Element,
+                frame.ElementRemainingSeconds);
+            enemy.SlowFraction = frame.SlowFraction;
+            enemy.PhysicalResistanceReductionPoints =
+                frame.PhysicalResistanceReductionPoints;
+            enemy.MagicResistanceReductionPoints = frame.MagicResistanceReductionPoints;
+
+            if (frame.Removal == PlannedEnemyRemoval.None)
+            {
+                return;
+            }
+
+            enemiesById.Remove(enemy.Id);
+            activeEnemies.Remove(enemy);
+            EnemySnapshot snapshot = CreateSnapshot(enemy);
+            if (frame.Removal == PlannedEnemyRemoval.Killed)
+            {
+                EnemyKilled?.Invoke(snapshot);
+            }
+            else
+            {
+                EnemyLeaked?.Invoke(snapshot);
+            }
+        }
+
         public void Step(float stepSeconds)
         {
             pendingSummons.Clear();
@@ -280,7 +332,8 @@ namespace TowerDefense3D.Enemies
                 enemy.Position,
                 enemy.Health,
                 enemy.IsHidden,
-                enemy.IsSummoned);
+                enemy.IsSummoned,
+                enemy.ElementState);
         }
 
         private readonly struct PendingSummon

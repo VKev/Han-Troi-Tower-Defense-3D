@@ -87,7 +87,8 @@ namespace TowerDefense3D.GameFlow
             builder.Register<WaveSystem>(Lifetime.Scoped)
                 .AsSelf()
                 .As<IWaveSystem>();
-            builder.Register<ProjectileHitSystem>(Lifetime.Scoped);
+            builder.Register<CombatTimelinePlanner>(Lifetime.Scoped);
+            builder.Register<CombatTimelineSystem>(Lifetime.Scoped);
             builder.Register<GameplaySimulationSystem>(Lifetime.Scoped);
             builder.Register<EnemyPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);

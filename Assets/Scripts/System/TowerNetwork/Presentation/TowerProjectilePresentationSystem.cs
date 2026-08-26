@@ -18,7 +18,7 @@ namespace TowerDefense3D.Towers
         private readonly List<TowerProjectileSnapshot> snapshotBuffer = new List<TowerProjectileSnapshot>();
         private readonly List<long> pendingProjectileIds = new List<long>();
         private readonly TowerNetworkManager manager;
-        private readonly ProjectileHitSystem projectileHitSystem;
+        private readonly CombatTimelineSystem combatTimelineSystem;
         private readonly GameplaySimulationSystem simulationSystem;
         private readonly ITowerProjectileViewPool viewPool;
 
@@ -26,13 +26,13 @@ namespace TowerDefense3D.Towers
 
         public TowerProjectilePresentationSystem(
             TowerNetworkManager manager,
-            ProjectileHitSystem projectileHitSystem,
+            CombatTimelineSystem combatTimelineSystem,
             GameplaySimulationSystem simulationSystem,
             ITowerProjectileViewPool viewPool)
         {
             this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
-            this.projectileHitSystem = projectileHitSystem
-                ?? throw new ArgumentNullException(nameof(projectileHitSystem));
+            this.combatTimelineSystem = combatTimelineSystem
+                ?? throw new ArgumentNullException(nameof(combatTimelineSystem));
             this.simulationSystem = simulationSystem ?? throw new ArgumentNullException(nameof(simulationSystem));
             this.viewPool = viewPool ?? throw new ArgumentNullException(nameof(viewPool));
         }
@@ -44,7 +44,7 @@ namespace TowerDefense3D.Towers
         {
             viewPool.Initialize();
             manager.StateChanged += HandleManagerStateChanged;
-            projectileHitSystem.ProjectileImpacted += HandleProjectileImpacted;
+            combatTimelineSystem.ProjectileImpacted += HandleProjectileImpacted;
             simulationSystem.StepCompleted += HandleStepCompleted;
             isStarted = true;
         }
@@ -66,7 +66,7 @@ namespace TowerDefense3D.Towers
             if (isStarted)
             {
                 manager.StateChanged -= HandleManagerStateChanged;
-                projectileHitSystem.ProjectileImpacted -= HandleProjectileImpacted;
+                combatTimelineSystem.ProjectileImpacted -= HandleProjectileImpacted;
                 simulationSystem.StepCompleted -= HandleStepCompleted;
                 isStarted = false;
             }

@@ -13,22 +13,19 @@ namespace TowerDefense3D.Simulation
     {
         private readonly WaveSystem waveSystem;
         private readonly TowerNetworkManager towerNetworkManager;
-        private readonly EnemySystem enemySystem;
-        private readonly ProjectileHitSystem projectileHitSystem;
+        private readonly CombatTimelineSystem combatTimelineSystem;
         private readonly FixedStepClock clock;
 
         public GameplaySimulationSystem(
             WaveSystem waveSystem,
             TowerNetworkManager towerNetworkManager,
-            EnemySystem enemySystem,
-            ProjectileHitSystem projectileHitSystem)
+            CombatTimelineSystem combatTimelineSystem)
         {
             this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
             this.towerNetworkManager = towerNetworkManager
                 ?? throw new ArgumentNullException(nameof(towerNetworkManager));
-            this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
-            this.projectileHitSystem = projectileHitSystem
-                ?? throw new ArgumentNullException(nameof(projectileHitSystem));
+            this.combatTimelineSystem = combatTimelineSystem
+                ?? throw new ArgumentNullException(nameof(combatTimelineSystem));
             clock = new FixedStepClock(towerNetworkManager.TickSeconds);
         }
 
@@ -51,7 +48,7 @@ namespace TowerDefense3D.Simulation
         public void Reset()
         {
             clock.Reset();
-            projectileHitSystem.Reset();
+            combatTimelineSystem.Reset();
             CurrentStep = 0L;
         }
 
@@ -64,8 +61,7 @@ namespace TowerDefense3D.Simulation
 
             waveSystem.StepSpawning(clock.StepSeconds);
             towerNetworkManager.StepOneTick();
-            enemySystem.Step(clock.StepSeconds);
-            projectileHitSystem.Step();
+            combatTimelineSystem.Step();
             waveSystem.CompleteStep();
             CurrentStep++;
             StepCompleted?.Invoke(CurrentStep);
