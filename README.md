@@ -6,7 +6,7 @@
 TowerDefense3D/
 ├── Assets/
 │   ├── Config/          # Authored ScriptableObject and settings instances
-│   ├── Resources/       # Runtime-loadable prefabs, models, materials, and textures
+│   ├── Resources/       # Runtime-loadable animations, prefabs, models, materials, and textures
 │   ├── Scenes/          # Bootstrap, gameplay levels, and test scenes
 │   └── Scripts/         # Project-owned C# source
 ├── Builds/              # Ignored local player builds
@@ -33,7 +33,8 @@ Assets/Scripts/
 │   └── <FeatureName>/
 ├── Components/          # MonoBehaviour boundaries authored in scenes and prefabs
 │   ├── Core/            # Unity-facing mechanisms shared by multiple component features
-│   │   └── Lifecycle/
+│   │   ├── Lifecycle/
+│   │   └── Pooling/
 │   └── <FeatureName>/
 ├── Editor/              # Editor-only authoring, validation, and project test tools
 │   └── <FeatureName>/
@@ -68,6 +69,7 @@ Assets/Scripts/
 
 ```text
 Assets/Config/<FeatureName>/       # Authored ScriptableObject/settings instances
+Assets/Resources/Animations/       # Runtime-loadable animation clips and controllers
 Assets/Resources/Prefabs/          # Runtime-loadable prefabs
 Assets/Resources/Models/           # Runtime-loadable models grouped by asset name
 Assets/Resources/Materials/        # Runtime-loadable materials

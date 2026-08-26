@@ -1,0 +1,469 @@
+fileFormatVersion: 2
+guid: 50a3b2adbcddaa243a4e3b81589d0207
+ModelImporter:
+  serializedVersion: 24300
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PebblePal_Material
+    second: {fileID: 2100000, guid: a615bf702fc5cd945ae96c566ab6bf18, type: 2}
+  materials:
+    materialImportMode: 0
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: "\nClip 'MoonlitMouse_Armature|Walk' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'backleg2' has translation
+      animation that will be discarded.\n\t'chest' has translation animation that
+      will be discarded.\n\t'head' has translation animation that will be discarded.\n\t'frontleg'
+      has translation animation that will be discarded.\n\t'frontleg0' has translation
+      animation that will be discarded.\n\t'frontleg1' has translation animation
+      that will be discarded.\n\t'R_frontleg' has translation animation that will
+      be discarded.\n\t'R_frontleg0' has translation animation that will be discarded.\n\t'R_frontleg1'
+      has translation animation that will be discarded.\n"
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 0
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: Idle
+      takeName: MoonlitMouse_Armature|Idle
+      internalID: 1345322105294742313
+      firstFrame: 0
+      lastFrame: 59
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Walk
+      takeName: MoonlitMouse_Armature|Walk
+      internalID: -1515930851955629585
+      firstFrame: 0
+      lastFrame: 30
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 0
+    importBlendShapes: 0
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 1
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human:
+    - boneName: Hips
+      humanName: Hips
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: backleg
+      humanName: LeftUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_backleg
+      humanName: RightUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: backleg0
+      humanName: LeftLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_backleg0
+      humanName: RightLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: backleg1
+      humanName: LeftFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_backleg1
+      humanName: RightFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: chest
+      humanName: Spine
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: head
+      humanName: Head
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: frontleg
+      humanName: LeftUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_frontleg
+      humanName: RightUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: frontleg0
+      humanName: LeftLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_frontleg0
+      humanName: RightLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: frontleg1
+      humanName: LeftHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_frontleg1
+      humanName: RightHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: backleg2
+      humanName: LeftToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: R_backleg2
+      humanName: RightToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    skeleton:
+    - name: MoonlitMouse(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: MoonlitMouse_Armature
+      parentName: MoonlitMouse(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: 0.000000081460335, y: -0, z: -0, w: 1}
+      scale: {x: 0.01, y: 0.01, z: 0.01}
+    - name: Hips
+      parentName: MoonlitMouse_Armature
+      position: {x: 0.7823866, y: 10.830765, z: -6.6180243}
+      rotation: {x: -0.01138719, y: -0.0036446285, z: 0.011145378, w: 0.9998664}
+      scale: {x: 0.85066324, y: 0.8506633, z: 0.8506632}
+    - name: tail
+      parentName: Hips
+      position: {x: 0.000000114274755, y: 0.00000018739823, z: 0.000000007669609}
+      rotation: {x: 0.76275146, y: -0.005081591, z: -0.0021007806, w: 0.6466684}
+      scale: {x: 1.0000044, y: 1.0000043, z: 1.0000048}
+    - name: tailstart
+      parentName: tail
+      position: {x: -0.00000004656613, y: 60.57311, z: -0.00000093568815}
+      rotation: {x: 0.9846808, y: -0.05838779, z: -0.045547612, w: 0.15786082}
+      scale: {x: 1.0000176, y: 1.0000178, z: 1.0000161}
+    - name: tail1
+      parentName: tailstart
+      position: {x: -0.00000020954758, y: 12.202935, z: -0.000003297464}
+      rotation: {x: -0.4756005, y: 0.19677025, z: -0.07845378, w: 0.85377437}
+      scale: {x: 1.0000088, y: 1.0000091, z: 1.0000088}
+    - name: tail2
+      parentName: tail1
+      position: {x: -0.0000014202669, y: 3.3062003, z: 0.000002773595}
+      rotation: {x: 0.10098706, y: 0.033728223, z: 0.057455096, w: 0.9926545}
+      scale: {x: 1.0000087, y: 1.0000085, z: 1.000008}
+    - name: tail3
+      parentName: tail2
+      position: {x: 0.0000027823262, y: 3.3101194, z: -0.000005651964}
+      rotation: {x: -0.5948162, y: -0.11806756, z: 0.008127265, w: 0.7951023}
+      scale: {x: 1.0000087, y: 1.0000086, z: 1.0000086}
+    - name: backleg
+      parentName: Hips
+      position: {x: -16.19924, y: 9.333326, z: 7.999998}
+      rotation: {x: 0.8519753, y: -0.040582802, z: 0.5124493, w: 0.099431984}
+      scale: {x: 1.0000043, y: 1.0000043, z: 1.0000044}
+    - name: backleg0
+      parentName: backleg
+      position: {x: -0.0000040978193, y: 32.544895, z: 0.0000014901161}
+      rotation: {x: 0.23800135, y: -0.44022688, z: -0.0678681, w: 0.86310464}
+      scale: {x: 1.0000042, y: 1.0000044, z: 1.0000045}
+    - name: backleg1
+      parentName: backleg0
+      position: {x: 0.0000024214387, y: 29.665005, z: 0.00000037252903}
+      rotation: {x: -0.94478863, y: 0.020834217, z: -0.26215446, w: 0.19548802}
+      scale: {x: 1.0000038, y: 1.0000042, z: 1.0000043}
+    - name: backleg2
+      parentName: backleg1
+      position: {x: 0.00000009313226, y: 43.602688, z: 0.0000011175871}
+      rotation: {x: 0.9579184, y: -0.18968573, z: 0.07563428, w: 0.2017205}
+      scale: {x: 1.0000043, y: 1.0000042, z: 1.0000042}
+    - name: R_backleg
+      parentName: Hips
+      position: {x: 14.89457, y: 9.33333, z: 8.000011}
+      rotation: {x: 0.8082634, y: 0.015631877, z: -0.5835779, w: 0.076829575}
+      scale: {x: 1.0000046, y: 1.0000044, z: 1.0000048}
+    - name: R_backleg0
+      parentName: R_backleg
+      position: {x: -0.00000074505806, y: 32.26979, z: -0.0000029802322}
+      rotation: {x: 0.18153532, y: 0.28876722, z: 0.047129896, w: 0.93884885}
+      scale: {x: 1.000004, y: 1.0000043, z: 1.0000043}
+    - name: R_backleg1
+      parentName: R_backleg0
+      position: {x: -0.00000037252903, y: 29.403532, z: -0.000005401671}
+      rotation: {x: -0.6396278, y: 0.016766733, z: 0.75328207, w: 0.15218806}
+      scale: {x: 1.0000042, y: 1.0000042, z: 1.0000042}
+    - name: R_backleg2
+      parentName: R_backleg1
+      position: {x: 0.000007264316, y: 43.729225, z: 0.0000020489097}
+      rotation: {x: 0.62321657, y: 0.14220057, z: 0.08800705, w: 0.76396}
+      scale: {x: 1.0000046, y: 1.0000039, z: 1.0000043}
+    - name: chest
+      parentName: Hips
+      position: {x: 0.70186657, y: 78.14213, z: -9.126695}
+      rotation: {x: 0.26248598, y: 0.0075329384, z: 0.06849554, w: 0.9624722}
+      scale: {x: 1.0000045, y: 1.0000045, z: 1.0000045}
+    - name: head
+      parentName: chest
+      position: {x: 1.0179778, y: 22.352627, z: -1.6488307}
+      rotation: {x: 0.5862721, y: -0.58220464, z: -0.27766538, w: -0.4901273}
+      scale: {x: 1.000004, y: 1.0000042, z: 1.0000044}
+    - name: headend
+      parentName: head
+      position: {x: -83.66144, y: -10.403039, z: -79.65038}
+      rotation: {x: -0.02137119, y: 0.3760361, z: 0.06838791, w: 0.92383075}
+      scale: {x: 1.000005, y: 1.0000043, z: 1.0000043}
+    - name: earend
+      parentName: head
+      position: {x: 36.89327, y: 43.214478, z: -21.73302}
+      rotation: {x: 0.06978912, y: -0.56277776, z: 0.5556579, w: 0.6079926}
+      scale: {x: 1.0000044, y: 1.0000045, z: 1.0000045}
+    - name: R_earend
+      parentName: head
+      position: {x: 46.76819, y: -32.811554, z: -22.311523}
+      rotation: {x: 0.008500321, y: -0.56427515, z: -0.4841754, w: 0.668652}
+      scale: {x: 1.0000044, y: 1.0000044, z: 1.0000043}
+    - name: frontleg
+      parentName: chest
+      position: {x: -19.136889, y: 11.645534, z: 0.4485119}
+      rotation: {x: 0.41540357, y: -0.50630605, z: 0.5017497, w: 0.565103}
+      scale: {x: 1.0000042, y: 1.0000037, z: 1.0000042}
+    - name: frontleg0
+      parentName: frontleg
+      position: {x: -0.00000074505806, y: 55.125034, z: 0.0000037252903}
+      rotation: {x: -0.005527346, y: -0.30493662, z: -0.013539729, w: 0.9522603}
+      scale: {x: 1.0000042, y: 1.0000042, z: 1.0000039}
+    - name: frontleg1
+      parentName: frontleg0
+      position: {x: -0, y: 16.669142, z: 0.0000037485734}
+      rotation: {x: -0.10764353, y: 0.057682, z: 0.0044684387, w: 0.9925048}
+      scale: {x: 1.0000044, y: 1.0000042, z: 1.0000049}
+    - name: frontleg2
+      parentName: frontleg1
+      position: {x: -0.00000020954758, y: 12.868804, z: -0.0000031664968}
+      rotation: {x: 0.2828316, y: 0.16273639, z: 0.31953028, w: 0.8896199}
+      scale: {x: 1.0000039, y: 1.000004, z: 1.0000043}
+    - name: R_frontleg
+      parentName: chest
+      position: {x: 18.118917, y: 7.809201, z: 1.200335}
+      rotation: {x: 0.34422186, y: 0.2574862, z: -0.6720609, w: 0.60294807}
+      scale: {x: 1.000004, y: 1.0000042, z: 1.0000043}
+    - name: R_frontleg0
+      parentName: R_frontleg
+      position: {x: -0.0000040978193, y: 55.128723, z: 0.0000053085387}
+      rotation: {x: -0.013828693, y: 0.32818627, z: 0.008292704, w: 0.9444754}
+      scale: {x: 1.0000044, y: 1.0000049, z: 1.0000042}
+    - name: R_frontleg1
+      parentName: R_frontleg0
+      position: {x: 0.0000016763806, y: 16.696783, z: -0.0000048428774}
+      rotation: {x: -0.019822156, y: -0.08570043, z: -0.14289969, w: 0.98582065}
+      scale: {x: 1.0000039, y: 1.0000043, z: 1.0000043}
+    - name: R_frontleg2
+      parentName: R_frontleg1
+      position: {x: -0.0000026717316, y: 12.807523, z: -0.000009778887}
+      rotation: {x: 0.47402552, y: -0.16611715, z: -0.16932887, w: 0.8479579}
+      scale: {x: 1.0000045, y: 1.0000043, z: 1.0000045}
+    - name: MoonlitMouse_Mesh
+      parentName: MoonlitMouse(Clone)
+      position: {x: 0.0000000144355, y: -2.6020854e-15, z: 0.0000000102445465}
+      rotation: {x: 0.00000008614734, y: 2.3282998e-10, z: 0.0000000013969832, w: 1}
+      scale: {x: 0.01, y: 0.01, z: 0.01}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: CodexMoonlitMouseV1
+  assetBundleName: 
+  assetBundleVariant: 

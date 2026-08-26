@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using TowerDefense3D.Components.Core;
 using UnityEngine;
-using UnityEngine.Pool;
 
 namespace TowerDefense3D.Towers
 {
@@ -14,10 +13,10 @@ namespace TowerDefense3D.Towers
 
         private readonly Dictionary<long, ActiveProjectileView> activeViews =
             new Dictionary<long, ActiveProjectileView>();
-        private readonly Dictionary<GameObject, ObjectPool<TowerProjectileView>> poolsByPrefab =
-            new Dictionary<GameObject, ObjectPool<TowerProjectileView>>();
-        private readonly Dictionary<GameObject, ObjectPool<TowerProjectileHitView>>
-            hitEffectPoolsByPrefab = new Dictionary<GameObject, ObjectPool<TowerProjectileHitView>>();
+        private readonly Dictionary<GameObject, ComponentPool<TowerProjectileView>> poolsByPrefab =
+            new Dictionary<GameObject, ComponentPool<TowerProjectileView>>();
+        private readonly Dictionary<GameObject, ComponentPool<TowerProjectileHitView>>
+            hitEffectPoolsByPrefab = new Dictionary<GameObject, ComponentPool<TowerProjectileHitView>>();
         private readonly List<RetiringProjectileView> retiringViews = new List<RetiringProjectileView>();
         private readonly List<ActiveHitEffectView> activeHitEffects = new List<ActiveHitEffectView>();
         private Transform presentationRoot;
@@ -29,7 +28,7 @@ namespace TowerDefense3D.Towers
             get
             {
                 int count = 0;
-                foreach (ObjectPool<TowerProjectileView> pool in poolsByPrefab.Values)
+                foreach (ComponentPool<TowerProjectileView> pool in poolsByPrefab.Values)
                 {
                     count += pool.CountInactive;
                 }
@@ -43,7 +42,7 @@ namespace TowerDefense3D.Towers
             get
             {
                 int count = 0;
-                foreach (ObjectPool<TowerProjectileHitView> pool in hitEffectPoolsByPrefab.Values)
+                foreach (ComponentPool<TowerProjectileHitView> pool in hitEffectPoolsByPrefab.Values)
                 {
                     count += pool.CountInactive;
                 }
@@ -77,7 +76,7 @@ namespace TowerDefense3D.Towers
 
             if (!activeViews.TryGetValue(projectileId, out ActiveProjectileView activeView))
             {
-                ObjectPool<TowerProjectileView> pool = GetPool(projectilePrefab);
+                ComponentPool<TowerProjectileView> pool = GetPool(projectilePrefab);
                 activeView = new ActiveProjectileView(projectilePrefab, pool, pool.Get());
                 activeViews.Add(projectileId, activeView);
                 activeView.View.Show(projectileId, position);
@@ -105,7 +104,7 @@ namespace TowerDefense3D.Towers
                 Initialize();
             }
 
-            ObjectPool<TowerProjectileHitView> pool = GetHitEffectPool(hitEffectPrefab);
+            ComponentPool<TowerProjectileHitView> pool = GetHitEffectPool(hitEffectPrefab);
             TowerProjectileHitView view = pool.Get();
             activeHitEffects.Add(new ActiveHitEffectView(
                 pool,
@@ -118,20 +117,17 @@ namespace TowerDefense3D.Towers
             if (activeViews.TryGetValue(projectileId, out ActiveProjectileView activeView))
             {
                 activeViews.Remove(projectileId);
-                if (activeView.View != null)
+                float releaseDelaySeconds = activeView.View.BeginRetirement();
+                if (releaseDelaySeconds > 0f)
                 {
-                    float releaseDelaySeconds = activeView.View.BeginRetirement();
-                    if (releaseDelaySeconds > 0f)
-                    {
-                        retiringViews.Add(new RetiringProjectileView(
-                            activeView.Pool,
-                            activeView.View,
-                            releaseDelaySeconds));
-                    }
-                    else
-                    {
-                        activeView.Pool.Release(activeView.View);
-                    }
+                    retiringViews.Add(new RetiringProjectileView(
+                        activeView.Pool,
+                        activeView.View,
+                        releaseDelaySeconds));
+                }
+                else
+                {
+                    activeView.Pool.Release(activeView.View);
                 }
             }
         }
@@ -169,49 +165,37 @@ namespace TowerDefense3D.Towers
         {
             foreach (ActiveProjectileView activeView in activeViews.Values)
             {
-                if (activeView.View != null)
-                {
-                    activeView.Pool.Release(activeView.View);
-                }
+                activeView.Pool.Release(activeView.View);
             }
 
             activeViews.Clear();
             for (int index = 0; index < retiringViews.Count; index++)
             {
                 RetiringProjectileView retiringView = retiringViews[index];
-                if (retiringView.View != null)
-                {
-                    retiringView.Pool.Release(retiringView.View);
-                }
+                retiringView.Pool.Release(retiringView.View);
             }
 
             retiringViews.Clear();
             for (int index = 0; index < activeHitEffects.Count; index++)
             {
                 ActiveHitEffectView hitEffect = activeHitEffects[index];
-                if (hitEffect.View != null)
-                {
-                    hitEffect.Pool.Release(hitEffect.View);
-                }
+                hitEffect.Pool.Release(hitEffect.View);
             }
 
             activeHitEffects.Clear();
         }
 
-        private ObjectPool<TowerProjectileView> GetPool(GameObject projectilePrefab)
+        private ComponentPool<TowerProjectileView> GetPool(GameObject projectilePrefab)
         {
             if (!poolsByPrefab.TryGetValue(
                 projectilePrefab,
-                out ObjectPool<TowerProjectileView> pool))
+                out ComponentPool<TowerProjectileView> pool))
             {
-                pool = new ObjectPool<TowerProjectileView>(
+                pool = new ComponentPool<TowerProjectileView>(
                     () => CreateView(projectilePrefab),
-                    actionOnGet: null,
-                    OnReleaseView,
-                    OnDestroyView,
-                    true,
+                    view => view.ResetForPool(),
                     defaultPoolCapacity,
-                    Math.Max(defaultPoolCapacity, maximumPoolSize));
+                    maximumPoolSize);
                 poolsByPrefab.Add(projectilePrefab, pool);
             }
 
@@ -232,20 +216,17 @@ namespace TowerDefense3D.Towers
             return view;
         }
 
-        private ObjectPool<TowerProjectileHitView> GetHitEffectPool(GameObject hitEffectPrefab)
+        private ComponentPool<TowerProjectileHitView> GetHitEffectPool(GameObject hitEffectPrefab)
         {
             if (!hitEffectPoolsByPrefab.TryGetValue(
                 hitEffectPrefab,
-                out ObjectPool<TowerProjectileHitView> pool))
+                out ComponentPool<TowerProjectileHitView> pool))
             {
-                pool = new ObjectPool<TowerProjectileHitView>(
+                pool = new ComponentPool<TowerProjectileHitView>(
                     () => CreateHitEffectView(hitEffectPrefab),
-                    actionOnGet: null,
-                    OnReleaseHitEffectView,
-                    OnDestroyHitEffectView,
-                    true,
+                    view => view.ResetForPool(),
                     defaultPoolCapacity,
-                    Math.Max(defaultPoolCapacity, maximumPoolSize));
+                    maximumPoolSize);
                 hitEffectPoolsByPrefab.Add(hitEffectPrefab, pool);
             }
 
@@ -266,48 +247,16 @@ namespace TowerDefense3D.Towers
             return view;
         }
 
-        private static void OnReleaseView(TowerProjectileView view)
-        {
-            if (view != null)
-            {
-                view.ResetForPool();
-            }
-        }
-
-        private static void OnDestroyView(TowerProjectileView view)
-        {
-            if (view != null)
-            {
-                RuntimeObjectDestroyer.Destroy(view.gameObject);
-            }
-        }
-
-        private static void OnReleaseHitEffectView(TowerProjectileHitView view)
-        {
-            if (view != null)
-            {
-                view.ResetForPool();
-            }
-        }
-
-        private static void OnDestroyHitEffectView(TowerProjectileHitView view)
-        {
-            if (view != null)
-            {
-                RuntimeObjectDestroyer.Destroy(view.gameObject);
-            }
-        }
-
         private void OnDestroy()
         {
             Clear();
-            foreach (ObjectPool<TowerProjectileView> pool in poolsByPrefab.Values)
+            foreach (ComponentPool<TowerProjectileView> pool in poolsByPrefab.Values)
             {
                 pool.Clear();
             }
 
             poolsByPrefab.Clear();
-            foreach (ObjectPool<TowerProjectileHitView> pool in hitEffectPoolsByPrefab.Values)
+            foreach (ComponentPool<TowerProjectileHitView> pool in hitEffectPoolsByPrefab.Values)
             {
                 pool.Clear();
             }
@@ -319,7 +268,7 @@ namespace TowerDefense3D.Towers
         {
             public ActiveProjectileView(
                 GameObject projectilePrefab,
-                ObjectPool<TowerProjectileView> pool,
+                ComponentPool<TowerProjectileView> pool,
                 TowerProjectileView view)
             {
                 ProjectilePrefab = projectilePrefab;
@@ -328,14 +277,14 @@ namespace TowerDefense3D.Towers
             }
 
             public GameObject ProjectilePrefab { get; }
-            public ObjectPool<TowerProjectileView> Pool { get; }
+            public ComponentPool<TowerProjectileView> Pool { get; }
             public TowerProjectileView View { get; }
         }
 
         private sealed class ActiveHitEffectView
         {
             public ActiveHitEffectView(
-                ObjectPool<TowerProjectileHitView> pool,
+                ComponentPool<TowerProjectileHitView> pool,
                 TowerProjectileHitView view,
                 float remainingSeconds)
             {
@@ -344,7 +293,7 @@ namespace TowerDefense3D.Towers
                 RemainingSeconds = remainingSeconds;
             }
 
-            public ObjectPool<TowerProjectileHitView> Pool { get; }
+            public ComponentPool<TowerProjectileHitView> Pool { get; }
             public TowerProjectileHitView View { get; }
             public float RemainingSeconds { get; set; }
         }
@@ -352,7 +301,7 @@ namespace TowerDefense3D.Towers
         private sealed class RetiringProjectileView
         {
             public RetiringProjectileView(
-                ObjectPool<TowerProjectileView> pool,
+                ComponentPool<TowerProjectileView> pool,
                 TowerProjectileView view,
                 float remainingSeconds)
             {
@@ -361,7 +310,7 @@ namespace TowerDefense3D.Towers
                 RemainingSeconds = remainingSeconds;
             }
 
-            public ObjectPool<TowerProjectileView> Pool { get; }
+            public ComponentPool<TowerProjectileView> Pool { get; }
             public TowerProjectileView View { get; }
             public float RemainingSeconds { get; set; }
         }

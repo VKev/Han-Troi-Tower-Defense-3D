@@ -15,9 +15,10 @@ MonoBehaviour:
   stableId: magic-resistant
   displayName: Magic Resistant
   rank: 0
-  viewPrefab: {fileID: 3125936180037268728, guid: 03bb1f023c4ace949a1d3fd967c020ae, type: 3}
+  viewPrefab: {fileID: 5197172185660305575, guid: bd31f13383383f548b8101292730a5ba, type: 3}
   baseMaxHealth: 24
   baseMoveSpeed: 1.8
+  baseHitRadius: 0.35
   basePhysicalResistance: 10
   baseMagicResistance: 60
   elementStatusEffectMultiplier: 1

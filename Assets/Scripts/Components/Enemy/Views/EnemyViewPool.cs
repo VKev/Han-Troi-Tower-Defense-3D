@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TowerDefense3D.Components.Core;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies
@@ -6,20 +7,19 @@ namespace TowerDefense3D.Enemies
     [DisallowMultipleComponent]
     public sealed class EnemyViewPool : MonoBehaviour, IEnemyViewPool
     {
+        [SerializeField, Min(1)] private int defaultPoolCapacity = 16;
+        [SerializeField, Min(1)] private int maximumPoolSize = 128;
+
         private readonly Dictionary<long, ActiveEnemyView> activeViews =
             new Dictionary<long, ActiveEnemyView>();
-        private readonly Dictionary<EnemyDefinition, Stack<EnemyView>> availableViews =
-            new Dictionary<EnemyDefinition, Stack<EnemyView>>();
+        private readonly Dictionary<EnemyDefinition, ComponentPool<EnemyView>> poolsByDefinition =
+            new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
 
         public void Spawn(EnemySnapshot enemy)
         {
-            Stack<EnemyView> definitionViews = GetAvailableViews(enemy.Definition);
-            EnemyView view = definitionViews.Count > 0
-                ? definitionViews.Pop()
-                : CreateView(enemy.Definition);
-            activeViews.Add(
-                enemy.EnemyId,
-                new ActiveEnemyView(enemy.Definition, view));
+            ComponentPool<EnemyView> pool = GetPool(enemy.Definition);
+            EnemyView view = pool.Get();
+            activeViews.Add(enemy.EnemyId, new ActiveEnemyView(pool, view));
             view.Bind(enemy);
         }
 
@@ -27,8 +27,7 @@ namespace TowerDefense3D.Enemies
         {
             ActiveEnemyView activeView = activeViews[enemyId];
             activeViews.Remove(enemyId);
-            activeView.View.Release();
-            GetAvailableViews(activeView.Definition).Push(activeView.View);
+            activeView.Pool.Release(activeView.View);
         }
 
         public void Render(
@@ -46,22 +45,25 @@ namespace TowerDefense3D.Enemies
         {
             foreach (ActiveEnemyView activeView in activeViews.Values)
             {
-                activeView.View.Release();
-                GetAvailableViews(activeView.Definition).Push(activeView.View);
+                activeView.Pool.Release(activeView.View);
             }
 
             activeViews.Clear();
         }
 
-        private Stack<EnemyView> GetAvailableViews(EnemyDefinition definition)
+        private ComponentPool<EnemyView> GetPool(EnemyDefinition definition)
         {
-            if (!availableViews.TryGetValue(definition, out Stack<EnemyView> views))
+            if (!poolsByDefinition.TryGetValue(definition, out ComponentPool<EnemyView> pool))
             {
-                views = new Stack<EnemyView>();
-                availableViews.Add(definition, views);
+                pool = new ComponentPool<EnemyView>(
+                    () => CreateView(definition),
+                    view => view.Release(),
+                    defaultPoolCapacity,
+                    maximumPoolSize);
+                poolsByDefinition.Add(definition, pool);
             }
 
-            return views;
+            return pool;
         }
 
         private EnemyView CreateView(EnemyDefinition definition)
@@ -85,15 +87,26 @@ namespace TowerDefense3D.Enemies
             return view;
         }
 
+        private void OnDestroy()
+        {
+            ReleaseAll();
+            foreach (ComponentPool<EnemyView> pool in poolsByDefinition.Values)
+            {
+                pool.Clear();
+            }
+
+            poolsByDefinition.Clear();
+        }
+
         private readonly struct ActiveEnemyView
         {
-            public ActiveEnemyView(EnemyDefinition definition, EnemyView view)
+            public ActiveEnemyView(ComponentPool<EnemyView> pool, EnemyView view)
             {
-                Definition = definition;
+                Pool = pool;
                 View = view;
             }
 
-            public EnemyDefinition Definition { get; }
+            public ComponentPool<EnemyView> Pool { get; }
             public EnemyView View { get; }
         }
     }

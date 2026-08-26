@@ -56,7 +56,7 @@ namespace TowerDefense3D.GridPlacement
         public TowerDefinition SelectedTower => selectedTower;
         public bool IsPlacementActive => selectedTower != null;
         public bool HasCandidate => hasCandidate;
-        public bool CandidateIsValid => hasCandidate && candidateIsValid;
+        public bool CandidateIsValid => candidateIsValid;
         public GridCell CandidateCell => candidateCell;
         public GridOccupancy Occupancy => model.Occupancy;
 
@@ -89,8 +89,7 @@ namespace TowerDefense3D.GridPlacement
                 BeginGameplayPointer(input);
             }
 
-            if (pointerKind == PointerKind.Gameplay
-                && pointerState == PointerState.Tracking
+            if (pointerState == PointerState.Tracking
                 && input.IsPressed
                 && input.PointerId == trackedPointerId)
             {
@@ -131,11 +130,6 @@ namespace TowerDefense3D.GridPlacement
 
         public bool BeginPlacementDrag(TowerDefinition definition, int pointerId)
         {
-            if (definition == null)
-            {
-                return false;
-            }
-
             CancelPlacement();
             SelectTower(definition);
             pointerState = PointerState.Tracking;
@@ -242,36 +236,25 @@ namespace TowerDefense3D.GridPlacement
 
         private bool TryPlaceCandidate()
         {
-            if (!model.TryReserve(
-                    candidateCell,
-                    selectedTower.Footprint,
-                    out PlacementReservation reservation))
-            {
-                RefreshCandidate(candidateCell);
-                return false;
-            }
+            model.TryReserve(
+                candidateCell,
+                selectedTower.Footprint,
+                out PlacementReservation reservation);
 
             GameObject instance = null;
             int ownerId = 0;
-            bool committed = false;
             using (reservation)
             {
                 Vector3 position = model.GetFootprintBottomCenter(candidateCell, selectedTower.Footprint);
-                if (instanceFactory.TryCreate(selectedTower, position, out instance))
+                if (!instanceFactory.TryCreate(selectedTower, position, out instance))
                 {
-                    ownerId = model.NextOwnerId();
-                    committed = reservation.Commit(ownerId);
-                    if (!committed)
-                    {
-                        instanceFactory.Destroy(instance);
-                    }
+                    reservation.Rollback();
+                    RefreshCandidate(candidateCell);
+                    return false;
                 }
-            }
 
-            if (!committed)
-            {
-                RefreshCandidate(candidateCell);
-                return false;
+                ownerId = model.NextOwnerId();
+                reservation.Commit(ownerId);
             }
 
             var placement = new GridPlacementCommit(
