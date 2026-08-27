@@ -9,7 +9,9 @@
 
 
 /* Uncomment this line if you want to globally disable soft particles */
-// #define GLOBAL_DISABLE_SOFT_PARTICLES
+/* Enabled for this project: the Mobile URP asset has no camera depth texture, so soft
+   particles would fade every CFXR effect to fully transparent. */
+#define GLOBAL_DISABLE_SOFT_PARTICLES
 
 /* Change this value if you want to globally scale the HDR effects */
 /* (e.g. if your bloom effect is too strong or too weak on the effects) */
