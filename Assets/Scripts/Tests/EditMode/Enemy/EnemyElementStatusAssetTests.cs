@@ -8,7 +8,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
     public sealed class EnemyElementStatusAssetTests
     {
         private const string StatusPrefabPath =
-            "Assets/Resources/Prefabs/Enemies/ElementStatus/EnemyElementStatusView.prefab";
+            "Assets/Resources/Prefabs/ElementStatus/EnemyElementStatusView.prefab";
         private const string AtlasPath =
             "Assets/Resources/Textures/ElementStatus/ElementIconsAtlas.png";
         private const string IconModelPath =
@@ -92,6 +92,30 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 EnemyElementStatusView view = prefab.GetComponentInChildren<EnemyElementStatusView>(true);
                 Assert.That(view, Is.Not.Null, EnemyPrefabPaths[index]);
                 Assert.That(view.transform.localPosition.y, Is.GreaterThan(0f), EnemyPrefabPaths[index]);
+            }
+        }
+
+        [Test]
+        public void EnemyPrefabs_AllPlayTheFireElementEffect()
+        {
+            for (int index = 0; index < EnemyPrefabPaths.Length; index++)
+            {
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyPrefabPaths[index]);
+                EnemyElementEffectView view = prefab.GetComponentInChildren<EnemyElementEffectView>(true);
+                Assert.That(view, Is.Not.Null, EnemyPrefabPaths[index]);
+
+                var serialized = new SerializedObject(view);
+                var fireEffect = serialized.FindProperty("fireEffect").objectReferenceValue as GameObject;
+                Assert.That(fireEffect, Is.Not.Null, EnemyPrefabPaths[index]);
+                Assert.That(fireEffect.activeSelf, Is.False, EnemyPrefabPaths[index]);
+                Assert.That(
+                    fireEffect.GetComponentsInChildren<ParticleSystem>(true),
+                    Is.Not.Empty,
+                    EnemyPrefabPaths[index]);
+                Assert.That(
+                    serialized.FindProperty("transitionDurationSeconds").floatValue,
+                    Is.EqualTo(0.2f),
+                    EnemyPrefabPaths[index]);
             }
         }
 

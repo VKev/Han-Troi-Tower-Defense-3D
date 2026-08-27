@@ -13,6 +13,7 @@ namespace TowerDefense3D.Enemies
         private Animator animator;
         private EnemyDamageFlashView damageFlashView;
         private EnemyElementStatusView elementStatusView;
+        private EnemyElementEffectView elementEffectView;
         private Quaternion spawnLocalRotation;
         private bool hasFacingDirection;
 
@@ -23,6 +24,7 @@ namespace TowerDefense3D.Enemies
             animator = GetComponent<Animator>();
             damageFlashView = GetComponent<EnemyDamageFlashView>();
             elementStatusView = GetComponentInChildren<EnemyElementStatusView>(true);
+            elementEffectView = GetComponentInChildren<EnemyElementEffectView>(true);
             spawnLocalRotation = transform.localRotation;
         }
 
@@ -43,12 +45,14 @@ namespace TowerDefense3D.Enemies
             SetMoving(true);
             GetDamageFlashView().Bind(enemy);
             GetElementStatusView().Bind(enemy.ElementState);
+            GetElementEffectView().Bind(enemy.ElementState);
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
         {
             GetDamageFlashView().Render(enemy, Time.deltaTime);
             GetElementStatusView().Render(enemy.ElementState, Time.deltaTime);
+            GetElementEffectView().Render(enemy.ElementState, Time.deltaTime);
             transform.position = Vector3.Lerp(
                 enemy.PreviousPosition,
                 enemy.Position,
@@ -80,6 +84,7 @@ namespace TowerDefense3D.Enemies
             SetMoving(false);
             GetDamageFlashView().Release();
             GetElementStatusView().Release();
+            GetElementEffectView().Release();
             EnemyId = 0L;
             hasFacingDirection = false;
             gameObject.SetActive(false);
@@ -117,6 +122,16 @@ namespace TowerDefense3D.Enemies
             }
 
             return elementStatusView;
+        }
+
+        private EnemyElementEffectView GetElementEffectView()
+        {
+            if (elementEffectView == null)
+            {
+                elementEffectView = GetComponentInChildren<EnemyElementEffectView>(true);
+            }
+
+            return elementEffectView;
         }
     }
 }

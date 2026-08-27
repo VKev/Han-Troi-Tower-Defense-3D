@@ -100,6 +100,23 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             SetField(statusView, "earthIcon", earth);
             SetField(statusView, "windIcon", wind);
             iconRoot.SetActive(false);
+
+            AddElementEffectView(viewObject);
+        }
+
+        private static void AddElementEffectView(GameObject viewObject)
+        {
+            var effectObject = new GameObject("Element Effect");
+            effectObject.transform.SetParent(viewObject.transform);
+            var fireObject = new GameObject("Fire");
+            fireObject.transform.SetParent(effectObject.transform);
+            fireObject.AddComponent<ParticleSystem>();
+            fireObject.SetActive(false);
+
+            EnemyElementEffectView effectView = effectObject.AddComponent<EnemyElementEffectView>();
+            typeof(EnemyElementEffectView)
+                .GetField("fireEffect", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(effectView, fireObject);
         }
 
         private static Transform CreateIcon(Transform parent, string name)

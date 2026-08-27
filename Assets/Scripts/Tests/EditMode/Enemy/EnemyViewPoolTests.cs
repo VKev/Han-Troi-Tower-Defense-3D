@@ -61,9 +61,25 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         {
             var prefab = new GameObject(name);
             AddElementStatusView(prefab);
+            AddElementEffectView(prefab);
             prefab.AddComponent<EnemyView>();
             prefab.SetActive(false);
             return prefab;
+        }
+
+        private static void AddElementEffectView(GameObject viewObject)
+        {
+            var effectObject = new GameObject("Element Effect");
+            effectObject.transform.SetParent(viewObject.transform);
+            var fireRoot = new GameObject("Fire");
+            fireRoot.transform.SetParent(effectObject.transform);
+            fireRoot.AddComponent<ParticleSystem>();
+            fireRoot.SetActive(false);
+
+            EnemyElementEffectView effectView = effectObject.AddComponent<EnemyElementEffectView>();
+            var serialized = new SerializedObject(effectView);
+            serialized.FindProperty("fireEffect").objectReferenceValue = fireRoot;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void AddElementStatusView(GameObject viewObject)
