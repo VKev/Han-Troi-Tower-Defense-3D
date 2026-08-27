@@ -52,7 +52,7 @@ namespace TowerDefense3D.Tests.EditMode
             Assert.That(reacted, Is.True);
             Assert.That(reaction.ReactionId, Is.EqualTo(ElementReactionId.ThermalShock));
             Assert.That(state.Phase, Is.EqualTo(EnemyElementPhase.ReactionCooldown));
-            Assert.That(state.GetRemainingSeconds(11L), Is.EqualTo(0.2f));
+            Assert.That(state.GetRemainingSeconds(11L), Is.EqualTo(0.5f));
         }
 
         [Test]
@@ -71,9 +71,9 @@ namespace TowerDefense3D.Tests.EditMode
             Assert.That(reacted, Is.False);
             Assert.That(reaction, Is.Null);
             Assert.That(state.Phase, Is.EqualTo(EnemyElementPhase.ReactionCooldown));
-            Assert.That(state.GetRemainingSeconds(13L), Is.EqualTo(0.1f));
+            Assert.That(state.GetRemainingSeconds(13L), Is.EqualTo(0.4f).Within(0.0001f));
 
-            state.Advance(15L);
+            state.Advance(21L);
 
             Assert.That(state.Phase, Is.EqualTo(EnemyElementPhase.Ready));
         }

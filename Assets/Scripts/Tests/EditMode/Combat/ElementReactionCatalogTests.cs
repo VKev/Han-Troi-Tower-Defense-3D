@@ -19,7 +19,7 @@ namespace TowerDefense3D.Tests.EditMode
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.ElementMarkDurationSeconds, Is.EqualTo(3f));
-            Assert.That(catalog.ReactionCooldownSeconds, Is.EqualTo(0.2f));
+            Assert.That(catalog.ReactionCooldownSeconds, Is.EqualTo(0.5f));
             Assert.That(catalog.MaximumSlowFraction, Is.EqualTo(0.7f));
             Assert.That(catalog.Definitions, Has.Count.EqualTo(10));
             Assert.That(catalog.CollectValidationErrors(), Is.Empty);
