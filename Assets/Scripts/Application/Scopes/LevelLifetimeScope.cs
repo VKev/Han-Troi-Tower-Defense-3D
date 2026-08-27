@@ -68,6 +68,7 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterComponentInHierarchy<WaveHudView>()
                 .As<IWaveHudView>();
             builder.RegisterComponentInHierarchy<EnemyViewPool>()
+                .AsSelf()
                 .As<IEnemyViewPool>();
             builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
             builder.RegisterInstance(placementView.WorldCamera);
@@ -130,6 +131,7 @@ namespace TowerDefense3D.GameFlow
             GridPlacementSystem placementSystem = container.Resolve<GridPlacementSystem>();
             GridPlacementView placementView = container.Resolve<GridPlacementView>();
             placementPresenter.Bind(placementSystem, placementView);
+            container.Resolve<EnemyViewPool>().Configure(placementView.WorldCamera);
             container.Resolve<GameplayUISystem>()
                 .BindReturnToMenu(container.Resolve<GameFlowSystem>().RequestReturnToLevelMenu);
 

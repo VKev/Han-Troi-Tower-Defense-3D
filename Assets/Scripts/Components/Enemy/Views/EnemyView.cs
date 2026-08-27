@@ -12,6 +12,7 @@ namespace TowerDefense3D.Enemies
 
         private Animator animator;
         private EnemyDamageFlashView damageFlashView;
+        private EnemyElementStatusView elementStatusView;
         private Quaternion spawnLocalRotation;
         private bool hasFacingDirection;
 
@@ -21,7 +22,13 @@ namespace TowerDefense3D.Enemies
         {
             animator = GetComponent<Animator>();
             damageFlashView = GetComponent<EnemyDamageFlashView>();
+            elementStatusView = GetComponentInChildren<EnemyElementStatusView>(true);
             spawnLocalRotation = transform.localRotation;
+        }
+
+        public void Configure(Camera worldCamera)
+        {
+            GetElementStatusView().Configure(worldCamera);
         }
 
         public void Bind(EnemySnapshot enemy)
@@ -35,11 +42,13 @@ namespace TowerDefense3D.Enemies
             gameObject.SetActive(true);
             SetMoving(true);
             GetDamageFlashView().Bind(enemy);
+            GetElementStatusView().Bind(enemy.ElementState);
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
         {
             GetDamageFlashView().Render(enemy, Time.deltaTime);
+            GetElementStatusView().Render(enemy.ElementState, Time.deltaTime);
             transform.position = Vector3.Lerp(
                 enemy.PreviousPosition,
                 enemy.Position,
@@ -70,6 +79,7 @@ namespace TowerDefense3D.Enemies
         {
             SetMoving(false);
             GetDamageFlashView().Release();
+            GetElementStatusView().Release();
             EnemyId = 0L;
             hasFacingDirection = false;
             gameObject.SetActive(false);
@@ -92,6 +102,21 @@ namespace TowerDefense3D.Enemies
             }
 
             return damageFlashView;
+        }
+
+        public void ShowReaction(ElementPair pair)
+        {
+            GetElementStatusView().ShowReaction(pair);
+        }
+
+        private EnemyElementStatusView GetElementStatusView()
+        {
+            if (elementStatusView == null)
+            {
+                elementStatusView = GetComponentInChildren<EnemyElementStatusView>(true);
+            }
+
+            return elementStatusView;
         }
     }
 }

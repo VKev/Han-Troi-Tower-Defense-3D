@@ -527,6 +527,7 @@ namespace TowerDefense3D.Enemies
             timeline.Add(tick, new PlannedReactionEvent(
                 enemy.Id,
                 reaction.ReactionId,
+                reaction.Pair,
                 hitPosition));
             ApplyReaction(reaction, enemy, hitPosition, enemies, fields, tick);
         }

@@ -6,15 +6,19 @@ namespace TowerDefense3D.Enemies
     public sealed class EnemyPresentationSystem : IDisposable
     {
         private readonly EnemySystem enemySystem;
+        private readonly CombatTimelineSystem combatTimelineSystem;
         private readonly IEnemyViewPool viewPool;
         private readonly List<EnemySnapshot> snapshots = new List<EnemySnapshot>();
         private bool isStarted;
 
         public EnemyPresentationSystem(
             EnemySystem enemySystem,
+            CombatTimelineSystem combatTimelineSystem,
             IEnemyViewPool viewPool)
         {
             this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
+            this.combatTimelineSystem = combatTimelineSystem
+                ?? throw new ArgumentNullException(nameof(combatTimelineSystem));
             this.viewPool = viewPool ?? throw new ArgumentNullException(nameof(viewPool));
         }
 
@@ -23,6 +27,7 @@ namespace TowerDefense3D.Enemies
             enemySystem.EnemySpawned += HandleEnemySpawned;
             enemySystem.EnemyKilled += HandleEnemyRemoved;
             enemySystem.EnemyLeaked += HandleEnemyRemoved;
+            combatTimelineSystem.ReactionTriggered += HandleReactionTriggered;
             isStarted = true;
         }
 
@@ -43,6 +48,7 @@ namespace TowerDefense3D.Enemies
             enemySystem.EnemySpawned -= HandleEnemySpawned;
             enemySystem.EnemyKilled -= HandleEnemyRemoved;
             enemySystem.EnemyLeaked -= HandleEnemyRemoved;
+            combatTimelineSystem.ReactionTriggered -= HandleReactionTriggered;
             viewPool.ReleaseAll();
         }
 
@@ -54,6 +60,11 @@ namespace TowerDefense3D.Enemies
         private void HandleEnemyRemoved(EnemySnapshot enemy)
         {
             viewPool.Despawn(enemy.EnemyId);
+        }
+
+        private void HandleReactionTriggered(ElementReactionEvent reaction)
+        {
+            viewPool.ShowReaction(reaction.EnemyId, reaction.Pair);
         }
     }
 }

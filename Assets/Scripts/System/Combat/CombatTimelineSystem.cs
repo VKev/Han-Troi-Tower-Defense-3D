@@ -94,6 +94,7 @@ namespace TowerDefense3D.Enemies
                 ReactionTriggered?.Invoke(new ElementReactionEvent(
                     reaction.EnemyId,
                     reaction.ReactionId,
+                    reaction.Pair,
                     reaction.Position));
             }
         }

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -12,6 +13,7 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
         {
             var viewObject = new GameObject("Enemy View");
             viewObject.transform.localRotation = Quaternion.Euler(0f, 175f, 0f);
+            AddElementStatusView(viewObject);
             EnemyView view = viewObject.AddComponent<EnemyView>();
             yield return null;
 
@@ -29,6 +31,7 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
         public IEnumerator Render_DirectionChangeTurnsGradually()
         {
             var viewObject = new GameObject("Enemy View");
+            AddElementStatusView(viewObject);
             EnemyView view = viewObject.AddComponent<EnemyView>();
             yield return null;
 
@@ -54,6 +57,7 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
         public IEnumerator Render_NoMovementOnXZPlaneKeepsCurrentRotation()
         {
             var viewObject = new GameObject("Enemy View");
+            AddElementStatusView(viewObject);
             EnemyView view = viewObject.AddComponent<EnemyView>();
             yield return null;
 
@@ -77,5 +81,39 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
                 1f,
                 false,
                 false);
+
+        private static void AddElementStatusView(GameObject viewObject)
+        {
+            var statusObject = new GameObject("Element Status");
+            statusObject.transform.SetParent(viewObject.transform);
+            var iconRoot = new GameObject("Icons");
+            iconRoot.transform.SetParent(statusObject.transform);
+            Transform fire = CreateIcon(iconRoot.transform, "Fire");
+            Transform water = CreateIcon(iconRoot.transform, "Water");
+            Transform earth = CreateIcon(iconRoot.transform, "Earth");
+            Transform wind = CreateIcon(iconRoot.transform, "Wind");
+
+            EnemyElementStatusView statusView = statusObject.AddComponent<EnemyElementStatusView>();
+            SetField(statusView, "iconRoot", iconRoot.transform);
+            SetField(statusView, "fireIcon", fire);
+            SetField(statusView, "waterIcon", water);
+            SetField(statusView, "earthIcon", earth);
+            SetField(statusView, "windIcon", wind);
+            iconRoot.SetActive(false);
+        }
+
+        private static Transform CreateIcon(Transform parent, string name)
+        {
+            var icon = new GameObject(name);
+            icon.transform.SetParent(parent);
+            return icon.transform;
+        }
+
+        private static void SetField(EnemyElementStatusView view, string name, Transform value)
+        {
+            typeof(EnemyElementStatusView)
+                .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(view, value);
+        }
     }
 }

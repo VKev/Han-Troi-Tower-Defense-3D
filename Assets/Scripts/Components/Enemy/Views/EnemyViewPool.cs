@@ -14,6 +14,12 @@ namespace TowerDefense3D.Enemies
             new Dictionary<long, ActiveEnemyView>();
         private readonly Dictionary<EnemyDefinition, ComponentPool<EnemyView>> poolsByDefinition =
             new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
+        private Camera worldCamera;
+
+        public void Configure(Camera camera)
+        {
+            worldCamera = camera;
+        }
 
         public void Spawn(EnemySnapshot enemy)
         {
@@ -28,6 +34,14 @@ namespace TowerDefense3D.Enemies
             ActiveEnemyView activeView = activeViews[enemyId];
             activeViews.Remove(enemyId);
             activeView.Pool.Release(activeView.View);
+        }
+
+        public void ShowReaction(long enemyId, ElementPair pair)
+        {
+            if (activeViews.TryGetValue(enemyId, out ActiveEnemyView activeView))
+            {
+                activeView.View.ShowReaction(pair);
+            }
         }
 
         public void Render(
@@ -83,6 +97,7 @@ namespace TowerDefense3D.Enemies
                     $"Enemy View Prefab '{definition.ViewPrefab.name}' must have an EnemyView on its root.");
             }
 
+            view.Configure(worldCamera);
             view.Release();
             return view;
         }

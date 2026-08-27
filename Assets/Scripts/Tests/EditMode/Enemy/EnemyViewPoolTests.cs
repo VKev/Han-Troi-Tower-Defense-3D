@@ -60,9 +60,38 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         private static GameObject CreateViewPrefab(string name)
         {
             var prefab = new GameObject(name);
+            AddElementStatusView(prefab);
             prefab.AddComponent<EnemyView>();
             prefab.SetActive(false);
             return prefab;
+        }
+
+        private static void AddElementStatusView(GameObject viewObject)
+        {
+            var statusObject = new GameObject("Element Status");
+            statusObject.transform.SetParent(viewObject.transform);
+            var iconRoot = new GameObject("Icons");
+            iconRoot.transform.SetParent(statusObject.transform);
+            Transform fire = CreateIcon(iconRoot.transform, "Fire");
+            Transform water = CreateIcon(iconRoot.transform, "Water");
+            Transform earth = CreateIcon(iconRoot.transform, "Earth");
+            Transform wind = CreateIcon(iconRoot.transform, "Wind");
+
+            EnemyElementStatusView statusView = statusObject.AddComponent<EnemyElementStatusView>();
+            var serialized = new SerializedObject(statusView);
+            serialized.FindProperty("iconRoot").objectReferenceValue = iconRoot.transform;
+            serialized.FindProperty("fireIcon").objectReferenceValue = fire;
+            serialized.FindProperty("waterIcon").objectReferenceValue = water;
+            serialized.FindProperty("earthIcon").objectReferenceValue = earth;
+            serialized.FindProperty("windIcon").objectReferenceValue = wind;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Transform CreateIcon(Transform parent, string name)
+        {
+            var icon = new GameObject(name);
+            icon.transform.SetParent(parent);
+            return icon.transform;
         }
 
         private static EnemyDefinition CreateDefinition(string name, GameObject viewPrefab)
