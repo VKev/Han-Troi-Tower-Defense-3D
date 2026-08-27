@@ -59,7 +59,7 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
-        public void Fire_ConvertsSecondsAndPreservesTotalCloneDamage()
+        public void Fire_ConvertsSecondsAndEmitsOneProjectileLikeOtherElements()
         {
             FireTowerDefinition definition =
                 Create<FireTowerDefinition>();
@@ -70,11 +70,11 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                     0.05f);
 
             Assert.That(spec.CycleTicks, Is.EqualTo(17));
-            Assert.That(spec.OutputProjectileCount, Is.EqualTo(3));
+            Assert.That(spec.OutputProjectileCount, Is.EqualTo(1));
             Assert.That(
                 spec.RequiredDownstreamReservationCount,
-                Is.EqualTo(3));
-            Assert.That(spec.SequenceSpacingTicks, Is.EqualTo(2));
+                Is.EqualTo(1));
+            Assert.That(spec.SequenceSpacingTicks, Is.Zero);
             Assert.That(
                 spec.OutputPayload.Kind,
                 Is.EqualTo(ProjectilePayloadKind.Fire));

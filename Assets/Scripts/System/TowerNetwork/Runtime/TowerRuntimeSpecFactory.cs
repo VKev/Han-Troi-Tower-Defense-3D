@@ -17,9 +17,9 @@ namespace TowerDefense3D.Towers
             SoulConsumeOrder? consumeOrder = soulNexus?.ConsumeOrder;
             int cycleTicks = ConvertPositiveSecondsToTicks(throughput.CycleIntervalSeconds, tickSeconds);
             int outputProjectileCount = GetOutputProjectileCount(definition, throughput);
-            int reservationCount = GetRequiredReservationCount(definition, outputProjectileCount);
+            int reservationCount = outputProjectileCount;
             int sequenceSpacingTicks = GetSequenceSpacingTicks(
-                definition, throughput, outputProjectileCount, tickSeconds);
+                throughput, outputProjectileCount, tickSeconds);
             ProjectilePayload outputPayload = CreateOutputPayload(definition);
 
             return new TowerRuntimeSpec(
@@ -74,6 +74,8 @@ namespace TowerDefense3D.Towers
             return Math.Max(1, decimal.ToInt32(decimal.Ceiling(exactTickCount)));
         }
 
+        // Every emitting tower, Fire included, fires its authored batch size. The Fire Tier One
+        // clone burst stays authoring data until tier upgrades are actually simulated.
         private static int GetOutputProjectileCount(TowerCombatDefinition definition, TowerThroughputProfile throughput)
         {
             if (definition is SoulNexusDefinition)
@@ -81,48 +83,18 @@ namespace TowerDefense3D.Towers
                 return 0;
             }
 
-            if (definition is FireTowerDefinition fire)
-            {
-                if (fire.TierOne == null)
-                {
-                    throw new InvalidOperationException("Fire Tier One data is missing.");
-                }
-
-                return fire.TierOne.OutputProjectileCount;
-            }
-
             return throughput.BatchSize;
         }
 
-        private static int GetRequiredReservationCount(TowerCombatDefinition definition, int outputProjectileCount)
-        {
-            if (definition is SoulNexusDefinition)
-            {
-                return 0;
-            }
-
-            if (definition is FireTowerDefinition fire)
-            {
-                return fire.TierOne.RequiredDownstreamReservationCount;
-            }
-
-            return outputProjectileCount;
-        }
-
         private static int GetSequenceSpacingTicks(
-            TowerCombatDefinition definition, TowerThroughputProfile throughput, int outputProjectileCount,
-            float tickSeconds)
+            TowerThroughputProfile throughput, int outputProjectileCount, float tickSeconds)
         {
             if (outputProjectileCount <= 1)
             {
                 return 0;
             }
 
-            float spacingSeconds = definition is FireTowerDefinition fire
-                ? fire.TierOne.SequenceSpacingSeconds
-                : throughput.SequenceSpacingSeconds;
-
-            return ConvertNonNegativeSecondsToTicks(spacingSeconds, tickSeconds);
+            return ConvertNonNegativeSecondsToTicks(throughput.SequenceSpacingSeconds, tickSeconds);
         }
 
         private static int ConvertNonNegativeSecondsToTicks(float seconds, float tickSeconds)

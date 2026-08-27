@@ -62,7 +62,7 @@ namespace TowerDefense3D.Towers.Tests.EditMode
             Assert.That(queuedInput.Payload.DamageType, Is.EqualTo(DamageType.Physical));
         }
 
-        [TestCase(TowerFamily.Fire, ProjectilePayloadKind.Fire, DamageType.Magic, 3)]
+        [TestCase(TowerFamily.Fire, ProjectilePayloadKind.Fire, DamageType.Magic, 1)]
         [TestCase(TowerFamily.Water, ProjectilePayloadKind.Water, DamageType.Magic, 1)]
         [TestCase(TowerFamily.Wind, ProjectilePayloadKind.Wind, DamageType.Magic, 1)]
         [TestCase(TowerFamily.Earth, ProjectilePayloadKind.Earth, DamageType.Physical, 1)]
@@ -130,7 +130,7 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         }
 
         [Test]
-        public void FireProcessor_EmitsAtomicThreeProjectileSequence()
+        public void FireProcessor_EmitsSingleProjectile()
         {
             ProcessorFixture fixture = CreateRunningFixture(TowerFamily.Fire);
 
@@ -141,24 +141,21 @@ namespace TowerDefense3D.Towers.Tests.EditMode
                 fixture.Manager.CreateProjectileSnapshot();
 
             Assert.That(fireSpec.CycleTicks, Is.EqualTo(17));
-            Assert.That(fireSpec.OutputProjectileCount, Is.EqualTo(3));
-            Assert.That(fireSpec.RequiredDownstreamReservationCount, Is.EqualTo(3));
-            Assert.That(fireSpec.SequenceSpacingTicks, Is.EqualTo(2));
-            Assert.That(projectiles.Count, Is.EqualTo(3));
+            Assert.That(fireSpec.OutputProjectileCount, Is.EqualTo(1));
+            Assert.That(fireSpec.RequiredDownstreamReservationCount, Is.EqualTo(1));
+            Assert.That(fireSpec.SequenceSpacingTicks, Is.Zero);
+            Assert.That(projectiles.Count, Is.EqualTo(1));
 
-            for (int index = 0; index < projectiles.Count; index++)
-            {
-                TowerProjectileSnapshot projectile = projectiles[index];
+            TowerProjectileSnapshot projectile = projectiles[0];
 
-                Assert.That(projectile.ProjectileId, Is.EqualTo(index + 2L));
-                Assert.That(projectile.Source, Is.EqualTo(fixture.ProcessorId));
-                Assert.That(projectile.Target, Is.EqualTo(fixture.NexusId));
-                Assert.That(projectile.Position.X, Is.EqualTo(1f).Within(0.0001f));
-                Assert.That(projectile.LaunchDelayTicks, Is.EqualTo(index * 2));
-                Assert.That(projectile.Payload.Kind, Is.EqualTo(ProjectilePayloadKind.Fire));
-                Assert.That(projectile.Payload.DamageType, Is.EqualTo(DamageType.Magic));
-                Assert.That(projectile.Payload.Damage, Is.EqualTo(6f).Within(0.0001f));
-            }
+            Assert.That(projectile.ProjectileId, Is.EqualTo(2L));
+            Assert.That(projectile.Source, Is.EqualTo(fixture.ProcessorId));
+            Assert.That(projectile.Target, Is.EqualTo(fixture.NexusId));
+            Assert.That(projectile.Position.X, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(projectile.LaunchDelayTicks, Is.Zero);
+            Assert.That(projectile.Payload.Kind, Is.EqualTo(ProjectilePayloadKind.Fire));
+            Assert.That(projectile.Payload.DamageType, Is.EqualTo(DamageType.Magic));
+            Assert.That(projectile.Payload.Damage, Is.EqualTo(6f).Within(0.0001f));
 
             TowerInputPortSnapshot fireInput =
                 GetInputSnapshot(fixture.Manager, fixture.ProcessorId, inputPort: 0);
@@ -173,8 +170,8 @@ namespace TowerDefense3D.Towers.Tests.EditMode
             Assert.That(fireInput.ReservedProjectileCount, Is.Zero);
             Assert.That(nexusInput.Capacity, Is.EqualTo(4));
             Assert.That(nexusInput.QueuedProjectileCount, Is.Zero);
-            Assert.That(nexusInput.ReservedProjectileCount, Is.EqualTo(3));
-            Assert.That(nexusInput.AvailableSlotCount, Is.EqualTo(1));
+            Assert.That(nexusInput.ReservedProjectileCount, Is.EqualTo(1));
+            Assert.That(nexusInput.AvailableSlotCount, Is.EqualTo(3));
             Assert.That(fire.CycleProgressTicks, Is.Zero);
             Assert.That(fire.IsReady, Is.False);
         }
@@ -182,62 +179,48 @@ namespace TowerDefense3D.Towers.Tests.EditMode
         [Test]
         public void BlockedFireProcessor_KeepsInputAndReady()
         {
-            ProcessorFixture fixture = CreateRunningFixture(TowerFamily.Fire);
+            // Fire emits one projectile per cycle, which the default nexus consumes faster than
+            // the chain produces. Starve the sink so the downstream port can actually fill up.
+            ProcessorFixture fixture = CreateRunningFixture(TowerFamily.Fire, nexusCycleSeconds: 60f);
 
-            StepTicks(fixture.Manager, 58);
+            TowerInputPortSnapshot nexusInput = default;
+            TowerNodeSimulationSnapshot blockedFire = default;
+            TowerInputPortSnapshot blockedFireInput = default;
+            bool isBlocked = false;
+            for (int step = 0; step < 500 && !isBlocked; step++)
+            {
+                Assert.That(fixture.Manager.StepOneTick(), Is.True);
+                nexusInput = GetInputSnapshot(fixture.Manager, fixture.NexusId, inputPort: 0);
+                blockedFire = GetNodeSnapshot(fixture.Manager, fixture.ProcessorId);
+                blockedFireInput =
+                    GetInputSnapshot(fixture.Manager, fixture.ProcessorId, inputPort: 0);
+                isBlocked = nexusInput.AvailableSlotCount == 0
+                    && blockedFire.IsReady
+                    && blockedFireInput.QueuedProjectileCount > 0;
+            }
 
-            TowerNodeSimulationSnapshot blockedFire =
-                GetNodeSnapshot(fixture.Manager, fixture.ProcessorId);
-
-            TowerInputPortSnapshot blockedFireInput =
-                GetInputSnapshot(fixture.Manager, fixture.ProcessorId, inputPort: 0);
-
-            TowerInputPortSnapshot nexusInput =
-                GetInputSnapshot(fixture.Manager, fixture.NexusId, inputPort: 0);
-
-            Assert.That(fixture.Manager.CurrentTick, Is.EqualTo(58));
-            Assert.That(fixture.Manager.ProjectileCount, Is.Zero);
-            Assert.That(blockedFire.CycleTicks, Is.EqualTo(17));
-            Assert.That(blockedFire.CycleProgressTicks, Is.EqualTo(17));
-            Assert.That(blockedFire.RemainingCycleTicks, Is.Zero);
-            Assert.That(blockedFire.IsReady, Is.True);
-
-            Assert.That(blockedFireInput.QueuedProjectileCount, Is.EqualTo(1));
-            Assert.That(blockedFireInput.ReservedProjectileCount, Is.Zero);
-
+            Assert.That(isBlocked, Is.True, "Fire processor never reached the blocked state.");
             Assert.That(nexusInput.Capacity, Is.EqualTo(4));
-            Assert.That(nexusInput.QueuedProjectileCount, Is.EqualTo(2));
-            Assert.That(nexusInput.ReservedProjectileCount, Is.Zero);
-            Assert.That(nexusInput.AvailableSlotCount, Is.EqualTo(2));
+            Assert.That(nexusInput.OccupiedSlotCount, Is.EqualTo(nexusInput.Capacity));
+            Assert.That(blockedFire.CycleProgressTicks, Is.EqualTo(blockedFire.CycleTicks));
+            Assert.That(blockedFire.RemainingCycleTicks, Is.Zero);
 
             Assert.That(
                 fixture.Manager.TryPeekInputProjectile(
                     fixture.ProcessorId, 0, out ProjectileQueueEntry blockedInput),
                 Is.True);
 
-            Assert.That(blockedInput.ProjectileId, Is.EqualTo(5L));
-            Assert.That(blockedInput.Payload.Kind, Is.EqualTo(ProjectilePayloadKind.Physical));
-            Assert.That(blockedInput.Payload.DamageType, Is.EqualTo(DamageType.Physical));
-
             Assert.That(fixture.Manager.StepOneTick(), Is.True);
 
             TowerNodeSimulationSnapshot retriedFire =
                 GetNodeSnapshot(fixture.Manager, fixture.ProcessorId);
 
-            TowerInputPortSnapshot retriedFireInput =
-                GetInputSnapshot(fixture.Manager, fixture.ProcessorId, inputPort: 0);
-
             TowerInputPortSnapshot unchangedNexusInput =
                 GetInputSnapshot(fixture.Manager, fixture.NexusId, inputPort: 0);
 
-            Assert.That(fixture.Manager.CurrentTick, Is.EqualTo(59));
-            Assert.That(fixture.Manager.ProjectileCount, Is.Zero);
-            Assert.That(retriedFire.CycleProgressTicks, Is.EqualTo(17));
+            Assert.That(retriedFire.CycleProgressTicks, Is.EqualTo(retriedFire.CycleTicks));
             Assert.That(retriedFire.IsReady, Is.True);
-            Assert.That(retriedFireInput.QueuedProjectileCount, Is.EqualTo(1));
-            Assert.That(unchangedNexusInput.QueuedProjectileCount, Is.EqualTo(2));
-            Assert.That(unchangedNexusInput.ReservedProjectileCount, Is.Zero);
-            Assert.That(unchangedNexusInput.AvailableSlotCount, Is.EqualTo(2));
+            Assert.That(unchangedNexusInput.AvailableSlotCount, Is.Zero);
 
             Assert.That(
                 fixture.Manager.TryPeekInputProjectile(
@@ -251,7 +234,8 @@ namespace TowerDefense3D.Towers.Tests.EditMode
             Assert.That(retainedInput.Payload.Damage, Is.EqualTo(blockedInput.Payload.Damage));
         }
 
-        private ProcessorFixture CreateRunningFixture(TowerFamily processorFamily)
+        private ProcessorFixture CreateRunningFixture(
+            TowerFamily processorFamily, float nexusCycleSeconds = 0f)
         {
             TowerCombatRules rules = Create<TowerCombatRules>();
             GeneratorTowerDefinition generator = Create<GeneratorTowerDefinition>();
@@ -264,6 +248,11 @@ namespace TowerDefense3D.Towers.Tests.EditMode
 
             TowerCombatDefinition processor =
                 SelectProcessor(processorFamily, fire, water, wind, earth);
+
+            if (nexusCycleSeconds > 0f)
+            {
+                SetPrivateField(nexus.Core.Throughput, "cycleIntervalSeconds", nexusCycleSeconds);
+            }
 
             SetPrivateField(catalog, "combatRules", rules);
             SetPrivateField(
