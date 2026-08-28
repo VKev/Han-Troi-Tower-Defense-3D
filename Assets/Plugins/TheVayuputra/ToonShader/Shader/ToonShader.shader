@@ -41,6 +41,11 @@ Shader "TheVayuputra/ToonShader"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
+            // Every material property must live in this one buffer for the SRP Batcher to
+            // accept the shader. The damage flash used to sit in an instancing buffer instead,
+            // which opted the shader into GPU instancing and out of the SRP Batcher - and that
+            // bought nothing, because the flash is driven by a MaterialPropertyBlock, which
+            // already excludes a renderer from the batcher for as long as the block is set.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 float4 _BaseColor;
@@ -49,12 +54,9 @@ Shader "TheVayuputra/ToonShader"
                 float _GlossThreshold;
                 float _GlossSoftness;
                 float4 _GlossTint;
+                float4 _DamageFlashColor;
+                float _DamageFlashAmount;
             CBUFFER_END
-
-            UNITY_INSTANCING_BUFFER_START(EnemyInstanceProperties)
-                UNITY_DEFINE_INSTANCED_PROP(float4, _DamageFlashColor)
-                UNITY_DEFINE_INSTANCED_PROP(float, _DamageFlashAmount)
-            UNITY_INSTANCING_BUFFER_END(EnemyInstanceProperties)
 
             struct Attributes
             {
@@ -132,13 +134,10 @@ Shader "TheVayuputra/ToonShader"
                 float3 ambient = SampleSH(N) * _BaseColor.rgb * baseMap;
 
                 float3 finalColor = diffuse + ambient + specular;
-                float3 damageFlashColor = UNITY_ACCESS_INSTANCED_PROP(
-                    EnemyInstanceProperties,
-                    _DamageFlashColor).rgb;
-                float damageFlashAmount = UNITY_ACCESS_INSTANCED_PROP(
-                    EnemyInstanceProperties,
-                    _DamageFlashAmount);
-                finalColor = lerp(finalColor, damageFlashColor, saturate(damageFlashAmount));
+                finalColor = lerp(
+                    finalColor,
+                    _DamageFlashColor.rgb,
+                    saturate(_DamageFlashAmount));
                 finalColor = MixFog(finalColor, input.fogCoord);
 
                 return float4(finalColor, 1.0);
