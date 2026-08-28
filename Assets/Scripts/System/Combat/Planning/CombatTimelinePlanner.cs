@@ -620,9 +620,11 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
+            enemy.LiftStartTick = tick;
             enemy.LiftEndTick = tick + SecondsToDurationTicks(reaction.LiftDurationSeconds);
             enemy.LiftImmuneUntilTick =
                 enemy.LiftEndTick + SecondsToDurationTicks(reaction.LiftImmunitySeconds);
+            enemy.LiftPeakHeightMeters = reaction.LiftHeightMeters;
         }
 
         private void ApplyBurn(
@@ -737,8 +739,25 @@ namespace TowerDefense3D.Enemies
                     enemy.ElementReaction.Element,
                     enemy.ElementReaction.GetRemainingSeconds(tick),
                     enemy.RemainingThermalShieldHits,
+                    CalculateLiftHeight(enemy, tick),
                     enemy.Removal));
             }
+        }
+
+        /// <summary>
+        /// Arc the enemy rides while it is held airborne: zero at both ends of the lift so it
+        /// leaves and returns to the ground cleanly, peaking halfway through.
+        /// </summary>
+        private static float CalculateLiftHeight(ShadowEnemy enemy, long tick)
+        {
+            long duration = enemy.LiftEndTick - enemy.LiftStartTick;
+            if (duration <= 0L || tick < enemy.LiftStartTick || tick >= enemy.LiftEndTick)
+            {
+                return 0f;
+            }
+
+            float progress = (float)(tick - enemy.LiftStartTick) / duration;
+            return 4f * progress * (1f - progress) * enemy.LiftPeakHeightMeters;
         }
 
         private static void RemoveCompleted(
@@ -902,8 +921,10 @@ namespace TowerDefense3D.Enemies
             public float RevealRemainingSeconds { get; set; }
             public EnemyElementReactionState ElementReaction { get; }
             public int RemainingThermalShieldHits { get; set; }
+            public long LiftStartTick { get; set; }
             public long LiftEndTick { get; set; }
             public long LiftImmuneUntilTick { get; set; }
+            public float LiftPeakHeightMeters { get; set; }
             public float PushBudgetMeters { get; set; }
             public float BurnDamagePerTick { get; set; }
             public int BurnIntervalTicks { get; set; }

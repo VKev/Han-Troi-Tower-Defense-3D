@@ -34,6 +34,7 @@ namespace TowerDefense3D.Enemies
         public float RevealRemainingSeconds { get; internal set; }
         public EnemyElementState ElementState { get; internal set; }
         public int RemainingThermalShieldHits { get; internal set; }
+        public float LiftHeightMeters { get; internal set; }
         public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
         internal int TargetPointIndex { get; set; }
         internal int SummonPhaseIndex { get; set; } = -1;

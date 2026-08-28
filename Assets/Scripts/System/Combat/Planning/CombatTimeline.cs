@@ -45,6 +45,7 @@ namespace TowerDefense3D.Enemies
             ElementType element,
             float elementRemainingSeconds,
             int remainingThermalShieldHits,
+            float liftHeightMeters,
             PlannedEnemyRemoval removal)
         {
             EnemyId = enemyId;
@@ -57,6 +58,7 @@ namespace TowerDefense3D.Enemies
             Element = element;
             ElementRemainingSeconds = elementRemainingSeconds;
             RemainingThermalShieldHits = remainingThermalShieldHits;
+            LiftHeightMeters = liftHeightMeters;
             Removal = removal;
         }
 
@@ -70,6 +72,7 @@ namespace TowerDefense3D.Enemies
         public ElementType Element { get; }
         public float ElementRemainingSeconds { get; }
         public int RemainingThermalShieldHits { get; }
+        public float LiftHeightMeters { get; }
         public PlannedEnemyRemoval Removal { get; }
     }
 

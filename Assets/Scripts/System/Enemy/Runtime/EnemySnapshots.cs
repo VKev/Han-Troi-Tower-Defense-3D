@@ -12,7 +12,9 @@ namespace TowerDefense3D.Enemies
             float health,
             bool isHidden,
             bool isSummoned,
-            EnemyElementState elementState = default)
+            EnemyElementState elementState = default,
+            int remainingThermalShieldHits = 0,
+            float liftHeightMeters = 0f)
         {
             EnemyId = enemyId;
             Definition = definition;
@@ -22,6 +24,8 @@ namespace TowerDefense3D.Enemies
             IsHidden = isHidden;
             IsSummoned = isSummoned;
             ElementState = elementState;
+            RemainingThermalShieldHits = remainingThermalShieldHits;
+            LiftHeightMeters = liftHeightMeters;
         }
 
         public long EnemyId { get; }
@@ -32,5 +36,8 @@ namespace TowerDefense3D.Enemies
         public bool IsHidden { get; }
         public bool IsSummoned { get; }
         public EnemyElementState ElementState { get; }
+        public int RemainingThermalShieldHits { get; }
+        public float LiftHeightMeters { get; }
+        public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
     }
 }

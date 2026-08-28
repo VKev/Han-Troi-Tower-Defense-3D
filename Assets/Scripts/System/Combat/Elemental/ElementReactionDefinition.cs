@@ -25,6 +25,10 @@ namespace TowerDefense3D.Enemies
             + "hold an enemy airborne forever and it never advances along the road.")]
         [SerializeField, Min(0f)] private float liftImmunitySeconds = 1.5f;
 
+        [Tooltip("Peak height the enemy is thrown to while lifted. Presentation only: the "
+            + "enemy already stops advancing for the whole lift regardless of this value.")]
+        [SerializeField, Min(0f)] private float liftHeightMeters = 1.2f;
+
         public ElementReactionId ReactionId => reactionId;
         public string DisplayName => displayName;
         public ElementPair Pair => new ElementPair(firstElement, secondElement);
@@ -35,6 +39,7 @@ namespace TowerDefense3D.Enemies
         public float BurnDurationSeconds => burnDurationSeconds;
         public float LiftDurationSeconds => liftDurationSeconds;
         public float LiftImmunitySeconds => liftImmunitySeconds;
+        public float LiftHeightMeters => liftHeightMeters;
 
         public IReadOnlyList<string> CollectValidationErrors()
         {

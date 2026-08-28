@@ -84,6 +84,7 @@ namespace TowerDefense3D.Enemies
                 frame.Element,
                 frame.ElementRemainingSeconds);
             enemy.RemainingThermalShieldHits = frame.RemainingThermalShieldHits;
+            enemy.LiftHeightMeters = frame.LiftHeightMeters;
 
             if (frame.Removal == PlannedEnemyRemoval.None)
             {
@@ -338,7 +339,9 @@ namespace TowerDefense3D.Enemies
                 enemy.Health,
                 enemy.IsHidden,
                 enemy.IsSummoned,
-                enemy.ElementState);
+                enemy.ElementState,
+                enemy.RemainingThermalShieldHits,
+                enemy.LiftHeightMeters);
         }
 
         private void PublishEnemyKilled(EnemySnapshot snapshot)

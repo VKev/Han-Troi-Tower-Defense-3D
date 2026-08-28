@@ -9,7 +9,8 @@ namespace TowerDefense3D.Enemies
     {
         FollowEnemy,
         ReactionPosition,
-        EnemyPosition
+        EnemyPosition,
+        EnemyFeet
     }
 
     /// <summary>
@@ -94,6 +95,7 @@ namespace TowerDefense3D.Enemies
         [SerializeField] private ReactionEffectAuthoring[] reactionEffects = new ReactionEffectAuthoring[0];
         [SerializeField, Min(0.01f)] private float transitionDurationSeconds = 0.4f;
 
+        private Transform enemyRoot;
         private MaterialPropertyBlock properties;
         private EffectRoot[] effectsByElement;
         private EffectRoot activeEffect;
@@ -353,10 +355,37 @@ namespace TowerDefense3D.Enemies
             }
 
             effect.Root.transform.SetParent(null, true);
-            effect.Root.transform.position = authoring.Placement
-                == EnemyElementEffectPlacement.EnemyPosition
-                ? GetReactionEffectSpawnPosition()
-                : reaction.Position;
+            effect.Root.transform.position = ResolvePlacementPosition(authoring, reaction);
+        }
+
+        private Vector3 ResolvePlacementPosition(
+            ReactionEffectAuthoring authoring,
+            ElementReactionEvent reaction)
+        {
+            switch (authoring.Placement)
+            {
+                case EnemyElementEffectPlacement.EnemyPosition:
+                    return GetReactionEffectSpawnPosition();
+                case EnemyElementEffectPlacement.EnemyFeet:
+                    return GetEnemyFeetPosition();
+                default:
+                    return reaction.Position;
+            }
+        }
+
+        /// <summary>
+        /// Ground position under the enemy. Read at trigger time and then detached, so an
+        /// effect placed here stays on the ground while a lift throws the enemy upwards.
+        /// </summary>
+        private Vector3 GetEnemyFeetPosition()
+        {
+            if (enemyRoot == null)
+            {
+                var view = GetComponentInParent<EnemyView>();
+                enemyRoot = view != null ? view.transform : transform;
+            }
+
+            return enemyRoot.position;
         }
 
         private void TickReactionTransition(float deltaTime)

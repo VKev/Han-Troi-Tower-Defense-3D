@@ -18,6 +18,7 @@ namespace TowerDefense3D.Enemies
         private EnemyDamageFlashView damageFlashView;
         private EnemyElementStatusView elementStatusView;
         private EnemyElementEffectView elementEffectView;
+        private EnemyThermalShieldView thermalShieldView;
         private Quaternion spawnLocalRotation;
         private Vector3 spawnLocalScale;
         private Vector3 scalePivotLocal;
@@ -36,6 +37,7 @@ namespace TowerDefense3D.Enemies
             damageFlashView = GetComponent<EnemyDamageFlashView>();
             elementStatusView = GetComponentInChildren<EnemyElementStatusView>(true);
             elementEffectView = GetComponentInChildren<EnemyElementEffectView>(true);
+            thermalShieldView = GetComponentInChildren<EnemyThermalShieldView>(true);
             spawnLocalRotation = transform.localRotation;
             spawnLocalScale = transform.localScale;
         }
@@ -65,6 +67,7 @@ namespace TowerDefense3D.Enemies
             GetDamageFlashView().Bind(enemy);
             GetElementStatusView().Bind(enemy.ElementState);
             GetElementEffectView().Bind(enemy.ElementState);
+            GetThermalShieldView()?.Bind(enemy);
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
@@ -72,10 +75,11 @@ namespace TowerDefense3D.Enemies
             GetDamageFlashView().Render(enemy, Time.deltaTime);
             GetElementStatusView().Render(enemy.ElementState, Time.deltaTime);
             GetElementEffectView().Render(enemy.ElementState, Time.deltaTime);
+            GetThermalShieldView()?.Render(enemy, Time.deltaTime);
             transform.position = Vector3.Lerp(
                 enemy.PreviousPosition,
                 enemy.Position,
-                interpolationAlpha);
+                interpolationAlpha) + Vector3.up * enemy.LiftHeightMeters;
 
             Vector3 movement = enemy.Position - enemy.PreviousPosition;
             movement.y = 0f;
@@ -141,6 +145,7 @@ namespace TowerDefense3D.Enemies
             GetDamageFlashView().Release();
             GetElementStatusView().Release();
             GetElementEffectView().Release();
+            GetThermalShieldView()?.Release();
             EnemyId = 0L;
             hasFacingDirection = false;
             gameObject.SetActive(false);
@@ -257,6 +262,20 @@ namespace TowerDefense3D.Enemies
         {
             GetElementStatusView().ShowReaction(reaction.Pair);
             GetElementEffectView().ShowReaction(reaction);
+            if (reaction.ReactionId == ElementReactionId.ThermalShock)
+            {
+                GetThermalShieldView()?.ShowThermalShockHit();
+            }
+        }
+
+        private EnemyThermalShieldView GetThermalShieldView()
+        {
+            if (thermalShieldView == null)
+            {
+                thermalShieldView = GetComponentInChildren<EnemyThermalShieldView>(true);
+            }
+
+            return thermalShieldView;
         }
 
         private EnemyElementStatusView GetElementStatusView()
