@@ -547,7 +547,9 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < effect.Renderers.Length; index++)
             {
                 Renderer renderer = effect.Renderers[index];
-                if (renderer.sharedMaterial == null || !renderer.sharedMaterial.HasProperty(BaseColorProperty))
+                if (renderer == null
+                    || renderer.sharedMaterial == null
+                    || !renderer.sharedMaterial.HasProperty(BaseColorProperty))
                 {
                     continue;
                 }
@@ -615,7 +617,11 @@ namespace TowerDefense3D.Enemies
 
             for (int index = 0; index < effect.Renderers.Length; index++)
             {
-                effect.Renderers[index].SetPropertyBlock(null);
+                Renderer renderer = effect.Renderers[index];
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(null);
+                }
             }
 
             effect.Root.transform.SetParent(effect.AuthoredParent, false);

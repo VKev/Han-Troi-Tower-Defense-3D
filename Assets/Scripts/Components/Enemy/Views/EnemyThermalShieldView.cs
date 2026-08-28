@@ -118,6 +118,12 @@ namespace TowerDefense3D.Enemies
         {
             for (int index = 0; index < renderers.Length; index++)
             {
+                Renderer renderer = renderers[index];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
                 Color authored = authoredColors[index];
                 Color tinted = Color.Lerp(authored, thermalShockFlashColor, flashAmount);
                 tinted.a = authored.a * opacity;
@@ -125,7 +131,7 @@ namespace TowerDefense3D.Enemies
                 properties.SetColor(BaseColorProperty, tinted);
                 properties.SetColor(TintColorProperty, tinted);
                 properties.SetColor(ColorProperty, tinted);
-                renderers[index].SetPropertyBlock(properties);
+                renderer.SetPropertyBlock(properties);
             }
         }
 

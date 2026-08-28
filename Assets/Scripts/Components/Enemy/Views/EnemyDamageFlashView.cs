@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies
@@ -81,7 +82,11 @@ namespace TowerDefense3D.Enemies
             properties.SetFloat(DamageFlashAmount, amount);
             for (int index = 0; index < renderers.Length; index++)
             {
-                renderers[index].SetPropertyBlock(properties);
+                Renderer renderer = renderers[index];
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(properties);
+                }
             }
         }
 
@@ -89,7 +94,11 @@ namespace TowerDefense3D.Enemies
         {
             for (int index = 0; index < renderers.Length; index++)
             {
-                renderers[index].SetPropertyBlock(null);
+                Renderer renderer = renderers[index];
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(null);
+                }
             }
         }
 
@@ -100,8 +109,28 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
-            renderers = GetComponentsInChildren<Renderer>(true);
+            renderers = CollectBodyRenderers();
             properties = new MaterialPropertyBlock();
+        }
+
+        /// <summary>
+        /// Body renderers only. Particle renderers belong to the effect views, which write their
+        /// own property blocks to them; flashing them here means several systems fight over one
+        /// renderer, and effect objects can come and go while this list is cached.
+        /// </summary>
+        private Renderer[] CollectBodyRenderers()
+        {
+            Renderer[] all = GetComponentsInChildren<Renderer>(true);
+            var body = new List<Renderer>(all.Length);
+            for (int index = 0; index < all.Length; index++)
+            {
+                if (!(all[index] is ParticleSystemRenderer))
+                {
+                    body.Add(all[index]);
+                }
+            }
+
+            return body.ToArray();
         }
     }
 }
