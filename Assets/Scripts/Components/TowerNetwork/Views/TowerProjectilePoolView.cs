@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.Components.Core;
+using TowerDefense3D.Vfx;
 using UnityEngine;
 
 namespace TowerDefense3D.Towers
@@ -15,14 +16,11 @@ namespace TowerDefense3D.Towers
             new Dictionary<long, ActiveProjectileView>();
         private readonly Dictionary<GameObject, ComponentPool<TowerProjectileView>> poolsByPrefab =
             new Dictionary<GameObject, ComponentPool<TowerProjectileView>>();
-        private readonly Dictionary<GameObject, ComponentPool<TowerProjectileHitView>>
-            hitEffectPoolsByPrefab = new Dictionary<GameObject, ComponentPool<TowerProjectileHitView>>();
         private readonly List<RetiringProjectileView> retiringViews = new List<RetiringProjectileView>();
-        private readonly List<ActiveHitEffectView> activeHitEffects = new List<ActiveHitEffectView>();
         private Transform presentationRoot;
+        private GlobalEffectEmitterView hitEffectEmitter;
 
         public int ActiveViewCount => activeViews.Count;
-        public int ActiveHitEffectCount => activeHitEffects.Count;
         public int InactiveViewCount
         {
             get
@@ -37,19 +35,6 @@ namespace TowerDefense3D.Towers
             }
         }
 
-        public int InactiveHitEffectCount
-        {
-            get
-            {
-                int count = 0;
-                foreach (ComponentPool<TowerProjectileHitView> pool in hitEffectPoolsByPrefab.Values)
-                {
-                    count += pool.CountInactive;
-                }
-
-                return count;
-            }
-        }
 
         public void Initialize()
         {
@@ -60,6 +45,13 @@ namespace TowerDefense3D.Towers
 
             presentationRoot = new GameObject("Tower Projectile Visuals").transform;
             presentationRoot.SetParent(transform, false);
+
+            // Kept at the world origin with an identity transform: the shared rigs hold systems
+            // authored in Local simulation space, which only behave correctly there.
+            var emitterRoot = new GameObject("Tower Hit Effect Emitter");
+            emitterRoot.transform.SetParent(null, false);
+            emitterRoot.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            hitEffectEmitter = emitterRoot.AddComponent<GlobalEffectEmitterView>();
         }
 
         public void Show(long projectileId, GameObject projectilePrefab, Vector3 position)
@@ -104,12 +96,7 @@ namespace TowerDefense3D.Towers
                 Initialize();
             }
 
-            ComponentPool<TowerProjectileHitView> pool = GetHitEffectPool(hitEffectPrefab);
-            TowerProjectileHitView view = pool.Get();
-            activeHitEffects.Add(new ActiveHitEffectView(
-                pool,
-                view,
-                view.Play(position)));
+            hitEffectEmitter.Play(hitEffectPrefab, position);
         }
 
         public void Release(long projectileId)
@@ -147,18 +134,6 @@ namespace TowerDefense3D.Towers
                 retiringViews.RemoveAt(index);
             }
 
-            for (int index = activeHitEffects.Count - 1; index >= 0; index--)
-            {
-                ActiveHitEffectView hitEffect = activeHitEffects[index];
-                hitEffect.RemainingSeconds -= deltaTime;
-                if (hitEffect.RemainingSeconds > 0f)
-                {
-                    continue;
-                }
-
-                hitEffect.Pool.Release(hitEffect.View);
-                activeHitEffects.RemoveAt(index);
-            }
         }
 
         public void Clear()
@@ -176,13 +151,10 @@ namespace TowerDefense3D.Towers
             }
 
             retiringViews.Clear();
-            for (int index = 0; index < activeHitEffects.Count; index++)
+            if (hitEffectEmitter != null)
             {
-                ActiveHitEffectView hitEffect = activeHitEffects[index];
-                hitEffect.Pool.Release(hitEffect.View);
+                hitEffectEmitter.Clear();
             }
-
-            activeHitEffects.Clear();
         }
 
         private ComponentPool<TowerProjectileView> GetPool(GameObject projectilePrefab)
@@ -216,36 +188,6 @@ namespace TowerDefense3D.Towers
             return view;
         }
 
-        private ComponentPool<TowerProjectileHitView> GetHitEffectPool(GameObject hitEffectPrefab)
-        {
-            if (!hitEffectPoolsByPrefab.TryGetValue(
-                hitEffectPrefab,
-                out ComponentPool<TowerProjectileHitView> pool))
-            {
-                pool = new ComponentPool<TowerProjectileHitView>(
-                    () => CreateHitEffectView(hitEffectPrefab),
-                    view => view.ResetForPool(),
-                    defaultPoolCapacity,
-                    maximumPoolSize);
-                hitEffectPoolsByPrefab.Add(hitEffectPrefab, pool);
-            }
-
-            return pool;
-        }
-
-        private TowerProjectileHitView CreateHitEffectView(GameObject hitEffectPrefab)
-        {
-            GameObject instance = Instantiate(hitEffectPrefab, presentationRoot);
-            instance.name = hitEffectPrefab.name;
-            TowerProjectileHitView view = instance.GetComponent<TowerProjectileHitView>();
-            if (view == null)
-            {
-                view = instance.AddComponent<TowerProjectileHitView>();
-            }
-
-            view.Initialize();
-            return view;
-        }
 
         private void OnDestroy()
         {
@@ -256,12 +198,11 @@ namespace TowerDefense3D.Towers
             }
 
             poolsByPrefab.Clear();
-            foreach (ComponentPool<TowerProjectileHitView> pool in hitEffectPoolsByPrefab.Values)
+            if (hitEffectEmitter != null)
             {
-                pool.Clear();
+                Destroy(hitEffectEmitter.gameObject);
+                hitEffectEmitter = null;
             }
-
-            hitEffectPoolsByPrefab.Clear();
         }
 
         private readonly struct ActiveProjectileView
@@ -281,22 +222,6 @@ namespace TowerDefense3D.Towers
             public TowerProjectileView View { get; }
         }
 
-        private sealed class ActiveHitEffectView
-        {
-            public ActiveHitEffectView(
-                ComponentPool<TowerProjectileHitView> pool,
-                TowerProjectileHitView view,
-                float remainingSeconds)
-            {
-                Pool = pool;
-                View = view;
-                RemainingSeconds = remainingSeconds;
-            }
-
-            public ComponentPool<TowerProjectileHitView> Pool { get; }
-            public TowerProjectileHitView View { get; }
-            public float RemainingSeconds { get; set; }
-        }
 
         private sealed class RetiringProjectileView
         {
