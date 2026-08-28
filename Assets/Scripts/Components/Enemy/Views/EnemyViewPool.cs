@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TowerDefense3D.Components.Core;
+using TowerDefense3D.Vfx;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies
@@ -18,10 +19,30 @@ namespace TowerDefense3D.Enemies
             new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
         private readonly List<ActiveEnemyView> pendingDeathSnapshot = new List<ActiveEnemyView>();
         private Camera worldCamera;
+        private GlobalEffectEmitterView reactionEffectEmitter;
 
         public void Configure(Camera camera)
         {
             worldCamera = camera;
+        }
+
+        /// <summary>
+        /// One rig set shared by every enemy, so a reaction firing on ten enemies at once still
+        /// costs one set of particle systems. Parked at the world origin with an identity
+        /// transform, which is what keeps Local-space systems behaving as authored.
+        /// </summary>
+        private GlobalEffectEmitterView EnsureReactionEffectEmitter()
+        {
+            if (reactionEffectEmitter != null)
+            {
+                return reactionEffectEmitter;
+            }
+
+            var root = new GameObject("Enemy Reaction Effect Emitter");
+            root.transform.SetParent(null, false);
+            root.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            reactionEffectEmitter = root.AddComponent<GlobalEffectEmitterView>();
+            return reactionEffectEmitter;
         }
 
         public void Spawn(EnemySnapshot enemy)
@@ -136,7 +157,7 @@ namespace TowerDefense3D.Enemies
                     $"Enemy View Prefab '{definition.ViewPrefab.name}' must have an EnemyView on its root.");
             }
 
-            view.Configure(worldCamera);
+            view.Configure(worldCamera, EnsureReactionEffectEmitter());
             view.Release();
             return view;
         }

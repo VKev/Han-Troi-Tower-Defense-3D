@@ -42,9 +42,10 @@ namespace TowerDefense3D.Enemies
             spawnLocalScale = transform.localScale;
         }
 
-        public void Configure(Camera worldCamera)
+        public void Configure(Camera worldCamera, Vfx.GlobalEffectEmitterView reactionEffectEmitter)
         {
             GetElementStatusView().Configure(worldCamera);
+            GetElementEffectView().ConfigureReactionEmitter(reactionEffectEmitter);
         }
 
         public void Bind(EnemySnapshot enemy)

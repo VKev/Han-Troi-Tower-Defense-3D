@@ -7,62 +7,63 @@ using UnityEngine;
 namespace TowerDefense3D.GameFlow.Editor
 {
     /// <summary>
-    /// Wires element reaction effects onto every authored enemy prefab. Reaction effects are
-    /// nested prefab instances that the view toggles rather than asset references it
-    /// instantiates, so each enemy needs its own copy. Enemy rigs are scaled differently, so
-    /// each copy is also given the local scale that lands on one shared world size - otherwise
-    /// the same effect covers twice the ground on a boss as it does on a basic enemy, and no
-    /// single authored reaction radius can match what the player sees.
+    /// Points every authored enemy prefab at the reaction effect prefabs it should play, and
+    /// removes the per-enemy nested copies an earlier wiring created. Reactions now play from one
+    /// rig shared by all enemies, so the reference is to the prefab asset rather than to a copy
+    /// living inside the enemy. Also attaches the thermal shield view where a shield mesh exists.
     /// </summary>
     public static class EnemyReactionEffectWiring
     {
         private const string EnemyPrefabFolder = "Assets/Resources/Prefabs/Enemies";
 
-        // Effect objects an earlier wiring left behind; removed so nothing dead ships.
-        private static readonly string[] RetiredEffectObjectNames = { "VFX_WaterSplash" };
+        // Nested effect copies from earlier wiring. Reaction effects now play from one shared
+        // rig at runtime, so a per-enemy copy is dead weight: it never renders and it multiplies
+        // the particle renderer count in every enemy prefab.
+        private static readonly string[] RetiredEffectObjectNames =
+        {
+            "VFX_WaterSplash",
+            "vfx_WindSwirl",
+            "VFX_WaterKnock",
+            "VFX_SocNhiet"
+        };
 
         private sealed class ReactionEffectPlan
         {
             public ReactionEffectPlan(
                 ElementReactionId reactionId,
                 string prefabPath,
-                string objectName,
                 EnemyElementEffectPlacement placement,
-                float durationSeconds,
-                float worldScale)
+                float durationSeconds)
             {
                 ReactionId = reactionId;
                 PrefabPath = prefabPath;
-                ObjectName = objectName;
                 Placement = placement;
                 DurationSeconds = durationSeconds;
-                WorldScale = worldScale;
             }
 
             public ElementReactionId ReactionId { get; }
             public string PrefabPath { get; }
-            public string ObjectName { get; }
             public EnemyElementEffectPlacement Placement { get; }
             public float DurationSeconds { get; }
-            public float WorldScale { get; }
         }
 
         private static readonly ReactionEffectPlan[] Plans =
         {
             new ReactionEffectPlan(
+                ElementReactionId.ThermalShock,
+                "Assets/Resources/Prefabs/VFX/VFX_SocNhiet.prefab",
+                EnemyElementEffectPlacement.EnemyPosition,
+                0.5f),
+            new ReactionEffectPlan(
                 ElementReactionId.Firestorm,
                 "Assets/Resources/Prefabs/VFX/vfx_WindSwirl.prefab",
-                "vfx_WindSwirl",
                 EnemyElementEffectPlacement.EnemyPosition,
-                2f,
-                1.54f),
+                2f),
             new ReactionEffectPlan(
                 ElementReactionId.WaterLift,
                 "Assets/Resources/Prefabs/VFX/VFX_WaterKnock.prefab",
-                "VFX_WaterKnock",
                 EnemyElementEffectPlacement.EnemyFeet,
-                1f,
-                1.54f)
+                1f)
         };
 
         [MenuItem("Tools/Tower Defense/Wire Enemy Reaction Effects")]
@@ -121,15 +122,13 @@ namespace TowerDefense3D.GameFlow.Editor
                 return false;
             }
 
-            Transform parent = FindReactionEffectParent(view, entries);
             RemoveRetiredEffects(root.transform);
             for (int index = 0; index < Plans.Length; index++)
             {
                 ReactionEffectPlan plan = Plans[index];
-                GameObject effect = EnsureInstance(parent, prefabs[index], plan);
                 SerializedProperty entry = FindOrAppendEntry(entries, (int)plan.ReactionId);
                 entry.FindPropertyRelative("reactionId").enumValueIndex = (int)plan.ReactionId;
-                entry.FindPropertyRelative("effect").objectReferenceValue = effect;
+                entry.FindPropertyRelative("effect").objectReferenceValue = prefabs[index];
                 entry.FindPropertyRelative("placement").enumValueIndex = (int)plan.Placement;
                 entry.FindPropertyRelative("priority").intValue = 0;
                 entry.FindPropertyRelative("durationSeconds").floatValue = plan.DurationSeconds;
@@ -139,6 +138,7 @@ namespace TowerDefense3D.GameFlow.Editor
             WireThermalShield(root);
             return true;
         }
+
 
         /// <summary>
         /// Enemies that carry a shield mesh get the view that fades it with the remaining
@@ -192,9 +192,10 @@ namespace TowerDefense3D.GameFlow.Editor
             for (int index = 0; index < RetiredEffectObjectNames.Length; index++)
             {
                 Transform retired = FindByName(root, RetiredEffectObjectNames[index]);
-                if (retired != null)
+                while (retired != null)
                 {
                     Object.DestroyImmediate(retired.gameObject, true);
+                    retired = FindByName(root, RetiredEffectObjectNames[index]);
                 }
             }
         }
@@ -216,61 +217,6 @@ namespace TowerDefense3D.GameFlow.Editor
             }
 
             return null;
-        }
-
-        private static Transform FindReactionEffectParent(
-            EnemyElementEffectView view,
-            SerializedProperty entries)
-        {
-            for (int index = 0; index < entries.arraySize; index++)
-            {
-                var existing = entries.GetArrayElementAtIndex(index)
-                    .FindPropertyRelative("effect")
-                    .objectReferenceValue as GameObject;
-                if (existing != null && existing.transform.parent != null)
-                {
-                    return existing.transform.parent;
-                }
-            }
-
-            return view.transform;
-        }
-
-        private static GameObject EnsureInstance(
-            Transform parent,
-            GameObject prefab,
-            ReactionEffectPlan plan)
-        {
-            Transform existing = parent.Find(plan.ObjectName);
-            GameObject instance;
-            if (existing != null)
-            {
-                instance = existing.gameObject;
-            }
-            else
-            {
-                instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
-                instance.name = plan.ObjectName;
-            }
-
-            instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = Quaternion.identity;
-            ApplyWorldScale(instance.transform, plan.WorldScale);
-            instance.SetActive(false);
-            return instance;
-        }
-
-        /// <summary>
-        /// Cancels the parent rig's scale so the effect lands on the requested world size.
-        /// </summary>
-        private static void ApplyWorldScale(Transform target, float worldScale)
-        {
-            target.localScale = Vector3.one;
-            Vector3 parentScale = target.parent != null ? target.parent.lossyScale : Vector3.one;
-            target.localScale = new Vector3(
-                worldScale / Mathf.Max(0.0001f, parentScale.x),
-                worldScale / Mathf.Max(0.0001f, parentScale.y),
-                worldScale / Mathf.Max(0.0001f, parentScale.z));
         }
 
         private static SerializedProperty FindOrAppendEntry(SerializedProperty entries, int reactionId)

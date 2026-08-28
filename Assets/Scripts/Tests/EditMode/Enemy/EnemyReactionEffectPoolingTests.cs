@@ -1,112 +1,107 @@
+using System.Collections.Generic;
 using NUnit.Framework;
-using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies.Tests.EditMode
 {
     /// <summary>
-    /// Reaction effects are nested inside each pooled enemy rather than instantiated per event,
-    /// so they are pooled with the enemy. Detached placements temporarily unparent the effect,
-    /// which is the one thing that can leak it out of the pooled hierarchy.
+    /// Reaction effects play from one rig shared by every enemy, so the authored reference must be
+    /// to a prefab asset. A reference to an object nested inside the enemy would mean the old
+    /// per-enemy copy is back, multiplying particle renderers by the number of enemy types.
+    /// Element marks are the opposite: their particles follow the enemy, so they stay nested.
     /// </summary>
     public sealed class EnemyReactionEffectPoolingTests
     {
-        private const string BasicEnemyPrefabPath = "Assets/Resources/Prefabs/Enemies/BasicEnemy.prefab";
+        private const string EnemyPrefabFolder = "Assets/Resources/Prefabs/Enemies";
 
         [Test]
-        public void DetachedReactionEffect_ReturnsUnderItsAuthoredParentWhenTheEnemyIsReleased()
+        public void EveryReactionEffect_ReferencesAPrefabAssetRatherThanANestedCopy()
         {
-            GameObject owner = PrefabUtility.LoadPrefabContents(BasicEnemyPrefabPath);
-            try
+            var offenders = new List<string>();
+
+            ForEachEnemyPrefab((prefabName, root, view) =>
             {
-                var view = owner.GetComponentInChildren<EnemyElementEffectView>(true);
-                Assert.That(view, Is.Not.Null);
-
-                Transform effect = FindDeep(owner.transform, "VFX_WaterKnock");
-                Assert.That(effect, Is.Not.Null, "The lift effect must be nested in the enemy prefab.");
-
-                Transform authoredParent = effect.parent;
-                Vector3 authoredLocalPosition = effect.localPosition;
-                Assert.That(authoredParent, Is.Not.Null);
-                Assert.That(effect.gameObject.activeSelf, Is.False, "Effects must start switched off.");
-
-                view.Bind(default);
-                view.ShowReaction(new ElementReactionEvent(
-                    1L,
-                    ElementReactionId.WaterLift,
-                    new ElementPair(ElementType.Water, ElementType.Wind),
-                    new Vector3(5f, 0f, 7f),
-                    1f));
-
-                Assert.That(effect.gameObject.activeSelf, Is.True, "The reaction must switch the effect on.");
-                Assert.That(
-                    effect.parent,
-                    Is.Null,
-                    "A feet-placed effect detaches so it stays on the ground while the enemy is lifted.");
-
-                view.Release();
-
-                Assert.That(
-                    effect.parent,
-                    Is.EqualTo(authoredParent),
-                    "Releasing the enemy must pull the effect back into the pooled hierarchy.");
-                Assert.That(effect.localPosition, Is.EqualTo(authoredLocalPosition));
-                Assert.That(effect.gameObject.activeSelf, Is.False);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(owner);
-            }
-        }
-
-        [Test]
-        public void EveryReactionEffect_IsNestedInTheEnemySoNothingIsInstantiatedPerEvent()
-        {
-            GameObject owner = PrefabUtility.LoadPrefabContents(BasicEnemyPrefabPath);
-            try
-            {
-                var view = owner.GetComponentInChildren<EnemyElementEffectView>(true);
                 var serialized = new SerializedObject(view);
                 SerializedProperty entries = serialized.FindProperty("reactionEffects");
+                Assert.That(entries.arraySize, Is.GreaterThan(0), prefabName + " has no reaction effects.");
 
-                Assert.That(entries.arraySize, Is.GreaterThan(0));
                 for (int index = 0; index < entries.arraySize; index++)
                 {
                     var effect = entries.GetArrayElementAtIndex(index)
                         .FindPropertyRelative("effect")
                         .objectReferenceValue as GameObject;
 
-                    Assert.That(effect, Is.Not.Null, $"Reaction effect {index} is unassigned.");
-                    Assert.That(
-                        effect.transform.IsChildOf(owner.transform),
-                        Is.True,
-                        $"{effect.name} must live inside the enemy prefab to be pooled with it.");
+                    if (effect == null)
+                    {
+                        offenders.Add($"{prefabName}: reaction effect {index} is unassigned");
+                        continue;
+                    }
+
+                    if (effect.transform.IsChildOf(root.transform))
+                    {
+                        offenders.Add($"{prefabName}/{effect.name}: nested copy instead of a prefab asset");
+                    }
                 }
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(owner);
-            }
+            });
+
+            Assert.That(
+                offenders,
+                Is.Empty,
+                "Run Tools > Tower Defense > Wire Enemy Reaction Effects.\n"
+                + string.Join("\n", offenders));
         }
 
-        private static Transform FindDeep(Transform root, string name)
+        [Test]
+        public void ElementMarks_StayNestedBecauseTheirParticlesFollowTheEnemy()
         {
-            if (root.name == name)
-            {
-                return root;
-            }
+            var offenders = new List<string>();
+            string[] markFields = { "fireEffect", "waterEffect", "windEffect" };
 
-            for (int index = 0; index < root.childCount; index++)
+            ForEachEnemyPrefab((prefabName, root, view) =>
             {
-                Transform found = FindDeep(root.GetChild(index), name);
-                if (found != null)
+                var serialized = new SerializedObject(view);
+                for (int index = 0; index < markFields.Length; index++)
                 {
-                    return found;
+                    var mark = serialized.FindProperty(markFields[index]).objectReferenceValue as GameObject;
+                    if (mark == null)
+                    {
+                        continue;
+                    }
+
+                    if (!mark.transform.IsChildOf(root.transform))
+                    {
+                        offenders.Add($"{prefabName}/{markFields[index]}: must stay nested in the enemy");
+                    }
+                }
+            });
+
+            Assert.That(offenders, Is.Empty, string.Join("\n", offenders));
+        }
+
+        private static void ForEachEnemyPrefab(
+            System.Action<string, GameObject, EnemyElementEffectView> inspect)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { EnemyPrefabFolder });
+            Assert.That(guids, Is.Not.Empty, "No enemy prefabs found under " + EnemyPrefabFolder);
+
+            for (int index = 0; index < guids.Length; index++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[index]);
+                GameObject root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    var view = root.GetComponentInChildren<EnemyElementEffectView>(true);
+                    if (view != null)
+                    {
+                        inspect(System.IO.Path.GetFileNameWithoutExtension(path), root, view);
+                    }
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
                 }
             }
-
-            return null;
         }
     }
 }

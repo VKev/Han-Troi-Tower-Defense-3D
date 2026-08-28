@@ -96,6 +96,7 @@ namespace TowerDefense3D.Enemies
         [SerializeField, Min(0.01f)] private float transitionDurationSeconds = 0.4f;
 
         private Transform enemyRoot;
+        private Vfx.GlobalEffectEmitterView reactionEffectEmitter;
         private MaterialPropertyBlock properties;
         private EffectRoot[] effectsByElement;
         private EffectRoot activeEffect;
@@ -194,6 +195,17 @@ namespace TowerDefense3D.Enemies
         {
             EnsureInitialized();
             ResetEffects();
+        }
+
+        /// <summary>
+        /// Reaction effects play from one rig shared by every enemy rather than from a copy nested
+        /// in each one, so ten enemies reacting at once still cost one set of particle systems.
+        /// Only positional effects can work this way: element marks stay nested because their
+        /// particles have to follow the enemy.
+        /// </summary>
+        public void ConfigureReactionEmitter(Vfx.GlobalEffectEmitterView emitter)
+        {
+            reactionEffectEmitter = emitter;
         }
 
         private void EnsureInitialized()
@@ -318,30 +330,14 @@ namespace TowerDefense3D.Enemies
             ElementReactionEvent reaction,
             float durationSeconds)
         {
-            for (int index = 0; index < overlayReactions.Count; index++)
+            if (reactionEffectEmitter == null || authoring.Effect == null)
             {
-                OverlayReaction existing = overlayReactions[index];
-                if (existing.Authoring.ReactionId != authoring.ReactionId)
-                {
-                    continue;
-                }
-
-                existing.RemainingSeconds = durationSeconds;
-                existing.Opacity = 0f;
-                existing.IsFadingOut = false;
-                PositionReactionEffect(existing.Effect, authoring, reaction);
-                SetOpacity(existing.Effect, 0f);
-                PlayParticles(existing.Effect);
                 return;
             }
 
-            var effect = new EffectRoot(authoring.Effect);
-            PositionReactionEffect(effect, authoring, reaction);
-            effect.Root.transform.localScale = effect.AuthoredScale;
-            effect.Root.SetActive(true);
-            SetOpacity(effect, 0f);
-            PlayParticles(effect);
-            overlayReactions.Add(new OverlayReaction(authoring, effect, durationSeconds));
+            reactionEffectEmitter.Play(
+                authoring.Effect,
+                ResolvePlacementPosition(authoring, reaction));
         }
 
         private void PositionReactionEffect(
