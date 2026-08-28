@@ -128,6 +128,45 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 + string.Join("\n", offenders));
         }
 
+        [Test]
+        public void NoVfxEffect_DestroysItselfWhenFinished()
+        {
+            var offenders = new List<string>();
+
+            ForEachVfxPrefab((prefabName, root) =>
+            {
+                MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+                for (int index = 0; index < behaviours.Length; index++)
+                {
+                    MonoBehaviour behaviour = behaviours[index];
+                    if (behaviour == null)
+                    {
+                        continue;
+                    }
+
+                    var clearBehavior = behaviour.GetType().GetField("clearBehavior");
+                    if (clearBehavior == null)
+                    {
+                        continue;
+                    }
+
+                    // Destroy is 2 in CFXR_Effect.ClearBehavior { None, Disable, Destroy }.
+                    // These effects are nested inside pooled enemies, so self-destruction takes
+                    // the effect away permanently and leaves cached renderer lists dangling.
+                    if ((int)clearBehavior.GetValue(behaviour) == 2)
+                    {
+                        offenders.Add($"{prefabName}/{behaviour.name}: clear behavior is Destroy");
+                    }
+                }
+            });
+
+            Assert.That(
+                offenders,
+                Is.Empty,
+                "Pooled effects must disable rather than destroy themselves.\n"
+                + string.Join("\n", offenders));
+        }
+
         private static void ForEachVfxPrefab(System.Action<string, GameObject> inspect)
         {
             string[] guids = AssetDatabase.FindAssets(
