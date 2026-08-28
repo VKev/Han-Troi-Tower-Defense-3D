@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.Core;
+using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Towers;
 
@@ -12,6 +13,8 @@ namespace TowerDefense3D.Waves
         private readonly EnemySystem enemySystem;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly WaveSpawnPlanner spawnPlanner;
+        private readonly LevelGoldSystem goldSystem;
+        private readonly LevelBaseHealthSystem healthSystem;
         private readonly StateMachine<WavePhase> stateMachine =
             new StateMachine<WavePhase>(WavePhase.Preparation, CanTransition);
         private IReadOnlyList<WaveSpawnOrder> currentPlan = Array.Empty<WaveSpawnOrder>();
@@ -23,13 +26,17 @@ namespace TowerDefense3D.Waves
             WaveScheduleDefinition schedule,
             EnemySystem enemySystem,
             TowerNetworkSystem towerNetworkSystem,
-            WaveSpawnPlanner spawnPlanner)
+            WaveSpawnPlanner spawnPlanner,
+            LevelGoldSystem goldSystem,
+            LevelBaseHealthSystem healthSystem)
         {
             this.schedule = schedule ?? throw new ArgumentNullException(nameof(schedule));
             this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.spawnPlanner = spawnPlanner ?? throw new ArgumentNullException(nameof(spawnPlanner));
+            this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
+            this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
 
             IReadOnlyList<string> errors = schedule.CollectValidationErrors();
             if (errors.Count > 0)
@@ -53,12 +60,22 @@ namespace TowerDefense3D.Waves
                 CurrentWaveNumber,
                 WaveCount,
                 enemySystem.LivingCount,
-                Phase == WavePhase.Preparation && towerNetworkSystem.HasValidChain);
+                Phase == WavePhase.Preparation && towerNetworkSystem.HasValidChain,
+                NextWaveClearGold);
         }
+
+        private int NextWaveClearGold => Phase == WavePhase.Victory
+            ? 0
+            : schedule.Waves[nextWaveIndex].ClearGoldReward;
 
         public IReadOnlyList<EnemySpawnBatchDefinition> GetNextWavePreview()
         {
             if (Phase == WavePhase.Victory)
+            {
+                return Array.Empty<EnemySpawnBatchDefinition>();
+            }
+
+            if (Phase == WavePhase.Defeat)
             {
                 return Array.Empty<EnemySpawnBatchDefinition>();
             }
@@ -80,6 +97,12 @@ namespace TowerDefense3D.Waves
                 return false;
             }
 
+            if (Phase == WavePhase.Defeat)
+            {
+                error = "The Toad has no HP remaining.";
+                return false;
+            }
+
             if (!towerNetworkSystem.TryStartSimulation(out error))
             {
                 return false;
@@ -88,7 +111,21 @@ namespace TowerDefense3D.Waves
             currentPlan = AssignEnemyIds(spawnPlanner.CreatePlan(schedule, nextWaveIndex));
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
-            WavePlanCreated?.Invoke(currentPlan);
+            try
+            {
+                WavePlanCreated?.Invoke(currentPlan);
+            }
+            catch (InvalidOperationException planningFailure)
+            {
+                // Planning runs before the wave starts, so a failure must leave the board
+                // exactly as it was rather than stranding it in a started simulation.
+                towerNetworkSystem.StopSimulation();
+                currentPlan = Array.Empty<WaveSpawnOrder>();
+                error = planningFailure.Message;
+                StateChanged?.Invoke();
+                return false;
+            }
+
             stateMachine.TransitionTo(WavePhase.Running);
             SpawnDueEnemies();
             StateChanged?.Invoke();
@@ -108,14 +145,26 @@ namespace TowerDefense3D.Waves
 
         public void CompleteStep()
         {
-            if (!IsRunning
-                || nextSpawnIndex < currentPlan.Count
-                || enemySystem.LivingCount > 0)
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            if (healthSystem.IsDepleted)
+            {
+                towerNetworkSystem.StopSimulation();
+                stateMachine.TransitionTo(WavePhase.Defeat);
+                StateChanged?.Invoke();
+                return;
+            }
+
+            if (nextSpawnIndex < currentPlan.Count || enemySystem.LivingCount > 0)
             {
                 return;
             }
 
             towerNetworkSystem.StopSimulation();
+            goldSystem.Add(schedule.Waves[nextWaveIndex].ClearGoldReward);
             nextWaveIndex++;
             stateMachine.TransitionTo(
                 nextWaveIndex >= schedule.Waves.Count
@@ -167,8 +216,11 @@ namespace TowerDefense3D.Waves
                     return nextPhase == WavePhase.Running;
                 case WavePhase.Running:
                     return nextPhase == WavePhase.Preparation
-                        || nextPhase == WavePhase.Victory;
+                        || nextPhase == WavePhase.Victory
+                        || nextPhase == WavePhase.Defeat;
                 case WavePhase.Victory:
+                    return nextPhase == WavePhase.Preparation;
+                case WavePhase.Defeat:
                     return nextPhase == WavePhase.Preparation;
                 default:
                     return false;

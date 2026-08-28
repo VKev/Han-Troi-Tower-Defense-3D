@@ -12,8 +12,11 @@ namespace TowerDefense3D.Enemies
 
         private readonly Dictionary<long, ActiveEnemyView> activeViews =
             new Dictionary<long, ActiveEnemyView>();
+        private readonly Dictionary<long, ActiveEnemyView> pendingDeaths =
+            new Dictionary<long, ActiveEnemyView>();
         private readonly Dictionary<EnemyDefinition, ComponentPool<EnemyView>> poolsByDefinition =
             new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
+        private readonly List<ActiveEnemyView> pendingDeathSnapshot = new List<ActiveEnemyView>();
         private Camera worldCamera;
 
         public void Configure(Camera camera)
@@ -33,14 +36,15 @@ namespace TowerDefense3D.Enemies
         {
             ActiveEnemyView activeView = activeViews[enemyId];
             activeViews.Remove(enemyId);
-            activeView.Pool.Release(activeView.View);
+            pendingDeaths[enemyId] = activeView;
+            activeView.View.BeginDeath(() => CompleteDeath(enemyId, activeView));
         }
 
-        public void ShowReaction(long enemyId, ElementPair pair)
+        public void ShowReaction(long enemyId, ElementReactionEvent reaction)
         {
             if (activeViews.TryGetValue(enemyId, out ActiveEnemyView activeView))
             {
-                activeView.View.ShowReaction(pair);
+                activeView.View.ShowReaction(reaction);
             }
         }
 
@@ -53,6 +57,22 @@ namespace TowerDefense3D.Enemies
                 EnemySnapshot enemy = enemies[index];
                 activeViews[enemy.EnemyId].View.Render(enemy, interpolationAlpha);
             }
+
+            TickLifecycle(Time.deltaTime);
+        }
+
+        public void TickLifecycle(float deltaTime)
+        {
+            pendingDeathSnapshot.Clear();
+            foreach (ActiveEnemyView pendingDeath in pendingDeaths.Values)
+            {
+                pendingDeathSnapshot.Add(pendingDeath);
+            }
+
+            for (int index = 0; index < pendingDeathSnapshot.Count; index++)
+            {
+                pendingDeathSnapshot[index].View.TickLifecycle(deltaTime);
+            }
         }
 
         public void ReleaseAll()
@@ -63,6 +83,25 @@ namespace TowerDefense3D.Enemies
             }
 
             activeViews.Clear();
+            foreach (ActiveEnemyView pendingDeath in pendingDeaths.Values)
+            {
+                pendingDeath.Pool.Release(pendingDeath.View);
+            }
+
+            pendingDeaths.Clear();
+            pendingDeathSnapshot.Clear();
+        }
+
+        private void CompleteDeath(long enemyId, ActiveEnemyView activeView)
+        {
+            if (!pendingDeaths.TryGetValue(enemyId, out ActiveEnemyView pendingDeath)
+                || pendingDeath.View != activeView.View)
+            {
+                return;
+            }
+
+            pendingDeaths.Remove(enemyId);
+            activeView.Pool.Release(activeView.View);
         }
 
         private ComponentPool<EnemyView> GetPool(EnemyDefinition definition)

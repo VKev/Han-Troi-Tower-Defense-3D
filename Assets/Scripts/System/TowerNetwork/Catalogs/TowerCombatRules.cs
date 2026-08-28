@@ -3,16 +3,6 @@ using UnityEngine;
 
 namespace TowerDefense3D.Towers
 {
-    public enum DefenseResolutionStep
-    {
-        StrongestEarthReduction,
-        PercentPenetration,
-        FlatPenetration,
-        ClampToMinimum,
-        Mitigation,
-        DamageTakenModifier
-    }
-
     /// <summary>
     /// Global combat authoring defaults. Element reactions are intentionally absent:
     /// the latest Element processor overwrites the projectile element payload, while
@@ -34,32 +24,23 @@ namespace TowerDefense3D.Towers
         [SerializeField, Min(0f)] private float projectileSpeedMetersPerSecond = 10f;
 
         [Header("Level Economy")]
-        [SerializeField, Min(0)] private int startingGold = 250;
         [SerializeField, Range(0f, 1f)] private float sellRefundFraction = 0.7f;
-        [SerializeField, Min(0)] private int normalWaveReward = 100;
-        [SerializeField, Min(0)] private int bossWaveReward = 140;
 
         [Header("Progression Limits")]
         [SerializeField, Min(0)] private int maximumTierThreeElementTowers = 2;
-
-        [Header("Defense Resolution")]
-        [SerializeField, Min(0f)] private float minimumEffectiveDefense;
-        [SerializeField]
-        private DefenseResolutionStep[] defenseResolutionOrder =
-        {
-            DefenseResolutionStep.StrongestEarthReduction,
-            DefenseResolutionStep.PercentPenetration,
-            DefenseResolutionStep.FlatPenetration,
-            DefenseResolutionStep.ClampToMinimum,
-            DefenseResolutionStep.Mitigation,
-            DefenseResolutionStep.DamageTakenModifier
-        };
 
         [Header("Simulation")]
         [SerializeField, Min(0.0001f)]
         private float simulationTickSeconds = 0.05f;
 
+        [Tooltip("Ceiling on how fast knockback may drag an enemy backwards, as a fraction "
+            + "of that enemy's own move speed. Below 1 the enemy always nets forward "
+            + "progress no matter how many pushing towers fire at it.")]
+        [SerializeField, Range(0f, 0.9f)]
+        private float maximumPushSpeedFraction = 0.4f;
+
         public float SimulationTickSeconds => simulationTickSeconds;
+        public float MaximumPushSpeedFraction => maximumPushSpeedFraction;
 
         public int MinimumProcessorCountInValidChain => minimumProcessorCountInValidChain;
         public int MinimumElementCountInValidChain => minimumElementCountInValidChain;
@@ -67,15 +48,8 @@ namespace TowerDefense3D.Towers
         public int NormalQueueCapacity => normalQueueCapacity;
         public float MinimumProcessIntervalSeconds => minimumProcessIntervalSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
-        public int StartingGold => startingGold;
         public float SellRefundFraction => sellRefundFraction;
-        public int NormalWaveReward => normalWaveReward;
-        public int BossWaveReward => bossWaveReward;
         public int MaximumTierThreeElementTowers => maximumTierThreeElementTowers;
-        public float MinimumEffectiveDefense => minimumEffectiveDefense;
-        public IReadOnlyList<DefenseResolutionStep> DefenseResolutionOrder =>
-            defenseResolutionOrder;
-
         public float CalculateProcessInterval(
             float baseIntervalSeconds,
             float totalProcessSpeedBonusFraction)

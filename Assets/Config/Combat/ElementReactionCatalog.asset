@@ -14,15 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.ElementReactionCatalog
   elementMarkDurationSeconds: 3
   reactionCooldownSeconds: 0.5
-  maximumSlowFraction: 0.7
   definitions:
-  - {fileID: 11400000, guid: 3227697e3976f044a925068684f14859, type: 2}
-  - {fileID: 11400000, guid: 0cf54511d900a984d81c05e9130c9c2c, type: 2}
-  - {fileID: 11400000, guid: 2e347c16cfeb15346bf7d16e5bbc030b, type: 2}
-  - {fileID: 11400000, guid: a7428438f9b522444a0920228e31c309, type: 2}
   - {fileID: 11400000, guid: 18f85c864aa0d8c43a4d0a188fdf486d, type: 2}
   - {fileID: 11400000, guid: f59dbf6541b34cf4ebece8954687ebfd, type: 2}
-  - {fileID: 11400000, guid: ab7979d5e746c6147b9b29114b84e62f, type: 2}
-  - {fileID: 11400000, guid: 58c32781118ce52408b059f81f340a23, type: 2}
-  - {fileID: 11400000, guid: 8f533765b2762b646ba00b22d0ec849a, type: 2}
   - {fileID: 11400000, guid: 16e946ebc1fc8524db5db1a3dc9ea7c5, type: 2}

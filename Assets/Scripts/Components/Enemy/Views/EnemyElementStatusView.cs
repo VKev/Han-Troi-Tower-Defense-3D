@@ -10,7 +10,6 @@ namespace TowerDefense3D.Enemies
         [SerializeField] private Transform iconRoot;
         [SerializeField] private Transform fireIcon;
         [SerializeField] private Transform waterIcon;
-        [SerializeField] private Transform earthIcon;
         [SerializeField] private Transform windIcon;
         [SerializeField, Min(0f)] private float reactionDisplaySeconds = 0.5f;
         [SerializeField, Min(0f)] private float reactionIconSpacing = 0.55f;
@@ -73,13 +72,7 @@ namespace TowerDefense3D.Enemies
             float halfSpacing = reactionIconSpacing * 0.5f;
             ShowSlot(SlotOf(pair.First), pair.First, new Vector3(-halfSpacing, 0f, 0f));
 
-            // A same-element reaction needs two copies of one icon, but there is only one quad
-            // per element. Borrow an idle quad and point it at the same mesh; every show
-            // re-assigns the mesh, so the borrowed quad never keeps a stale icon.
-            int secondSlot = pair.First == pair.Second
-                ? SpareSlotFor(pair.First)
-                : SlotOf(pair.Second);
-            ShowSlot(secondSlot, pair.Second, new Vector3(halfSpacing, 0f, 0f));
+            ShowSlot(SlotOf(pair.Second), pair.Second, new Vector3(halfSpacing, 0f, 0f));
             iconRoot.gameObject.SetActive(true);
         }
 
@@ -123,7 +116,6 @@ namespace TowerDefense3D.Enemies
         {
             fireIcon.gameObject.SetActive(false);
             waterIcon.gameObject.SetActive(false);
-            earthIcon.gameObject.SetActive(false);
             windIcon.gameObject.SetActive(false);
             iconRoot.gameObject.SetActive(false);
         }
@@ -150,8 +142,7 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
-            // Indexed by ElementType: Fire, Water, Wind, Earth.
-            slotIcons = new[] { fireIcon, waterIcon, windIcon, earthIcon };
+            slotIcons = new[] { fireIcon, waterIcon, windIcon };
             slotFilters = new MeshFilter[slotIcons.Length];
             slotMeshes = new Mesh[slotIcons.Length];
             for (int index = 0; index < slotIcons.Length; index++)
@@ -168,9 +159,5 @@ namespace TowerDefense3D.Enemies
             return (int)element;
         }
 
-        private static int SpareSlotFor(ElementType element)
-        {
-            return element == ElementType.Fire ? SlotOf(ElementType.Water) : SlotOf(ElementType.Fire);
-        }
     }
 }

@@ -10,7 +10,6 @@ namespace TowerDefense3D.Towers
         Fire,
         Water,
         Wind,
-        Earth,
         SoulNexus
     }
 
@@ -25,8 +24,7 @@ namespace TowerDefense3D.Towers
     {
         Fire,
         Water,
-        Wind,
-        Earth
+        Wind
     }
 
     [Serializable]

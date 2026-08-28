@@ -6,7 +6,7 @@ namespace TowerDefense3D.Enemies
     {
         void Spawn(EnemySnapshot enemy);
         void Despawn(long enemyId);
-        void ShowReaction(long enemyId, ElementPair pair);
+        void ShowReaction(long enemyId, ElementReactionEvent reaction);
         void Render(IReadOnlyList<EnemySnapshot> enemies, float interpolationAlpha);
         void ReleaseAll();
     }

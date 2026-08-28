@@ -18,6 +18,7 @@ namespace TowerDefense3D.Enemies
             Position = position;
             PreviousPosition = position;
             TargetPointIndex = 1;
+            RemainingThermalShieldHits = definition.ThermalShockHitsToBreakShield;
         }
 
         public long Id { get; }
@@ -32,9 +33,8 @@ namespace TowerDefense3D.Enemies
             && RevealRemainingSeconds <= 0f;
         public float RevealRemainingSeconds { get; internal set; }
         public EnemyElementState ElementState { get; internal set; }
-        public float SlowFraction { get; internal set; }
-        public float PhysicalResistanceReductionPoints { get; internal set; }
-        public float MagicResistanceReductionPoints { get; internal set; }
+        public int RemainingThermalShieldHits { get; internal set; }
+        public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
         internal int TargetPointIndex { get; set; }
         internal int SummonPhaseIndex { get; set; } = -1;
         internal float SummonElapsedSeconds { get; set; }

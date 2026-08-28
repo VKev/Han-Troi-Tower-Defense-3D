@@ -34,9 +34,8 @@ MonoBehaviour:
       maxInstancesPerLevel: 0
       sellable: 1
   generation:
-    physicalDamage:
+    basicDamage:
       amount: 8
-      damageType: 0
     generatesWithoutEnemy: 1
     requiresValidChain: 1
     upgradedBatchSize: 2

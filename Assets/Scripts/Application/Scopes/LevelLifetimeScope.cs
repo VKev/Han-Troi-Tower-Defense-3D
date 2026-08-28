@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
@@ -61,6 +62,12 @@ namespace TowerDefense3D.GameFlow
                 .As<ITowerProjectileViewPool>();
             builder.RegisterComponentInHierarchy<GameplayUIView>()
                 .As<IGameplayUIView>();
+            builder.RegisterComponentInHierarchy<LevelStatusHudView>()
+                .As<ILevelStatusHudView>();
+            builder.RegisterComponentInHierarchy<PauseHudView>()
+                .As<IPauseHudView>();
+            builder.RegisterComponentInHierarchy<LevelOutcomeHudView>()
+                .As<ILevelOutcomeHudView>();
             builder.RegisterComponentInHierarchy<PlacementHudView>()
                 .As<IPlacementHudView>();
             builder.RegisterComponentInHierarchy<TowerNetworkHudView>()
@@ -73,6 +80,12 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
             builder.RegisterInstance(placementView.WorldCamera);
             builder.RegisterInstance(waveSchedule);
+            builder.Register<LevelGoldSystem>(
+                resolver => new LevelGoldSystem(GetLevelEntry(resolver).StartingGold),
+                Lifetime.Scoped);
+            builder.Register<LevelBaseHealthSystem>(
+                resolver => new LevelBaseHealthSystem(GetLevelEntry(resolver).StartingHealth),
+                Lifetime.Scoped);
             builder.Register<BoardSystem>(Lifetime.Scoped);
             builder.Register<RoadPath>(
                 resolver => RoadPathFactory.Create(resolver.Resolve<BoardSystem>()),
@@ -96,6 +109,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkHudPresenter>(Lifetime.Scoped);
             builder.Register<WaveHudPresenter>(Lifetime.Scoped);
+            builder.Register<LevelOutcomeHudPresenter>(Lifetime.Scoped);
             builder.Register<GameplayUISystem>(Lifetime.Scoped);
             builder.Register<LevelSystemGroup>(Lifetime.Scoped);
             builder.RegisterBuildCallback(AttachLevelSystems);
@@ -132,13 +146,29 @@ namespace TowerDefense3D.GameFlow
             GridPlacementView placementView = container.Resolve<GridPlacementView>();
             placementPresenter.Bind(placementSystem, placementView);
             container.Resolve<EnemyViewPool>().Configure(placementView.WorldCamera);
+            GameFlowSystem gameFlowSystem = container.Resolve<GameFlowSystem>();
             container.Resolve<GameplayUISystem>()
-                .BindReturnToMenu(container.Resolve<GameFlowSystem>().RequestReturnToLevelMenu);
+                .BindReturnToMenu(gameFlowSystem.RequestReturnToLevelMenu);
+            BindLevelOutcomeHud(container, gameFlowSystem);
 
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();
             activeLevelSystems.Attach(systems);
             attachedSystems = systems;
+        }
+
+        private void BindLevelOutcomeHud(IObjectResolver container, GameFlowSystem gameFlowSystem)
+        {
+            LevelCatalogEntry entry = GetLevelEntry(container);
+            bool hasNextLevel = container.Resolve<LevelCatalog>()
+                .TryGetNextLevel(levelNumber, out _);
+            int currentLevelNumber = levelNumber;
+            container.Resolve<LevelOutcomeHudPresenter>().BindLevel(
+                entry.DisplayName,
+                hasNextLevel,
+                () => gameFlowSystem.RequestReplayLevel(currentLevelNumber),
+                () => gameFlowSystem.RequestPlayNextLevel(currentLevelNumber),
+                gameFlowSystem.RequestReturnToLevelMenu);
         }
 
         private T FindSceneComponent<T>() where T : Component
@@ -154,6 +184,18 @@ namespace TowerDefense3D.GameFlow
             }
 
             throw new InvalidOperationException($"Level scene requires {typeof(T).Name}.");
+        }
+
+        private LevelCatalogEntry GetLevelEntry(IObjectResolver resolver)
+        {
+            LevelCatalog catalog = resolver.Resolve<LevelCatalog>();
+            if (catalog.TryGetLevel(levelNumber, out LevelCatalogEntry entry))
+            {
+                return entry;
+            }
+
+            throw new InvalidOperationException(
+                $"LevelLifetimeScope requires a LevelCatalog entry for Level {levelNumber}.");
         }
     }
 }

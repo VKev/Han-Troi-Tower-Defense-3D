@@ -72,6 +72,56 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator BindAndDeathScale_InterpolatesAroundFootPivot()
+        {
+            var viewObject = new GameObject("Enemy View");
+            AddElementStatusView(viewObject);
+            var model = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            model.name = "Model";
+            model.transform.SetParent(viewObject.transform);
+            model.transform.localPosition = new Vector3(0f, 1f, 0f);
+            model.transform.localScale = new Vector3(1f, 2f, 1f);
+            EnemyView view = viewObject.AddComponent<EnemyView>();
+            EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
+            yield return null;
+
+            view.Bind(new EnemySnapshot(
+                1L,
+                definition,
+                new Vector3(3f, 2f, 4f),
+                new Vector3(3f, 2f, 4f),
+                definition.BaseMaxHealth,
+                false,
+                false));
+
+            Renderer modelRenderer = model.GetComponent<Renderer>();
+            float footY = modelRenderer.bounds.min.y;
+            view.TickLifecycle(0.2f);
+            Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+
+            view.TickLifecycle(0.2f);
+            Assert.That(viewObject.transform.localScale.x, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+
+            bool completed = false;
+            view.BeginDeath(() => completed = true);
+            view.TickLifecycle(0.1f);
+            Assert.That(completed, Is.False);
+            Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+
+            view.TickLifecycle(0.1f);
+            Assert.That(completed, Is.True);
+            Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+
+            Object.Destroy(viewObject);
+            Object.Destroy(definition);
+            yield return null;
+        }
+
         private static EnemySnapshot Snapshot(Vector3 previousPosition, Vector3 position) =>
             new EnemySnapshot(
                 1L,
@@ -90,14 +140,12 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             iconRoot.transform.SetParent(statusObject.transform);
             Transform fire = CreateIcon(iconRoot.transform, "Fire");
             Transform water = CreateIcon(iconRoot.transform, "Water");
-            Transform earth = CreateIcon(iconRoot.transform, "Earth");
             Transform wind = CreateIcon(iconRoot.transform, "Wind");
 
             EnemyElementStatusView statusView = statusObject.AddComponent<EnemyElementStatusView>();
             SetField(statusView, "iconRoot", iconRoot.transform);
             SetField(statusView, "fireIcon", fire);
             SetField(statusView, "waterIcon", water);
-            SetField(statusView, "earthIcon", earth);
             SetField(statusView, "windIcon", wind);
             iconRoot.SetActive(false);
 

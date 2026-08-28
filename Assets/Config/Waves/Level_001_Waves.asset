@@ -14,12 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Waves.WaveScheduleDefinition
   randomSeed: 11001
   waves:
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 8
+      count: 12
       startTimeSeconds: 0
-      spawnWindowSeconds: 4
-  - spawnBatches:
+      spawnWindowSeconds: 6
+  - clearGoldReward: 130
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
       count: 6
       startTimeSeconds: 0
@@ -28,7 +30,8 @@ MonoBehaviour:
       count: 4
       startTimeSeconds: 2
       spawnWindowSeconds: 3
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
       count: 6
       startTimeSeconds: 0
@@ -37,12 +40,14 @@ MonoBehaviour:
       count: 4
       startTimeSeconds: 2
       spawnWindowSeconds: 3
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: b111ebd2a63e5374791b768be64fe3ee, type: 2}
       count: 8
       startTimeSeconds: 0
       spawnWindowSeconds: 6
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: 95175cd02ddf7af4cb6e933188c03abf, type: 2}
       count: 2
       startTimeSeconds: 1
@@ -51,12 +56,14 @@ MonoBehaviour:
       count: 10
       startTimeSeconds: 0
       spawnWindowSeconds: 8
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 8
       startTimeSeconds: 0
       spawnWindowSeconds: 7
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: 14f998cb656be094b9f009a48ab36a2f, type: 2}
       count: 1
       startTimeSeconds: 1
@@ -65,7 +72,8 @@ MonoBehaviour:
       count: 3
       startTimeSeconds: 0
       spawnWindowSeconds: 2
-  - spawnBatches:
+  - clearGoldReward: 100
+    spawnBatches:
     - enemy: {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}
       count: 1
       startTimeSeconds: 1

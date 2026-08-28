@@ -116,13 +116,14 @@ namespace TowerDefense3D.Towers
                 case FireTowerDefinition fire:
                     return CreateFirePayload(fire);
                 case WaterTowerDefinition water:
-                    return CreateElementPayload(ProjectilePayloadKind.Water, water.DirectDamage, "Water");
+                    return new ProjectilePayload(ProjectilePayloadKind.Water, 0f);
                 case WindTowerDefinition wind:
-                    return CreateElementPayload(ProjectilePayloadKind.Wind, wind.DirectDamage, "Wind");
-                case EarthTowerDefinition earth:
-                    return CreateElementPayload(ProjectilePayloadKind.Earth, earth.DirectDamage, "Earth");
+                    return new ProjectilePayload(
+                        ProjectilePayloadKind.Wind,
+                        0f,
+                        pushDistanceMeters: wind.BasePushDistanceMeters);
                 case SoulNexusDefinition:
-                    return new ProjectilePayload(ProjectilePayloadKind.Physical, 0f, DamageType.Physical);
+                    return new ProjectilePayload(ProjectilePayloadKind.Basic, 0f);
                 default:
                     throw new NotSupportedException(
                         $"Tower type '{definition.GetType().Name}' is not supported by V0 tower simulation.");
@@ -131,35 +132,30 @@ namespace TowerDefense3D.Towers
 
         private static ProjectilePayload CreateGeneratorPayload(GeneratorTowerDefinition generator)
         {
-            if (generator.Generation == null || generator.Generation.PhysicalDamage == null)
+            if (generator.Generation == null || generator.Generation.BasicDamage == null)
             {
-                throw new InvalidOperationException("Generator physical damage data is missing.");
+                throw new InvalidOperationException("Generator basic damage data is missing.");
             }
 
-            DamageProfile damage = generator.Generation.PhysicalDamage;
-            return new ProjectilePayload(ProjectilePayloadKind.Physical, damage.Amount, damage.DamageType);
+            DamageProfile damage = generator.Generation.BasicDamage;
+            return new ProjectilePayload(ProjectilePayloadKind.Basic, damage.Amount);
         }
 
         private static ProjectilePayload CreateFirePayload(FireTowerDefinition fire)
         {
-            if (fire.DirectDamage == null || fire.TierOne == null)
+            if (fire.DirectDamage == null || fire.Burn == null)
             {
-                throw new InvalidOperationException("Fire direct damage or Tier One data is missing.");
+                throw new InvalidOperationException("Fire direct damage or burn data is missing.");
             }
 
-            float totalFireDamage = fire.DirectDamage.Amount * fire.TierOne.DirectFireDamageMultiplier;
-            return new ProjectilePayload(ProjectilePayloadKind.Fire, totalFireDamage, fire.DirectDamage.DamageType);
-        }
-
-        private static ProjectilePayload CreateElementPayload(
-            ProjectilePayloadKind kind, DamageProfile damage, string displayName)
-        {
-            if (damage == null)
-            {
-                throw new InvalidOperationException($"{displayName} direct damage data is missing.");
-            }
-
-            return new ProjectilePayload(kind, damage.Amount, damage.DamageType);
+            float totalFireDamage = fire.DirectDamage.Amount;
+            BurnProfile burn = fire.Burn;
+            return new ProjectilePayload(
+                ProjectilePayloadKind.Fire,
+                totalFireDamage,
+                burn.DamagePerTick,
+                burn.TickIntervalSeconds,
+                burn.DurationSeconds);
         }
     }
 }

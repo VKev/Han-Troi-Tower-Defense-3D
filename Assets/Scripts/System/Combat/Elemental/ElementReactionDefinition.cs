@@ -13,36 +13,28 @@ namespace TowerDefense3D.Enemies
         [SerializeField] private string displayName;
         [SerializeField] private ElementType firstElement;
         [SerializeField] private ElementType secondElement;
-        [SerializeField, Min(0f)] private float physicalDamage;
-        [SerializeField, Min(0f)] private float magicDamage;
+        [SerializeField, Min(0f)] private float damage;
         [SerializeField, Min(0f)] private float radiusMeters;
         [SerializeField, Min(0f)] private float burnDamagePerTick;
         [SerializeField, Min(0f)] private float burnTickIntervalSeconds;
         [SerializeField, Min(0f)] private float burnDurationSeconds;
-        [SerializeField, Range(0f, 1f)] private float slowStrengthFraction;
-        [SerializeField, Min(0f)] private float slowDurationSeconds;
-        [SerializeField, Min(0f)] private float pushDistanceMeters;
-        [SerializeField, Min(0f)] private float physicalResistanceReductionPoints;
-        [SerializeField, Min(0f)] private float magicResistanceReductionPoints;
-        [SerializeField, Min(0f)] private float resistanceReductionDurationSeconds;
-        [SerializeField] private bool createsField;
+        [SerializeField, Min(0f)] private float liftDurationSeconds;
+
+        [Tooltip("Seconds after a lift ends before the same enemy can be lifted again. "
+            + "Must exceed the fastest re-application interval, otherwise a chain can "
+            + "hold an enemy airborne forever and it never advances along the road.")]
+        [SerializeField, Min(0f)] private float liftImmunitySeconds = 1.5f;
 
         public ElementReactionId ReactionId => reactionId;
         public string DisplayName => displayName;
         public ElementPair Pair => new ElementPair(firstElement, secondElement);
-        public float PhysicalDamage => physicalDamage;
-        public float MagicDamage => magicDamage;
+        public float Damage => damage;
         public float RadiusMeters => radiusMeters;
         public float BurnDamagePerTick => burnDamagePerTick;
         public float BurnTickIntervalSeconds => burnTickIntervalSeconds;
         public float BurnDurationSeconds => burnDurationSeconds;
-        public float SlowStrengthFraction => slowStrengthFraction;
-        public float SlowDurationSeconds => slowDurationSeconds;
-        public float PushDistanceMeters => pushDistanceMeters;
-        public float PhysicalResistanceReductionPoints => physicalResistanceReductionPoints;
-        public float MagicResistanceReductionPoints => magicResistanceReductionPoints;
-        public float ResistanceReductionDurationSeconds => resistanceReductionDurationSeconds;
-        public bool CreatesField => createsField;
+        public float LiftDurationSeconds => liftDurationSeconds;
+        public float LiftImmunitySeconds => liftImmunitySeconds;
 
         public IReadOnlyList<string> CollectValidationErrors()
         {
@@ -58,33 +50,14 @@ namespace TowerDefense3D.Enemies
                 errors.Add("Element Reaction Burn requires a positive interval and duration.");
             }
 
-            if (slowStrengthFraction > 0f && slowDurationSeconds <= 0f)
+            if (liftDurationSeconds > 0f && liftImmunitySeconds <= 0f)
             {
-                errors.Add("Element Reaction Slow requires a positive duration.");
-            }
-
-            if ((physicalResistanceReductionPoints > 0f || magicResistanceReductionPoints > 0f)
-                && resistanceReductionDurationSeconds <= 0f)
-            {
-                errors.Add("Element Reaction Resistance reduction requires a positive duration.");
-            }
-
-            if (createsField && radiusMeters <= 0f)
-            {
-                errors.Add("Element Reaction Field requires a positive radius.");
-            }
-
-            if (reactionId == ElementReactionId.PureRewrite && HasSpecialEffect)
-            {
-                errors.Add("Pure Rewrite cannot deal damage or apply a special effect.");
+                errors.Add(
+                    "Element Reaction Lift requires a positive Lift Immunity, "
+                    + "otherwise an enemy can be held airborne indefinitely.");
             }
 
             return errors;
         }
-
-        private bool HasSpecialEffect => physicalDamage > 0f || magicDamage > 0f || radiusMeters > 0f
-            || burnDamagePerTick > 0f || slowStrengthFraction > 0f || pushDistanceMeters > 0f
-            || physicalResistanceReductionPoints > 0f || magicResistanceReductionPoints > 0f
-            || createsField;
     }
 }

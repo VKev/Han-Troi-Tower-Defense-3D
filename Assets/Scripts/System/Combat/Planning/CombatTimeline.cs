@@ -44,9 +44,7 @@ namespace TowerDefense3D.Enemies
             EnemyElementPhase elementPhase,
             ElementType element,
             float elementRemainingSeconds,
-            float slowFraction,
-            float physicalResistanceReductionPoints,
-            float magicResistanceReductionPoints,
+            int remainingThermalShieldHits,
             PlannedEnemyRemoval removal)
         {
             EnemyId = enemyId;
@@ -58,9 +56,7 @@ namespace TowerDefense3D.Enemies
             ElementPhase = elementPhase;
             Element = element;
             ElementRemainingSeconds = elementRemainingSeconds;
-            SlowFraction = slowFraction;
-            PhysicalResistanceReductionPoints = physicalResistanceReductionPoints;
-            MagicResistanceReductionPoints = magicResistanceReductionPoints;
+            RemainingThermalShieldHits = remainingThermalShieldHits;
             Removal = removal;
         }
 
@@ -73,9 +69,7 @@ namespace TowerDefense3D.Enemies
         public EnemyElementPhase ElementPhase { get; }
         public ElementType Element { get; }
         public float ElementRemainingSeconds { get; }
-        public float SlowFraction { get; }
-        public float PhysicalResistanceReductionPoints { get; }
-        public float MagicResistanceReductionPoints { get; }
+        public int RemainingThermalShieldHits { get; }
         public PlannedEnemyRemoval Removal { get; }
     }
 
@@ -85,18 +79,21 @@ namespace TowerDefense3D.Enemies
             long enemyId,
             ElementReactionId reactionId,
             ElementPair pair,
-            Vector3 position)
+            Vector3 position,
+            float durationSeconds)
         {
             EnemyId = enemyId;
             ReactionId = reactionId;
             Pair = pair;
             Position = position;
+            DurationSeconds = durationSeconds;
         }
 
         public long EnemyId { get; }
         public ElementReactionId ReactionId { get; }
         public ElementPair Pair { get; }
         public Vector3 Position { get; }
+        public float DurationSeconds { get; }
     }
 
     internal sealed class CombatTimeline

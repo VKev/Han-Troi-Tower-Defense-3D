@@ -1,5 +1,6 @@
 using System.Reflection;
 using NUnit.Framework;
+using TowerDefense3D.Economy;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
@@ -17,6 +18,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private TowerCatalog towerCatalog;
         private TowerNetworkManager manager;
         private TowerNetworkSystem system;
+        private LevelGoldSystem goldSystem;
 
         [SetUp]
         public void SetUp()
@@ -35,7 +37,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 new TowerInstanceFactoryStub());
 
             manager = new TowerNetworkManager(towerCatalog);
-            system = new TowerNetworkSystem(manager, placementSystem, 1);
+            goldSystem = new LevelGoldSystem(1000);
+            system = new TowerNetworkSystem(
+                manager,
+                placementSystem,
+                1,
+                goldSystem);
             owner = new GameObject("Tower Network System Test");
         }
 
@@ -129,6 +136,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(manager.NodeCount, Is.EqualTo(1));
             Assert.That(manager.LinkCount, Is.Zero);
             Assert.That(manager.HasValidChain, Is.False);
+        }
+
+        [Test]
+        public void BeginTowerPlacementDrag_RejectsTowerWhenGoldIsInsufficient()
+        {
+            system.Start();
+            Assert.That(towerCatalog.TryGet(TowerFamily.Generator, out TowerCombatDefinition generator), Is.True);
+
+            goldSystem.TrySpend(goldSystem.Balance);
+
+            Assert.That(system.BeginTowerPlacementDrag(generator, 1), Is.False);
+            Assert.That(system.LastFeedback, Is.EqualTo("Not enough Gold."));
         }
 
         private TowerRuntimeView RegisterTower(TowerFamily family, Vector3 position, int ownerId)

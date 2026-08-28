@@ -13,6 +13,7 @@ namespace TowerDefense3D.Towers
         private readonly float tickSeconds;
         private readonly float projectileSpeedMetersPerSecond;
         private readonly float maximumLinkRangeMeters;
+        private readonly float maximumPushSpeedFraction;
         private readonly TowerCatalog catalog;
         private readonly StateMachine<TowerNetworkPhase> phaseMachine =
             new StateMachine<TowerNetworkPhase>(TowerNetworkPhase.Inactive, CanTransition);
@@ -39,6 +40,7 @@ namespace TowerDefense3D.Towers
             tickSeconds = combatRules.SimulationTickSeconds;
             projectileSpeedMetersPerSecond = combatRules.ProjectileSpeedMetersPerSecond;
             maximumLinkRangeMeters = combatRules.MaximumLinkRangeMeters;
+            maximumPushSpeedFraction = combatRules.MaximumPushSpeedFraction;
         }
 
         public event Action StateChanged;
@@ -51,6 +53,7 @@ namespace TowerDefense3D.Towers
         public float TickSeconds => tickSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
         public float MaximumLinkRangeMeters => maximumLinkRangeMeters;
+        public float MaximumPushSpeedFraction => maximumPushSpeedFraction;
         public bool HasLevelSession => Phase != TowerNetworkPhase.Inactive;
         public int ActiveLevelNumber => activeLevelNumber;
         public int NodeCount => nodes.Count;

@@ -9,7 +9,6 @@ namespace TowerDefense3D.Enemies
     public sealed class CombatTimelinePlanner
     {
         private const float ProjectileHitRadius = 0.2f;
-        private const float HiddenDamageMultiplier = 0.5f;
         private const long ImpactMergeWindowTicks = 4L;
         private const float ImpactMergeDistanceMeters = 1.25f;
 
@@ -18,6 +17,7 @@ namespace TowerDefense3D.Enemies
         private readonly ElementReactionCatalog reactionCatalog;
         private readonly float tickSeconds;
         private readonly float projectileSpeed;
+        private readonly float maximumPushSpeedFraction;
 
         public CombatTimelinePlanner(
             TowerNetworkManager towerNetworkManager,
@@ -29,6 +29,7 @@ namespace TowerDefense3D.Enemies
             this.reactionCatalog = reactionCatalog;
             tickSeconds = towerNetworkManager.TickSeconds;
             projectileSpeed = towerNetworkManager.ProjectileSpeedMetersPerSecond;
+            maximumPushSpeedFraction = Mathf.Clamp01(towerNetworkManager.MaximumPushSpeedFraction);
         }
 
         internal CombatTimeline Create(IReadOnlyList<WaveSpawnOrder> wavePlan)
@@ -39,7 +40,6 @@ namespace TowerDefense3D.Enemies
             var timeline = new CombatTimeline();
             var enemies = new List<ShadowEnemy>();
             var projectiles = new List<ShadowProjectile>();
-            var fields = new List<ShadowField>();
             var pendingSummons = new List<ShadowSummon>();
             var hitCandidates = new List<ShadowHit>();
             var lastImpacts = new Dictionary<long, ProjectileImpactHistory>();
@@ -55,10 +55,9 @@ namespace TowerDefense3D.Enemies
                     projectiles,
                     tick,
                     ref nextProjectileSpawnIndex);
-                TickFields(fields, enemies, tick);
                 TickEnemyEffects(enemies, tick);
                 QueueBossSummons(enemies, pendingSummons);
-                MoveEnemies(enemies);
+                MoveEnemies(enemies, tick);
                 SpawnSummons(
                     pendingSummons,
                     enemies,
@@ -70,7 +69,6 @@ namespace TowerDefense3D.Enemies
                 ResolveHits(
                     hitCandidates,
                     enemies,
-                    fields,
                     timeline,
                     lastImpacts,
                     tick);
@@ -104,7 +102,45 @@ namespace TowerDefense3D.Enemies
                     trajectories[index].LastMovementTick);
             }
 
-            return checked(lastMovementTick * 4L + 200L);
+            float progressFraction = CalculateGuaranteedProgressFraction();
+            return checked((long)Math.Ceiling(lastMovementTick / progressFraction) + 200L);
+        }
+
+        /// <summary>
+        /// Smallest share of its own move speed that an enemy is guaranteed to keep once every
+        /// bounded slow-down is stacked: lift can only hold it for its share of each lift cycle,
+        /// and knockback can only claw back its capped fraction of the rest. Staying above zero
+        /// is what makes planning terminate, and the horizon is sized from it so a legal but
+        /// heavily controlled wave is planned rather than rejected.
+        /// </summary>
+        private float CalculateGuaranteedProgressFraction()
+        {
+            float longestLiftUptime = 0f;
+            IReadOnlyList<ElementReactionDefinition> reactions = reactionCatalog.Definitions;
+            for (int index = 0; index < reactions.Count; index++)
+            {
+                ElementReactionDefinition reaction = reactions[index];
+                if (reaction == null || reaction.LiftDurationSeconds <= 0f)
+                {
+                    continue;
+                }
+
+                float cycleSeconds = reaction.LiftDurationSeconds + reaction.LiftImmunitySeconds;
+                longestLiftUptime = Mathf.Max(
+                    longestLiftUptime,
+                    reaction.LiftDurationSeconds / cycleSeconds);
+            }
+
+            float fraction = (1f - longestLiftUptime) * (1f - maximumPushSpeedFraction);
+            if (fraction <= 0f)
+            {
+                throw new InvalidOperationException(
+                    "Combat rules allow an enemy to be halted indefinitely: lift uptime "
+                    + $"{longestLiftUptime:P0} combined with a push ceiling of "
+                    + $"{maximumPushSpeedFraction:P0} leaves no forward progress.");
+            }
+
+            return fraction;
         }
 
         private void SpawnWaveEnemies(
@@ -148,38 +184,6 @@ namespace TowerDefense3D.Enemies
             }
         }
 
-        private void TickFields(
-            List<ShadowField> fields,
-            List<ShadowEnemy> enemies,
-            long tick)
-        {
-            for (int fieldIndex = fields.Count - 1; fieldIndex >= 0; fieldIndex--)
-            {
-                ShadowField field = fields[fieldIndex];
-                if (tick >= field.EndTick)
-                {
-                    fields.RemoveAt(fieldIndex);
-                    continue;
-                }
-
-                for (int enemyIndex = 0; enemyIndex < enemies.Count; enemyIndex++)
-                {
-                    ShadowEnemy enemy = enemies[enemyIndex];
-                    if (!enemy.IsAlive || !IsWithinRadiusXZ(enemy.Position, field.Position, field.Radius))
-                    {
-                        continue;
-                    }
-
-                    ApplySlow(enemy, field.SlowFraction, tick + 1L);
-                    ApplyResistanceReduction(
-                        enemy,
-                        field.PhysicalResistanceReductionPoints,
-                        0f,
-                        tick + 1L);
-                }
-            }
-        }
-
         private void TickEnemyEffects(List<ShadowEnemy> enemies, long tick)
         {
             for (int index = 0; index < enemies.Count; index++)
@@ -187,6 +191,7 @@ namespace TowerDefense3D.Enemies
                 ShadowEnemy enemy = enemies[index];
                 enemy.PreviousPosition = enemy.Position;
                 enemy.Removal = PlannedEnemyRemoval.None;
+                RefillPushBudget(enemy);
                 ExpireEffects(enemy, tick);
                 if (!enemy.IsAlive || enemy.BurnDamagePerTick <= 0f
                     || tick < enemy.NextBurnTick || tick >= enemy.BurnEndTick)
@@ -194,12 +199,7 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
-                ResolvedDamage burnDamage = EnemyDamageResolver.Resolve(
-                    new DamageChannels(0f, enemy.BurnDamagePerTick),
-                    enemy.Definition,
-                    -enemy.PhysicalResistanceReductionPoints,
-                    -enemy.MagicResistanceReductionPoints);
-                enemy.Health = Mathf.Max(0f, enemy.Health - burnDamage.Total);
+                ApplyDamage(enemy, enemy.BurnDamagePerTick, isThermalShock: false);
                 enemy.NextBurnTick += enemy.BurnIntervalTicks;
                 if (!enemy.IsAlive)
                 {
@@ -208,24 +208,21 @@ namespace TowerDefense3D.Enemies
             }
         }
 
+        /// <summary>
+        /// Tops the knockback budget back up by one tick's worth of allowance, capped at one
+        /// second so an enemy that walked unharassed cannot be shoved a long way at once.
+        /// </summary>
+        private void RefillPushBudget(ShadowEnemy enemy)
+        {
+            float allowancePerSecond = enemy.Definition.BaseMoveSpeed * maximumPushSpeedFraction;
+            enemy.PushBudgetMeters = Mathf.Min(
+                allowancePerSecond,
+                enemy.PushBudgetMeters + allowancePerSecond * tickSeconds);
+        }
+
         private void ExpireEffects(ShadowEnemy enemy, long tick)
         {
             enemy.ElementReaction.Advance(tick);
-
-            if (tick >= enemy.SlowEndTick)
-            {
-                enemy.SlowFraction = 0f;
-            }
-
-            if (tick >= enemy.PhysicalResistanceReductionEndTick)
-            {
-                enemy.PhysicalResistanceReductionPoints = 0f;
-            }
-
-            if (tick >= enemy.MagicResistanceReductionEndTick)
-            {
-                enemy.MagicResistanceReductionPoints = 0f;
-            }
 
             if (tick >= enemy.BurnEndTick)
             {
@@ -280,7 +277,7 @@ namespace TowerDefense3D.Enemies
             }
         }
 
-        private void MoveEnemies(List<ShadowEnemy> enemies)
+        private void MoveEnemies(List<ShadowEnemy> enemies, long tick)
         {
             for (int index = 0; index < enemies.Count; index++)
             {
@@ -290,8 +287,13 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
+                if (tick < enemy.LiftEndTick)
+                {
+                    continue;
+                }
+
                 float speedBonus = FindStrongestSpeedBonus(enemy, enemies);
-                float speedMultiplier = (1f + speedBonus) * (1f - enemy.SlowFraction);
+                float speedMultiplier = 1f + speedBonus;
                 float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * tickSeconds;
                 Vector3 position = enemy.Position;
                 int targetPointIndex = enemy.TargetPointIndex;
@@ -419,6 +421,8 @@ namespace TowerDefense3D.Enemies
                 {
                     ShadowEnemy enemy = enemies[enemyIndex];
                     if (!enemy.IsAlive || enemy.Removal == PlannedEnemyRemoval.Leaked
+                        || (enemy.IsHidden
+                            && projectile.Payload.Kind != ProjectilePayloadKind.Water)
                         || projectile.HitEnemyIds.Contains(enemy.Id))
                     {
                         continue;
@@ -451,7 +455,6 @@ namespace TowerDefense3D.Enemies
         private void ResolveHits(
             List<ShadowHit> hits,
             List<ShadowEnemy> enemies,
-            List<ShadowField> fields,
             CombatTimeline timeline,
             Dictionary<long, ProjectileImpactHistory> lastImpacts,
             long tick)
@@ -464,7 +467,7 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
-                ResolveDirectHit(hit, enemies, fields, timeline, tick);
+                ResolveDirectHit(hit, enemies, timeline, tick);
                 if (ShouldPresentImpact(hit, lastImpacts, tick))
                 {
                     timeline.Add(tick, new ProjectileImpactEvent(
@@ -477,27 +480,36 @@ namespace TowerDefense3D.Enemies
         private void ResolveDirectHit(
             ShadowHit hit,
             List<ShadowEnemy> enemies,
-            List<ShadowField> fields,
             CombatTimeline timeline,
             long tick)
         {
             ShadowEnemy enemy = hit.Enemy;
-            bool wasHidden = enemy.IsHidden;
-            ResolvedDamage directDamage = EnemyDamageResolver.Resolve(
-                hit.Projectile.Payload.DamageChannels,
-                enemy.Definition,
-                -enemy.PhysicalResistanceReductionPoints,
-                -enemy.MagicResistanceReductionPoints);
-            float directMultiplier = wasHidden ? HiddenDamageMultiplier : 1f;
-            enemy.Health = Mathf.Max(0f, enemy.Health - directDamage.Total * directMultiplier);
-            if (enemy.Definition is StealthEnemyDefinition stealth)
+            ProjectilePayload payload = hit.Projectile.Payload;
+            if (payload.Kind == ProjectilePayloadKind.Water
+                && enemy.Definition is StealthEnemyDefinition stealth)
             {
                 enemy.RevealRemainingSeconds = stealth.RevealDurationSeconds;
             }
 
-            if (!wasHidden && TryGetElement(hit.Projectile.Payload.Kind, out ElementType incoming))
+            if (payload.Kind == ProjectilePayloadKind.Wind)
             {
-                ApplyElement(enemy, incoming, hit.Position, enemies, fields, timeline, tick);
+                ApplyPush(enemy, payload.PushDistanceMeters);
+            }
+
+            ApplyDamage(enemy, payload.Damage, isThermalShock: false);
+            if (payload.Kind == ProjectilePayloadKind.Fire)
+            {
+                ApplyBurn(
+                    enemy,
+                    payload.BurnDamagePerTick,
+                    payload.BurnTickIntervalSeconds,
+                    payload.BurnDurationSeconds,
+                    tick);
+            }
+
+            if (TryGetElement(payload.Kind, out ElementType incoming))
+            {
+                ApplyElement(enemy, incoming, hit.Position, enemies, timeline, tick);
             }
 
             if (!enemy.IsAlive)
@@ -511,13 +523,12 @@ namespace TowerDefense3D.Enemies
             ElementType incoming,
             Vector3 hitPosition,
             List<ShadowEnemy> enemies,
-            List<ShadowField> fields,
             CombatTimeline timeline,
             long tick)
         {
             if (!enemy.ElementReaction.TryReceive(
                 incoming,
-                enemy.Definition.ElementStatusEffectMultiplier,
+                1f,
                 tick,
                 out ElementReactionDefinition reaction))
             {
@@ -528,8 +539,9 @@ namespace TowerDefense3D.Enemies
                 enemy.Id,
                 reaction.ReactionId,
                 reaction.Pair,
-                hitPosition));
-            ApplyReaction(reaction, enemy, hitPosition, enemies, fields, tick);
+                hitPosition,
+                reaction.BurnDurationSeconds));
+            ApplyReaction(reaction, enemy, hitPosition, enemies, tick);
         }
 
         private void ApplyReaction(
@@ -537,7 +549,6 @@ namespace TowerDefense3D.Enemies
             ShadowEnemy primary,
             Vector3 position,
             List<ShadowEnemy> enemies,
-            List<ShadowField> fields,
             long tick)
         {
             if (reaction.RadiusMeters <= 0f)
@@ -549,7 +560,7 @@ namespace TowerDefense3D.Enemies
                 for (int index = 0; index < enemies.Count; index++)
                 {
                     ShadowEnemy target = enemies[index];
-                    if (target.IsAlive && IsWithinRadiusXZ(
+                    if (target.IsAlive && !target.IsHidden && IsWithinRadiusXZ(
                         target.Position,
                         position,
                         reaction.RadiusMeters))
@@ -559,16 +570,6 @@ namespace TowerDefense3D.Enemies
                 }
             }
 
-            if (reaction.CreatesField)
-            {
-                fields.Add(new ShadowField(
-                    position,
-                    reaction.RadiusMeters,
-                    reaction.SlowStrengthFraction,
-                    reaction.PhysicalResistanceReductionPoints,
-                    tick + SecondsToDurationTicks(
-                        reaction.ResistanceReductionDurationSeconds)));
-            }
         }
 
         private void ApplyReactionToEnemy(
@@ -576,67 +577,68 @@ namespace TowerDefense3D.Enemies
             ShadowEnemy enemy,
             long tick)
         {
-            bool hidden = enemy.IsHidden;
-            ResolvedDamage damage = EnemyDamageResolver.Resolve(
-                new DamageChannels(reaction.PhysicalDamage, reaction.MagicDamage),
-                enemy.Definition,
-                -enemy.PhysicalResistanceReductionPoints,
-                -enemy.MagicResistanceReductionPoints);
-            enemy.Health = Mathf.Max(
-                0f,
-                enemy.Health - damage.Total * (hidden ? HiddenDamageMultiplier : 1f));
-            if (hidden || !enemy.IsAlive)
+            switch (reaction.ReactionId)
             {
-                if (!enemy.IsAlive)
-                {
-                    enemy.Removal = PlannedEnemyRemoval.Killed;
-                }
-
-                return;
-            }
-
-            ApplyBurn(enemy, reaction, tick);
-            ApplyPush(enemy, reaction.PushDistanceMeters);
-            if (!reaction.CreatesField)
-            {
-                ApplyReactionSlow(enemy, reaction, tick);
-                ApplyResistanceReduction(
-                    enemy,
-                    reaction.PhysicalResistanceReductionPoints,
-                    reaction.MagicResistanceReductionPoints,
-                    tick + SecondsToDurationTicks(
-                        reaction.ResistanceReductionDurationSeconds));
+                case ElementReactionId.ThermalShock:
+                    ApplyDamage(enemy, reaction.Damage, isThermalShock: true);
+                    break;
+                case ElementReactionId.Firestorm:
+                    enemy.ElementReaction.ForceMark(
+                        ElementType.Fire,
+                        1f,
+                        tick);
+                    ApplyBurn(
+                        enemy,
+                        reaction.BurnDamagePerTick,
+                        reaction.BurnTickIntervalSeconds,
+                        reaction.BurnDurationSeconds,
+                        tick);
+                    break;
+                case ElementReactionId.WaterLift:
+                    ApplyLift(reaction, enemy, tick);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(reaction));
             }
         }
 
-        private void ApplyReactionSlow(
-            ShadowEnemy enemy,
+        /// <summary>
+        /// Lifts a regular enemy, then makes it immune until the lift has worn off and its
+        /// immunity window has elapsed. Without the window a chain that re-triggers faster
+        /// than the lift lasts would hold the enemy airborne forever: it would never advance,
+        /// never leak, and never die, because the lift itself deals no damage.
+        /// </summary>
+        private void ApplyLift(
             ElementReactionDefinition reaction,
+            ShadowEnemy enemy,
             long tick)
         {
-            float duration = reaction.SlowDurationSeconds
-                * enemy.Definition.SlowDurationMultiplier;
-            if (duration > 0f)
+            if (enemy.Definition.Rank != EnemyRank.Regular
+                || tick < enemy.LiftImmuneUntilTick
+                || reaction.LiftDurationSeconds <= 0f)
             {
-                ApplySlow(
-                    enemy,
-                    reaction.SlowStrengthFraction,
-                    tick + SecondsToDurationTicks(duration));
+                return;
             }
+
+            enemy.LiftEndTick = tick + SecondsToDurationTicks(reaction.LiftDurationSeconds);
+            enemy.LiftImmuneUntilTick =
+                enemy.LiftEndTick + SecondsToDurationTicks(reaction.LiftImmunitySeconds);
         }
 
         private void ApplyBurn(
             ShadowEnemy enemy,
-            ElementReactionDefinition reaction,
+            float damagePerTick,
+            float tickIntervalSeconds,
+            float durationSeconds,
             long tick)
         {
-            if (reaction.BurnDamagePerTick <= 0f)
+            if (damagePerTick <= 0f || tickIntervalSeconds <= 0f || durationSeconds <= 0f)
             {
                 return;
             }
 
-            int intervalTicks = SecondsToDurationTicks(reaction.BurnTickIntervalSeconds);
-            float incomingDps = reaction.BurnDamagePerTick / intervalTicks;
+            int intervalTicks = SecondsToDurationTicks(tickIntervalSeconds);
+            float incomingDps = damagePerTick / intervalTicks;
             float activeDps = enemy.BurnIntervalTicks > 0
                 ? enemy.BurnDamagePerTick / enemy.BurnIntervalTicks
                 : 0f;
@@ -645,38 +647,51 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
-            enemy.BurnDamagePerTick = reaction.BurnDamagePerTick;
+            enemy.BurnDamagePerTick = damagePerTick;
             enemy.BurnIntervalTicks = intervalTicks;
             enemy.NextBurnTick = tick + intervalTicks;
-            enemy.BurnEndTick = tick + SecondsToDurationTicks(reaction.BurnDurationSeconds);
+            enemy.BurnEndTick = tick + SecondsToDurationTicks(durationSeconds);
         }
 
-        private void ApplySlow(ShadowEnemy enemy, float strength, long endTick)
+        private static void ApplyDamage(
+            ShadowEnemy enemy,
+            float damage,
+            bool isThermalShock)
         {
-            if (strength <= 0f || enemy.Definition.Rank == EnemyRank.Boss)
+            if (damage <= 0f || !enemy.IsAlive)
             {
                 return;
             }
 
-            float effectiveStrength = Mathf.Min(
-                reactionCatalog.MaximumSlowFraction,
-                strength * enemy.Definition.SlowStrengthMultiplier);
-            if (effectiveStrength < enemy.SlowFraction)
+            if (enemy.RemainingThermalShieldHits > 0)
             {
+                if (isThermalShock)
+                {
+                    enemy.RemainingThermalShieldHits--;
+                }
+
                 return;
             }
 
-            enemy.SlowFraction = effectiveStrength;
-            enemy.SlowEndTick = Math.Max(enemy.SlowEndTick, endTick);
+            enemy.Health = Mathf.Max(0f, enemy.Health - damage);
+            if (!enemy.IsAlive)
+            {
+                enemy.Removal = PlannedEnemyRemoval.Killed;
+            }
         }
 
         private void ApplyPush(ShadowEnemy enemy, float distance)
         {
-            float effectiveDistance = distance * enemy.Definition.PushDistanceMultiplier;
-            if (effectiveDistance <= 0f || enemy.Definition.Rank == EnemyRank.Boss)
+            // Knockback spends a budget that refills at a fraction of the enemy's own move
+            // speed, so however many pushing towers fire at once they can never drag it
+            // backwards faster than it walks forwards.
+            float effectiveDistance = Mathf.Min(distance, enemy.PushBudgetMeters);
+            if (effectiveDistance <= 0f)
             {
                 return;
             }
+
+            enemy.PushBudgetMeters -= effectiveDistance;
 
             Vector3 position = enemy.Position;
             int targetPointIndex = enemy.TargetPointIndex;
@@ -703,29 +718,6 @@ namespace TowerDefense3D.Enemies
             enemy.TargetPointIndex = Math.Max(1, targetPointIndex);
         }
 
-        private static void ApplyResistanceReduction(
-            ShadowEnemy enemy,
-            float physicalPoints,
-            float magicPoints,
-            long endTick)
-        {
-            if (physicalPoints >= enemy.PhysicalResistanceReductionPoints)
-            {
-                enemy.PhysicalResistanceReductionPoints = physicalPoints;
-                enemy.PhysicalResistanceReductionEndTick = Math.Max(
-                    enemy.PhysicalResistanceReductionEndTick,
-                    endTick);
-            }
-
-            if (magicPoints >= enemy.MagicResistanceReductionPoints)
-            {
-                enemy.MagicResistanceReductionPoints = magicPoints;
-                enemy.MagicResistanceReductionEndTick = Math.Max(
-                    enemy.MagicResistanceReductionEndTick,
-                    endTick);
-            }
-        }
-
         private void RecordFrames(
             List<ShadowEnemy> enemies,
             CombatTimeline timeline,
@@ -744,9 +736,7 @@ namespace TowerDefense3D.Enemies
                     enemy.ElementReaction.Phase,
                     enemy.ElementReaction.Element,
                     enemy.ElementReaction.GetRemainingSeconds(tick),
-                    enemy.SlowFraction,
-                    enemy.PhysicalResistanceReductionPoints,
-                    enemy.MagicResistanceReductionPoints,
+                    enemy.RemainingThermalShieldHits,
                     enemy.Removal));
             }
         }
@@ -822,9 +812,6 @@ namespace TowerDefense3D.Enemies
                 case ProjectilePayloadKind.Wind:
                     element = ElementType.Wind;
                     return true;
-                case ProjectilePayloadKind.Earth:
-                    element = ElementType.Earth;
-                    return true;
                 default:
                     element = default;
                     return false;
@@ -898,6 +885,7 @@ namespace TowerDefense3D.Enemies
                 ElementReaction = new EnemyElementReactionState(
                     reactionCatalog,
                     tickSeconds);
+                RemainingThermalShieldHits = definition.ThermalShockHitsToBreakShield;
             }
 
             public long Id { get; }
@@ -913,12 +901,10 @@ namespace TowerDefense3D.Enemies
             public int TargetPointIndex { get; set; }
             public float RevealRemainingSeconds { get; set; }
             public EnemyElementReactionState ElementReaction { get; }
-            public float SlowFraction { get; set; }
-            public long SlowEndTick { get; set; }
-            public float PhysicalResistanceReductionPoints { get; set; }
-            public long PhysicalResistanceReductionEndTick { get; set; }
-            public float MagicResistanceReductionPoints { get; set; }
-            public long MagicResistanceReductionEndTick { get; set; }
+            public int RemainingThermalShieldHits { get; set; }
+            public long LiftEndTick { get; set; }
+            public long LiftImmuneUntilTick { get; set; }
+            public float PushBudgetMeters { get; set; }
             public float BurnDamagePerTick { get; set; }
             public int BurnIntervalTicks { get; set; }
             public long NextBurnTick { get; set; }
@@ -1001,27 +987,5 @@ namespace TowerDefense3D.Enemies
             public int TargetPointIndex { get; }
         }
 
-        private readonly struct ShadowField
-        {
-            public ShadowField(
-                Vector3 position,
-                float radius,
-                float slowFraction,
-                float physicalResistanceReductionPoints,
-                long endTick)
-            {
-                Position = position;
-                Radius = radius;
-                SlowFraction = slowFraction;
-                PhysicalResistanceReductionPoints = physicalResistanceReductionPoints;
-                EndTick = endTick;
-            }
-
-            public Vector3 Position { get; }
-            public float Radius { get; }
-            public float SlowFraction { get; }
-            public float PhysicalResistanceReductionPoints { get; }
-            public long EndTick { get; }
-        }
     }
 }

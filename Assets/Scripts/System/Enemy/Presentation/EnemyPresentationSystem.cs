@@ -64,7 +64,7 @@ namespace TowerDefense3D.Enemies
 
         private void HandleReactionTriggered(ElementReactionEvent reaction)
         {
-            viewPool.ShowReaction(reaction.EnemyId, reaction.Pair);
+            viewPool.ShowReaction(reaction.EnemyId, reaction);
         }
     }
 }

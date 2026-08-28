@@ -87,9 +87,32 @@ namespace TowerDefense3D.GameFlow
 
         internal void BeginLevelLoad(LevelLoadRequest request)
         {
-            if (State == GameFlowState.LevelMenu)
+            if (State == GameFlowState.LevelMenu || State == GameFlowState.Gameplay)
             {
                 levelTransitionFlow.BeginLevelLoad(request);
+            }
+        }
+
+        /// <summary>
+        /// Restarts the level currently being played. Ignored outside gameplay.
+        /// </summary>
+        public void RequestReplayLevel(int levelNumber)
+        {
+            if (State == GameFlowState.Gameplay)
+            {
+                levelMenuFlow.PlayLevel(levelNumber);
+            }
+        }
+
+        /// <summary>
+        /// Advances from the level currently being played to the next authored level.
+        /// Ignored outside gameplay, or when no later level is authored.
+        /// </summary>
+        public void RequestPlayNextLevel(int currentLevelNumber)
+        {
+            if (State == GameFlowState.Gameplay)
+            {
+                levelMenuFlow.PlayNextLevel(currentLevelNumber);
             }
         }
 

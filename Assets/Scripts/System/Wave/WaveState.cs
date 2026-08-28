@@ -4,7 +4,8 @@ namespace TowerDefense3D.Waves
     {
         Preparation,
         Running,
-        Victory
+        Victory,
+        Defeat
     }
 
     public readonly struct WaveState
@@ -14,13 +15,15 @@ namespace TowerDefense3D.Waves
             int currentWaveNumber,
             int waveCount,
             int livingEnemyCount,
-            bool canStartWave)
+            bool canStartWave,
+            int nextWaveClearGold = 0)
         {
             Phase = phase;
             CurrentWaveNumber = currentWaveNumber;
             WaveCount = waveCount;
             LivingEnemyCount = livingEnemyCount;
             CanStartWave = canStartWave;
+            NextWaveClearGold = nextWaveClearGold;
         }
 
         public WavePhase Phase { get; }
@@ -28,5 +31,6 @@ namespace TowerDefense3D.Waves
         public int WaveCount { get; }
         public int LivingEnemyCount { get; }
         public bool CanStartWave { get; }
+        public int NextWaveClearGold { get; }
     }
 }

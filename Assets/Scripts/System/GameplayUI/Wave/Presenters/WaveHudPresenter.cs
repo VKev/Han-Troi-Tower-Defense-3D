@@ -34,7 +34,12 @@ namespace TowerDefense3D.GameFlow
         {
             WaveState state = waveSystem.CreateState();
             view.Render(new WaveHudState(
-                CreateWaveText(state),
+                CreateWaveCounterText(state),
+                CreateStatusText(state),
+                CreateWaveProgress(state),
+                state.LivingEnemyCount.ToString("00"),
+                CreateStartWaveText(state),
+                CreateStartWaveBonusText(state),
                 CreatePreviewText(state),
                 state.CanStartWave));
         }
@@ -47,18 +52,63 @@ namespace TowerDefense3D.GameFlow
             Refresh();
         }
 
-        private static string CreateWaveText(WaveState state)
+        private static string CreateWaveCounterText(WaveState state)
+        {
+            return $"{state.CurrentWaveNumber:00} / {state.WaveCount:00}";
+        }
+
+        private static string CreateStatusText(WaveState state)
         {
             switch (state.Phase)
             {
                 case WavePhase.Running:
-                    return $"WAVE {state.CurrentWaveNumber}/{state.WaveCount}"
-                        + $"  ENEMIES {state.LivingEnemyCount}";
+                    return "WAVE IN PROGRESS";
+                case WavePhase.Victory:
+                    return "ALL WAVES CLEARED";
+                case WavePhase.Defeat:
+                    return "CÓC HAS FALLEN";
+                default:
+                    return state.CanStartWave
+                        ? "READY TO START"
+                        : "LINK A VALID CHAIN";
+            }
+        }
+
+        private static float CreateWaveProgress(WaveState state)
+        {
+            if (state.Phase == WavePhase.Victory)
+            {
+                return 1f;
+            }
+
+            if (state.WaveCount <= 0)
+            {
+                return 0f;
+            }
+
+            return (float)(state.CurrentWaveNumber - 1) / state.WaveCount;
+        }
+
+        private static string CreateStartWaveText(WaveState state)
+        {
+            switch (state.Phase)
+            {
+                case WavePhase.Running:
+                    return "WAVE RUNNING";
                 case WavePhase.Victory:
                     return "VICTORY";
+                case WavePhase.Defeat:
+                    return "DEFEAT";
                 default:
-                    return $"START WAVE {state.CurrentWaveNumber}/{state.WaveCount}";
+                    return "START WAVE";
             }
+        }
+
+        private static string CreateStartWaveBonusText(WaveState state)
+        {
+            return state.Phase == WavePhase.Preparation && state.NextWaveClearGold > 0
+                ? $"+{state.NextWaveClearGold} CLEAR BONUS"
+                : string.Empty;
         }
 
         private string CreatePreviewText(WaveState state)
@@ -78,20 +128,26 @@ namespace TowerDefense3D.GameFlow
                 return "All waves cleared.";
             }
 
+            if (state.Phase == WavePhase.Defeat)
+            {
+                return "The Toad has no HP remaining.";
+            }
+
             IReadOnlyList<EnemySpawnBatchDefinition> batches =
                 waveSystem.GetNextWavePreview();
-            var summary = new StringBuilder("Next: ");
+            var summary = new StringBuilder();
             for (int index = 0; index < batches.Count; index++)
             {
                 if (index > 0)
                 {
-                    summary.Append("  |  ");
+                    summary.Append('\n');
                 }
 
                 EnemySpawnBatchDefinition batch = batches[index];
-                summary.Append(batch.Count)
-                    .Append("x ")
+                summary.Append("• ")
                     .Append(batch.Enemy.DisplayName)
+                    .Append("  ×")
+                    .Append(batch.Count)
                     .Append(GetWarning(batch.Enemy));
             }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Economy;
 using TowerDefense3D.GridPlacement;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace TowerDefense3D.Towers
     {
         private readonly TowerNetworkManager manager;
         private readonly GridPlacementSystem placementSystem;
+        private readonly LevelGoldSystem goldSystem;
         private readonly TowerRuntimeViewRegistry viewRegistry;
         private readonly int levelNumber;
 
@@ -23,10 +25,12 @@ namespace TowerDefense3D.Towers
         public TowerNetworkSystem(
             TowerNetworkManager manager,
             GridPlacementSystem placementSystem,
-            int levelNumber)
+            int levelNumber,
+            LevelGoldSystem goldSystem)
         {
             this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
             this.placementSystem = placementSystem ?? throw new ArgumentNullException(nameof(placementSystem));
+            this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
             if (levelNumber <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(levelNumber), "Level number must be positive.");
@@ -110,6 +114,12 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
+            if (!goldSystem.CanAfford(GetBuildCost(definition)))
+            {
+                ReportFeedback("Not enough Gold.");
+                return false;
+            }
+
             TowerDefinition placementDefinition = definition.Core.PlacementDefinition;
             if (placementDefinition == null)
             {
@@ -140,10 +150,20 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
+            TowerCombatDefinition definition = placementCombatDefinition;
+            if (definition == null || !goldSystem.TrySpend(GetBuildCost(definition)))
+            {
+                placementSystem.CancelPlacementDrag(pointerId);
+                placementCombatDefinition = null;
+                ReportFeedback("Not enough Gold.");
+                return false;
+            }
+
             bool placed = placementSystem.EndPlacementDrag(pointerId, screenPosition, pointerOverUi);
             placementCombatDefinition = null;
             if (!placed)
             {
+                goldSystem.Add(GetBuildCost(definition));
                 ReportFeedback("Tower placement canceled.");
             }
 
@@ -289,6 +309,17 @@ namespace TowerDefense3D.Towers
         private static string GetDisplayName(ITowerRuntimeView view)
         {
             return view.CombatDefinition.Core.DisplayName;
+        }
+
+        private static int GetBuildCost(TowerCombatDefinition definition)
+        {
+            TowerEconomyProfile economy = definition.Core.Economy;
+            if (economy == null)
+            {
+                throw new InvalidOperationException(definition.name + " requires an economy profile.");
+            }
+
+            return economy.BuildCost;
         }
     }
 }

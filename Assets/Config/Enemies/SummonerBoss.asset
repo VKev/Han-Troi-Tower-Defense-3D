@@ -19,16 +19,10 @@ MonoBehaviour:
   baseMaxHealth: 600
   baseMoveSpeed: 0.8
   baseHitRadius: 1.172
-  basePhysicalResistance: 35
-  baseMagicResistance: 35
-  elementStatusEffectMultiplier: 1
-  slowStrengthMultiplier: 0.35
-  slowDurationMultiplier: 0.5
-  stunDurationMultiplier: 1
-  levitateDurationMultiplier: 1
-  pushDistanceMultiplier: 0
+  thermalShockHitsToBreakShield: 0
   goldOnDeath: 180
   soulOnDirectHit: 3
+  leakDamage: 5
   summonPhases:
   - startHealthFraction: 1
     summonIntervalSeconds: 8

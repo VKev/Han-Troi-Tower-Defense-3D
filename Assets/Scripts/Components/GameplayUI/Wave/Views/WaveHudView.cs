@@ -8,6 +8,12 @@ namespace TowerDefense3D.GameFlow
     public sealed class WaveHudView : MonoBehaviour, IWaveHudView
     {
         [SerializeField] private Button startWaveButton;
+        [SerializeField] private Text startWaveText;
+        [SerializeField] private Text startWaveBonusText;
+        [SerializeField] private Text waveCounterText;
+        [SerializeField] private Text statusText;
+        [SerializeField] private Image waveProgressFill;
+        [SerializeField] private Text enemiesLeftText;
         [SerializeField] private Text previewText;
         private bool isInitialized;
 
@@ -27,7 +33,12 @@ namespace TowerDefense3D.GameFlow
         public void Render(WaveHudState state)
         {
             startWaveButton.interactable = state.StartWaveEnabled;
-            startWaveButton.GetComponentInChildren<Text>(true).text = state.WaveText;
+            startWaveText.text = state.StartWaveText;
+            startWaveBonusText.text = state.StartWaveBonusText;
+            waveCounterText.text = state.WaveCounterText;
+            statusText.text = state.StatusText;
+            waveProgressFill.fillAmount = Mathf.Clamp01(state.WaveProgress);
+            enemiesLeftText.text = state.EnemiesLeftText;
             previewText.text = state.PreviewText;
         }
 

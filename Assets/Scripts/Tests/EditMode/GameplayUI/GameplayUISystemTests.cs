@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
@@ -21,8 +22,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public void RefreshIfDirty_RefreshesForLocalStateEventsAndRoutesViewCommands()
         {
             TowerNetworkSystem towerNetworkSystem = CreateTowerNetworkSystem();
+            var goldSystem = new LevelGoldSystem(400);
+            var healthSystem = new LevelBaseHealthSystem(10);
             var enemySystem = new EnemySystem(
-                new RoadPath(new[] { Vector3.zero, Vector3.forward }));
+                new RoadPath(new[] { Vector3.zero, Vector3.forward }),
+                goldSystem,
+                healthSystem);
             EnemyDefinition enemyDefinition = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(EnemyPath);
             Assert.That(enemyDefinition, Is.Not.Null);
             var gameplayView = new GameplayViewStub();
@@ -32,6 +37,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var waveSystem = new WaveSystemStub();
             var waveHudView = new WaveHudViewStub();
             var wavePresenter = new WaveHudPresenter(waveSystem, waveHudView);
+            var statusHudView = new LevelStatusHudViewStub();
             var gameplayUISystem = new GameplayUISystem(
                 gameplayView,
                 placementHudView,
@@ -39,7 +45,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 presenter,
                 waveSystem,
                 wavePresenter,
-                enemySystem);
+                enemySystem,
+                goldSystem,
+                healthSystem,
+                statusHudView);
             int returnRequestCount = 0;
             gameplayUISystem.BindReturnToMenu(() => returnRequestCount++);
 
@@ -55,6 +64,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(towerHudView.RenderCount, Is.EqualTo(1));
             Assert.That(waveHudView.ShowCount, Is.EqualTo(1));
             Assert.That(waveHudView.RenderCount, Is.EqualTo(1));
+            Assert.That(statusHudView.LastGold, Is.EqualTo(400));
+            Assert.That(statusHudView.LastHealth, Is.EqualTo(10));
+            Assert.That(statusHudView.LastMaximumHealth, Is.EqualTo(10));
 
             towerNetworkSystem.ReportFeedback("Network changed.");
             gameplayUISystem.RefreshIfDirty();
@@ -71,6 +83,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             gameplayUISystem.RefreshIfDirty();
 
             Assert.That(waveHudView.RenderCount, Is.EqualTo(4));
+
+            goldSystem.Add(10);
+            healthSystem.TakeDamage(1);
+
+            Assert.That(statusHudView.LastGold, Is.EqualTo(410));
+            Assert.That(statusHudView.LastHealth, Is.EqualTo(9));
 
             towerHudView.RequestReturnToMenu();
 
@@ -98,7 +116,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 inputSystem,
                 new GridPlacementViewStub(),
                 new TowerInstanceFactoryStub());
-            return new TowerNetworkSystem(new TowerNetworkManager(towerCatalog), placementSystem, 1);
+            return new TowerNetworkSystem(
+                new TowerNetworkManager(towerCatalog),
+                placementSystem,
+                1,
+                new LevelGoldSystem(1000));
         }
 
         private sealed class GameplayViewStub : IGameplayUIView
@@ -118,6 +140,24 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public void Show()
             {
                 ShowCount++;
+            }
+        }
+
+        private sealed class LevelStatusHudViewStub : ILevelStatusHudView
+        {
+            public int LastGold { get; private set; }
+            public int LastHealth { get; private set; }
+            public int LastMaximumHealth { get; private set; }
+
+            public void RenderGold(int gold)
+            {
+                LastGold = gold;
+            }
+
+            public void RenderHealth(int currentHealth, int maximumHealth)
+            {
+                LastHealth = currentHealth;
+                LastMaximumHealth = maximumHealth;
             }
         }
 

@@ -42,9 +42,9 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(stealth.RevealDurationSeconds, Is.EqualTo(2f));
             Assert.That(speedSupport.RegularSpeedBonusFraction, Is.EqualTo(0.25f));
             Assert.That(speedSupport.MiniBossSpeedBonusFraction, Is.EqualTo(0.10f));
-            Assert.That(miniBoss.PushDistanceMultiplier, Is.EqualTo(0.25f));
+            Assert.That(miniBoss.LeakDamage, Is.EqualTo(1));
             Assert.That(summonerBoss.Rank, Is.EqualTo(EnemyRank.Boss));
-            Assert.That(summonerBoss.PushDistanceMultiplier, Is.Zero);
+            Assert.That(summonerBoss.LeakDamage, Is.EqualTo(5));
             Assert.That(summonerBoss.SummonPhases, Has.Count.EqualTo(3));
             Assert.That(summonerBoss.SummonPhases[0].StartHealthFraction, Is.EqualTo(1f));
             Assert.That(summonerBoss.SummonPhases[1].StartHealthFraction, Is.EqualTo(0.6f));

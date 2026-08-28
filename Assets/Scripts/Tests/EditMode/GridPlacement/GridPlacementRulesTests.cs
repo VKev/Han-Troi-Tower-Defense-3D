@@ -224,9 +224,6 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             "Assets/Config/GridPlacement/WindTower.asset",
             "Assets/Config/Towers/Definitions/Elements/Wind.asset")]
         [TestCase(
-            "Assets/Config/GridPlacement/EarthTower.asset",
-            "Assets/Config/Towers/Definitions/Elements/Earth.asset")]
-        [TestCase(
             "Assets/Config/GridPlacement/SoulNexusTower.asset",
             "Assets/Config/Towers/Definitions/Sinks/SoulNexus.asset")]
         public void TowerInstanceFactory_GroundsAuthoredTowerAndCentersProjectileOrigin(

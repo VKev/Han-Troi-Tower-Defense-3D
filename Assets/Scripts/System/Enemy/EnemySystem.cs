@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Economy;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies
@@ -7,6 +8,8 @@ namespace TowerDefense3D.Enemies
     public sealed class EnemySystem
     {
         private readonly RoadPath roadPath;
+        private readonly LevelGoldSystem goldSystem;
+        private readonly LevelBaseHealthSystem healthSystem;
         private readonly List<EnemyInstance> activeEnemies = new List<EnemyInstance>();
         private readonly Dictionary<long, EnemyInstance> enemiesById =
             new Dictionary<long, EnemyInstance>();
@@ -15,9 +18,14 @@ namespace TowerDefense3D.Enemies
         private readonly List<PendingSummon> pendingSummons = new List<PendingSummon>();
         private long nextEnemyId = 1L;
 
-        public EnemySystem(RoadPath roadPath)
+        public EnemySystem(
+            RoadPath roadPath,
+            LevelGoldSystem goldSystem,
+            LevelBaseHealthSystem healthSystem)
         {
             this.roadPath = roadPath ?? throw new ArgumentNullException(nameof(roadPath));
+            this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
+            this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
         }
 
         public event Action<EnemySnapshot> EnemySpawned;
@@ -75,10 +83,7 @@ namespace TowerDefense3D.Enemies
                 frame.ElementPhase,
                 frame.Element,
                 frame.ElementRemainingSeconds);
-            enemy.SlowFraction = frame.SlowFraction;
-            enemy.PhysicalResistanceReductionPoints =
-                frame.PhysicalResistanceReductionPoints;
-            enemy.MagicResistanceReductionPoints = frame.MagicResistanceReductionPoints;
+            enemy.RemainingThermalShieldHits = frame.RemainingThermalShieldHits;
 
             if (frame.Removal == PlannedEnemyRemoval.None)
             {
@@ -90,11 +95,11 @@ namespace TowerDefense3D.Enemies
             EnemySnapshot snapshot = CreateSnapshot(enemy);
             if (frame.Removal == PlannedEnemyRemoval.Killed)
             {
-                EnemyKilled?.Invoke(snapshot);
+                PublishEnemyKilled(snapshot);
             }
             else
             {
-                EnemyLeaked?.Invoke(snapshot);
+                PublishEnemyLeaked(snapshot);
             }
         }
 
@@ -135,7 +140,7 @@ namespace TowerDefense3D.Enemies
                 {
                     enemiesById.Remove(enemy.Id);
                     activeEnemies.RemoveAt(index);
-                    EnemyLeaked?.Invoke(CreateSnapshot(enemy));
+                    PublishEnemyLeaked(CreateSnapshot(enemy));
                     continue;
                 }
 
@@ -163,7 +168,7 @@ namespace TowerDefense3D.Enemies
             }
 
             enemiesById.Remove(enemyId);
-            EnemyKilled?.Invoke(CreateSnapshot(enemy));
+            PublishEnemyKilled(CreateSnapshot(enemy));
             return true;
         }
 
@@ -334,6 +339,18 @@ namespace TowerDefense3D.Enemies
                 enemy.IsHidden,
                 enemy.IsSummoned,
                 enemy.ElementState);
+        }
+
+        private void PublishEnemyKilled(EnemySnapshot snapshot)
+        {
+            goldSystem.Add(snapshot.Definition.GoldOnDeath);
+            EnemyKilled?.Invoke(snapshot);
+        }
+
+        private void PublishEnemyLeaked(EnemySnapshot snapshot)
+        {
+            healthSystem.TakeDamage(snapshot.Definition.LeakDamage);
+            EnemyLeaked?.Invoke(snapshot);
         }
 
         private readonly struct PendingSummon

@@ -12,20 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68e9eecde07b31a4fa58668ae722c852, type: 3}
   m_Name: FireWind_Firestorm
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.ElementReactionDefinition
-  reactionId: 5
+  reactionId: 1
   displayName: "B\xE3o L\u1EEDa"
   firstElement: 0
   secondElement: 2
-  physicalDamage: 0
-  magicDamage: 6
+  damage: 0
   radiusMeters: 2
   burnDamagePerTick: 1
   burnTickIntervalSeconds: 0.5
   burnDurationSeconds: 2
-  slowStrengthFraction: 0
-  slowDurationSeconds: 0
-  pushDistanceMeters: 0
-  physicalResistanceReductionPoints: 0
-  magicResistanceReductionPoints: 0
-  resistanceReductionDurationSeconds: 0
-  createsField: 0
+  liftDurationSeconds: 0
+  liftImmunitySeconds: 0

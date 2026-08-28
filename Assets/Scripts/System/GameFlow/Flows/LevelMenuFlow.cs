@@ -49,6 +49,36 @@ namespace TowerDefense3D.GameFlow
             applicationUiSystem.ShowLevelMenu(items, HandleLevelSelected);
         }
 
+        /// <summary>
+        /// Loads one authored level directly, unlocking it first when progress has not reached it.
+        /// </summary>
+        public void PlayLevel(int levelNumber)
+        {
+            if (!levelCatalog.TryGetLevel(levelNumber, out LevelCatalogEntry entry))
+            {
+                return;
+            }
+
+            if (!saveSystem.Progress.IsUnlocked(entry.LevelNumber))
+            {
+                saveSystem.TryUnlockAndSave(entry.LevelNumber, out SaveWriteResult writeResult);
+                if (!writeResult.IsSuccess)
+                {
+                    gameFlowSystem.ShowSaveWarning(writeResult.Error);
+                }
+            }
+
+            gameFlowSystem.BeginLevelLoad(new LevelLoadRequest(entry.LevelNumber, entry.ScenePath));
+        }
+
+        public void PlayNextLevel(int currentLevelNumber)
+        {
+            if (levelCatalog.TryGetNextLevel(currentLevelNumber, out LevelCatalogEntry entry))
+            {
+                PlayLevel(entry.LevelNumber);
+            }
+        }
+
         private void HandleLevelSelected(int levelNumber)
         {
             if (!levelCatalog.TryGetLevel(levelNumber, out LevelCatalogEntry entry))

@@ -199,9 +199,11 @@ namespace TowerDefense3D.Towers
                 throw new ArgumentException("V0 requires the entire output batch to be reserved atomically.");
             }
 
-            if (outputPayload.Damage <= 0f)
+            if (outputPayload.Kind != ProjectilePayloadKind.Water
+                && outputPayload.Kind != ProjectilePayloadKind.Wind
+                && outputPayload.Damage <= 0f)
             {
-                throw new ArgumentException("A producing tower requires positive output damage.");
+                throw new ArgumentException("A damage-dealing tower requires positive output damage.");
             }
         }
 

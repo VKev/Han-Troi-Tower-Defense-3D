@@ -12,14 +12,14 @@ namespace TowerDefense3D.Towers
         [Serializable]
         public sealed class GenerationProfile
         {
-            [SerializeField] private DamageProfile physicalDamage =
-                new DamageProfile(8f, DamageType.Physical);
+            [SerializeField] private DamageProfile basicDamage =
+                new DamageProfile(8f);
             [SerializeField] private bool generatesWithoutEnemy = true;
             [SerializeField] private bool requiresValidChain = true;
             [SerializeField, Min(1)] private int upgradedBatchSize = 2;
             [SerializeField] private bool upgradedProjectilesHaveIndependentIds = true;
 
-            public DamageProfile PhysicalDamage => physicalDamage;
+            public DamageProfile BasicDamage => basicDamage;
             public bool GeneratesWithoutEnemy => generatesWithoutEnemy;
             public bool RequiresValidChain => requiresValidChain;
             public int UpgradedBatchSize => upgradedBatchSize;
@@ -48,9 +48,9 @@ namespace TowerDefense3D.Towers
                 return;
             }
 
-            if (generation.PhysicalDamage == null || generation.PhysicalDamage.Amount <= 0f)
+            if (generation.BasicDamage == null || generation.BasicDamage.Amount <= 0f)
             {
-                errors.Add("Generator Physical Damage must be greater than zero.");
+                errors.Add("Generator Basic Damage must be greater than zero.");
             }
 
             if (Core?.Throughput != null &&

@@ -10,17 +10,15 @@ namespace TowerDefense3D.Enemies
         menuName = "Tower Defense/Combat/Element Reaction Catalog")]
     public sealed class ElementReactionCatalog : ScriptableObject
     {
-        private const int ExpectedPairCount = 10;
+        private const int ExpectedPairCount = 3;
 
         [SerializeField, Min(0.01f)] private float elementMarkDurationSeconds = 3f;
         [SerializeField, Min(0.01f)] private float reactionCooldownSeconds = 0.2f;
-        [SerializeField, Range(0f, 1f)] private float maximumSlowFraction = 0.7f;
         [SerializeField] private List<ElementReactionDefinition> definitions =
             new List<ElementReactionDefinition>();
 
         public float ElementMarkDurationSeconds => elementMarkDurationSeconds;
         public float ReactionCooldownSeconds => reactionCooldownSeconds;
-        public float MaximumSlowFraction => maximumSlowFraction;
         public IReadOnlyList<ElementReactionDefinition> Definitions => definitions;
 
         public ElementReactionDefinition Get(ElementType first, ElementType second)
@@ -49,11 +47,6 @@ namespace TowerDefense3D.Enemies
             if (reactionCooldownSeconds <= 0f)
             {
                 errors.Add("Reaction cooldown must be positive.");
-            }
-
-            if (maximumSlowFraction <= 0f || maximumSlowFraction > 0.7f)
-            {
-                errors.Add("Maximum Slow must be greater than zero and no higher than 70%.");
             }
 
             var authoredPairs = new HashSet<ElementPair>();

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using TowerDefense3D.Economy;
 using UnityEditor;
 using UnityEngine;
 
@@ -29,7 +30,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 Vector3.zero,
                 Vector3.right
             });
-            var system = new EnemySystem(road);
+            var healthSystem = new LevelBaseHealthSystem(10);
+            var system = new EnemySystem(road, new LevelGoldSystem(0), healthSystem);
             int leakCount = 0;
             system.EnemyLeaked += _ => leakCount++;
 
@@ -43,21 +45,24 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             Assert.That(system.LivingCount, Is.Zero);
             Assert.That(leakCount, Is.EqualTo(1));
+            Assert.That(healthSystem.CurrentHealth, Is.EqualTo(9));
         }
 
         [Test]
         public void ApplyDamage_KillsEnemyOnlyWhenHealthReachesZero()
         {
+            var goldSystem = new LevelGoldSystem(0);
             var system = new EnemySystem(new RoadPath(new[]
             {
                 Vector3.zero,
                 Vector3.right * 10f
-            }));
+            }), goldSystem, new LevelBaseHealthSystem(10));
             EnemyInstance enemy = system.Spawn(definition);
 
             Assert.That(system.ApplyDamage(enemy.Id, definition.BaseMaxHealth - 1f), Is.False);
             Assert.That(system.ApplyDamage(enemy.Id, 1f), Is.True);
             Assert.That(system.LivingCount, Is.Zero);
+            Assert.That(goldSystem.Balance, Is.EqualTo(definition.GoldOnDeath));
         }
 
         [Test]
@@ -134,7 +139,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             {
                 Vector3.zero,
                 Vector3.right * 1000f
-            }));
+            }), new LevelGoldSystem(0), new LevelBaseHealthSystem(10));
         }
     }
 }

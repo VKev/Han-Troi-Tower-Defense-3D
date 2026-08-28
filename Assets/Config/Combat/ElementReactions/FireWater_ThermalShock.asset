@@ -12,20 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68e9eecde07b31a4fa58668ae722c852, type: 3}
   m_Name: FireWater_ThermalShock
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.ElementReactionDefinition
-  reactionId: 4
+  reactionId: 0
   displayName: "S\u1ED1c Nhi\u1EC7t"
   firstElement: 0
   secondElement: 1
-  physicalDamage: 0
-  magicDamage: 12
+  damage: 12
   radiusMeters: 2
   burnDamagePerTick: 0
   burnTickIntervalSeconds: 0
   burnDurationSeconds: 0
-  slowStrengthFraction: 0
-  slowDurationSeconds: 0
-  pushDistanceMeters: 0
-  physicalResistanceReductionPoints: 0
-  magicResistanceReductionPoints: 15
-  resistanceReductionDurationSeconds: 2
-  createsField: 0
+  liftDurationSeconds: 0
+  liftImmunitySeconds: 0

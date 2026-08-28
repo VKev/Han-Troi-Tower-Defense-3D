@@ -48,7 +48,6 @@ MonoBehaviour:
   iconRoot: {fileID: 6250529279408319737}
   fireIcon: {fileID: 947090009120237254}
   waterIcon: {fileID: 5989607225231671178}
-  earthIcon: {fileID: 4040975194522106362}
   windIcon: {fileID: 7248355648831173612}
   reactionDisplaySeconds: 0.5
   reactionIconSpacing: 0.55

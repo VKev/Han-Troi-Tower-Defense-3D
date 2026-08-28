@@ -95,7 +95,8 @@ namespace TowerDefense3D.Enemies
                     reaction.EnemyId,
                     reaction.ReactionId,
                     reaction.Pair,
-                    reaction.Position));
+                    reaction.Position,
+                    reaction.DurationSeconds));
             }
         }
     }

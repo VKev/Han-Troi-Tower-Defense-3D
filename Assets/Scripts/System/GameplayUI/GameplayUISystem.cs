@@ -1,5 +1,7 @@
 using System;
+using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
+using TowerDefense3D.Simulation;
 using TowerDefense3D.Towers;
 using TowerDefense3D.Waves;
 
@@ -17,6 +19,12 @@ namespace TowerDefense3D.GameFlow
         private readonly IWaveSystem waveSystem;
         private readonly WaveHudPresenter waveHudPresenter;
         private readonly EnemySystem enemySystem;
+        private readonly LevelGoldSystem goldSystem;
+        private readonly LevelBaseHealthSystem healthSystem;
+        private readonly ILevelStatusHudView statusHudView;
+        private readonly GameplaySimulationSystem simulationSystem;
+        private readonly IPauseHudView pauseHudView;
+        private readonly LevelOutcomeHudPresenter levelOutcomeHudPresenter;
 
         private bool isDirty;
         private bool isStarted;
@@ -28,7 +36,10 @@ namespace TowerDefense3D.GameFlow
             TowerNetworkHudPresenter towerNetworkHudPresenter,
             IWaveSystem waveSystem,
             WaveHudPresenter waveHudPresenter,
-            EnemySystem enemySystem)
+            EnemySystem enemySystem,
+            LevelGoldSystem goldSystem,
+            LevelBaseHealthSystem healthSystem,
+            ILevelStatusHudView statusHudView)
         {
             this.gameplayView = gameplayView ?? throw new ArgumentNullException(nameof(gameplayView));
             this.placementHudView = placementHudView ?? throw new ArgumentNullException(nameof(placementHudView));
@@ -40,6 +51,42 @@ namespace TowerDefense3D.GameFlow
             this.waveHudPresenter = waveHudPresenter
                 ?? throw new ArgumentNullException(nameof(waveHudPresenter));
             this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
+            this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
+            this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
+            this.statusHudView = statusHudView ?? throw new ArgumentNullException(nameof(statusHudView));
+        }
+
+        public GameplayUISystem(
+            IGameplayUIView gameplayView,
+            IPlacementHudView placementHudView,
+            TowerNetworkSystem towerNetworkSystem,
+            TowerNetworkHudPresenter towerNetworkHudPresenter,
+            IWaveSystem waveSystem,
+            WaveHudPresenter waveHudPresenter,
+            EnemySystem enemySystem,
+            LevelGoldSystem goldSystem,
+            LevelBaseHealthSystem healthSystem,
+            ILevelStatusHudView statusHudView,
+            GameplaySimulationSystem simulationSystem,
+            IPauseHudView pauseHudView,
+            LevelOutcomeHudPresenter levelOutcomeHudPresenter)
+            : this(
+                gameplayView,
+                placementHudView,
+                towerNetworkSystem,
+                towerNetworkHudPresenter,
+                waveSystem,
+                waveHudPresenter,
+                enemySystem,
+                goldSystem,
+                healthSystem,
+                statusHudView)
+        {
+            this.simulationSystem = simulationSystem
+                ?? throw new ArgumentNullException(nameof(simulationSystem));
+            this.pauseHudView = pauseHudView ?? throw new ArgumentNullException(nameof(pauseHudView));
+            this.levelOutcomeHudPresenter = levelOutcomeHudPresenter
+                ?? throw new ArgumentNullException(nameof(levelOutcomeHudPresenter));
         }
 
         public void BindReturnToMenu(Action requestReturnToMenu)
@@ -58,6 +105,18 @@ namespace TowerDefense3D.GameFlow
             enemySystem.EnemySpawned += MarkDirty;
             enemySystem.EnemyKilled += MarkDirty;
             enemySystem.EnemyLeaked += MarkDirty;
+            goldSystem.BalanceChanged += HandleGoldChanged;
+            healthSystem.HealthChanged += HandleHealthChanged;
+            statusHudView.RenderGold(goldSystem.Balance);
+            statusHudView.RenderHealth(healthSystem.CurrentHealth, healthSystem.MaximumHealth);
+            if (simulationSystem != null && pauseHudView != null)
+            {
+                pauseHudView.Initialize();
+                pauseHudView.Render(simulationSystem.IsPaused);
+                pauseHudView.Show();
+                pauseHudView.PauseToggleRequested += HandlePauseToggleRequested;
+            }
+            levelOutcomeHudPresenter?.Connect();
             isStarted = true;
             isDirty = true;
         }
@@ -72,6 +131,7 @@ namespace TowerDefense3D.GameFlow
             isDirty = false;
             towerNetworkHudPresenter.Refresh();
             waveHudPresenter.Refresh();
+            levelOutcomeHudPresenter?.Refresh();
         }
 
         public void Dispose()
@@ -87,6 +147,14 @@ namespace TowerDefense3D.GameFlow
             enemySystem.EnemySpawned -= MarkDirty;
             enemySystem.EnemyKilled -= MarkDirty;
             enemySystem.EnemyLeaked -= MarkDirty;
+            goldSystem.BalanceChanged -= HandleGoldChanged;
+            healthSystem.HealthChanged -= HandleHealthChanged;
+            if (simulationSystem != null && pauseHudView != null)
+            {
+                pauseHudView.PauseToggleRequested -= HandlePauseToggleRequested;
+                pauseHudView.Shutdown();
+            }
+            levelOutcomeHudPresenter?.Disconnect();
             towerNetworkHudPresenter.Disconnect();
             waveHudPresenter.Disconnect();
         }
@@ -99,6 +167,27 @@ namespace TowerDefense3D.GameFlow
         private void MarkDirty(EnemySnapshot _)
         {
             isDirty = true;
+        }
+
+        private void HandleGoldChanged(int balance)
+        {
+            statusHudView.RenderGold(balance);
+        }
+
+        private void HandleHealthChanged(int currentHealth, int maximumHealth)
+        {
+            statusHudView.RenderHealth(currentHealth, maximumHealth);
+        }
+
+        private void HandlePauseToggleRequested()
+        {
+            if (simulationSystem == null || pauseHudView == null)
+            {
+                return;
+            }
+
+            simulationSystem.SetPaused(!simulationSystem.IsPaused);
+            pauseHudView.Render(simulationSystem.IsPaused);
         }
     }
 }

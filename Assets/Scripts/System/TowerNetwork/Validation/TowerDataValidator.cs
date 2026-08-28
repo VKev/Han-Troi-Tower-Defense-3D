@@ -98,39 +98,10 @@ namespace TowerDefense3D.Towers
                 errors.Add("Combat rules require a positive normal queue.");
             }
 
-            if (rules.StartingGold < 0 || rules.NormalWaveReward < 0 ||
-                rules.BossWaveReward < rules.NormalWaveReward ||
-                rules.SellRefundFraction < 0f || rules.SellRefundFraction > 1f ||
-                rules.MaximumTierThreeElementTowers != 2 ||
-                rules.MinimumEffectiveDefense < 0f)
+            if (rules.SellRefundFraction < 0f || rules.SellRefundFraction > 1f ||
+                rules.MaximumTierThreeElementTowers != 2)
             {
-                errors.Add("Economy, progression limits, or defense floor are invalid.");
-            }
-
-            DefenseResolutionStep[] expectedOrder =
-            {
-                DefenseResolutionStep.StrongestEarthReduction,
-                DefenseResolutionStep.PercentPenetration,
-                DefenseResolutionStep.FlatPenetration,
-                DefenseResolutionStep.ClampToMinimum,
-                DefenseResolutionStep.Mitigation,
-                DefenseResolutionStep.DamageTakenModifier
-            };
-            if (rules.DefenseResolutionOrder == null ||
-                rules.DefenseResolutionOrder.Count != expectedOrder.Length)
-            {
-                errors.Add("Defense Resolution Order is incomplete.");
-            }
-            else
-            {
-                for (int index = 0; index < expectedOrder.Length; index++)
-                {
-                    if (rules.DefenseResolutionOrder[index] != expectedOrder[index])
-                    {
-                        errors.Add("Defense Resolution Order does not match the authored contract.");
-                        break;
-                    }
-                }
+                errors.Add("Economy or progression limits are invalid.");
             }
 
             return errors;

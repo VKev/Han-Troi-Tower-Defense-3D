@@ -3,19 +3,6 @@ using UnityEngine;
 
 namespace TowerDefense3D.Towers
 {
-    public enum DamageType
-    {
-        Physical,
-        Magic,
-        True
-    }
-
-    public enum EqualDefenseDamageType
-    {
-        Physical,
-        Magic
-    }
-
     public enum EffectStackingRule
     {
         StrongerReplacesWeakerAndEqualRefreshes,
@@ -27,16 +14,13 @@ namespace TowerDefense3D.Towers
     public sealed class DamageProfile
     {
         [SerializeField, Min(0f)] private float amount;
-        [SerializeField] private DamageType damageType;
 
-        public DamageProfile(float amount, DamageType damageType)
+        public DamageProfile(float amount)
         {
             this.amount = amount;
-            this.damageType = damageType;
         }
 
         public float Amount => amount;
-        public DamageType DamageType => damageType;
     }
 
     [Serializable]

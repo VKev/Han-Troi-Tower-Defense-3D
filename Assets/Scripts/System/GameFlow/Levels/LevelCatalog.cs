@@ -27,6 +27,29 @@ namespace TowerDefense3D.GameFlow
             return false;
         }
 
+        /// <summary>
+        /// Finds the authored level that follows <paramref name="levelNumber"/> in play order.
+        /// </summary>
+        public bool TryGetNextLevel(int levelNumber, out LevelCatalogEntry entry)
+        {
+            entry = null;
+            for (int index = 0; index < levels.Count; index++)
+            {
+                LevelCatalogEntry candidate = levels[index];
+                if (candidate == null || candidate.LevelNumber <= levelNumber)
+                {
+                    continue;
+                }
+
+                if (entry == null || candidate.LevelNumber < entry.LevelNumber)
+                {
+                    entry = candidate;
+                }
+            }
+
+            return entry != null;
+        }
+
         public List<LevelCatalogEntry> CreateOrderedSnapshot()
         {
             var snapshot = new List<LevelCatalogEntry>(levels.Count);
@@ -83,6 +106,12 @@ namespace TowerDefense3D.GameFlow
                 if (!entry.HasFullScenePath)
                 {
                     error = $"Level {entry.LevelNumber} requires a full Assets/.../*.unity scene path.";
+                    return false;
+                }
+
+                if (entry.StartingGold < 0 || entry.StartingHealth <= 0)
+                {
+                    error = $"Level {entry.LevelNumber} requires non-negative Starting Gold and positive Starting Health.";
                     return false;
                 }
 

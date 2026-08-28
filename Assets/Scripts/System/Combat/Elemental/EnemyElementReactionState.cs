@@ -60,6 +60,13 @@ namespace TowerDefense3D.Enemies
                 return false;
             }
 
+            if (Element == incoming)
+            {
+                phaseEndTick = tick + SecondsToTicks(
+                    catalog.ElementMarkDurationSeconds * statusDurationMultiplier);
+                return false;
+            }
+
             reaction = catalog.Get(Element, incoming);
             Element = default;
             Phase = EnemyElementPhase.ReactionCooldown;
@@ -72,6 +79,19 @@ namespace TowerDefense3D.Enemies
             return Phase == EnemyElementPhase.Ready
                 ? 0f
                 : Math.Max(0L, phaseEndTick - tick) * tickSeconds;
+        }
+
+        public void ForceMark(ElementType element, float statusDurationMultiplier, long tick)
+        {
+            if (statusDurationMultiplier <= 0f)
+            {
+                return;
+            }
+
+            Element = element;
+            Phase = EnemyElementPhase.Marked;
+            phaseEndTick = tick + SecondsToTicks(
+                catalog.ElementMarkDurationSeconds * statusDurationMultiplier);
         }
 
         private int SecondsToTicks(float seconds)

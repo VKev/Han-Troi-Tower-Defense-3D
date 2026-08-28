@@ -11,6 +11,8 @@ namespace TowerDefense3D.GameFlow
     {
         [SerializeField] private Button button;
         [SerializeField] private TowerCombatDefinition definition;
+        [SerializeField] private Text nameText;
+        [SerializeField] private Text costText;
         private int activePointerId;
         private bool isDragging;
 
@@ -21,6 +23,24 @@ namespace TowerDefense3D.GameFlow
 
         public Button Button => button;
         public TowerCombatDefinition Definition => definition;
+
+        public void ApplyDefinitionLabels()
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            if (nameText != null)
+            {
+                nameText.text = definition.Core.DisplayName.ToUpperInvariant();
+            }
+
+            if (costText != null)
+            {
+                costText.text = definition.Core.Economy.BuildCost.ToString("N0");
+            }
+        }
 
         public void SetInteractable(bool interactable)
         {
@@ -89,6 +109,11 @@ namespace TowerDefense3D.GameFlow
         {
             bool isOverUi = eventData.pointerCurrentRaycast.module is GraphicRaycaster;
             return new TowerPlacementPointerEvent(eventData.pointerId, eventData.position, isOverUi);
+        }
+
+        private void Awake()
+        {
+            ApplyDefinitionLabels();
         }
 
         private void OnDisable()

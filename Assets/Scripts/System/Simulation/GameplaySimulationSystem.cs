@@ -33,9 +33,15 @@ namespace TowerDefense3D.Simulation
 
         public float InterpolationAlpha => clock.InterpolationAlpha;
         public long CurrentStep { get; private set; }
+        public bool IsPaused { get; private set; }
 
         public void Tick(float deltaTimeSeconds)
         {
+            if (IsPaused)
+            {
+                return;
+            }
+
             if (!waveSystem.IsRunning)
             {
                 clock.Reset();
@@ -47,9 +53,15 @@ namespace TowerDefense3D.Simulation
 
         public void Reset()
         {
+            IsPaused = false;
             clock.Reset();
             combatTimelineSystem.Reset();
             CurrentStep = 0L;
+        }
+
+        public void SetPaused(bool isPaused)
+        {
+            IsPaused = isPaused;
         }
 
         private void Step()

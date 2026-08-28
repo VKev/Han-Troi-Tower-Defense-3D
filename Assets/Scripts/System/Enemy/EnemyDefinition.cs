@@ -27,20 +27,16 @@ namespace TowerDefense3D.Enemies
         [SerializeField, Min(0.01f)] private float baseMaxHealth = 16f;
         [SerializeField, Min(0.01f)] private float baseMoveSpeed = 2f;
         [SerializeField, Min(0.01f)] private float baseHitRadius = 0.35f;
-        [SerializeField, Min(0f)] private float basePhysicalResistance;
-        [SerializeField, Min(0f)] private float baseMagicResistance;
 
-        [Header("Received Effect Multipliers")]
-        [SerializeField, Range(0f, 1f)] private float elementStatusEffectMultiplier = 1f;
-        [SerializeField, Range(0f, 1f)] private float slowStrengthMultiplier = 1f;
-        [SerializeField, Range(0f, 1f)] private float slowDurationMultiplier = 1f;
-        [SerializeField, Range(0f, 1f)] private float stunDurationMultiplier = 1f;
-        [SerializeField, Range(0f, 1f)] private float levitateDurationMultiplier = 1f;
-        [SerializeField, Range(0f, 1f)] private float pushDistanceMultiplier = 1f;
+        [Header("Thermal Shield")]
+        [SerializeField, Min(0)] private int thermalShockHitsToBreakShield = 2;
 
         [Header("Rewards")]
         [SerializeField, Min(0)] private int goldOnDeath = 10;
         [SerializeField, Min(0)] private int soulOnDirectHit = 1;
+
+        [Header("Base Threat")]
+        [SerializeField, Min(1)] private int leakDamage = 1;
 
         public string StableId => stableId;
         public string DisplayName => displayName;
@@ -49,16 +45,10 @@ namespace TowerDefense3D.Enemies
         public float BaseMaxHealth => baseMaxHealth;
         public float BaseMoveSpeed => baseMoveSpeed;
         public float BaseHitRadius => baseHitRadius;
-        public float BasePhysicalResistance => basePhysicalResistance;
-        public float BaseMagicResistance => baseMagicResistance;
-        public float ElementStatusEffectMultiplier => elementStatusEffectMultiplier;
-        public float SlowStrengthMultiplier => slowStrengthMultiplier;
-        public float SlowDurationMultiplier => slowDurationMultiplier;
-        public float StunDurationMultiplier => stunDurationMultiplier;
-        public float LevitateDurationMultiplier => levitateDurationMultiplier;
-        public float PushDistanceMultiplier => pushDistanceMultiplier;
+        public int ThermalShockHitsToBreakShield => thermalShockHitsToBreakShield;
         public int GoldOnDeath => goldOnDeath;
         public int SoulOnDirectHit => soulOnDirectHit;
+        public int LeakDamage => leakDamage;
 
         internal void CollectValidationErrors(ICollection<string> errors)
         {
@@ -90,24 +80,9 @@ namespace TowerDefense3D.Enemies
                 errors.Add($"{name}: Base Max Health, Base Move Speed and Base Hit Radius must be greater than zero.");
             }
 
-            if (basePhysicalResistance < 0f || baseMagicResistance < 0f)
+            if (goldOnDeath < 0 || soulOnDirectHit < 0 || leakDamage <= 0)
             {
-                errors.Add($"{name}: Base resistances cannot be negative.");
-            }
-
-            if (!IsUnitMultiplier(elementStatusEffectMultiplier) ||
-                !IsUnitMultiplier(slowStrengthMultiplier) ||
-                !IsUnitMultiplier(slowDurationMultiplier) ||
-                !IsUnitMultiplier(stunDurationMultiplier) ||
-                !IsUnitMultiplier(levitateDurationMultiplier) ||
-                !IsUnitMultiplier(pushDistanceMultiplier))
-            {
-                errors.Add($"{name}: Received effect multipliers must be between zero and one.");
-            }
-
-            if (goldOnDeath < 0 || soulOnDirectHit < 0)
-            {
-                errors.Add($"{name}: Rewards cannot be negative.");
+                errors.Add($"{name}: Rewards cannot be negative and Leak Damage must be positive.");
             }
 
             CollectSpecificValidationErrors(errors);
@@ -117,9 +92,5 @@ namespace TowerDefense3D.Enemies
         {
         }
 
-        private static bool IsUnitMultiplier(float value)
-        {
-            return value >= 0f && value <= 1f;
-        }
     }
 }

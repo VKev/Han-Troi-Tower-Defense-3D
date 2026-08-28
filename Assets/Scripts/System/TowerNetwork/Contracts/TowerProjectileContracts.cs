@@ -6,16 +6,21 @@ namespace TowerDefense3D.Towers
 {
     public enum ProjectilePayloadKind
     {
-        Physical,
+        Basic,
         Fire,
         Water,
-        Wind,
-        Earth
+        Wind
     }
 
     public readonly struct ProjectilePayload
     {
-        public ProjectilePayload(ProjectilePayloadKind kind, float damage, DamageType damageType)
+        public ProjectilePayload(
+            ProjectilePayloadKind kind,
+            float damage,
+            float burnDamagePerTick = 0f,
+            float burnTickIntervalSeconds = 0f,
+            float burnDurationSeconds = 0f,
+            float pushDistanceMeters = 0f)
         {
             if (!FiniteNumber.IsFinite(damage) || damage < 0f)
             {
@@ -24,38 +29,19 @@ namespace TowerDefense3D.Towers
             }
 
             Kind = kind;
-            DamageChannels = DamageChannels.From(damage, damageType);
-            DamageType = damageType;
-        }
-
-        public ProjectilePayload(
-            ProjectilePayloadKind kind,
-            DamageChannels damageChannels)
-        {
-            Kind = kind;
-            DamageChannels = damageChannels;
-            DamageType = GetPrimaryDamageType(damageChannels);
+            Damage = damage;
+            BurnDamagePerTick = burnDamagePerTick;
+            BurnTickIntervalSeconds = burnTickIntervalSeconds;
+            BurnDurationSeconds = burnDurationSeconds;
+            PushDistanceMeters = pushDistanceMeters;
         }
 
         public ProjectilePayloadKind Kind { get; }
-        public DamageChannels DamageChannels { get; }
-        public float Damage => DamageChannels.Total;
-        public DamageType DamageType { get; }
-
-        private static DamageType GetPrimaryDamageType(DamageChannels damage)
-        {
-            if (damage.Physical > 0f)
-            {
-                return DamageType.Physical;
-            }
-
-            if (damage.Magic > 0f)
-            {
-                return DamageType.Magic;
-            }
-
-            return DamageType.True;
-        }
+        public float Damage { get; }
+        public float BurnDamagePerTick { get; }
+        public float BurnTickIntervalSeconds { get; }
+        public float BurnDurationSeconds { get; }
+        public float PushDistanceMeters { get; }
     }
 
     public readonly struct ProjectileQueueEntry

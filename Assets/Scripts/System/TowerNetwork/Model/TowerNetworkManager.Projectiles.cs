@@ -216,7 +216,11 @@ namespace TowerDefense3D.Towers
                 || projectile.Position.Z != source.Position.Z
                 || projectile.LaunchDelayTicks != launchDelayTicks
                 || projectile.Payload.Kind != payload.Kind
-                || !projectile.Payload.DamageChannels.Equals(payload.DamageChannels))
+                || projectile.Payload.Damage != payload.Damage
+                || projectile.Payload.BurnDamagePerTick != payload.BurnDamagePerTick
+                || projectile.Payload.BurnTickIntervalSeconds != payload.BurnTickIntervalSeconds
+                || projectile.Payload.BurnDurationSeconds != payload.BurnDurationSeconds
+                || projectile.Payload.PushDistanceMeters != payload.PushDistanceMeters)
             {
                 throw new InvalidOperationException(
                     $"Projectile plan diverged at tick {CurrentTick} for tower {source.Id}.");

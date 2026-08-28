@@ -39,11 +39,15 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             pool.Spawn(Snapshot(1L, firstDefinition));
             EnemyView firstView = FindView(pool, 1L);
+            firstView.TickLifecycle(0.4f);
             pool.Despawn(1L);
+            pool.TickLifecycle(0.4f);
 
             pool.Spawn(Snapshot(2L, secondDefinition));
             EnemyView secondView = FindView(pool, 2L);
+            secondView.TickLifecycle(0.4f);
             pool.Despawn(2L);
+            pool.TickLifecycle(0.4f);
 
             pool.Spawn(Snapshot(3L, firstDefinition));
             pool.Spawn(Snapshot(4L, secondDefinition));
@@ -55,6 +59,23 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             pool.ReleaseAll();
             Assert.That(firstView.gameObject.activeSelf, Is.False);
             Assert.That(secondView.gameObject.activeSelf, Is.False);
+        }
+
+        [Test]
+        public void Despawn_KeepsViewActiveUntilScaleAnimationCompletes()
+        {
+            EnemyViewPool pool = poolObject.AddComponent<EnemyViewPool>();
+
+            pool.Spawn(Snapshot(1L, firstDefinition));
+            EnemyView view = FindView(pool, 1L);
+            pool.Despawn(1L);
+
+            Assert.That(view.gameObject.activeSelf, Is.True);
+            pool.TickLifecycle(0.1f);
+            Assert.That(view.gameObject.activeSelf, Is.True);
+
+            pool.TickLifecycle(0.1f);
+            Assert.That(view.gameObject.activeSelf, Is.False);
         }
 
         private static GameObject CreateViewPrefab(string name)
@@ -90,7 +111,6 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             iconRoot.transform.SetParent(statusObject.transform);
             Transform fire = CreateIcon(iconRoot.transform, "Fire");
             Transform water = CreateIcon(iconRoot.transform, "Water");
-            Transform earth = CreateIcon(iconRoot.transform, "Earth");
             Transform wind = CreateIcon(iconRoot.transform, "Wind");
 
             EnemyElementStatusView statusView = statusObject.AddComponent<EnemyElementStatusView>();
@@ -98,7 +118,6 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             serialized.FindProperty("iconRoot").objectReferenceValue = iconRoot.transform;
             serialized.FindProperty("fireIcon").objectReferenceValue = fire;
             serialized.FindProperty("waterIcon").objectReferenceValue = water;
-            serialized.FindProperty("earthIcon").objectReferenceValue = earth;
             serialized.FindProperty("windIcon").objectReferenceValue = wind;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
