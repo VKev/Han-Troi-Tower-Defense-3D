@@ -27,6 +27,8 @@ namespace TowerDefense3D.Vfx
         private readonly Dictionary<GameObject, EffectRig> rigsByPrefab =
             new Dictionary<GameObject, EffectRig>();
         private readonly List<PendingBurst> pendingBursts = new List<PendingBurst>();
+        private readonly List<PendingRateEmission> pendingRateEmissions =
+            new List<PendingRateEmission>();
 
         /// <summary>
         /// Plays <paramref name="effectPrefab"/> at <paramref name="position"/>. The rig for that
@@ -60,12 +62,26 @@ namespace TowerDefense3D.Vfx
                         schedule.Count,
                         schedule.DelaySeconds));
                 }
+
+                if (emitter.RatePerSecond > 0f && emitter.DurationSeconds > 0f)
+                {
+                    float initialSeconds = Mathf.Min(0.1f, emitter.DurationSeconds);
+                    Emit(
+                        emitter,
+                        position,
+                        Mathf.CeilToInt(emitter.RatePerSecond * initialSeconds));
+                    pendingRateEmissions.Add(new PendingRateEmission(
+                        emitter,
+                        position,
+                        emitter.DurationSeconds - initialSeconds));
+                }
             }
         }
 
         public void Clear()
         {
             pendingBursts.Clear();
+            pendingRateEmissions.Clear();
             foreach (EffectRig rig in rigsByPrefab.Values)
             {
                 for (int index = 0; index < rig.Emitters.Length; index++)
@@ -77,7 +93,7 @@ namespace TowerDefense3D.Vfx
 
         private void Update()
         {
-            if (pendingBursts.Count == 0)
+            if (pendingBursts.Count == 0 && pendingRateEmissions.Count == 0)
             {
                 return;
             }
@@ -96,21 +112,53 @@ namespace TowerDefense3D.Vfx
                 Emit(pending.Emitter, pending.Position, pending.Count);
                 pendingBursts.RemoveAt(index);
             }
+
+            for (int index = pendingRateEmissions.Count - 1; index >= 0; index--)
+            {
+                PendingRateEmission pending = pendingRateEmissions[index];
+                float activeSeconds = Mathf.Min(deltaTime, pending.RemainingSeconds);
+                pending.FractionalCount += pending.Emitter.RatePerSecond * activeSeconds;
+                int count = Mathf.FloorToInt(pending.FractionalCount);
+                if (count > 0)
+                {
+                    pending.FractionalCount -= count;
+                    Emit(pending.Emitter, pending.Position, count);
+                }
+
+                pending.RemainingSeconds -= deltaTime;
+                if (pending.RemainingSeconds > 0f)
+                {
+                    pendingRateEmissions[index] = pending;
+                }
+                else
+                {
+                    pendingRateEmissions.RemoveAt(index);
+                }
+            }
         }
 
-        private static void Emit(EffectEmitter emitter, Vector3 position, int count)
+        private static void Emit(EffectEmitter emitter, Vector3 worldPosition, int count)
         {
-            if (count <= 0 || emitter.System == null)
+            ParticleSystem system = emitter.System;
+            if (count <= 0 || system == null)
             {
                 return;
             }
+
+            // EmitParams.position is read in the system's own simulation space. A Local-space
+            // system therefore needs the world position converted, and the rig keeps the authored
+            // root scale, so passing world coordinates straight through would place particles at
+            // scale times the intended distance from the origin.
+            Vector3 position = system.main.simulationSpace == ParticleSystemSimulationSpace.Local
+                ? system.transform.InverseTransformPoint(worldPosition)
+                : worldPosition;
 
             var emitParams = new ParticleSystem.EmitParams
             {
                 position = position,
                 applyShapeToPosition = true
             };
-            emitter.System.Emit(emitParams, count);
+            system.Emit(emitParams, count);
         }
 
         private EffectRig GetRig(GameObject effectPrefab)
@@ -142,6 +190,8 @@ namespace TowerDefense3D.Vfx
                 instance.transform.localRotation = Quaternion.identity;
                 instance.SetActive(true);
 
+                NeutraliseAutoClear(instance);
+
                 ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
                 HashSet<ParticleSystem> driven = CollectSubEmitters(systems);
                 var emitters = new List<EffectEmitter>(systems.Length);
@@ -150,6 +200,13 @@ namespace TowerDefense3D.Vfx
                 {
                     ParticleSystem system = systems[index];
                     system.gameObject.SetActive(true);
+                    KeepAliveForReuse(system);
+
+                    // Every system, including a sub-emitter, must have its authored automatic
+                    // emission stopped. Otherwise a sub-emitter also plays from its parked
+                    // transform at the origin instead of only when its parent particle triggers it.
+                    ParticleSystem.EmissionModule emission = system.emission;
+                    emission.enabled = false;
 
                     // Sub-emitters are spawned by their parent's particles. Emitting into them
                     // directly would place their particles at the event position instead of at
@@ -160,20 +217,73 @@ namespace TowerDefense3D.Vfx
                     }
 
                     BurstSchedule[] bursts = ReadBursts(system);
+                    float ratePerSecond = emission.rateOverTime.constantMax;
+                    ParticleSystem.MainModule main = system.main;
+                    float durationSeconds = main.loop ? 1f : main.duration;
 
                     // The authored emission module is replaced by explicit Emit calls, and the
                     // system is kept alive so its particles keep simulating between events.
-                    ParticleSystem.EmissionModule emission = system.emission;
-                    emission.enabled = false;
-                    ParticleSystem.MainModule main = system.main;
                     main.loop = true;
                     main.playOnAwake = false;
+
                     system.Play();
 
-                    emitters.Add(new EffectEmitter(system, bursts));
+                    emitters.Add(new EffectEmitter(
+                        system,
+                        bursts,
+                        ratePerSecond,
+                        durationSeconds));
                 }
 
                 return new EffectRig(emitters.ToArray());
+            }
+
+            /// <summary>
+            /// Clears the two authored settings that assume a throwaway instance. Applied to every
+            /// system including sub-emitters, which are otherwise left alone.
+            /// </summary>
+            private static void KeepAliveForReuse(ParticleSystem system)
+            {
+                ParticleSystem.MainModule main = system.main;
+
+                // The authored stop action disables or destroys the object when playback ends. The
+                // pooled instances this replaced cleared it for the same reason: on a rig that has
+                // to survive every later event it would switch the effect off for good.
+                main.stopAction = ParticleSystemStopAction.None;
+
+                // Automatic culling pauses a system whose bounds are offscreen. An idle rig has no
+                // particles, so its bounds are a point at the origin - usually outside the camera -
+                // and the system would be paused at the moment an event tries to emit into it.
+                // Nothing about the look changes; only the culling decision does.
+                main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+            }
+
+            /// <summary>
+            /// Authored effects can carry a component that disables or destroys the object once
+            /// the effect finishes - Cartoon FX does this by default. On a shared rig that would
+            /// switch the whole thing off after the first event, so the behaviour is turned off.
+            /// </summary>
+            private static void NeutraliseAutoClear(GameObject instance)
+            {
+                MonoBehaviour[] behaviours = instance.GetComponentsInChildren<MonoBehaviour>(true);
+                for (int index = 0; index < behaviours.Length; index++)
+                {
+                    MonoBehaviour behaviour = behaviours[index];
+                    if (behaviour == null)
+                    {
+                        continue;
+                    }
+
+                    System.Reflection.FieldInfo field =
+                        behaviour.GetType().GetField("clearBehavior");
+                    if (field == null || !field.FieldType.IsEnum)
+                    {
+                        continue;
+                    }
+
+                    // 0 is None in CFXR_Effect.ClearBehavior { None, Disable, Destroy }.
+                    field.SetValue(behaviour, System.Enum.ToObject(field.FieldType, 0));
+                }
             }
 
             private static BurstSchedule[] ReadBursts(ParticleSystem system)
@@ -230,14 +340,22 @@ namespace TowerDefense3D.Vfx
 
         private readonly struct EffectEmitter
         {
-            public EffectEmitter(ParticleSystem system, BurstSchedule[] bursts)
+            public EffectEmitter(
+                ParticleSystem system,
+                BurstSchedule[] bursts,
+                float ratePerSecond,
+                float durationSeconds)
             {
                 System = system;
                 Bursts = bursts;
+                RatePerSecond = ratePerSecond;
+                DurationSeconds = durationSeconds;
             }
 
             public ParticleSystem System { get; }
             public BurstSchedule[] Bursts { get; }
+            public float RatePerSecond { get; }
+            public float DurationSeconds { get; }
         }
 
         private readonly struct BurstSchedule
@@ -270,6 +388,25 @@ namespace TowerDefense3D.Vfx
             public Vector3 Position { get; }
             public int Count { get; }
             public float RemainingSeconds { get; set; }
+        }
+
+        private struct PendingRateEmission
+        {
+            public PendingRateEmission(
+                EffectEmitter emitter,
+                Vector3 position,
+                float remainingSeconds)
+            {
+                Emitter = emitter;
+                Position = position;
+                RemainingSeconds = remainingSeconds;
+                FractionalCount = 0f;
+            }
+
+            public EffectEmitter Emitter { get; }
+            public Vector3 Position { get; }
+            public float RemainingSeconds { get; set; }
+            public float FractionalCount { get; set; }
         }
     }
 }

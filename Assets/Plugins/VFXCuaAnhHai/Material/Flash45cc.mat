@@ -47,7 +47,7 @@ Material:
   - _DOUBLESIDED_ON
   - _ENABLE_FOG_ON_TRANSPARENT
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
   m_CustomRenderQueue: 3000
   stringTagMap:
@@ -160,7 +160,6 @@ Material:
     - _UseShadowThreshold: 0
     - _Use_Color_texture: 1
     - _WorkflowMode: 1
-    - _XRMotionVectorsPass: 1
     - _ZTest: 4
     - _ZTestDepthEqualForOpaque: 4
     - _ZTestTransparent: 4

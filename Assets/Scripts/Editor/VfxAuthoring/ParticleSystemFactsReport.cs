@@ -16,8 +16,7 @@ namespace TowerDefense3D.GameFlow.Editor
     {
         private static readonly string[] Folders =
         {
-            "Assets/Resources/Prefabs/VFX",
-            "Assets/Plugins/VFXCuaAnhHai"
+            "Assets/Resources/Prefabs/VFX"
         };
 
         [MenuItem("Tools/Tower Defense/Report Particle System Facts")]

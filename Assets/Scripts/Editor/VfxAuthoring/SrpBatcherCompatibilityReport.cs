@@ -72,7 +72,7 @@ namespace TowerDefense3D.GameFlow.Editor
         /// </summary>
         private static string DescribeRendererMix()
         {
-            string[] folders = { "Assets/Resources/Prefabs", "Assets/Plugins/VFXCuaAnhHai" };
+            string[] folders = { "Assets/Resources/Prefabs" };
             int mesh = 0;
             int skinned = 0;
             int particle = 0;
