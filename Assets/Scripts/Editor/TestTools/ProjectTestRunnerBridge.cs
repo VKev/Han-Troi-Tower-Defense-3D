@@ -39,6 +39,12 @@ namespace TowerDefense3D.Tests.EditMode
         [MenuItem("Tools/Tower Defense/Tests/Run All EditMode")]
         public static void RunEditMode()
         {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("EditMode tests require idle Edit Mode.");
+                return;
+            }
+
             Start(TestMode.EditMode, EditModeAssemblyName, true);
         }
 
