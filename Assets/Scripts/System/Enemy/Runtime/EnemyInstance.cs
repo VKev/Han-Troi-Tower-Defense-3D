@@ -19,6 +19,9 @@ namespace TowerDefense3D.Enemies
             PreviousPosition = position;
             TargetPointIndex = 1;
             RemainingThermalShieldHits = definition.ThermalShockHitsToBreakShield;
+            SupportActivationRemainingSeconds = definition is SpeedSupportEnemyDefinition support
+                ? support.ActivationDelaySeconds
+                : 0f;
         }
 
         public long Id { get; }
@@ -36,8 +39,16 @@ namespace TowerDefense3D.Enemies
         public int RemainingThermalShieldHits { get; internal set; }
         public float LiftHeightMeters { get; internal set; }
         public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
+        public bool IsSpeedAuraActive { get; internal set; }
+        public bool IsSpeedBuffed { get; internal set; }
+        public int SkillCastVersion { get; internal set; }
+        internal RoadPath Route { get; set; }
         internal int TargetPointIndex { get; set; }
         internal int SummonPhaseIndex { get; set; } = -1;
         internal float SummonElapsedSeconds { get; set; }
+        internal float SummonCastRemainingSeconds { get; set; }
+        internal float SupportActivationRemainingSeconds { get; set; }
+        internal float SkillCastRemainingSeconds { get; set; }
+        internal bool SkillCastCompletedThisStep { get; set; }
     }
 }

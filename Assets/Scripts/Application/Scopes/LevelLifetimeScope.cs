@@ -87,8 +87,8 @@ namespace TowerDefense3D.GameFlow
                 resolver => new LevelBaseHealthSystem(GetLevelEntry(resolver).StartingHealth),
                 Lifetime.Scoped);
             builder.Register<BoardSystem>(Lifetime.Scoped);
-            builder.Register<RoadPath>(
-                resolver => RoadPathFactory.Create(resolver.Resolve<BoardSystem>()),
+            builder.Register<RoadPathSet>(
+                resolver => RoadPathFactory.CreatePaths(resolver.Resolve<BoardSystem>()),
                 Lifetime.Scoped);
             builder.Register<BoardCameraSystem>(Lifetime.Scoped);
             builder.Register<GameplayInputSystem>(Lifetime.Scoped);
@@ -96,12 +96,22 @@ namespace TowerDefense3D.GameFlow
             builder.Register<TowerNetworkSystem>(Lifetime.Scoped)
                 .WithParameter("levelNumber", levelNumber);
             builder.Register<TowerInteractionSystem>(Lifetime.Scoped);
-            builder.Register<EnemySystem>(Lifetime.Scoped);
+            builder.Register<EnemySystem>(
+                resolver => new EnemySystem(
+                    resolver.Resolve<RoadPathSet>(),
+                    resolver.Resolve<LevelGoldSystem>(),
+                    resolver.Resolve<LevelBaseHealthSystem>()),
+                Lifetime.Scoped);
             builder.Register<WaveSpawnPlanner>(Lifetime.Scoped);
             builder.Register<WaveSystem>(Lifetime.Scoped)
                 .AsSelf()
                 .As<IWaveSystem>();
-            builder.Register<CombatTimelinePlanner>(Lifetime.Scoped);
+            builder.Register<CombatTimelinePlanner>(
+                resolver => new CombatTimelinePlanner(
+                    resolver.Resolve<TowerNetworkManager>(),
+                    resolver.Resolve<RoadPathSet>(),
+                    resolver.Resolve<ElementReactionCatalog>()),
+                Lifetime.Scoped);
             builder.Register<CombatTimelineSystem>(Lifetime.Scoped);
             builder.Register<GameplaySimulationSystem>(Lifetime.Scoped);
             builder.Register<EnemyPresentationSystem>(Lifetime.Scoped);

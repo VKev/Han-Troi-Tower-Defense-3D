@@ -475,7 +475,18 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fb6bd04cfe0358749b691fed773c1837, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7829796574129086580}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fb6bd04cfe0358749b691fed773c1837, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2211351626042526482}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fb6bd04cfe0358749b691fed773c1837, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8933163882635629333}
   m_SourcePrefab: {fileID: 100100000, guid: fb6bd04cfe0358749b691fed773c1837, type: 3}
+--- !u!4 &2866312956743985419 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4545924244059652026, guid: fb6bd04cfe0358749b691fed773c1837, type: 3}
+  m_PrefabInstance: {fileID: 7435040077684549965}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &6963735950641024678 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: fb6bd04cfe0358749b691fed773c1837, type: 3}
@@ -520,7 +531,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49dc218059e8ad143942117e0b7efa7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemyView
-  spawnScaleDurationSeconds: 0.4
   deathScaleDurationSeconds: 0.2
 --- !u!114 &2752108169280914534
 MonoBehaviour:
@@ -570,3 +580,31 @@ MonoBehaviour:
     priority: 0
     durationSeconds: 1
   transitionDurationSeconds: 0.4
+--- !u!114 &2211351626042526482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7777708168483902492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0db10ec4e6bba8a4ab6573225175f2fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemySkillEffectView
+  effectPrefab: {fileID: 1339262175069690375, guid: 367535971f7474e489f29f20bec81a02, type: 3}
+  anchor: {fileID: 2866312956743985419}
+  playDelaySeconds: 1
+--- !u!114 &8933163882635629333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7777708168483902492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20c689cf8cf3f3a4c803ed9c4bce5773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemySpeedTrailView
+  trailPrefab: {fileID: 8475491197590333196, guid: 6a472ab0191d39441a61f6d860db2df4, type: 3}

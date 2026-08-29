@@ -45,3 +45,4 @@ MonoBehaviour:
       count: 2
     - definition: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
       count: 2
+  summonSkillDurationSeconds: 3

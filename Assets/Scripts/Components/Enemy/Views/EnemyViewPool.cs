@@ -8,6 +8,8 @@ namespace TowerDefense3D.Enemies
     [DisallowMultipleComponent]
     public sealed class EnemyViewPool : MonoBehaviour, IEnemyViewPool
     {
+        private const string PrespawnVfxResourcePath = "Prefabs/VFX/VFX_Prespawn";
+
         [SerializeField, Min(1)] private int defaultPoolCapacity = 16;
         [SerializeField, Min(1)] private int maximumPoolSize = 128;
 
@@ -18,6 +20,7 @@ namespace TowerDefense3D.Enemies
         private readonly Dictionary<EnemyDefinition, ComponentPool<EnemyView>> poolsByDefinition =
             new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
         private readonly List<ActiveEnemyView> pendingDeathSnapshot = new List<ActiveEnemyView>();
+        private readonly List<PrespawnEffect> prespawnEffects = new List<PrespawnEffect>();
         private Camera worldCamera;
         private GlobalEffectEmitterView reactionEffectEmitter;
 
@@ -51,6 +54,7 @@ namespace TowerDefense3D.Enemies
             EnemyView view = pool.Get();
             activeViews.Add(enemy.EnemyId, new ActiveEnemyView(pool, view));
             view.Bind(enemy);
+            PlayPrespawnEffect(enemy, view);
         }
 
         public void Despawn(long enemyId)
@@ -84,6 +88,7 @@ namespace TowerDefense3D.Enemies
 
         public void TickLifecycle(float deltaTime)
         {
+            TickPrespawnEffects(deltaTime);
             pendingDeathSnapshot.Clear();
             foreach (ActiveEnemyView pendingDeath in pendingDeaths.Values)
             {
@@ -111,6 +116,7 @@ namespace TowerDefense3D.Enemies
 
             pendingDeaths.Clear();
             pendingDeathSnapshot.Clear();
+            prespawnEffects.Clear();
         }
 
         private void CompleteDeath(long enemyId, ActiveEnemyView activeView)
@@ -162,6 +168,67 @@ namespace TowerDefense3D.Enemies
             return view;
         }
 
+        /// <summary>
+        /// The effect tracks the enemy until its ring fires and then stays put, planted a short
+        /// way down the road so the enemy walks through the middle of the ring rather than
+        /// standing on it for a single frame. Tracking beats predicting the spot outright:
+        /// enemy views render one simulation tick behind, and speed buffs are unknown at spawn.
+        /// </summary>
+        private void PlayPrespawnEffect(EnemySnapshot enemy, EnemyView view)
+        {
+            GameObject prefab = Resources.Load<GameObject>(PrespawnVfxResourcePath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            float leadDistanceMeters = enemy.Definition.BaseMoveSpeed
+                * EnemySpawnPresentationTiming.PrespawnLeadSeconds;
+            GameObject instance = Instantiate(
+                prefab,
+                GetPrespawnEffectPosition(view, leadDistanceMeters),
+                Quaternion.identity,
+                transform);
+            if (!Application.isPlaying)
+            {
+                DestroyImmediate(instance);
+                return;
+            }
+
+            Destroy(instance, EnemySpawnPresentationTiming.PrespawnVfxDurationSeconds);
+            prespawnEffects.Add(new PrespawnEffect(
+                instance.transform,
+                enemy.EnemyId,
+                leadDistanceMeters));
+        }
+
+        private static Vector3 GetPrespawnEffectPosition(EnemyView view, float leadDistanceMeters)
+        {
+            return view.RenderedRootPosition
+                + view.RenderedMoveDirection * leadDistanceMeters;
+        }
+
+        private void TickPrespawnEffects(float deltaTime)
+        {
+            for (int index = prespawnEffects.Count - 1; index >= 0; index--)
+            {
+                PrespawnEffect effect = prespawnEffects[index];
+                if (!activeViews.TryGetValue(effect.EnemyId, out ActiveEnemyView activeView)
+                    || effect.Transform == null
+                    || effect.ElapsedSeconds
+                        >= EnemySpawnPresentationTiming.PrespawnRingDelaySeconds)
+                {
+                    prespawnEffects.RemoveAt(index);
+                    continue;
+                }
+
+                effect.Transform.position = GetPrespawnEffectPosition(
+                    activeView.View,
+                    effect.LeadDistanceMeters);
+                prespawnEffects[index] = effect.Advanced(deltaTime);
+            }
+        }
+
         private void OnDestroy()
         {
             ReleaseAll();
@@ -171,6 +238,35 @@ namespace TowerDefense3D.Enemies
             }
 
             poolsByDefinition.Clear();
+        }
+
+        private readonly struct PrespawnEffect
+        {
+            public PrespawnEffect(
+                Transform transform,
+                long enemyId,
+                float leadDistanceMeters,
+                float elapsedSeconds = 0f)
+            {
+                Transform = transform;
+                EnemyId = enemyId;
+                LeadDistanceMeters = leadDistanceMeters;
+                ElapsedSeconds = elapsedSeconds;
+            }
+
+            public Transform Transform { get; }
+            public long EnemyId { get; }
+            public float LeadDistanceMeters { get; }
+            public float ElapsedSeconds { get; }
+
+            public PrespawnEffect Advanced(float deltaTime)
+            {
+                return new PrespawnEffect(
+                    Transform,
+                    EnemyId,
+                    LeadDistanceMeters,
+                    ElapsedSeconds + deltaTime);
+            }
         }
 
         private readonly struct ActiveEnemyView

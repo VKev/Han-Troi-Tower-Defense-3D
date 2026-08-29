@@ -39,8 +39,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(miniBoss.GetType(), Is.EqualTo(typeof(EnemyDefinition)));
             Assert.That(miniBoss.Rank, Is.EqualTo(EnemyRank.MiniBoss));
 
-            Assert.That(stealth.RevealDurationSeconds, Is.EqualTo(2f));
-            Assert.That(speedSupport.RegularSpeedBonusFraction, Is.EqualTo(0.25f));
+            Assert.That(stealth.RevealDurationSeconds, Is.EqualTo(5f));
+            Assert.That(speedSupport.RegularSpeedBonusFraction, Is.EqualTo(0.5f));
             Assert.That(speedSupport.MiniBossSpeedBonusFraction, Is.EqualTo(0.10f));
             Assert.That(miniBoss.LeakDamage, Is.EqualTo(1));
             Assert.That(summonerBoss.Rank, Is.EqualTo(EnemyRank.Boss));
@@ -75,6 +75,45 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                     viewPrefabs.Add(definition.ViewPrefab),
                     Is.True,
                     $"{definition.StableId} must use its own View Prefab.");
+            }
+        }
+
+        [Test]
+        public void SpeedSupportEnemy_UsesChickenSkillEffectAtHeadBone()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Resources/Prefabs/Enemies/SpeedSupportEnemy.prefab");
+            GameObject effect = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Resources/Prefabs/VFX/FX_Chicken.prefab");
+
+            EnemySkillEffectView skillView = prefab.GetComponent<EnemySkillEffectView>();
+            Assert.That(skillView, Is.Not.Null);
+
+            SerializedObject serialized = new SerializedObject(skillView);
+            Assert.That(serialized.FindProperty("effectPrefab").objectReferenceValue, Is.SameAs(effect));
+            Transform anchor = serialized.FindProperty("anchor").objectReferenceValue as Transform;
+            Assert.That(anchor, Is.Not.Null);
+            Assert.That(anchor.name, Is.EqualTo("Bone_008"));
+            Assert.That(anchor.IsChildOf(prefab.transform), Is.True);
+        }
+
+        [Test]
+        public void ApprovedEnemyViews_UseEarthTrailForSpeedBuffs()
+        {
+            EnemyCatalog catalog = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(CatalogPath);
+            GameObject trail = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Resources/Prefabs/VFX/VFX_Trail_Earth.prefab");
+
+            foreach (EnemyDefinition definition in catalog.Definitions)
+            {
+                EnemySpeedTrailView trailView = definition.ViewPrefab.GetComponent<EnemySpeedTrailView>();
+                Assert.That(trailView, Is.Not.Null, definition.StableId);
+
+                SerializedObject serialized = new SerializedObject(trailView);
+                Assert.That(
+                    serialized.FindProperty("trailPrefab").objectReferenceValue,
+                    Is.SameAs(trail),
+                    definition.StableId);
             }
         }
 

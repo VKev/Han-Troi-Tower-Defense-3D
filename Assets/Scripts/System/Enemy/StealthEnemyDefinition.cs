@@ -18,6 +18,7 @@ namespace TowerDefense3D.Enemies
             {
                 errors.Add($"{name}: Reveal Duration must be greater than zero.");
             }
+
         }
     }
 }

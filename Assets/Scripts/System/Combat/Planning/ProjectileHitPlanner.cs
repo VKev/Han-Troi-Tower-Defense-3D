@@ -11,7 +11,7 @@ namespace TowerDefense3D.Enemies
         private const double TickBoundaryTolerance = 0.000001d;
         private const float ImpactMergeDistanceMeters = 1.25f;
         private const long ImpactMergeWindowTicks = 4L;
-        private readonly RoadPath roadPath;
+        private readonly RoadPathSet roadPaths;
         private readonly float tickSeconds;
         private readonly float projectileSpeedMetersPerSecond;
         private readonly float projectileHitRadius;
@@ -21,14 +21,27 @@ namespace TowerDefense3D.Enemies
             float tickSeconds,
             float projectileSpeedMetersPerSecond,
             float projectileHitRadius)
+            : this(
+                new RoadPathSet(new[] { roadPath }),
+                tickSeconds,
+                projectileSpeedMetersPerSecond,
+                projectileHitRadius)
         {
-            this.roadPath = roadPath ?? throw new ArgumentNullException(nameof(roadPath));
+        }
+
+        public ProjectileHitPlanner(
+            RoadPathSet roadPaths,
+            float tickSeconds,
+            float projectileSpeedMetersPerSecond,
+            float projectileHitRadius)
+        {
+            this.roadPaths = roadPaths ?? throw new ArgumentNullException(nameof(roadPaths));
             this.tickSeconds = tickSeconds;
             this.projectileSpeedMetersPerSecond = projectileSpeedMetersPerSecond;
             this.projectileHitRadius = projectileHitRadius;
         }
 
-        public Vector3 RoadStart => roadPath.Start;
+        public Vector3 RoadStart => roadPaths.Primary.Start;
 
         public IReadOnlyList<EnemyTrajectoryPlan> CreateWaveEnemyTrajectories(
             IReadOnlyList<WaveSpawnOrder> wavePlan)
@@ -37,10 +50,12 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < wavePlan.Count; index++)
             {
                 WaveSpawnOrder order = wavePlan[index];
+                RoadPath route = roadPaths.GetForEnemy(order.EnemyId);
                 seeds[index] = new EnemyTrajectorySeed(
                     order.EnemyId,
                     order.Enemy,
-                    roadPath.Start,
+                    route,
+                    route.Start,
                     1,
                     Math.Max(1L, SecondsToTick(order.TimeSeconds)));
             }
@@ -272,9 +287,9 @@ namespace TowerDefense3D.Enemies
             float remainingDistance = speed * tickSeconds;
             float segmentStartTime = (currentTick - 1L) * tickSeconds;
 
-            while (remainingDistance > 0f && state.TargetPointIndex < roadPath.PointCount)
+            while (remainingDistance > 0f && state.TargetPointIndex < state.Route.PointCount)
             {
-                Vector3 target = roadPath.GetPoint(state.TargetPointIndex);
+                Vector3 target = state.Route.GetPoint(state.TargetPointIndex);
                 float distanceToTarget = Vector3.Distance(state.Position, target);
                 if (distanceToTarget <= float.Epsilon)
                 {
@@ -301,7 +316,7 @@ namespace TowerDefense3D.Enemies
                 }
             }
 
-            state.IsComplete = state.TargetPointIndex >= roadPath.PointCount;
+            state.IsComplete = state.TargetPointIndex >= state.Route.PointCount;
         }
 
         private static float FindStrongestSpeedBonus(
@@ -363,12 +378,14 @@ namespace TowerDefense3D.Enemies
         public EnemyTrajectorySeed(
             long enemyId,
             EnemyDefinition definition,
+            RoadPath route,
             Vector3 position,
             int targetPointIndex,
             long firstMovementTick)
         {
             EnemyId = enemyId;
             Definition = definition;
+            Route = route ?? throw new ArgumentNullException(nameof(route));
             Position = position;
             TargetPointIndex = targetPointIndex;
             FirstMovementTick = firstMovementTick;
@@ -376,6 +393,7 @@ namespace TowerDefense3D.Enemies
 
         public long EnemyId { get; }
         public EnemyDefinition Definition { get; }
+        public RoadPath Route { get; }
         public Vector3 Position { get; }
         public int TargetPointIndex { get; }
         public long FirstMovementTick { get; }
@@ -387,6 +405,7 @@ namespace TowerDefense3D.Enemies
         {
             EnemyId = seed.EnemyId;
             Definition = seed.Definition;
+            Route = seed.Route;
             Position = seed.Position;
             TargetPointIndex = seed.TargetPointIndex;
             FirstMovementTick = seed.FirstMovementTick;
@@ -394,6 +413,7 @@ namespace TowerDefense3D.Enemies
 
         public long EnemyId { get; }
         public EnemyDefinition Definition { get; }
+        public RoadPath Route { get; }
         public long FirstMovementTick { get; }
         public List<TimedTrajectorySegment> Segments { get; } = new List<TimedTrajectorySegment>();
         public Vector3 Position { get; set; }

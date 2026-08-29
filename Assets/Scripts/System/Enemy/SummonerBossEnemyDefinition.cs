@@ -32,8 +32,10 @@ namespace TowerDefense3D.Enemies
         }
 
         [SerializeField] private List<SummonPhase> summonPhases = new List<SummonPhase>();
+        [SerializeField, Min(0.01f)] private float summonSkillDurationSeconds = 3f;
 
         public IReadOnlyList<SummonPhase> SummonPhases => summonPhases;
+        public float SummonSkillDurationSeconds => summonSkillDurationSeconds;
 
         internal override void CollectSpecificValidationErrors(ICollection<string> errors)
         {

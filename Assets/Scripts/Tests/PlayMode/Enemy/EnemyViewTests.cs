@@ -86,22 +86,31 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
             yield return null;
 
-            view.Bind(new EnemySnapshot(
+            EnemySnapshot spawn = new EnemySnapshot(
                 1L,
                 definition,
                 new Vector3(3f, 2f, 4f),
                 new Vector3(3f, 2f, 4f),
                 definition.BaseMaxHealth,
                 false,
-                false));
+                false);
+            view.Bind(spawn);
 
             Renderer modelRenderer = model.GetComponent<Renderer>();
             float footY = modelRenderer.bounds.min.y;
-            view.TickLifecycle(0.2f);
+            view.TickLifecycle(EnemySpawnPresentationTiming.SpawnScaleDelaySeconds * 0.5f);
+            Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0f).Within(0.001f));
+
+            view.TickLifecycle(
+                EnemySpawnPresentationTiming.SpawnScaleDelaySeconds * 0.5f
+                + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds * 0.5f);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0.5f).Within(0.001f));
             Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
 
-            view.TickLifecycle(0.2f);
+            view.Render(spawn, 1f);
+            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+
+            view.TickLifecycle(EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(1f).Within(0.001f));
             Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
 

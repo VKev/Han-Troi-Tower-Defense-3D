@@ -13,7 +13,7 @@ namespace TowerDefense3D.Enemies
         private const float ImpactMergeDistanceMeters = 1.25f;
 
         private readonly TowerNetworkManager towerNetworkManager;
-        private readonly RoadPath roadPath;
+        private readonly RoadPathSet roadPaths;
         private readonly ElementReactionCatalog reactionCatalog;
         private readonly float tickSeconds;
         private readonly float projectileSpeed;
@@ -23,9 +23,20 @@ namespace TowerDefense3D.Enemies
             TowerNetworkManager towerNetworkManager,
             RoadPath roadPath,
             ElementReactionCatalog reactionCatalog)
+            : this(
+                towerNetworkManager,
+                new RoadPathSet(new[] { roadPath }),
+                reactionCatalog)
+        {
+        }
+
+        public CombatTimelinePlanner(
+            TowerNetworkManager towerNetworkManager,
+            RoadPathSet roadPaths,
+            ElementReactionCatalog reactionCatalog)
         {
             this.towerNetworkManager = towerNetworkManager;
-            this.roadPath = roadPath;
+            this.roadPaths = roadPaths;
             this.reactionCatalog = reactionCatalog;
             tickSeconds = towerNetworkManager.TickSeconds;
             projectileSpeed = towerNetworkManager.ProjectileSpeedMetersPerSecond;
@@ -88,7 +99,7 @@ namespace TowerDefense3D.Enemies
         private long CalculatePlanningHorizon(IReadOnlyList<WaveSpawnOrder> wavePlan)
         {
             var trajectoryPlanner = new ProjectileHitPlanner(
-                roadPath,
+                roadPaths,
                 tickSeconds,
                 projectileSpeed,
                 ProjectileHitRadius);
@@ -153,10 +164,13 @@ namespace TowerDefense3D.Enemies
                 && SecondsToTick(wavePlan[nextSpawnIndex].TimeSeconds) <= tick)
             {
                 WaveSpawnOrder order = wavePlan[nextSpawnIndex++];
+                int routeIndex = roadPaths.GetRouteIndex(order.EnemyId);
                 enemies.Add(new ShadowEnemy(
                     order.EnemyId,
                     order.Enemy,
-                    roadPath.Start,
+                    roadPaths.Get(routeIndex),
+                    routeIndex,
+                    roadPaths.Get(routeIndex).Start,
                     1,
                     isSummoned: false,
                     reactionCatalog,
@@ -192,7 +206,9 @@ namespace TowerDefense3D.Enemies
                 enemy.PreviousPosition = enemy.Position;
                 enemy.Removal = PlannedEnemyRemoval.None;
                 RefillPushBudget(enemy);
+                enemy.SkillCastCompletedThisTick = false;
                 ExpireEffects(enemy, tick);
+                UpdateSpeedSupport(enemy);
                 if (!enemy.IsAlive || enemy.BurnDamagePerTick <= 0f
                     || tick < enemy.NextBurnTick || tick >= enemy.BurnEndTick)
                 {
@@ -234,6 +250,46 @@ namespace TowerDefense3D.Enemies
                 enemy.RevealRemainingSeconds - tickSeconds);
         }
 
+        private void UpdateSpeedSupport(ShadowEnemy enemy)
+        {
+            if (!(enemy.Definition is SpeedSupportEnemyDefinition support))
+            {
+                return;
+            }
+
+            if (enemy.SupportActivationRemainingSeconds > 0f)
+            {
+                enemy.SupportActivationRemainingSeconds = Mathf.Max(
+                    0f,
+                    enemy.SupportActivationRemainingSeconds - tickSeconds);
+                if (enemy.SupportActivationRemainingSeconds > 0f)
+                {
+                    return;
+                }
+            }
+
+            if (!enemy.IsSpeedAuraActive)
+            {
+                enemy.SkillCastRemainingSeconds = support.SkillDurationSeconds;
+                enemy.SkillCastVersion++;
+                enemy.IsSpeedAuraActive = true;
+                return;
+            }
+
+            if (enemy.SkillCastRemainingSeconds <= 0f)
+            {
+                return;
+            }
+
+            enemy.SkillCastRemainingSeconds = Mathf.Max(
+                0f,
+                enemy.SkillCastRemainingSeconds - tickSeconds);
+            if (enemy.SkillCastRemainingSeconds <= 0f)
+            {
+                enemy.SkillCastCompletedThisTick = true;
+            }
+        }
+
         private void QueueBossSummons(
             List<ShadowEnemy> enemies,
             List<ShadowSummon> pendingSummons)
@@ -255,24 +311,55 @@ namespace TowerDefense3D.Enemies
                     boss.SummonElapsedSeconds = 0f;
                 }
 
+                if (boss.SummonCastRemainingSeconds > 0f)
+                {
+                    boss.SummonCastRemainingSeconds = Mathf.Max(
+                        0f,
+                        boss.SummonCastRemainingSeconds - tickSeconds);
+                    if (boss.SummonCastRemainingSeconds <= 0f)
+                    {
+                        boss.SkillCastCompletedThisTick = true;
+                    }
+                    boss.SkillCastRemainingSeconds = boss.SummonCastRemainingSeconds;
+                    if (boss.SummonCastRemainingSeconds > 0f)
+                    {
+                        continue;
+                    }
+
+                    AddSummons(definition.SummonPhases[boss.SummonPhaseIndex], boss, pendingSummons);
+                    continue;
+                }
+
                 SummonerBossEnemyDefinition.SummonPhase phase =
                     definition.SummonPhases[phaseIndex];
                 boss.SummonElapsedSeconds += tickSeconds;
                 while (boss.SummonElapsedSeconds >= phase.SummonIntervalSeconds)
                 {
                     boss.SummonElapsedSeconds -= phase.SummonIntervalSeconds;
-                    for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
-                    {
-                        SummonerBossEnemyDefinition.SummonedEnemyEntry entry =
-                            phase.Entries[entryIndex];
-                        for (int count = 0; count < entry.Count; count++)
-                        {
-                            pendingSummons.Add(new ShadowSummon(
-                                entry.Definition,
-                                boss.Position,
-                                boss.TargetPointIndex));
-                        }
-                    }
+                    boss.SummonCastRemainingSeconds = definition.SummonSkillDurationSeconds;
+                    boss.SkillCastRemainingSeconds = definition.SummonSkillDurationSeconds;
+                    boss.SkillCastCompletedThisTick = true;
+                    boss.SkillCastVersion++;
+                    break;
+                }
+            }
+        }
+
+        private static void AddSummons(
+            SummonerBossEnemyDefinition.SummonPhase phase,
+            ShadowEnemy boss,
+            List<ShadowSummon> pendingSummons)
+        {
+            for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+            {
+                SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
+                for (int count = 0; count < entry.Count; count++)
+                {
+                    pendingSummons.Add(new ShadowSummon(
+                        entry.Definition,
+                        boss.Position,
+                        boss.TargetPointIndex,
+                        boss.RouteIndex));
                 }
             }
         }
@@ -287,17 +374,25 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
+                float speedBonus = FindStrongestSpeedBonus(enemy, enemies);
+                enemy.IsSpeedBuffed = speedBonus > 0f;
+
                 if (tick < enemy.LiftEndTick)
                 {
                     continue;
                 }
 
-                float speedBonus = FindStrongestSpeedBonus(enemy, enemies);
+                if (enemy.SkillCastRemainingSeconds > 0f || enemy.SkillCastCompletedThisTick)
+                {
+                    enemy.PreviousPosition = enemy.Position;
+                    continue;
+                }
+
                 float speedMultiplier = 1f + speedBonus;
                 float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * tickSeconds;
                 Vector3 position = enemy.Position;
                 int targetPointIndex = enemy.TargetPointIndex;
-                bool reachedEnd = roadPath.Move(ref targetPointIndex, ref position, distance);
+                bool reachedEnd = enemy.Route.Move(ref targetPointIndex, ref position, distance);
                 enemy.Position = position;
                 enemy.TargetPointIndex = targetPointIndex;
                 if (reachedEnd)
@@ -321,6 +416,7 @@ namespace TowerDefense3D.Enemies
             {
                 ShadowEnemy source = enemies[index];
                 if (source == target || !source.IsAlive
+                    || !source.IsSpeedAuraActive
                     || !(source.Definition is SpeedSupportEnemyDefinition support))
                 {
                     continue;
@@ -357,6 +453,8 @@ namespace TowerDefense3D.Enemies
                 enemies.Add(new ShadowEnemy(
                     enemyId,
                     summon.Definition,
+                    roadPaths.Get(summon.RouteIndex),
+                    summon.RouteIndex,
                     summon.Position,
                     summon.TargetPointIndex,
                     isSummoned: true,
@@ -366,7 +464,8 @@ namespace TowerDefense3D.Enemies
                     enemyId,
                     summon.Definition,
                     summon.Position,
-                    summon.TargetPointIndex));
+                    summon.TargetPointIndex,
+                    summon.RouteIndex));
             }
         }
 
@@ -699,7 +798,7 @@ namespace TowerDefense3D.Enemies
             int targetPointIndex = enemy.TargetPointIndex;
             while (effectiveDistance > 0f && targetPointIndex > 0)
             {
-                Vector3 previousPoint = roadPath.GetPoint(targetPointIndex - 1);
+                Vector3 previousPoint = enemy.Route.GetPoint(targetPointIndex - 1);
                 float distanceToPrevious = Vector3.Distance(position, previousPoint);
                 if (distanceToPrevious <= float.Epsilon)
                 {
@@ -740,6 +839,8 @@ namespace TowerDefense3D.Enemies
                     enemy.ElementReaction.GetRemainingSeconds(tick),
                     enemy.RemainingThermalShieldHits,
                     CalculateLiftHeight(enemy, tick),
+                    enemy.SkillCastVersion,
+                    enemy.IsSpeedBuffed,
                     enemy.Removal));
             }
         }
@@ -888,6 +989,8 @@ namespace TowerDefense3D.Enemies
             public ShadowEnemy(
                 long id,
                 EnemyDefinition definition,
+                RoadPath route,
+                int routeIndex,
                 Vector3 position,
                 int targetPointIndex,
                 bool isSummoned,
@@ -896,6 +999,8 @@ namespace TowerDefense3D.Enemies
             {
                 Id = id;
                 Definition = definition;
+                Route = route ?? throw new ArgumentNullException(nameof(route));
+                RouteIndex = routeIndex;
                 Position = position;
                 PreviousPosition = position;
                 TargetPointIndex = targetPointIndex;
@@ -905,10 +1010,15 @@ namespace TowerDefense3D.Enemies
                     reactionCatalog,
                     tickSeconds);
                 RemainingThermalShieldHits = definition.ThermalShockHitsToBreakShield;
+                SupportActivationRemainingSeconds = definition is SpeedSupportEnemyDefinition support
+                    ? support.ActivationDelaySeconds
+                    : 0f;
             }
 
             public long Id { get; }
             public EnemyDefinition Definition { get; }
+            public RoadPath Route { get; }
+            public int RouteIndex { get; }
             public bool IsSummoned { get; }
             public float Health { get; set; }
             public float HealthFraction => Health / Definition.BaseMaxHealth;
@@ -919,6 +1029,9 @@ namespace TowerDefense3D.Enemies
             public Vector3 Position { get; set; }
             public int TargetPointIndex { get; set; }
             public float RevealRemainingSeconds { get; set; }
+            public bool IsSpeedAuraActive { get; set; }
+            public bool IsSpeedBuffed { get; set; }
+            public int SkillCastVersion { get; set; }
             public EnemyElementReactionState ElementReaction { get; }
             public int RemainingThermalShieldHits { get; set; }
             public long LiftStartTick { get; set; }
@@ -932,6 +1045,10 @@ namespace TowerDefense3D.Enemies
             public long BurnEndTick { get; set; }
             public int SummonPhaseIndex { get; set; } = -1;
             public float SummonElapsedSeconds { get; set; }
+            public float SummonCastRemainingSeconds { get; set; }
+            public float SupportActivationRemainingSeconds { get; set; }
+            public float SkillCastRemainingSeconds { get; set; }
+            public bool SkillCastCompletedThisTick { get; set; }
             public PlannedEnemyRemoval Removal { get; set; }
         }
 
@@ -996,16 +1113,19 @@ namespace TowerDefense3D.Enemies
             public ShadowSummon(
                 EnemyDefinition definition,
                 Vector3 position,
-                int targetPointIndex)
+                int targetPointIndex,
+                int routeIndex)
             {
                 Definition = definition;
                 Position = position;
                 TargetPointIndex = targetPointIndex;
+                RouteIndex = routeIndex;
             }
 
             public EnemyDefinition Definition { get; }
             public Vector3 Position { get; }
             public int TargetPointIndex { get; }
+            public int RouteIndex { get; }
         }
 
     }

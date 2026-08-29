@@ -23,6 +23,8 @@ MonoBehaviour:
   goldOnDeath: 14
   soulOnDirectHit: 1
   leakDamage: 1
-  auraRadiusMeters: 3
-  regularSpeedBonusFraction: 0.25
+  auraRadiusMeters: 6
+  regularSpeedBonusFraction: 0.5
   miniBossSpeedBonusFraction: 0.1
+  activationDelaySeconds: 2
+  skillDurationSeconds: 2.5

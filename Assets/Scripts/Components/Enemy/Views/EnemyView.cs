@@ -11,7 +11,6 @@ namespace TowerDefense3D.Enemies
         private const float TurnSpeedDegreesPerSecond = 360f;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
 
-        [SerializeField, Min(0.01f)] private float spawnScaleDurationSeconds = 0.4f;
         [SerializeField, Min(0.01f)] private float deathScaleDurationSeconds = 0.2f;
 
         private Animator animator;
@@ -19,17 +18,36 @@ namespace TowerDefense3D.Enemies
         private EnemyElementStatusView elementStatusView;
         private EnemyElementEffectView elementEffectView;
         private EnemyThermalShieldView thermalShieldView;
+        private EnemyStealthView stealthView;
+        private EnemySkillEffectView skillEffectView;
+        private EnemySpeedTrailView speedTrailView;
         private Quaternion spawnLocalRotation;
         private Vector3 spawnLocalScale;
         private Vector3 scalePivotLocal;
         private Vector3 scaleAnchorWorld;
+        private Vector3 renderedRootPosition;
+        private Vector3 renderedMoveDirection;
         private float scaleProgress = 1f;
+        private float spawnScaleDelayRemainingSeconds;
         private bool isSpawning;
         private bool isDying;
         private Action deathCompletion;
         private bool hasFacingDirection;
+        private int renderedSkillCastVersion;
 
         public long EnemyId { get; private set; }
+
+        /// <summary>
+        /// Root position on the road, before the spawn scale shifts the transform to keep the
+        /// model's pivot planted. This is where the enemy settles once it reaches full scale.
+        /// </summary>
+        public Vector3 RenderedRootPosition => renderedRootPosition;
+
+        /// <summary>
+        /// Unit heading of the last movement the view rendered, or zero before the enemy has
+        /// moved. Zero on the spawn frame, since the enemy has no previous position yet.
+        /// </summary>
+        public Vector3 RenderedMoveDirection => renderedMoveDirection;
 
         private void Awake()
         {
@@ -38,6 +56,9 @@ namespace TowerDefense3D.Enemies
             elementStatusView = GetComponentInChildren<EnemyElementStatusView>(true);
             elementEffectView = GetComponentInChildren<EnemyElementEffectView>(true);
             thermalShieldView = GetComponentInChildren<EnemyThermalShieldView>(true);
+            stealthView = GetComponentInChildren<EnemyStealthView>(true);
+            skillEffectView = GetComponentInChildren<EnemySkillEffectView>(true);
+            speedTrailView = GetComponentInChildren<EnemySpeedTrailView>(true);
             spawnLocalRotation = transform.localRotation;
             spawnLocalScale = transform.localScale;
         }
@@ -46,6 +67,7 @@ namespace TowerDefense3D.Enemies
         {
             GetElementStatusView().Configure(worldCamera);
             GetElementEffectView().ConfigureReactionEmitter(reactionEffectEmitter);
+            GetSkillEffectView()?.ConfigureEmitter(reactionEffectEmitter);
         }
 
         public void Bind(EnemySnapshot enemy)
@@ -53,34 +75,54 @@ namespace TowerDefense3D.Enemies
             EnemyId = enemy.EnemyId;
             string prefix = enemy.IsSummoned ? "Summoned Enemy" : "Enemy";
             gameObject.name = $"{prefix} {enemy.EnemyId} - {enemy.Definition.DisplayName}";
-            transform.position = enemy.Position;
+            renderedRootPosition = enemy.Position;
+            transform.position = renderedRootPosition;
             transform.localRotation = spawnLocalRotation;
             hasFacingDirection = false;
+            renderedSkillCastVersion = enemy.SkillCastVersion;
             gameObject.SetActive(true);
             CaptureScalePivot();
             scaleProgress = 0f;
+            spawnScaleDelayRemainingSeconds = EnemySpawnPresentationTiming.SpawnScaleDelaySeconds;
             isSpawning = true;
             isDying = false;
             deathCompletion = null;
-            scaleAnchorWorld = transform.TransformPoint(scalePivotLocal);
+            scaleAnchorWorld = GetFullScaleAnchor();
             ApplyScaleAroundAnchor(0f);
             SetMoving(true);
             GetDamageFlashView().Bind(enemy);
             GetElementStatusView().Bind(enemy.ElementState);
             GetElementEffectView().Bind(enemy.ElementState);
             GetThermalShieldView()?.Bind(enemy);
+            GetStealthView()?.Bind(enemy);
+            GetSkillEffectView()?.Bind(enemy.SkillCastVersion);
+            GetSpeedTrailView()?.Bind();
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
         {
             GetDamageFlashView().Render(enemy, Time.deltaTime);
+            GetStealthView()?.Render(enemy, Time.deltaTime);
+            bool skillCastStarted = enemy.SkillCastVersion != renderedSkillCastVersion;
+            if (skillCastStarted)
+            {
+                renderedSkillCastVersion = enemy.SkillCastVersion;
+                Animator targetAnimator = animator != null ? animator : GetComponent<Animator>();
+                targetAnimator?.Play("Skill", 0, 0f);
+            }
             GetElementStatusView().Render(enemy.ElementState, Time.deltaTime);
             GetElementEffectView().Render(enemy.ElementState, Time.deltaTime);
             GetThermalShieldView()?.Render(enemy, Time.deltaTime);
-            transform.position = Vector3.Lerp(
+            renderedRootPosition = Vector3.Lerp(
                 enemy.PreviousPosition,
                 enemy.Position,
                 interpolationAlpha) + Vector3.up * enemy.LiftHeightMeters;
+            transform.position = renderedRootPosition;
+            if (skillCastStarted)
+            {
+                GetSkillEffectView()?.Play(enemy.SkillCastVersion);
+            }
+            GetSpeedTrailView()?.Render(enemy.IsSpeedBuffed);
 
             Vector3 movement = enemy.Position - enemy.PreviousPosition;
             movement.y = 0f;
@@ -90,6 +132,7 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
+            renderedMoveDirection = movement.normalized;
             Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.up);
             if (!hasFacingDirection)
             {
@@ -128,6 +171,9 @@ namespace TowerDefense3D.Enemies
             GetDamageFlashView().Release();
             GetElementStatusView().Release();
             GetElementEffectView().Release();
+            GetStealthView()?.Release();
+            GetSkillEffectView()?.Release();
+            GetSpeedTrailView()?.Release();
         }
 
         public void TickLifecycle(float deltaTime)
@@ -141,13 +187,20 @@ namespace TowerDefense3D.Enemies
             isSpawning = false;
             isDying = false;
             scaleProgress = 1f;
+            spawnScaleDelayRemainingSeconds = 0f;
             transform.localScale = spawnLocalScale;
             SetMoving(false);
             GetDamageFlashView().Release();
             GetElementStatusView().Release();
             GetElementEffectView().Release();
             GetThermalShieldView()?.Release();
+            GetStealthView()?.Release();
+            GetSkillEffectView()?.Release();
+            GetSpeedTrailView()?.Release();
             EnemyId = 0L;
+            renderedSkillCastVersion = 0;
+            renderedRootPosition = Vector3.zero;
+            renderedMoveDirection = Vector3.zero;
             hasFacingDirection = false;
             gameObject.SetActive(false);
         }
@@ -166,11 +219,24 @@ namespace TowerDefense3D.Enemies
 
             if (isSpawning)
             {
-                scaleAnchorWorld = transform.TransformPoint(scalePivotLocal);
+                scaleAnchorWorld = GetFullScaleAnchor();
+                if (spawnScaleDelayRemainingSeconds > 0f)
+                {
+                    float heldSeconds = spawnScaleDelayRemainingSeconds;
+                    spawnScaleDelayRemainingSeconds -= deltaTime;
+                    if (spawnScaleDelayRemainingSeconds > 0f)
+                    {
+                        ApplyScaleAroundAnchor(0f);
+                        return;
+                    }
+
+                    deltaTime -= heldSeconds;
+                }
+
                 scaleProgress = Mathf.MoveTowards(
                     scaleProgress,
                     1f,
-                    deltaTime / spawnScaleDurationSeconds);
+                    deltaTime / EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
             }
             else
             {
@@ -240,6 +306,17 @@ namespace TowerDefense3D.Enemies
             transform.position += scaleAnchorWorld - currentAnchorWorld;
         }
 
+        private Vector3 GetFullScaleAnchor()
+        {
+            Vector3 localOffset = transform.localRotation * Vector3.Scale(
+                scalePivotLocal,
+                spawnLocalScale);
+            Vector3 worldOffset = transform.parent != null
+                ? transform.parent.TransformVector(localOffset)
+                : localOffset;
+            return renderedRootPosition + worldOffset;
+        }
+
         private void SetMoving(bool value)
         {
             Animator targetAnimator = animator != null ? animator : GetComponent<Animator>();
@@ -277,6 +354,36 @@ namespace TowerDefense3D.Enemies
             }
 
             return thermalShieldView;
+        }
+
+        private EnemyStealthView GetStealthView()
+        {
+            if (stealthView == null)
+            {
+                stealthView = GetComponentInChildren<EnemyStealthView>(true);
+            }
+
+            return stealthView;
+        }
+
+        private EnemySkillEffectView GetSkillEffectView()
+        {
+            if (skillEffectView == null)
+            {
+                skillEffectView = GetComponentInChildren<EnemySkillEffectView>(true);
+            }
+
+            return skillEffectView;
+        }
+
+        private EnemySpeedTrailView GetSpeedTrailView()
+        {
+            if (speedTrailView == null)
+            {
+                speedTrailView = GetComponentInChildren<EnemySpeedTrailView>(true);
+            }
+
+            return speedTrailView;
         }
 
         private EnemyElementStatusView GetElementStatusView()

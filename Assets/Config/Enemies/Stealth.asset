@@ -23,4 +23,4 @@ MonoBehaviour:
   goldOnDeath: 15
   soulOnDirectHit: 1
   leakDamage: 1
-  revealDurationSeconds: 2
+  revealDurationSeconds: 5

@@ -66,7 +66,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         }
 
         [Test]
-        public void SpeedSupport_UsesStrongestNearbyAuraWithoutBuffingItself()
+        public void SpeedSupport_AppliesNearbyBuffWhenSkillCastStarts()
         {
             SpeedSupportEnemyDefinition support = AssetDatabase.LoadAssetAtPath<SpeedSupportEnemyDefinition>(
                 "Assets/Config/Enemies/SpeedSupport.asset");
@@ -76,15 +76,46 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             EnemyInstance supportEnemy = system.Spawn(support);
             EnemyInstance basicEnemy = system.Spawn(basic);
+            system.Step(support.ActivationDelaySeconds);
+
+            Assert.That(supportEnemy.IsSpeedAuraActive, Is.True);
+            Assert.That(supportEnemy.SkillCastVersion, Is.EqualTo(1));
+            Assert.That(basicEnemy.IsSpeedBuffed, Is.True);
+            Assert.That(
+                basicEnemy.Position.x,
+                Is.EqualTo(basic.BaseMoveSpeed * (1f + support.RegularSpeedBonusFraction)
+                    * support.ActivationDelaySeconds).Within(0.0001f));
+            Assert.That(supportEnemy.Position.x, Is.Zero);
+
+            float positionBeforeBuff = basicEnemy.Position.x;
             system.Step(0.5f);
 
             float expectedBasicDistance = basic.BaseMoveSpeed
                 * (1f + support.RegularSpeedBonusFraction)
                 * 0.5f;
-            Assert.That(basicEnemy.Position.x, Is.EqualTo(expectedBasicDistance).Within(0.0001f));
+            Assert.That(basicEnemy.Position.x - positionBeforeBuff, Is.EqualTo(expectedBasicDistance).Within(0.0001f));
             Assert.That(
                 supportEnemy.Position.x,
-                Is.EqualTo(support.BaseMoveSpeed * 0.5f).Within(0.0001f));
+                Is.Zero);
+        }
+
+        [Test]
+        public void SpeedSupport_StopsMovingDuringSkillCast()
+        {
+            SpeedSupportEnemyDefinition support = AssetDatabase.LoadAssetAtPath<SpeedSupportEnemyDefinition>(
+                "Assets/Config/Enemies/SpeedSupport.asset");
+            var system = CreateLongRoadSystem();
+            EnemyInstance enemy = system.Spawn(support);
+
+            system.Step(support.ActivationDelaySeconds);
+            float positionAtCastStart = enemy.Position.x;
+            system.Step(support.SkillDurationSeconds);
+
+            Assert.That(enemy.Position.x, Is.EqualTo(positionAtCastStart).Within(0.0001f));
+            Assert.That(enemy.IsSpeedAuraActive, Is.True);
+
+            system.Step(0.05f);
+            Assert.That(enemy.Position.x, Is.GreaterThan(positionAtCastStart));
         }
 
         [Test]
@@ -118,6 +149,10 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             system.Spawn(bossDefinition);
             system.Step(bossDefinition.SummonPhases[0].SummonIntervalSeconds);
+            system.CopySnapshotsTo(snapshots);
+            Assert.That(system.LivingCount, Is.EqualTo(1));
+
+            system.Step(bossDefinition.SummonSkillDurationSeconds);
             system.CopySnapshotsTo(snapshots);
 
             int summonedCount = 0;

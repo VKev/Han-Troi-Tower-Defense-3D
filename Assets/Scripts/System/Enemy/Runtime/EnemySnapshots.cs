@@ -14,7 +14,9 @@ namespace TowerDefense3D.Enemies
             bool isSummoned,
             EnemyElementState elementState = default,
             int remainingThermalShieldHits = 0,
-            float liftHeightMeters = 0f)
+            float liftHeightMeters = 0f,
+            int skillCastVersion = 0,
+            bool isSpeedBuffed = false)
         {
             EnemyId = enemyId;
             Definition = definition;
@@ -26,6 +28,8 @@ namespace TowerDefense3D.Enemies
             ElementState = elementState;
             RemainingThermalShieldHits = remainingThermalShieldHits;
             LiftHeightMeters = liftHeightMeters;
+            SkillCastVersion = skillCastVersion;
+            IsSpeedBuffed = isSpeedBuffed;
         }
 
         public long EnemyId { get; }
@@ -38,6 +42,8 @@ namespace TowerDefense3D.Enemies
         public EnemyElementState ElementState { get; }
         public int RemainingThermalShieldHits { get; }
         public float LiftHeightMeters { get; }
+        public int SkillCastVersion { get; }
+        public bool IsSpeedBuffed { get; }
         public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
     }
 }

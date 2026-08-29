@@ -68,6 +68,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             pool.Spawn(Snapshot(1L, firstDefinition));
             EnemyView view = FindView(pool, 1L);
+            pool.TickLifecycle(1.6f);
+            view.TickLifecycle(0.4f);
             pool.Despawn(1L);
 
             Assert.That(view.gameObject.activeSelf, Is.True);

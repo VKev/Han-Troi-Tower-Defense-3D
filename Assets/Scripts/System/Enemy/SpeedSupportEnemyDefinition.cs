@@ -11,10 +11,14 @@ namespace TowerDefense3D.Enemies
         [SerializeField, Min(0.01f)] private float auraRadiusMeters = 3f;
         [SerializeField, Range(0f, 1f)] private float regularSpeedBonusFraction = 0.25f;
         [SerializeField, Range(0f, 1f)] private float miniBossSpeedBonusFraction = 0.10f;
+        [SerializeField, Min(0f)] private float activationDelaySeconds = 1f;
+        [SerializeField, Min(0.01f)] private float skillDurationSeconds = 2.5f;
 
         public float AuraRadiusMeters => auraRadiusMeters;
         public float RegularSpeedBonusFraction => regularSpeedBonusFraction;
         public float MiniBossSpeedBonusFraction => miniBossSpeedBonusFraction;
+        public float ActivationDelaySeconds => activationDelaySeconds;
+        public float SkillDurationSeconds => skillDurationSeconds;
 
         internal override void CollectSpecificValidationErrors(ICollection<string> errors)
         {

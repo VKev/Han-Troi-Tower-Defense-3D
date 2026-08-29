@@ -7,7 +7,7 @@ namespace TowerDefense3D.Enemies
 {
     public sealed class EnemySystem
     {
-        private readonly RoadPath roadPath;
+        private readonly RoadPathSet roadPaths;
         private readonly LevelGoldSystem goldSystem;
         private readonly LevelBaseHealthSystem healthSystem;
         private readonly List<EnemyInstance> activeEnemies = new List<EnemyInstance>();
@@ -22,8 +22,19 @@ namespace TowerDefense3D.Enemies
             RoadPath roadPath,
             LevelGoldSystem goldSystem,
             LevelBaseHealthSystem healthSystem)
+            : this(
+                new RoadPathSet(new[] { roadPath }),
+                goldSystem,
+                healthSystem)
         {
-            this.roadPath = roadPath ?? throw new ArgumentNullException(nameof(roadPath));
+        }
+
+        public EnemySystem(
+            RoadPathSet roadPaths,
+            LevelGoldSystem goldSystem,
+            LevelBaseHealthSystem healthSystem)
+        {
+            this.roadPaths = roadPaths ?? throw new ArgumentNullException(nameof(roadPaths));
             this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
             this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
         }
@@ -36,12 +47,15 @@ namespace TowerDefense3D.Enemies
 
         public EnemyInstance Spawn(EnemyDefinition definition)
         {
-            return SpawnAt(ReserveEnemyId(), definition, roadPath.Start, 1);
+            long enemyId = ReserveEnemyId();
+            RoadPath route = roadPaths.GetForEnemy(enemyId);
+            return SpawnAt(enemyId, definition, route.Start, 1, route);
         }
 
         internal EnemyInstance Spawn(long enemyId, EnemyDefinition definition)
         {
-            return SpawnAt(enemyId, definition, roadPath.Start, 1);
+            RoadPath route = roadPaths.GetForEnemy(enemyId);
+            return SpawnAt(enemyId, definition, route.Start, 1, route);
         }
 
         internal long ReserveEnemyId()
@@ -68,6 +82,7 @@ namespace TowerDefense3D.Enemies
                 spawn.Definition,
                 spawn.Position,
                 spawn.TargetPointIndex,
+                roadPaths.Get(spawn.RouteIndex),
                 isSummoned: true);
         }
 
@@ -78,6 +93,8 @@ namespace TowerDefense3D.Enemies
             enemy.Position = frame.Position;
             enemy.Health = frame.Health;
             enemy.RevealRemainingSeconds = frame.RevealRemainingSeconds;
+            enemy.SkillCastVersion = frame.SkillCastVersion;
+            enemy.IsSpeedBuffed = frame.IsSpeedBuffed;
             enemy.TargetPointIndex = frame.TargetPointIndex;
             enemy.ElementState = new EnemyElementState(
                 frame.ElementPhase,
@@ -107,16 +124,6 @@ namespace TowerDefense3D.Enemies
         public void Step(float stepSeconds)
         {
             pendingSummons.Clear();
-            speedBonusesByEnemyId.Clear();
-            for (int index = 0; index < activeEnemies.Count; index++)
-            {
-                EnemyInstance enemy = activeEnemies[index];
-                if (enemy.IsAlive)
-                {
-                    speedBonusesByEnemyId.Add(enemy.Id, FindStrongestSpeedBonus(enemy));
-                }
-            }
-
             for (int index = activeEnemies.Count - 1; index >= 0; index--)
             {
                 EnemyInstance enemy = activeEnemies[index];
@@ -126,14 +133,41 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
+                enemy.SkillCastCompletedThisStep = false;
                 UpdateReveal(enemy, stepSeconds);
+                UpdateSpeedSupport(enemy, stepSeconds);
                 QueueBossSummons(enemy, stepSeconds);
+            }
+
+            speedBonusesByEnemyId.Clear();
+            for (int index = 0; index < activeEnemies.Count; index++)
+            {
+                EnemyInstance enemy = activeEnemies[index];
+                if (!enemy.IsAlive)
+                {
+                    continue;
+                }
+
+                float speedBonus = FindStrongestSpeedBonus(enemy);
+                speedBonusesByEnemyId.Add(enemy.Id, speedBonus);
+                enemy.IsSpeedBuffed = speedBonus > 0f;
+            }
+
+            for (int index = activeEnemies.Count - 1; index >= 0; index--)
+            {
+                EnemyInstance enemy = activeEnemies[index];
+                if (enemy.SkillCastRemainingSeconds > 0f || enemy.SkillCastCompletedThisStep)
+                {
+                    enemy.PreviousPosition = enemy.Position;
+                    continue;
+                }
+
                 enemy.PreviousPosition = enemy.Position;
                 float speedMultiplier = 1f + speedBonusesByEnemyId[enemy.Id];
                 float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * stepSeconds;
                 Vector3 position = enemy.Position;
                 int targetPointIndex = enemy.TargetPointIndex;
-                bool reachedEnd = roadPath.Move(ref targetPointIndex, ref position, distance);
+                bool reachedEnd = enemy.Route.Move(ref targetPointIndex, ref position, distance);
                 enemy.Position = position;
                 enemy.TargetPointIndex = targetPointIndex;
 
@@ -144,7 +178,6 @@ namespace TowerDefense3D.Enemies
                     PublishEnemyLeaked(CreateSnapshot(enemy));
                     continue;
                 }
-
             }
 
             SpawnPendingSummons();
@@ -209,12 +242,14 @@ namespace TowerDefense3D.Enemies
             EnemyDefinition definition,
             Vector3 position,
             int targetPointIndex,
+            RoadPath route,
             bool isSummoned = false)
         {
             var enemy = new EnemyInstance(enemyId, definition, position)
             {
                 IsSummoned = isSummoned,
-                TargetPointIndex = targetPointIndex
+                TargetPointIndex = targetPointIndex,
+                Route = route
             };
             activeEnemies.Add(enemy);
             enemiesById.Add(enemy.Id, enemy);
@@ -235,6 +270,7 @@ namespace TowerDefense3D.Enemies
                 EnemyInstance source = activeEnemies[index];
                 if (ReferenceEquals(source, target)
                     || !source.IsAlive
+                    || !source.IsSpeedAuraActive
                     || !(source.Definition is SpeedSupportEnemyDefinition support))
                 {
                     continue;
@@ -264,6 +300,25 @@ namespace TowerDefense3D.Enemies
                 return;
             }
 
+            if (boss.SummonCastRemainingSeconds > 0f)
+            {
+                boss.SummonCastRemainingSeconds = Mathf.Max(
+                    0f,
+                    boss.SummonCastRemainingSeconds - stepSeconds);
+                if (boss.SummonCastRemainingSeconds <= 0f)
+                {
+                    boss.SkillCastCompletedThisStep = true;
+                }
+                boss.SkillCastRemainingSeconds = boss.SummonCastRemainingSeconds;
+                if (boss.SummonCastRemainingSeconds > 0f)
+                {
+                    return;
+                }
+
+                AddSummons(definition.SummonPhases[boss.SummonPhaseIndex], boss);
+                return;
+            }
+
             int phaseIndex = FindSummonPhase(definition, boss.HealthFraction);
             if (phaseIndex != boss.SummonPhaseIndex)
             {
@@ -276,16 +331,25 @@ namespace TowerDefense3D.Enemies
             while (boss.SummonElapsedSeconds >= phase.SummonIntervalSeconds)
             {
                 boss.SummonElapsedSeconds -= phase.SummonIntervalSeconds;
-                for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+                boss.SummonCastRemainingSeconds = definition.SummonSkillDurationSeconds;
+                boss.SkillCastRemainingSeconds = definition.SummonSkillDurationSeconds;
+                boss.SkillCastVersion++;
+                break;
+            }
+        }
+
+        private void AddSummons(SummonerBossEnemyDefinition.SummonPhase phase, EnemyInstance boss)
+        {
+            for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+            {
+                SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
+                for (int count = 0; count < entry.Count; count++)
                 {
-                    SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
-                    for (int count = 0; count < entry.Count; count++)
-                    {
-                        pendingSummons.Add(new PendingSummon(
-                            entry.Definition,
-                            boss.Position,
-                            boss.TargetPointIndex));
-                    }
+                    pendingSummons.Add(new PendingSummon(
+                        entry.Definition,
+                        boss.Position,
+                        boss.TargetPointIndex,
+                        boss.Route));
                 }
             }
         }
@@ -300,6 +364,7 @@ namespace TowerDefense3D.Enemies
                     summon.Definition,
                     summon.Position,
                     summon.TargetPointIndex,
+                    summon.Route,
                     isSummoned: true);
             }
         }
@@ -329,6 +394,47 @@ namespace TowerDefense3D.Enemies
                 enemy.RevealRemainingSeconds - stepSeconds);
         }
 
+        private static void UpdateSpeedSupport(EnemyInstance enemy, float stepSeconds)
+        {
+            if (!(enemy.Definition is SpeedSupportEnemyDefinition support))
+            {
+                return;
+            }
+
+            if (enemy.SupportActivationRemainingSeconds > 0f)
+            {
+                enemy.SupportActivationRemainingSeconds = Mathf.Max(
+                    0f,
+                    enemy.SupportActivationRemainingSeconds - stepSeconds);
+                if (enemy.SupportActivationRemainingSeconds > 0f)
+                {
+                    return;
+                }
+
+            }
+
+            if (!enemy.IsSpeedAuraActive)
+            {
+                enemy.SkillCastRemainingSeconds = support.SkillDurationSeconds;
+                enemy.SkillCastVersion++;
+                enemy.IsSpeedAuraActive = true;
+                return;
+            }
+
+            if (enemy.SkillCastRemainingSeconds <= 0f)
+            {
+                return;
+            }
+
+            enemy.SkillCastRemainingSeconds = Mathf.Max(
+                0f,
+                enemy.SkillCastRemainingSeconds - stepSeconds);
+            if (enemy.SkillCastRemainingSeconds <= 0f)
+            {
+                enemy.SkillCastCompletedThisStep = true;
+            }
+        }
+
         private static EnemySnapshot CreateSnapshot(EnemyInstance enemy)
         {
             return new EnemySnapshot(
@@ -341,7 +447,9 @@ namespace TowerDefense3D.Enemies
                 enemy.IsSummoned,
                 enemy.ElementState,
                 enemy.RemainingThermalShieldHits,
-                enemy.LiftHeightMeters);
+                enemy.LiftHeightMeters,
+                enemy.SkillCastVersion,
+                enemy.IsSpeedBuffed);
         }
 
         private void PublishEnemyKilled(EnemySnapshot snapshot)
@@ -361,16 +469,19 @@ namespace TowerDefense3D.Enemies
             public PendingSummon(
                 EnemyDefinition definition,
                 Vector3 position,
-                int targetPointIndex)
+                int targetPointIndex,
+                RoadPath route)
             {
                 Definition = definition;
                 Position = position;
                 TargetPointIndex = targetPointIndex;
+                Route = route;
             }
 
             public EnemyDefinition Definition { get; }
             public Vector3 Position { get; }
             public int TargetPointIndex { get; }
+            public RoadPath Route { get; }
         }
     }
 }

@@ -35,9 +35,9 @@ namespace TowerDefense3D.Enemies
         {
             long tick = towerNetworkManager.CurrentTick;
             ApplySpawns(timeline.GetSpawns(tick));
-            ApplyFrames(timeline.GetFrames(tick));
             PublishImpacts(timeline.GetImpacts(tick));
             PublishReactions(timeline.GetReactions(tick));
+            ApplyFrames(timeline.GetFrames(tick));
         }
 
         public void Reset()

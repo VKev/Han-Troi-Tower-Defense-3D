@@ -18,18 +18,21 @@ namespace TowerDefense3D.Enemies
             long enemyId,
             EnemyDefinition definition,
             Vector3 position,
-            int targetPointIndex)
+            int targetPointIndex,
+            int routeIndex)
         {
             EnemyId = enemyId;
             Definition = definition;
             Position = position;
             TargetPointIndex = targetPointIndex;
+            RouteIndex = routeIndex;
         }
 
         public long EnemyId { get; }
         public EnemyDefinition Definition { get; }
         public Vector3 Position { get; }
         public int TargetPointIndex { get; }
+        public int RouteIndex { get; }
     }
 
     internal readonly struct PlannedEnemyFrame
@@ -46,6 +49,8 @@ namespace TowerDefense3D.Enemies
             float elementRemainingSeconds,
             int remainingThermalShieldHits,
             float liftHeightMeters,
+            int skillCastVersion,
+            bool isSpeedBuffed,
             PlannedEnemyRemoval removal)
         {
             EnemyId = enemyId;
@@ -59,6 +64,8 @@ namespace TowerDefense3D.Enemies
             ElementRemainingSeconds = elementRemainingSeconds;
             RemainingThermalShieldHits = remainingThermalShieldHits;
             LiftHeightMeters = liftHeightMeters;
+            SkillCastVersion = skillCastVersion;
+            IsSpeedBuffed = isSpeedBuffed;
             Removal = removal;
         }
 
@@ -73,6 +80,8 @@ namespace TowerDefense3D.Enemies
         public float ElementRemainingSeconds { get; }
         public int RemainingThermalShieldHits { get; }
         public float LiftHeightMeters { get; }
+        public int SkillCastVersion { get; }
+        public bool IsSpeedBuffed { get; }
         public PlannedEnemyRemoval Removal { get; }
     }
 
