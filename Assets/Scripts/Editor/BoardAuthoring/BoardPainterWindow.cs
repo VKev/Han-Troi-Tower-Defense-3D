@@ -13,7 +13,9 @@ namespace TowerDefense3D.GridPlacement.Editor
             CameraFocus,
             Road,
             RoadSpawn,
-            RoadEnd
+            RoadEnd,
+            RoadDirection,
+            Route
         }
 
         private const float HeaderSize = 28f;
@@ -44,7 +46,9 @@ namespace TowerDefense3D.GridPlacement.Editor
         private static readonly string[] BasicCellPresetLabels =
             System.Array.ConvertAll(BasicCellPresetOptions, BoardPaintPresetUtility.GetLabel);
         internal static readonly string[] OverlayCellOptions =
-            { "Prefab", "Camera Focus", "Road", "Road Spawn", "Road End" };
+            {
+                "Prefab", "Camera Focus", "Road", "Road Spawn", "Road End", "Route Arrow", "Route"
+            };
 
         private BoardDefinition boardAsset;
         private BoardAuthoringDocument document;
@@ -69,10 +73,16 @@ namespace TowerDefense3D.GridPlacement.Editor
         private bool strokeChanged;
         private bool strokeIsCameraFocus;
         private bool strokeIsRoadBrush;
+        private bool strokeIsRoadDirectionBrush;
         private bool strokeIsGridPlaceableBrush;
         private bool overlayCellBrushActive;
         private bool cameraFocusAllowed;
         private OverlayPaintMode selectedOverlayMode = OverlayPaintMode.Prefab;
+        private RoadExitDirection selectedRoadExitDirection = RoadExitDirection.East;
+        private int selectedRouteIndex;
+        private bool strokeIsRouteBrush;
+        private readonly Dictionary<GridCell, string> routeOrderLabels =
+            new Dictionary<GridCell, string>();
         private GridPlaceableAuthoring selectedGridPlaceable;
         private GridCell lastPaintedCell;
         private int gridControlId;
@@ -322,6 +332,12 @@ namespace TowerDefense3D.GridPlacement.Editor
                 case OverlayPaintMode.RoadEnd:
                     DrawRoadPanel(GetRoadPaintMode(selectedOverlayMode));
                     break;
+                case OverlayPaintMode.RoadDirection:
+                    DrawRoadDirectionPanel();
+                    break;
+                case OverlayPaintMode.Route:
+                    DrawRoutePanel();
+                    break;
                 default:
                     DrawGridPlaceablePanel();
                     break;
@@ -364,6 +380,130 @@ namespace TowerDefense3D.GridPlacement.Editor
                 "Left-click/drag paints the selected road role. Right-click/drag erases. "
                 + "Basic Cell and other overlay data are preserved. No level restriction.",
                 EditorStyles.wordWrappedMiniLabel);
+        }
+
+        private void DrawRoadDirectionPanel()
+        {
+            selectedRoadExitDirection = (RoadExitDirection)EditorGUILayout.EnumPopup(
+                "Exit Direction",
+                selectedRoadExitDirection);
+            if (selectedRoadExitDirection == RoadExitDirection.None)
+            {
+                selectedRoadExitDirection = RoadExitDirection.East;
+            }
+
+            EditorGUILayout.LabelField(
+                "Left-click a road cell to choose its next cell. Right-click clears its arrow. "
+                + "The last road cell must point to Road End; Road End needs no arrow.",
+                EditorStyles.wordWrappedMiniLabel);
+        }
+
+        /// <summary>
+        /// A route is the ordered walk itself, so it can step on one cell twice to close a lap or
+        /// leave a junction differently from another route. Exit arrows express neither.
+        /// </summary>
+        private void DrawRoutePanel()
+        {
+            int routeCount = document.RouteCount;
+            if (routeCount == 0)
+            {
+                EditorGUILayout.LabelField(
+                    "No route recorded yet. Drawing on the grid starts one.",
+                    EditorStyles.wordWrappedMiniLabel);
+            }
+            else
+            {
+                selectedRouteIndex = Mathf.Clamp(selectedRouteIndex, 0, routeCount - 1);
+                var labels = new string[routeCount];
+                for (int index = 0; index < routeCount; index++)
+                {
+                    labels[index] = $"Route {index}  ({document.GetRoute(index).Count} cells)";
+                }
+
+                selectedRouteIndex = EditorGUILayout.Popup("Route", selectedRouteIndex, labels);
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Add"))
+                {
+                    selectedRouteIndex = document.AddRoute();
+                    document.Commit("Add Route");
+                }
+
+                using (new EditorGUI.DisabledScope(routeCount == 0))
+                {
+                    if (GUILayout.Button("Undo Cell")
+                        && document.RemoveLastRouteCell(selectedRouteIndex))
+                    {
+                        document.Commit("Remove Route Cell");
+                    }
+
+                    if (GUILayout.Button("Clear"))
+                    {
+                        document.ClearRoute(selectedRouteIndex);
+                        document.Commit("Clear Route");
+                    }
+
+                    if (GUILayout.Button("Delete"))
+                    {
+                        document.RemoveRoute(selectedRouteIndex);
+                        selectedRouteIndex = Mathf.Max(0, selectedRouteIndex - 1);
+                        document.Commit("Delete Route");
+                    }
+                }
+            }
+
+            EditorGUILayout.LabelField(
+                "Left-click or drag along the road to record the walk in order. Right-click "
+                + "removes the last recorded cell. Once a board has routes they replace its exit "
+                + "arrows at runtime.",
+                EditorStyles.wordWrappedMiniLabel);
+            DrawRouteIssues();
+        }
+
+        private void DrawRouteIssues()
+        {
+            IReadOnlyList<GridCell> route = document.GetRoute(selectedRouteIndex);
+            if (route.Count == 0)
+            {
+                return;
+            }
+
+            if (route.Count < 2)
+            {
+                EditorGUILayout.HelpBox("A route needs at least two cells.", MessageType.Warning);
+                return;
+            }
+
+            for (int index = 1; index < route.Count; index++)
+            {
+                GridCell previous = route[index - 1];
+                GridCell current = route[index];
+                if (previous.Y != current.Y
+                    || Mathf.Abs(previous.X - current.X) + Mathf.Abs(previous.Z - current.Z) != 1)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"Step {index} jumps from {previous} to {current}. Route cells must "
+                        + "share an edge.",
+                        MessageType.Error);
+                    return;
+                }
+            }
+
+            if ((document.GetFlags(route[0]) & BoardCellFlags.RoadSpawn) == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "The first cell of the route is not a Road Spawn.",
+                    MessageType.Warning);
+            }
+
+            if ((document.GetFlags(route[route.Count - 1]) & BoardCellFlags.RoadEnd) == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "The last cell of the route is not a Road End.",
+                    MessageType.Warning);
+            }
         }
 
         private void DrawGridPlaceablePanel()
@@ -552,6 +692,14 @@ namespace TowerDefense3D.GridPlacement.Editor
 
         private void DrawCells(Rect gridRect, GridDimensions dimensions, float cellSize)
         {
+            bool showRouteOrder = overlayCellBrushActive
+                && selectedOverlayMode == OverlayPaintMode.Route
+                && cellSize >= 14f;
+            if (showRouteOrder)
+            {
+                BuildRouteOrderLabels();
+            }
+
             for (int z = 0; z < dimensions.Depth; z++)
             {
                 for (int x = 0; x < dimensions.Width; x++)
@@ -560,6 +708,8 @@ namespace TowerDefense3D.GridPlacement.Editor
                     BoardCellFlags flags = document.GetFlags(coordinate);
                     BoardPaintPreset preset = BoardPaintPresetUtility.GetClosestPreset(flags);
                     RoadPaintMode roadRole = RoadPaintModeUtility.GetRoadRole(flags);
+                    RoadExitDirection roadExitDirection =
+                        document.GetRoadExitDirection(coordinate);
                     GameObject gridPlaceable = document.GetGridPlaceable(coordinate);
                     Rect cellRect = GetCellRect(gridRect, dimensions, x, z, cellSize);
                     Color fillColor = roadRole != RoadPaintMode.None
@@ -603,6 +753,19 @@ namespace TowerDefense3D.GridPlacement.Editor
                         EditorGUI.DrawRect(accentRect, GridPlaceableAccentColor);
                     }
 
+                    if (showRouteOrder
+                        && routeOrderLabels.TryGetValue(coordinate, out string orderLabel))
+                    {
+                        GUI.Label(cellRect, orderLabel, EditorStyles.whiteBoldLabel);
+                    }
+                    else if (roadExitDirection != RoadExitDirection.None)
+                    {
+                        GUI.Label(
+                            cellRect,
+                            GetRoadExitArrow(roadExitDirection),
+                            EditorStyles.whiteBoldLabel);
+                    }
+
                     if (cellRect.Contains(Event.current.mousePosition))
                     {
                         string tooltip = gridPlaceable != null
@@ -627,12 +790,18 @@ namespace TowerDefense3D.GridPlacement.Editor
                 && cameraFocusAllowed;
             bool useRoadBrush = overlayCellBrushActive
                 && IsRoadOverlay(selectedOverlayMode);
+            bool useRoadDirectionBrush = overlayCellBrushActive
+                && selectedOverlayMode == OverlayPaintMode.RoadDirection;
+            bool useRouteBrush = overlayCellBrushActive
+                && selectedOverlayMode == OverlayPaintMode.Route;
             bool useGridPlaceableBrush = overlayCellBrushActive
                 && selectedOverlayMode == OverlayPaintMode.Prefab;
             RoadPaintMode selectedRoadMode = GetRoadPaintMode(selectedOverlayMode);
             bool brushAvailable = !overlayCellBrushActive
                 || useCameraFocusBrush
                 || useRoadBrush
+                || useRoadDirectionBrush
+                || useRouteBrush
                 || useGridPlaceableBrush;
 
             if (current.type == EventType.MouseDown
@@ -644,6 +813,8 @@ namespace TowerDefense3D.GridPlacement.Editor
                 strokeChanged = false;
                 strokeIsCameraFocus = useCameraFocusBrush;
                 strokeIsRoadBrush = useRoadBrush;
+                strokeIsRoadDirectionBrush = useRoadDirectionBrush;
+                strokeIsRouteBrush = useRouteBrush;
                 strokeIsGridPlaceableBrush = useGridPlaceableBrush;
                 GUIUtility.hotControl = gridControlId;
                 if (useCameraFocusBrush)
@@ -653,6 +824,18 @@ namespace TowerDefense3D.GridPlacement.Editor
                 else if (useRoadBrush)
                 {
                     PaintRoadCell(coordinate, current.button == 1 ? RoadPaintMode.None : selectedRoadMode);
+                }
+                else if (useRoadDirectionBrush)
+                {
+                    PaintRoadDirectionCell(
+                        coordinate,
+                        current.button == 1
+                            ? RoadExitDirection.None
+                            : selectedRoadExitDirection);
+                }
+                else if (useRouteBrush)
+                {
+                    PaintRouteCell(coordinate, current.button == 1);
                 }
                 else if (useGridPlaceableBrush)
                 {
@@ -693,6 +876,21 @@ namespace TowerDefense3D.GridPlacement.Editor
                         PaintRoadCell(
                             dragCoordinate,
                             current.button == 1 ? RoadPaintMode.None : selectedRoadMode);
+                    }
+                    else if (strokeIsRoadDirectionBrush)
+                    {
+                        PaintRoadDirectionCell(
+                            dragCoordinate,
+                            current.button == 1
+                                ? RoadExitDirection.None
+                                : selectedRoadExitDirection);
+                    }
+                    else if (strokeIsRouteBrush)
+                    {
+                        if (current.button != 1)
+                        {
+                            PaintRouteCell(dragCoordinate, false);
+                        }
                     }
                     else if (strokeIsGridPlaceableBrush)
                     {
@@ -818,6 +1016,35 @@ namespace TowerDefense3D.GridPlacement.Editor
             Repaint();
         }
 
+        private void PaintRoadDirectionCell(
+            GridCell coordinate,
+            RoadExitDirection direction)
+        {
+            if (strokeChanged && coordinate == lastPaintedCell)
+            {
+                return;
+            }
+
+            lastPaintedCell = coordinate;
+            RoadExitDirection before = document.GetRoadExitDirection(coordinate);
+            document.SetRoadExitDirection(coordinate, direction);
+            strokeChanged |= before != document.GetRoadExitDirection(coordinate);
+            Repaint();
+        }
+
+        private void PaintRouteCell(GridCell coordinate, bool removeLast)
+        {
+            if (document.RouteCount == 0)
+            {
+                selectedRouteIndex = document.AddRoute();
+            }
+
+            strokeChanged |= removeLast
+                ? document.RemoveLastRouteCell(selectedRouteIndex)
+                : document.AppendRouteCell(selectedRouteIndex, coordinate);
+            Repaint();
+        }
+
         internal static bool PaintRoadBrush(
             BoardAuthoringDocument targetDocument,
             GridCell center,
@@ -907,6 +1134,10 @@ namespace TowerDefense3D.GridPlacement.Editor
                     ? "Toggle Camera Focus"
                     : strokeIsRoadBrush
                         ? "Paint Road Cells"
+                        : strokeIsRouteBrush
+                            ? "Edit Route"
+                        : strokeIsRoadDirectionBrush
+                            ? "Paint Road Directions"
                         : strokeIsGridPlaceableBrush
                             ? "Paint Grid Prefabs"
                             : "Paint Board Cells";
@@ -915,6 +1146,8 @@ namespace TowerDefense3D.GridPlacement.Editor
 
             strokeActive = false;
             strokeChanged = false;
+            strokeIsRoadDirectionBrush = false;
+            strokeIsRouteBrush = false;
             if (GUIUtility.hotControl == gridControlId)
             {
                 GUIUtility.hotControl = 0;
@@ -1040,6 +1273,32 @@ namespace TowerDefense3D.GridPlacement.Editor
                 OverlayPaintMode.RoadSpawn => RoadPaintMode.Spawn,
                 OverlayPaintMode.RoadEnd => RoadPaintMode.End,
                 _ => RoadPaintMode.None
+            };
+
+        /// <summary>
+        /// A cell walked twice shows both of its step numbers, which is how a lap reads back.
+        /// </summary>
+        private void BuildRouteOrderLabels()
+        {
+            routeOrderLabels.Clear();
+            IReadOnlyList<GridCell> route = document.GetRoute(selectedRouteIndex);
+            for (int index = 0; index < route.Count; index++)
+            {
+                routeOrderLabels[route[index]] =
+                    routeOrderLabels.TryGetValue(route[index], out string existing)
+                        ? existing + "/" + (index + 1)
+                        : (index + 1).ToString();
+            }
+        }
+
+        private static string GetRoadExitArrow(RoadExitDirection direction) =>
+            direction switch
+            {
+                RoadExitDirection.East => ">",
+                RoadExitDirection.South => "v",
+                RoadExitDirection.West => "<",
+                RoadExitDirection.North => "^",
+                _ => string.Empty
             };
 
         private Rect GetCellRect(

@@ -72,7 +72,9 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                     "Camera Focus",
                     "Road",
                     "Road Spawn",
-                    "Road End"
+                    "Road End",
+                    "Route Arrow",
+                    "Route"
                 }));
         }
 

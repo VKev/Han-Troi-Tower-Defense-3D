@@ -126,6 +126,27 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         }
 
         [Test]
+        public void SetRoadExitDirection_PersistsOnRoadCellAndClearsWhenCellBecomesRoadEnd()
+        {
+            GridCell coordinate = new GridCell(1, 1, 0);
+            BoardDefinition definition = CreateTransientBoard(
+                new GridDimensions(3, 3, 1),
+                new[] { new BoardCellDefinition(coordinate, BoardCellFlags.Road) });
+            var document = new BoardAuthoringDocument(definition);
+
+            document.SetRoadExitDirection(coordinate, RoadExitDirection.North);
+            Assert.That(
+                document.GetRoadExitDirection(coordinate),
+                Is.EqualTo(RoadExitDirection.North));
+
+            document.SetRoadRole(coordinate, RoadPaintMode.End);
+
+            Assert.That(
+                document.GetRoadExitDirection(coordinate),
+                Is.EqualTo(RoadExitDirection.None));
+        }
+
+        [Test]
         public void Validate_RoadRoleCombinedWithKnownFlags_ReportsNoUnknownFlagWarning()
         {
             BoardDefinition definition = CreateTransientBoard(
@@ -292,6 +313,29 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             var reloadedDocument = new BoardAuthoringDocument(reloaded);
 
             Assert.That(reloadedDocument.GetFlags(coordinate), Is.EqualTo(BoardCellFlags.RoadSpawn));
+        }
+
+        [Test]
+        public void TemporaryAsset_SaveAndReloadPreservesRoadExitDirection()
+        {
+            BoardDefinition definition = CreateTemporaryAsset(
+                new GridDimensions(3, 3, 1),
+                new[] { new BoardCellDefinition(new GridCell(0, 0, 0), BoardCellFlags.Road) });
+            string path = AssetDatabase.GetAssetPath(definition);
+            var document = new BoardAuthoringDocument(definition);
+            GridCell coordinate = new GridCell(0, 0, 0);
+
+            document.SetRoadExitDirection(coordinate, RoadExitDirection.East);
+            document.Commit("Save road exit direction");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+
+            BoardDefinition reloaded = AssetDatabase.LoadAssetAtPath<BoardDefinition>(path);
+            var reloadedDocument = new BoardAuthoringDocument(reloaded);
+
+            Assert.That(
+                reloadedDocument.GetRoadExitDirection(coordinate),
+                Is.EqualTo(RoadExitDirection.East));
         }
 
         private BoardDefinition CreateTransientBoard(

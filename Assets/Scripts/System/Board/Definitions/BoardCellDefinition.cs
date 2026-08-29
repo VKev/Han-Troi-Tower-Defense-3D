@@ -3,6 +3,15 @@ using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement
 {
+    public enum RoadExitDirection
+    {
+        None,
+        East,
+        South,
+        West,
+        North
+    }
+
     [Flags]
     public enum BoardCellFlags
     {
@@ -24,11 +33,21 @@ namespace TowerDefense3D.GridPlacement
     {
         [SerializeField] private GridCell coordinate;
         [SerializeField] private BoardCellFlags flags;
+        [SerializeField] private RoadExitDirection roadExitDirection;
 
         public BoardCellDefinition(GridCell coordinate, BoardCellFlags flags)
+            : this(coordinate, flags, RoadExitDirection.None)
+        {
+        }
+
+        public BoardCellDefinition(
+            GridCell coordinate,
+            BoardCellFlags flags,
+            RoadExitDirection roadExitDirection)
         {
             this.coordinate = coordinate;
             this.flags = flags;
+            this.roadExitDirection = roadExitDirection;
         }
 
         public GridCell Coordinate => coordinate;
@@ -40,5 +59,6 @@ namespace TowerDefense3D.GridPlacement
         public bool IsRoad => (flags & BoardCellFlags.Road) != 0;
         public bool IsRoadSpawn => (flags & BoardCellFlags.RoadSpawn) != 0;
         public bool IsRoadEnd => (flags & BoardCellFlags.RoadEnd) != 0;
+        public RoadExitDirection RoadExitDirection => roadExitDirection;
     }
 }

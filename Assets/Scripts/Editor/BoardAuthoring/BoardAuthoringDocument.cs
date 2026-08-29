@@ -17,11 +17,15 @@ namespace TowerDefense3D.GridPlacement.Editor
         private const string CameraRotationOffsetEulerProperty = "cameraRotationOffsetEuler";
         private const string CellsProperty = "cells";
         private const string GridPlaceablesProperty = "gridPlaceables";
+        private const string RoutesProperty = "routes";
 
         private readonly Dictionary<GridCell, BoardCellFlags> cells =
             new Dictionary<GridCell, BoardCellFlags>();
+        private readonly Dictionary<GridCell, RoadExitDirection> roadExitDirections =
+            new Dictionary<GridCell, RoadExitDirection>();
         private readonly Dictionary<GridCell, GameObject> gridPlaceables =
             new Dictionary<GridCell, GameObject>();
+        private readonly List<List<GridCell>> routes = new List<List<GridCell>>();
 
         public BoardAuthoringDocument(BoardDefinition asset)
         {
@@ -47,7 +51,9 @@ namespace TowerDefense3D.GridPlacement.Editor
         public void Reload()
         {
             cells.Clear();
+            roadExitDirections.Clear();
             gridPlaceables.Clear();
+            routes.Clear();
             DuplicateCoordinateCount = 0;
             SerializedNoneEntryCount = 0;
             DuplicateGridPlaceableCoordinateCount = 0;
@@ -92,6 +98,16 @@ namespace TowerDefense3D.GridPlacement.Editor
                 {
                     cells.Add(coordinate, flags);
                 }
+
+                SerializedProperty directionProperty =
+                    element.FindPropertyRelative("roadExitDirection");
+                RoadExitDirection direction = directionProperty != null
+                    ? (RoadExitDirection)directionProperty.enumValueIndex
+                    : RoadExitDirection.None;
+                if (direction != RoadExitDirection.None)
+                {
+                    roadExitDirections[coordinate] = direction;
+                }
             }
 
             SerializedProperty serializedGridPlaceables =
@@ -120,6 +136,86 @@ namespace TowerDefense3D.GridPlacement.Editor
 
                 gridPlaceables[coordinate] = prefab;
             }
+
+            SerializedProperty serializedRoutes = serialized.FindProperty(RoutesProperty);
+            for (int i = 0; serializedRoutes != null && i < serializedRoutes.arraySize; i++)
+            {
+                SerializedProperty routeCells = serializedRoutes
+                    .GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("cells");
+                var route = new List<GridCell>(routeCells != null ? routeCells.arraySize : 0);
+                for (int cellIndex = 0;
+                     routeCells != null && cellIndex < routeCells.arraySize;
+                     cellIndex++)
+                {
+                    route.Add(ReadCoordinate(routeCells.GetArrayElementAtIndex(cellIndex)));
+                }
+
+                routes.Add(route);
+            }
+        }
+
+        public int RouteCount => routes.Count;
+
+        public IReadOnlyList<GridCell> GetRoute(int routeIndex)
+        {
+            return routeIndex >= 0 && routeIndex < routes.Count
+                ? routes[routeIndex]
+                : Array.Empty<GridCell>();
+        }
+
+        public int AddRoute()
+        {
+            routes.Add(new List<GridCell>());
+            return routes.Count - 1;
+        }
+
+        public void RemoveRoute(int routeIndex)
+        {
+            if (routeIndex >= 0 && routeIndex < routes.Count)
+            {
+                routes.RemoveAt(routeIndex);
+            }
+        }
+
+        public void ClearRoute(int routeIndex)
+        {
+            if (routeIndex >= 0 && routeIndex < routes.Count)
+            {
+                routes[routeIndex].Clear();
+            }
+        }
+
+        /// <summary>
+        /// Appends unless the cell is already the tail, so dragging along a road records the walk
+        /// once per cell. Stepping back onto an earlier cell is allowed: that is how a lap closes.
+        /// </summary>
+        public bool AppendRouteCell(int routeIndex, GridCell coordinate)
+        {
+            if (routeIndex < 0 || routeIndex >= routes.Count)
+            {
+                return false;
+            }
+
+            List<GridCell> route = routes[routeIndex];
+            if (route.Count > 0 && route[route.Count - 1] == coordinate)
+            {
+                return false;
+            }
+
+            route.Add(coordinate);
+            return true;
+        }
+
+        public bool RemoveLastRouteCell(int routeIndex)
+        {
+            if (routeIndex < 0 || routeIndex >= routes.Count || routes[routeIndex].Count == 0)
+            {
+                return false;
+            }
+
+            routes[routeIndex].RemoveAt(routes[routeIndex].Count - 1);
+            return true;
         }
 
         public BoardCellFlags GetFlags(GridCell coordinate) =>
@@ -131,6 +227,11 @@ namespace TowerDefense3D.GridPlacement.Editor
             gridPlaceables.TryGetValue(coordinate, out GameObject prefab)
                 ? prefab
                 : null;
+
+        public RoadExitDirection GetRoadExitDirection(GridCell coordinate) =>
+            roadExitDirections.TryGetValue(coordinate, out RoadExitDirection direction)
+                ? direction
+                : RoadExitDirection.None;
 
         public void SetGridPlaceable(GridCell coordinate, GameObject prefab)
         {
@@ -159,11 +260,30 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (updated == BoardCellFlags.None)
             {
                 cells.Remove(coordinate);
+                roadExitDirections.Remove(coordinate);
             }
             else
             {
                 cells[coordinate] = updated;
             }
+        }
+
+        public void SetRoadExitDirection(
+            GridCell coordinate,
+            RoadExitDirection direction)
+        {
+            if ((GetFlags(coordinate) & RoadPaintModeUtility.RoadRoleMask) == 0)
+            {
+                return;
+            }
+
+            if (direction == RoadExitDirection.None)
+            {
+                roadExitDirections.Remove(coordinate);
+                return;
+            }
+
+            roadExitDirections[coordinate] = direction;
         }
 
         public void SetCameraFocus(GridCell coordinate, bool enabled)
@@ -192,10 +312,15 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (updated == BoardCellFlags.None)
             {
                 cells.Remove(coordinate);
+                roadExitDirections.Remove(coordinate);
             }
             else
             {
                 cells[coordinate] = updated;
+                if (mode == RoadPaintMode.None || mode == RoadPaintMode.End)
+                {
+                    roadExitDirections.Remove(coordinate);
+                }
             }
         }
 
@@ -414,6 +539,18 @@ namespace TowerDefense3D.GridPlacement.Editor
                     $"{outsideGridPlaceableCount} prefab cells are outside the current dimensions.");
             }
 
+            foreach (KeyValuePair<GridCell, RoadExitDirection> pair in roadExitDirections)
+            {
+                if (!IsWithinBounds(pair.Key, Dimensions))
+                {
+                    issues.Add($"Road exit at {pair.Key} is outside the board dimensions.");
+                }
+                else if ((GetFlags(pair.Key) & RoadPaintModeUtility.RoadRoleMask) == 0)
+                {
+                    issues.Add($"Road exit at {pair.Key} is not on a road cell.");
+                }
+            }
+
             if (buildableWithoutSupport > 0)
             {
                 issues.Add($"{buildableWithoutSupport} buildable cells do not support placement.");
@@ -464,6 +601,8 @@ namespace TowerDefense3D.GridPlacement.Editor
                 SerializedProperty element = serializedCells.GetArrayElementAtIndex(i);
                 WriteCoordinate(element.FindPropertyRelative("coordinate"), ordered[i].Key);
                 element.FindPropertyRelative("flags").intValue = (int)ordered[i].Value;
+                element.FindPropertyRelative("roadExitDirection").enumValueIndex =
+                    (int)GetRoadExitDirection(ordered[i].Key);
             }
 
             List<KeyValuePair<GridCell, GameObject>> orderedGridPlaceables =
@@ -480,6 +619,25 @@ namespace TowerDefense3D.GridPlacement.Editor
                     orderedGridPlaceables[i].Key);
                 element.FindPropertyRelative("prefab").objectReferenceValue =
                     orderedGridPlaceables[i].Value;
+            }
+
+            SerializedProperty serializedRoutes = serialized.FindProperty(RoutesProperty);
+            if (serializedRoutes != null)
+            {
+                serializedRoutes.arraySize = routes.Count;
+                for (int i = 0; i < routes.Count; i++)
+                {
+                    SerializedProperty routeCells = serializedRoutes
+                        .GetArrayElementAtIndex(i)
+                        .FindPropertyRelative("cells");
+                    routeCells.arraySize = routes[i].Count;
+                    for (int cellIndex = 0; cellIndex < routes[i].Count; cellIndex++)
+                    {
+                        WriteCoordinate(
+                            routeCells.GetArrayElementAtIndex(cellIndex),
+                            routes[i][cellIndex]);
+                    }
+                }
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();

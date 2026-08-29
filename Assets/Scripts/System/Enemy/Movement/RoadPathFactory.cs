@@ -17,14 +17,20 @@ namespace TowerDefense3D.Enemies
 
         public static RoadPath Create(BoardSystem boardSystem)
         {
+            return CreatePaths(boardSystem).Primary;
+        }
+
+        public static RoadPathSet CreatePaths(BoardSystem boardSystem)
+        {
             if (boardSystem == null)
             {
                 throw new ArgumentNullException(nameof(boardSystem));
             }
 
             var roadCells = new HashSet<GridCell>();
-            GridCell? spawn = null;
-            GridCell? end = null;
+            var roadDirections = new Dictionary<GridCell, RoadExitDirection>();
+            var spawns = new List<GridCell>();
+            var ends = new HashSet<GridCell>();
             IReadOnlyList<BoardCellDefinition> cells = boardSystem.Definition.Cells;
 
             for (int index = 0; index < cells.Count; index++)
@@ -36,50 +42,108 @@ namespace TowerDefense3D.Enemies
                 }
 
                 roadCells.Add(cell.Coordinate);
+                if (cell.RoadExitDirection != RoadExitDirection.None)
+                {
+                    roadDirections[cell.Coordinate] = cell.RoadExitDirection;
+                }
                 if (cell.IsRoadSpawn)
                 {
-                    SetUniqueEndpoint(ref spawn, cell.Coordinate, "RoadSpawn");
+                    spawns.Add(cell.Coordinate);
                 }
 
                 if (cell.IsRoadEnd)
                 {
-                    SetUniqueEndpoint(ref end, cell.Coordinate, "RoadEnd");
+                    ends.Add(cell.Coordinate);
                 }
             }
 
-            if (!spawn.HasValue || !end.HasValue)
+            IReadOnlyList<BoardRouteDefinition> authoredRoutes = boardSystem.Definition.Routes;
+            if (authoredRoutes.Count > 0)
+            {
+                return CreateAuthoredRoutes(boardSystem, authoredRoutes, roadCells);
+            }
+
+            if (spawns.Count == 0 || ends.Count == 0)
             {
                 throw new InvalidOperationException(
-                    "Board road requires exactly one RoadSpawn and one RoadEnd cell.");
+                    "Board road requires at least one RoadSpawn and one RoadEnd cell.");
             }
 
-            IReadOnlyList<GridCell> orderedCells = FindPath(roadCells, spawn.Value, end.Value);
-            var worldPoints = new Vector3[orderedCells.Count];
-            for (int index = 0; index < orderedCells.Count; index++)
+            var paths = new RoadPath[spawns.Count];
+            for (int routeIndex = 0; routeIndex < spawns.Count; routeIndex++)
             {
-                worldPoints[index] = boardSystem.Board.Mapper.CellToWorldCenter(orderedCells[index]);
+                IReadOnlyList<GridCell> orderedCells = roadDirections.Count > 0
+                    ? FollowAuthoredPath(roadCells, roadDirections, spawns[routeIndex], ends)
+                    : FindPath(roadCells, spawns[routeIndex], ends);
+                var worldPoints = new Vector3[orderedCells.Count];
+                for (int pointIndex = 0; pointIndex < orderedCells.Count; pointIndex++)
+                {
+                    worldPoints[pointIndex] = boardSystem.Board.Mapper.CellToWorldCenter(
+                        orderedCells[pointIndex]);
+                }
+
+                paths[routeIndex] = new RoadPath(worldPoints);
             }
 
-            return new RoadPath(worldPoints);
+            return new RoadPathSet(paths);
         }
 
-        private static void SetUniqueEndpoint(
-            ref GridCell? endpoint,
-            GridCell coordinate,
-            string role)
+        /// <summary>
+        /// An authored route is walked exactly as drawn, so it can lap a closed loop or leave a
+        /// junction differently from another route. Only adjacency is enforced; repeating a cell
+        /// is what makes a lap, so it is not an error.
+        /// </summary>
+        private static RoadPathSet CreateAuthoredRoutes(
+            BoardSystem boardSystem,
+            IReadOnlyList<BoardRouteDefinition> routes,
+            ISet<GridCell> roadCells)
         {
-            if (endpoint.HasValue && endpoint.Value != coordinate)
+            var paths = new RoadPath[routes.Count];
+            for (int routeIndex = 0; routeIndex < routes.Count; routeIndex++)
             {
-                throw new InvalidOperationException($"Board road contains more than one {role} cell.");
+                IReadOnlyList<GridCell> cells = routes[routeIndex].Cells;
+                if (cells.Count < 2)
+                {
+                    throw new InvalidOperationException(
+                        $"Authored route {routeIndex} needs at least two cells.");
+                }
+
+                var worldPoints = new Vector3[cells.Count];
+                for (int cellIndex = 0; cellIndex < cells.Count; cellIndex++)
+                {
+                    GridCell cell = cells[cellIndex];
+                    if (!roadCells.Contains(cell))
+                    {
+                        throw new InvalidOperationException(
+                            $"Authored route {routeIndex} steps onto non-road cell {cell}.");
+                    }
+
+                    if (cellIndex > 0 && !IsAdjacent(cells[cellIndex - 1], cell))
+                    {
+                        throw new InvalidOperationException(
+                            $"Authored route {routeIndex} jumps from {cells[cellIndex - 1]} "
+                            + $"to {cell}, which do not share an edge.");
+                    }
+
+                    worldPoints[cellIndex] = boardSystem.Board.Mapper.CellToWorldCenter(cell);
+                }
+
+                paths[routeIndex] = new RoadPath(worldPoints);
             }
 
-            endpoint = coordinate;
+            return new RoadPathSet(paths);
+        }
+
+        private static bool IsAdjacent(GridCell left, GridCell right)
+        {
+            return left.Y == right.Y
+                && Math.Abs(left.X - right.X) + Math.Abs(left.Z - right.Z) == 1;
         }
 
         private static IReadOnlyList<GridCell> FindPath(
             ISet<GridCell> roadCells,
             GridCell spawn,
-            GridCell end)
+            ISet<GridCell> ends)
         {
             var frontier = new Queue<GridCell>();
             var previous = new Dictionary<GridCell, GridCell>();
@@ -89,9 +153,9 @@ namespace TowerDefense3D.Enemies
             while (frontier.Count > 0)
             {
                 GridCell current = frontier.Dequeue();
-                if (current == end)
+                if (ends.Contains(current))
                 {
-                    return Reconstruct(previous, spawn, end);
+                    return Reconstruct(previous, spawn, current);
                 }
 
                 for (int index = 0; index < NeighborOffsets.Length; index++)
@@ -129,6 +193,68 @@ namespace TowerDefense3D.Enemies
 
             reversed.Reverse();
             return reversed;
+        }
+
+        private static IReadOnlyList<GridCell> FollowAuthoredPath(
+            ISet<GridCell> roadCells,
+            IReadOnlyDictionary<GridCell, RoadExitDirection> directions,
+            GridCell spawn,
+            ISet<GridCell> ends)
+        {
+            var ordered = new List<GridCell> { spawn };
+            var visited = new HashSet<GridCell> { spawn };
+            GridCell current = spawn;
+
+            while (!ends.Contains(current))
+            {
+                if (!directions.TryGetValue(current, out RoadExitDirection direction))
+                {
+                    throw new InvalidOperationException(
+                        $"Road cell {current} needs an authored exit direction to reach RoadEnd.");
+                }
+
+                GridCell next = GetNeighbor(current, direction);
+                if (!roadCells.Contains(next))
+                {
+                    throw new InvalidOperationException(
+                        $"Road exit at {current} points to non-road cell {next}.");
+                }
+
+                if (!visited.Add(next))
+                {
+                    throw new InvalidOperationException(
+                        $"Authored road directions contain a loop at {next}.");
+                }
+
+                ordered.Add(next);
+                current = next;
+            }
+
+            return ordered;
+        }
+
+        private static GridCell GetNeighbor(GridCell coordinate, RoadExitDirection direction)
+        {
+            return direction switch
+            {
+                RoadExitDirection.East => new GridCell(
+                    coordinate.X + 1,
+                    coordinate.Z,
+                    coordinate.Y),
+                RoadExitDirection.South => new GridCell(
+                    coordinate.X,
+                    coordinate.Z - 1,
+                    coordinate.Y),
+                RoadExitDirection.West => new GridCell(
+                    coordinate.X - 1,
+                    coordinate.Z,
+                    coordinate.Y),
+                RoadExitDirection.North => new GridCell(
+                    coordinate.X,
+                    coordinate.Z + 1,
+                    coordinate.Y),
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            };
         }
     }
 }
