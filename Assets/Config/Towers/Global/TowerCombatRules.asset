@@ -17,7 +17,7 @@ MonoBehaviour:
   maximumLinkRangeMeters: 12
   normalQueueCapacity: 3
   minimumProcessIntervalSeconds: 0.15
-  projectileSpeedMetersPerSecond: 20
+  projectileSpeedMetersPerSecond: 10
   sellRefundFraction: 0.7
   maximumTierThreeElementTowers: 2
   simulationTickSeconds: 0.05

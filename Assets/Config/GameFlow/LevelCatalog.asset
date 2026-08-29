@@ -23,3 +23,33 @@ MonoBehaviour:
     scenePath: Assets/Scenes/Levels/Level_002.unity
     startingGold: 500
     startingHealth: 10
+  - levelNumber: 3
+    displayName: Level 3
+    scenePath: Assets/Scenes/Levels/Level_003.unity
+    startingGold: 500
+    startingHealth: 10
+  - levelNumber: 4
+    displayName: Level 4
+    scenePath: Assets/Scenes/Levels/Level_004.unity
+    startingGold: 500
+    startingHealth: 10
+  - levelNumber: 5
+    displayName: Level 5
+    scenePath: Assets/Scenes/Levels/Level_005.unity
+    startingGold: 500
+    startingHealth: 10
+  - levelNumber: 6
+    displayName: Level 6
+    scenePath: Assets/Scenes/Levels/Level_006.unity
+    startingGold: 500
+    startingHealth: 10
+  - levelNumber: 7
+    displayName: Level 7
+    scenePath: Assets/Scenes/Levels/Level_007.unity
+    startingGold: 500
+    startingHealth: 10
+  - levelNumber: 8
+    displayName: Level 8
+    scenePath: Assets/Scenes/Levels/Level_008.unity
+    startingGold: 500
+    startingHealth: 10

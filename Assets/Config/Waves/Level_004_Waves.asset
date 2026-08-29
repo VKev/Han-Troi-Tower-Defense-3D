@@ -10,34 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 196b90abdad5b3646ba8a4afaab3ccf5, type: 3}
-  m_Name: Level_001_Waves
+  m_Name: Level_004_Waves
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Waves.WaveScheduleDefinition
-  randomSeed: 11001
+  randomSeed: 22002
   waves:
   - clearGoldReward: 100
     spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 8
       startTimeSeconds: 0
-      spawnWindowSeconds: 6
-    - enemy: {fileID: 11400000, guid: 95175cd02ddf7af4cb6e933188c03abf, type: 2}
-      count: 1
-      startTimeSeconds: 0
-      spawnWindowSeconds: 3
-    - enemy: {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}
-      count: 1
-      startTimeSeconds: 0
-      spawnWindowSeconds: 3
+      spawnWindowSeconds: 4
   - clearGoldReward: 130
     spawnBatches:
     - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
       count: 6
       startTimeSeconds: 0
       spawnWindowSeconds: 4
-    - enemy: {fileID: 11400000, guid: 95175cd02ddf7af4cb6e933188c03abf, type: 2}
-      count: 1
-      startTimeSeconds: 1
-      spawnWindowSeconds: 1
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 4
+      startTimeSeconds: 2
+      spawnWindowSeconds: 3
   - clearGoldReward: 100
     spawnBatches:
     - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
@@ -80,12 +72,6 @@ MonoBehaviour:
       count: 3
       startTimeSeconds: 0
       spawnWindowSeconds: 2
-  - clearGoldReward: 100
-    spawnBatches:
-    - enemy: {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}
-      count: 1
-      startTimeSeconds: 1
-      spawnWindowSeconds: 0
   - clearGoldReward: 100
     spawnBatches:
     - enemy: {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}

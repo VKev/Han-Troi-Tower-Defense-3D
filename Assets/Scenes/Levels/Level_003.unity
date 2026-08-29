@@ -1251,7 +1251,7 @@ MonoBehaviour:
   autoRun: 0
   autoInjectGameObjects: []
   levelNumber: 3
-  waveSchedule: {fileID: 0}
+  waveSchedule: {fileID: 11400000, guid: f27b26bbead99944ca712d6ffee7d585, type: 2}
 --- !u!1001 &197966365
 PrefabInstance:
   m_ObjectHideFlags: 0

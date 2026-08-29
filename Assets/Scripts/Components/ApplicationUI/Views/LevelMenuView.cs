@@ -38,11 +38,37 @@ namespace TowerDefense3D.GameFlow
 
         private void EnsureAuthoredCapacity(int requiredCount)
         {
-            if (requiredCount > levelButtons.Length)
+            if (requiredCount <= levelButtons.Length)
             {
-                throw new InvalidOperationException(
-                    $"LevelMenuView has {levelButtons.Length} authored level buttons but requires {requiredCount}.");
+                return;
             }
+
+            LevelButtonView template = FindTemplate();
+            int authoredCount = levelButtons.Length;
+            Array.Resize(ref levelButtons, requiredCount);
+            for (int index = authoredCount; index < requiredCount; index++)
+            {
+                LevelButtonView copy = Instantiate(
+                    template,
+                    template.transform.parent,
+                    false);
+                copy.name = $"{template.name} {index + 1}";
+                levelButtons[index] = copy;
+            }
+        }
+
+        private LevelButtonView FindTemplate()
+        {
+            for (int index = levelButtons.Length - 1; index >= 0; index--)
+            {
+                if (levelButtons[index] != null)
+                {
+                    return levelButtons[index];
+                }
+            }
+
+            throw new InvalidOperationException(
+                "LevelMenuView requires at least one authored LevelButtonView template.");
         }
 
         private void UnbindButtons()

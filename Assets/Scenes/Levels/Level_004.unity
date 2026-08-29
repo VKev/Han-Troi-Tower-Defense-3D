@@ -1244,8 +1244,8 @@ MonoBehaviour:
     TypeName: 
   autoRun: 0
   autoInjectGameObjects: []
-  levelNumber: 5
-  waveSchedule: {fileID: 0}
+  levelNumber: 4
+  waveSchedule: {fileID: 11400000, guid: ab7b6610ba4ee794ba1aa04a8baf4c2f, type: 2}
 --- !u!1 &200052385
 GameObject:
   m_ObjectHideFlags: 0

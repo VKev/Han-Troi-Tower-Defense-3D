@@ -4621,6 +4621,7 @@ MonoBehaviour:
   autoRun: 0
   autoInjectGameObjects: []
   levelNumber: 8
+  waveSchedule: {fileID: 11400000, guid: 0f864e2b286bf0d4c882ae2524a90df5, type: 2}
 --- !u!1001 &180689141
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7636,8 +7637,6 @@ MonoBehaviour:
     y: 0.08
     width: 0.9
     height: 0.84
-  cameraLocalPositionOffset: {x: 0, y: -0.5, z: 0}
-  cameraLocalRotationOffsetEuler: {x: 0, y: 0, z: 0}
   authoredBaseRotationEuler: {x: 81.87003, y: 0, z: 0}
   hasAuthoredBaseRotation: 1
 --- !u!1001 &331138041
