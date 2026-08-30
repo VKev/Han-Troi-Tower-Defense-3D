@@ -17,6 +17,7 @@ namespace TowerDefense3D.Enemies
             Health = definition.BaseMaxHealth;
             Position = position;
             PreviousPosition = position;
+            SpawnDelayRemainingSeconds = EnemySpawnPresentationTiming.SpawnMovementDelaySeconds;
             TargetPointIndex = 1;
             RemainingThermalShieldHits = definition.ThermalShockHitsToBreakShield;
             SupportActivationRemainingSeconds = definition is SpeedSupportEnemyDefinition support
@@ -48,6 +49,7 @@ namespace TowerDefense3D.Enemies
         internal float SummonElapsedSeconds { get; set; }
         internal float SummonCastRemainingSeconds { get; set; }
         internal float SupportActivationRemainingSeconds { get; set; }
+        internal float SpawnDelayRemainingSeconds { get; set; }
         internal float SkillCastRemainingSeconds { get; set; }
         internal bool SkillCastCompletedThisStep { get; set; }
     }

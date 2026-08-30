@@ -174,7 +174,8 @@ namespace TowerDefense3D.Enemies
                     1,
                     isSummoned: false,
                     reactionCatalog,
-                    tickSeconds));
+                    tickSeconds,
+                    checked(tick + GetSpawnMovementDelayTicks())));
             }
         }
 
@@ -374,6 +375,12 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
+                if (tick < enemy.FirstMovementTick)
+                {
+                    enemy.PreviousPosition = enemy.Position;
+                    continue;
+                }
+
                 float speedBonus = FindStrongestSpeedBonus(enemy, enemies);
                 enemy.IsSpeedBuffed = speedBonus > 0f;
 
@@ -459,7 +466,8 @@ namespace TowerDefense3D.Enemies
                     summon.TargetPointIndex,
                     isSummoned: true,
                     reactionCatalog,
-                    tickSeconds));
+                    tickSeconds,
+                    checked(tick + GetSpawnMovementDelayTicks())));
                 timeline.Add(tick, new PlannedEnemySpawn(
                     enemyId,
                     summon.Definition,
@@ -955,6 +963,9 @@ namespace TowerDefense3D.Enemies
             return Math.Max(1L, (long)Math.Ceiling(seconds / tickSeconds - 0.000001d));
         }
 
+        private long GetSpawnMovementDelayTicks() =>
+            SecondsToTick(EnemySpawnPresentationTiming.SpawnMovementDelaySeconds);
+
         private static long FindNextEnemyId(IReadOnlyList<WaveSpawnOrder> wavePlan)
         {
             long next = 1L;
@@ -995,7 +1006,8 @@ namespace TowerDefense3D.Enemies
                 int targetPointIndex,
                 bool isSummoned,
                 ElementReactionCatalog reactionCatalog,
-                float tickSeconds)
+                float tickSeconds,
+                long firstMovementTick)
             {
                 Id = id;
                 Definition = definition;
@@ -1006,6 +1018,7 @@ namespace TowerDefense3D.Enemies
                 TargetPointIndex = targetPointIndex;
                 Health = definition.BaseMaxHealth;
                 IsSummoned = isSummoned;
+                FirstMovementTick = firstMovementTick;
                 ElementReaction = new EnemyElementReactionState(
                     reactionCatalog,
                     tickSeconds);
@@ -1020,6 +1033,7 @@ namespace TowerDefense3D.Enemies
             public RoadPath Route { get; }
             public int RouteIndex { get; }
             public bool IsSummoned { get; }
+            public long FirstMovementTick { get; }
             public float Health { get; set; }
             public float HealthFraction => Health / Definition.BaseMaxHealth;
             public bool IsAlive => Health > 0f;

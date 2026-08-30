@@ -31,6 +31,8 @@ namespace TowerDefense3D.Enemies
         private float spawnScaleDelayRemainingSeconds;
         private bool isSpawning;
         private bool isDying;
+        private bool isAwaitingActivation;
+        private bool isAwaitingScaleStart;
         private Action deathCompletion;
         private bool hasFacingDirection;
         private int renderedSkillCastVersion;
@@ -38,8 +40,7 @@ namespace TowerDefense3D.Enemies
         public long EnemyId { get; private set; }
 
         /// <summary>
-        /// Root position on the road, before the spawn scale shifts the transform to keep the
-        /// model's pivot planted. This is where the enemy settles once it reaches full scale.
+        /// World position on the road where the model's bottom-center pivot is planted.
         /// </summary>
         public Vector3 RenderedRootPosition => renderedRootPosition;
 
@@ -70,8 +71,9 @@ namespace TowerDefense3D.Enemies
             GetSkillEffectView()?.ConfigureEmitter(reactionEffectEmitter);
         }
 
-        public void Bind(EnemySnapshot enemy)
+        public void Bind(EnemySnapshot enemy, bool activateImmediately = true)
         {
+            SetRenderingVisible(false);
             EnemyId = enemy.EnemyId;
             string prefix = enemy.IsSummoned ? "Summoned Enemy" : "Enemy";
             gameObject.name = $"{prefix} {enemy.EnemyId} - {enemy.Definition.DisplayName}";
@@ -80,27 +82,38 @@ namespace TowerDefense3D.Enemies
             transform.localRotation = spawnLocalRotation;
             hasFacingDirection = false;
             renderedSkillCastVersion = enemy.SkillCastVersion;
-            gameObject.SetActive(true);
-            CaptureScalePivot();
-            scaleProgress = 0f;
-            spawnScaleDelayRemainingSeconds = EnemySpawnPresentationTiming.SpawnScaleDelaySeconds;
-            isSpawning = true;
-            isDying = false;
-            deathCompletion = null;
-            scaleAnchorWorld = GetFullScaleAnchor();
-            ApplyScaleAroundAnchor(0f);
-            SetMoving(true);
-            GetDamageFlashView().Bind(enemy);
-            GetElementStatusView().Bind(enemy.ElementState);
-            GetElementEffectView().Bind(enemy.ElementState);
-            GetThermalShieldView()?.Bind(enemy);
-            GetStealthView()?.Bind(enemy);
-            GetSkillEffectView()?.Bind(enemy.SkillCastVersion);
-            GetSpeedTrailView()?.Bind();
+            isAwaitingActivation = true;
+            isAwaitingScaleStart = false;
+            if (!activateImmediately)
+            {
+                return;
+            }
+
+            ActivateHidden(enemy);
+            StartScaleTransition();
+            SetRenderingVisible(true);
         }
 
         public void Render(EnemySnapshot enemy, float interpolationAlpha)
         {
+            Vector3 interpolatedRootPosition = Vector3.Lerp(
+                enemy.PreviousPosition,
+                enemy.Position,
+                interpolationAlpha) + Vector3.up * enemy.LiftHeightMeters;
+            if (isAwaitingActivation)
+            {
+                renderedRootPosition = interpolatedRootPosition;
+                transform.position = renderedRootPosition;
+                ActivateHidden(enemy);
+                isAwaitingScaleStart = true;
+                return;
+            }
+
+            if (isAwaitingScaleStart)
+            {
+                StartScaleTransition();
+            }
+
             GetDamageFlashView().Render(enemy, Time.deltaTime);
             GetStealthView()?.Render(enemy, Time.deltaTime);
             bool skillCastStarted = enemy.SkillCastVersion != renderedSkillCastVersion;
@@ -113,10 +126,7 @@ namespace TowerDefense3D.Enemies
             GetElementStatusView().Render(enemy.ElementState, Time.deltaTime);
             GetElementEffectView().Render(enemy.ElementState, Time.deltaTime);
             GetThermalShieldView()?.Render(enemy, Time.deltaTime);
-            renderedRootPosition = Vector3.Lerp(
-                enemy.PreviousPosition,
-                enemy.Position,
-                interpolationAlpha) + Vector3.up * enemy.LiftHeightMeters;
+            renderedRootPosition = interpolatedRootPosition;
             transform.position = renderedRootPosition;
             if (skillCastStarted)
             {
@@ -129,6 +139,7 @@ namespace TowerDefense3D.Enemies
             if (movement.sqrMagnitude == 0f)
             {
                 TickScaleTransition();
+                SetRenderingVisible(true);
                 return;
             }
 
@@ -139,6 +150,7 @@ namespace TowerDefense3D.Enemies
                 transform.rotation = targetRotation;
                 hasFacingDirection = true;
                 TickScaleTransition();
+                SetRenderingVisible(true);
                 return;
             }
 
@@ -147,10 +159,47 @@ namespace TowerDefense3D.Enemies
                 targetRotation,
                 TurnSpeedDegreesPerSecond * Time.deltaTime);
             TickScaleTransition();
+            SetRenderingVisible(true);
+        }
+
+        private void ActivateHidden(EnemySnapshot enemy)
+        {
+            gameObject.SetActive(true);
+            isAwaitingActivation = false;
+            isDying = false;
+            deathCompletion = null;
+            SetMoving(true);
+            GetDamageFlashView().Bind(enemy);
+            GetElementStatusView().Bind(enemy.ElementState);
+            GetElementEffectView().Bind(enemy.ElementState);
+            GetThermalShieldView()?.Bind(enemy);
+            GetStealthView()?.Bind(enemy);
+            GetSkillEffectView()?.Bind(enemy.SkillCastVersion);
+            GetSpeedTrailView()?.Bind();
+            SetRenderingVisible(false);
+        }
+
+        private void StartScaleTransition()
+        {
+            isAwaitingScaleStart = false;
+            CaptureScalePivot();
+            scaleProgress = 0f;
+            spawnScaleDelayRemainingSeconds = EnemySpawnPresentationTiming.SpawnScaleDelaySeconds;
+            isSpawning = true;
+            scaleAnchorWorld = renderedRootPosition;
+            ApplyScaleAroundAnchor(0f);
         }
 
         public void BeginDeath(Action onComplete)
         {
+            if (isAwaitingActivation || isAwaitingScaleStart)
+            {
+                isAwaitingActivation = false;
+                isAwaitingScaleStart = false;
+                onComplete?.Invoke();
+                return;
+            }
+
             if (isDying)
             {
                 return;
@@ -183,9 +232,13 @@ namespace TowerDefense3D.Enemies
 
         public void Release()
         {
+            SetRenderingVisible(false);
+            gameObject.SetActive(false);
             deathCompletion = null;
             isSpawning = false;
             isDying = false;
+            isAwaitingActivation = false;
+            isAwaitingScaleStart = false;
             scaleProgress = 1f;
             spawnScaleDelayRemainingSeconds = 0f;
             transform.localScale = spawnLocalScale;
@@ -202,7 +255,6 @@ namespace TowerDefense3D.Enemies
             renderedRootPosition = Vector3.zero;
             renderedMoveDirection = Vector3.zero;
             hasFacingDirection = false;
-            gameObject.SetActive(false);
         }
 
         private void TickScaleTransition()
@@ -214,12 +266,14 @@ namespace TowerDefense3D.Enemies
         {
             if (!isSpawning && !isDying)
             {
+                scaleAnchorWorld = renderedRootPosition;
+                ApplyScaleAroundAnchor(1f);
                 return;
             }
 
             if (isSpawning)
             {
-                scaleAnchorWorld = GetFullScaleAnchor();
+                scaleAnchorWorld = renderedRootPosition;
                 if (spawnScaleDelayRemainingSeconds > 0f)
                 {
                     float heldSeconds = spawnScaleDelayRemainingSeconds;
@@ -272,7 +326,7 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < renderers.Length; index++)
             {
                 Renderer renderer = renderers[index];
-                if (renderer is ParticleSystemRenderer
+                if (renderer is ParticleSystemRenderer || renderer is TrailRenderer
                     || renderer.GetComponentInParent<EnemyElementStatusView>() != null)
                 {
                     continue;
@@ -306,15 +360,13 @@ namespace TowerDefense3D.Enemies
             transform.position += scaleAnchorWorld - currentAnchorWorld;
         }
 
-        private Vector3 GetFullScaleAnchor()
+        private void SetRenderingVisible(bool value)
         {
-            Vector3 localOffset = transform.localRotation * Vector3.Scale(
-                scalePivotLocal,
-                spawnLocalScale);
-            Vector3 worldOffset = transform.parent != null
-                ? transform.parent.TransformVector(localOffset)
-                : localOffset;
-            return renderedRootPosition + worldOffset;
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                renderers[index].forceRenderingOff = !value;
+            }
         }
 
         private void SetMoving(bool value)

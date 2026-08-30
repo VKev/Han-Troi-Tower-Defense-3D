@@ -156,15 +156,28 @@ namespace TowerDefense3D.Enemies
             for (int index = activeEnemies.Count - 1; index >= 0; index--)
             {
                 EnemyInstance enemy = activeEnemies[index];
+                enemy.PreviousPosition = enemy.Position;
+                float movementSeconds = stepSeconds;
+                if (enemy.SpawnDelayRemainingSeconds > 0f)
+                {
+                    float heldSeconds = Mathf.Min(
+                        enemy.SpawnDelayRemainingSeconds,
+                        movementSeconds);
+                    enemy.SpawnDelayRemainingSeconds -= heldSeconds;
+                    movementSeconds -= heldSeconds;
+                    if (movementSeconds <= 0f)
+                    {
+                        continue;
+                    }
+                }
+
                 if (enemy.SkillCastRemainingSeconds > 0f || enemy.SkillCastCompletedThisStep)
                 {
-                    enemy.PreviousPosition = enemy.Position;
                     continue;
                 }
 
-                enemy.PreviousPosition = enemy.Position;
                 float speedMultiplier = 1f + speedBonusesByEnemyId[enemy.Id];
-                float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * stepSeconds;
+                float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * movementSeconds;
                 Vector3 position = enemy.Position;
                 int targetPointIndex = enemy.TargetPointIndex;
                 bool reachedEnd = enemy.Route.Move(ref targetPointIndex, ref position, distance);

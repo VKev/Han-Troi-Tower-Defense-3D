@@ -51,13 +51,15 @@ namespace TowerDefense3D.Enemies
             {
                 WaveSpawnOrder order = wavePlan[index];
                 RoadPath route = roadPaths.GetForEnemy(order.EnemyId);
+                long spawnTick = Math.Max(1L, SecondsToTick(order.TimeSeconds));
                 seeds[index] = new EnemyTrajectorySeed(
                     order.EnemyId,
                     order.Enemy,
                     route,
                     route.Start,
                     1,
-                    Math.Max(1L, SecondsToTick(order.TimeSeconds)));
+                    checked(spawnTick + SecondsToTick(
+                        EnemySpawnPresentationTiming.SpawnMovementDelaySeconds)));
             }
 
             return CreateEnemyTrajectories(seeds);

@@ -97,7 +97,8 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             view.Bind(spawn);
 
             Renderer modelRenderer = model.GetComponent<Renderer>();
-            float footY = modelRenderer.bounds.min.y;
+            Vector3 spawnAnchor = BottomCenter(modelRenderer.bounds);
+            Assert.That(Vector3.Distance(spawnAnchor, spawn.Position), Is.LessThan(0.001f));
             view.TickLifecycle(EnemySpawnPresentationTiming.SpawnScaleDelaySeconds * 0.5f);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0f).Within(0.001f));
 
@@ -105,28 +106,84 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
                 EnemySpawnPresentationTiming.SpawnScaleDelaySeconds * 0.5f
                 + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds * 0.5f);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0.5f).Within(0.001f));
-            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+            Assert.That(Vector3.Distance(BottomCenter(modelRenderer.bounds), spawn.Position), Is.LessThan(0.001f));
 
             view.Render(spawn, 1f);
-            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+            Assert.That(Vector3.Distance(BottomCenter(modelRenderer.bounds), spawn.Position), Is.LessThan(0.001f));
 
             view.TickLifecycle(EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(1f).Within(0.001f));
-            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+            Assert.That(Vector3.Distance(BottomCenter(modelRenderer.bounds), spawn.Position), Is.LessThan(0.001f));
 
             bool completed = false;
             view.BeginDeath(() => completed = true);
             view.TickLifecycle(0.1f);
             Assert.That(completed, Is.False);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0.5f).Within(0.001f));
-            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+            Assert.That(Vector3.Distance(BottomCenter(modelRenderer.bounds), spawn.Position), Is.LessThan(0.001f));
 
             view.TickLifecycle(0.1f);
             Assert.That(completed, Is.True);
             Assert.That(viewObject.transform.localScale.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(modelRenderer.bounds.min.y, Is.EqualTo(footY).Within(0.001f));
+            Assert.That(Vector3.Distance(BottomCenter(modelRenderer.bounds), spawn.Position), Is.LessThan(0.001f));
 
             Object.Destroy(viewObject);
+            Object.Destroy(definition);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BasicEnemyPoolScale_WaitsForAnimatorBoundsAndStaysOnRoad()
+        {
+            GameObject prefab = Resources.Load<GameObject>("Prefabs/Enemies/BasicEnemy");
+            Assert.That(prefab, Is.Not.Null);
+
+            GameObject instance = Object.Instantiate(prefab);
+            EnemyView view = instance.GetComponent<EnemyView>();
+            Animator animator = instance.GetComponent<Animator>();
+            SkinnedMeshRenderer body = instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            var staleTrailObject = new GameObject("Stale pooled trail");
+            staleTrailObject.transform.SetParent(instance.transform);
+            TrailRenderer staleTrail = staleTrailObject.AddComponent<TrailRenderer>();
+            staleTrail.emitting = false;
+            staleTrail.AddPosition(new Vector3(100f, 0f, 100f));
+            staleTrail.AddPosition(new Vector3(101f, 0f, 101f));
+            staleTrailObject.SetActive(false);
+            EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
+            Vector3 roadPosition = new Vector3(3f, 2f, 4f);
+            EnemySnapshot spawn = new EnemySnapshot(
+                49L,
+                definition,
+                roadPosition,
+                roadPosition,
+                definition.BaseMaxHealth,
+                false,
+                false);
+
+            view.Release();
+            view.Bind(spawn, activateImmediately: false);
+            view.Render(spawn, 1f);
+
+            Assert.That(instance.activeSelf, Is.True);
+            Assert.That(body.forceRenderingOff, Is.True);
+            yield return null;
+
+            animator.enabled = false;
+            view.Render(spawn, 1f);
+            view.TickLifecycle(
+                EnemySpawnPresentationTiming.SpawnScaleDelaySeconds
+                + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds * 0.5f);
+
+            Assert.That(body.forceRenderingOff, Is.False);
+            Assert.That(Vector3.Distance(BottomCenter(body.bounds), roadPosition), Is.LessThan(0.01f));
+
+            view.TickLifecycle(EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
+            view.BeginDeath(null);
+            view.TickLifecycle(0.1f);
+
+            Assert.That(Vector3.Distance(BottomCenter(body.bounds), roadPosition), Is.LessThan(0.01f));
+
+            Object.Destroy(instance);
             Object.Destroy(definition);
             yield return null;
         }
@@ -182,6 +239,9 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             icon.transform.SetParent(parent);
             return icon.transform;
         }
+
+        private static Vector3 BottomCenter(Bounds bounds) =>
+            new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
 
         private static void SetField(EnemyElementStatusView view, string name, Transform value)
         {

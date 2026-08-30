@@ -37,13 +37,19 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         {
             EnemyViewPool pool = poolObject.AddComponent<EnemyViewPool>();
 
-            pool.Spawn(Snapshot(1L, firstDefinition));
+            EnemySnapshot first = Snapshot(1L, firstDefinition);
+            pool.Spawn(first);
+            pool.Render(new[] { first }, 1f);
+            pool.Render(new[] { first }, 1f);
             EnemyView firstView = FindView(pool, 1L);
             firstView.TickLifecycle(0.4f);
             pool.Despawn(1L);
             pool.TickLifecycle(0.4f);
 
-            pool.Spawn(Snapshot(2L, secondDefinition));
+            EnemySnapshot second = Snapshot(2L, secondDefinition);
+            pool.Spawn(second);
+            pool.Render(new[] { second }, 1f);
+            pool.Render(new[] { second }, 1f);
             EnemyView secondView = FindView(pool, 2L);
             secondView.TickLifecycle(0.4f);
             pool.Despawn(2L);
@@ -62,14 +68,43 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         }
 
         [Test]
+        public void Spawn_HidesViewUntilFirstRenderAtItsGameplayPosition()
+        {
+            EnemyViewPool pool = poolObject.AddComponent<EnemyViewPool>();
+            Vector3 position = new Vector3(3f, 2f, 4f);
+            EnemySnapshot enemy = Snapshot(1L, firstDefinition, position);
+
+            pool.Spawn(enemy);
+            EnemyView view = FindView(pool, 1L);
+            ParticleSystemRenderer renderer = view.GetComponentInChildren<ParticleSystemRenderer>(true);
+
+            Assert.That(view.gameObject.activeSelf, Is.False);
+            Assert.That(renderer.forceRenderingOff, Is.True);
+
+            pool.Render(new[] { enemy }, 1f);
+
+            Assert.That(view.gameObject.activeSelf, Is.False);
+            Assert.That(view.transform.position, Is.EqualTo(position));
+
+            pool.Render(new[] { enemy }, 1f);
+
+            Assert.That(renderer.forceRenderingOff, Is.False);
+            Assert.That(view.transform.position, Is.EqualTo(position));
+        }
+
+        [Test]
         public void Despawn_KeepsViewActiveUntilScaleAnimationCompletes()
         {
             EnemyViewPool pool = poolObject.AddComponent<EnemyViewPool>();
 
-            pool.Spawn(Snapshot(1L, firstDefinition));
+            EnemySnapshot enemy = Snapshot(1L, firstDefinition);
+            pool.Spawn(enemy);
+            pool.Render(new[] { enemy }, 1f);
+            pool.Render(new[] { enemy }, 1f);
             EnemyView view = FindView(pool, 1L);
             pool.TickLifecycle(1.6f);
             view.TickLifecycle(0.4f);
+
             pool.Despawn(1L);
 
             Assert.That(view.gameObject.activeSelf, Is.True);
@@ -143,11 +178,17 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         }
 
         private static EnemySnapshot Snapshot(long enemyId, EnemyDefinition definition) =>
+            Snapshot(enemyId, definition, Vector3.zero);
+
+        private static EnemySnapshot Snapshot(
+            long enemyId,
+            EnemyDefinition definition,
+            Vector3 position) =>
             new EnemySnapshot(
                 enemyId,
                 definition,
-                Vector3.zero,
-                Vector3.zero,
+                position,
+                position,
                 definition.BaseMaxHealth,
                 false,
                 false);

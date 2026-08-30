@@ -36,6 +36,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             system.EnemyLeaked += _ => leakCount++;
 
             EnemyInstance enemy = system.Spawn(definition);
+            system.Step(EnemySpawnPresentationTiming.SpawnMovementDelaySeconds);
             system.Step(0.25f);
 
             Assert.That(enemy.Position.x, Is.EqualTo(0.5f).Within(0.0001f));
@@ -46,6 +47,21 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(system.LivingCount, Is.Zero);
             Assert.That(leakCount, Is.EqualTo(1));
             Assert.That(healthSystem.CurrentHealth, Is.EqualTo(9));
+        }
+
+        [Test]
+        public void Step_HoldsEnemyAtRoadSpawnUntilPresentationCompletes()
+        {
+            var system = CreateLongRoadSystem();
+            EnemyInstance enemy = system.Spawn(definition);
+
+            system.Step(EnemySpawnPresentationTiming.SpawnMovementDelaySeconds - 0.01f);
+            Assert.That(enemy.Position, Is.EqualTo(Vector3.zero));
+
+            system.Step(0.02f);
+            Assert.That(
+                enemy.Position.x,
+                Is.EqualTo(definition.BaseMoveSpeed * 0.01f).Within(0.0001f));
         }
 
         [Test]
@@ -76,6 +92,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             EnemyInstance supportEnemy = system.Spawn(support);
             EnemyInstance basicEnemy = system.Spawn(basic);
+            SkipSpawnDelay(supportEnemy, basicEnemy);
             system.Step(support.ActivationDelaySeconds);
 
             Assert.That(supportEnemy.IsSpeedAuraActive, Is.True);
@@ -106,6 +123,7 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 "Assets/Config/Enemies/SpeedSupport.asset");
             var system = CreateLongRoadSystem();
             EnemyInstance enemy = system.Spawn(support);
+            SkipSpawnDelay(enemy);
 
             system.Step(support.ActivationDelaySeconds);
             float positionAtCastStart = enemy.Position.x;
@@ -175,6 +193,14 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 Vector3.zero,
                 Vector3.right * 1000f
             }), new LevelGoldSystem(0), new LevelBaseHealthSystem(10));
+        }
+
+        private static void SkipSpawnDelay(params EnemyInstance[] enemies)
+        {
+            for (int index = 0; index < enemies.Length; index++)
+            {
+                enemies[index].SpawnDelayRemainingSeconds = 0f;
+            }
         }
     }
 }
