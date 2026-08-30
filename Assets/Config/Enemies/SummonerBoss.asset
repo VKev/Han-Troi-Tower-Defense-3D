@@ -28,21 +28,23 @@ MonoBehaviour:
     summonIntervalSeconds: 8
     entries:
     - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 2
+      count: 4
   - startHealthFraction: 0.6
     summonIntervalSeconds: 6
     entries:
     - definition: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
-      count: 1
+      count: 2
     - definition: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
-      count: 1
+      count: 2
   - startHealthFraction: 0.3
     summonIntervalSeconds: 4
     entries:
     - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 2
     - definition: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
-      count: 2
+      count: 1
     - definition: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
-      count: 2
+      count: 1
   summonSkillDurationSeconds: 3
+  summonSpawnStartDelaySeconds: 1.833333
+  summonSpawnOffsetMeters: 0.9

@@ -165,12 +165,15 @@ namespace TowerDefense3D.Enemies
             {
                 WaveSpawnOrder order = wavePlan[nextSpawnIndex++];
                 int routeIndex = roadPaths.GetRouteIndex(order.EnemyId);
+                RoadPath lane = roadPaths.GetLane(
+                    routeIndex,
+                    roadPaths.GetLaneIndex(order.EnemyId, order.Enemy));
                 enemies.Add(new ShadowEnemy(
                     order.EnemyId,
                     order.Enemy,
-                    roadPaths.Get(routeIndex),
+                    lane,
                     routeIndex,
-                    roadPaths.Get(routeIndex).Start,
+                    lane.Start,
                     1,
                     isSummoned: false,
                     reactionCatalog,
@@ -322,12 +325,7 @@ namespace TowerDefense3D.Enemies
                         boss.SkillCastCompletedThisTick = true;
                     }
                     boss.SkillCastRemainingSeconds = boss.SummonCastRemainingSeconds;
-                    if (boss.SummonCastRemainingSeconds > 0f)
-                    {
-                        continue;
-                    }
-
-                    AddSummons(definition.SummonPhases[boss.SummonPhaseIndex], boss, pendingSummons);
+                    ReleaseDueSummons(definition, boss, pendingSummons);
                     continue;
                 }
 
@@ -341,27 +339,46 @@ namespace TowerDefense3D.Enemies
                     boss.SkillCastRemainingSeconds = definition.SummonSkillDurationSeconds;
                     boss.SkillCastCompletedThisTick = true;
                     boss.SkillCastVersion++;
+                    boss.SummonsSpawnedThisCast = 0;
+                    BossSummonSchedule.Build(
+                        definition,
+                        phase,
+                        boss.Id,
+                        boss.SkillCastVersion,
+                        boss.SummonSchedule);
                     break;
                 }
             }
         }
 
-        private static void AddSummons(
-            SummonerBossEnemyDefinition.SummonPhase phase,
+        /// <summary>
+        /// Mirror of the live simulation's release step. Both read the same schedule so the
+        /// planned timeline and the replay put every summon on the same tick and the same spot.
+        /// </summary>
+        private void ReleaseDueSummons(
+            SummonerBossEnemyDefinition definition,
             ShadowEnemy boss,
             List<ShadowSummon> pendingSummons)
         {
-            for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+            float elapsed = definition.SummonSkillDurationSeconds
+                - boss.SummonCastRemainingSeconds;
+            while (boss.SummonsSpawnedThisCast < boss.SummonSchedule.Count
+                && boss.SummonSchedule[boss.SummonsSpawnedThisCast].DueSeconds <= elapsed)
             {
-                SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
-                for (int count = 0; count < entry.Count; count++)
-                {
-                    pendingSummons.Add(new ShadowSummon(
-                        entry.Definition,
-                        boss.Position,
-                        boss.TargetPointIndex,
-                        boss.RouteIndex));
-                }
+                ScheduledSummon scheduled = boss.SummonSchedule[boss.SummonsSpawnedThisCast];
+                boss.SummonsSpawnedThisCast++;
+                BossSummonSchedule.GetSpawnPlacement(
+                    boss.Route,
+                    boss.TargetPointIndex,
+                    boss.Position,
+                    scheduled.ForwardOffsetMeters,
+                    out Vector3 spawnPosition,
+                    out int spawnTargetPointIndex);
+                pendingSummons.Add(new ShadowSummon(
+                    scheduled.Definition,
+                    spawnPosition,
+                    spawnTargetPointIndex,
+                    boss.RouteIndex));
             }
         }
 
@@ -460,7 +477,9 @@ namespace TowerDefense3D.Enemies
                 enemies.Add(new ShadowEnemy(
                     enemyId,
                     summon.Definition,
-                    roadPaths.Get(summon.RouteIndex),
+                    roadPaths.GetLane(
+                        summon.RouteIndex,
+                        roadPaths.GetLaneIndex(enemyId, summon.Definition)),
                     summon.RouteIndex,
                     summon.Position,
                     summon.TargetPointIndex,
@@ -1062,6 +1081,8 @@ namespace TowerDefense3D.Enemies
             public float SummonCastRemainingSeconds { get; set; }
             public float SupportActivationRemainingSeconds { get; set; }
             public float SkillCastRemainingSeconds { get; set; }
+            public List<ScheduledSummon> SummonSchedule { get; } = new List<ScheduledSummon>();
+            public int SummonsSpawnedThisCast { get; set; }
             public bool SkillCastCompletedThisTick { get; set; }
             public PlannedEnemyRemoval Removal { get; set; }
         }

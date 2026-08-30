@@ -1,4 +1,5 @@
 using System;
+using UnityEditor;
 using System.Reflection;
 using NUnit.Framework;
 using TowerDefense3D.GridPlacement;
@@ -74,9 +75,47 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 new BoardSystem(new BoardViewStub(definition)));
 
             Assert.That(paths.Count, Is.EqualTo(2));
-            Assert.That(paths.GetForEnemy(1).Start, Is.EqualTo(new Vector3(0.5f, 0f, 0.5f)));
-            Assert.That(paths.GetForEnemy(2).Start, Is.EqualTo(new Vector3(0.5f, 0f, 2.5f)));
-            Assert.That(paths.GetForEnemy(3).Start, Is.EqualTo(new Vector3(0.5f, 0f, 0.5f)));
+            Assert.That(paths.GetRouteIndex(1), Is.EqualTo(0));
+            Assert.That(paths.GetRouteIndex(2), Is.EqualTo(1));
+            Assert.That(paths.GetRouteIndex(3), Is.EqualTo(0));
+            Assert.That(paths.Get(0).Start, Is.EqualTo(new Vector3(0.5f, 0f, 0.5f)));
+            Assert.That(paths.Get(1).Start, Is.EqualTo(new Vector3(0.5f, 0f, 2.5f)));
+        }
+
+        [Test]
+        public void CreatePaths_SplitsEachRoadIntoLanesWithTheBossOnTheCentre()
+        {
+            definition = CreateBoard(new[]
+            {
+                Cell(0, 0, BoardCellFlags.RoadSpawn, RoadExitDirection.East),
+                Cell(1, 0, BoardCellFlags.Road, RoadExitDirection.East),
+                Cell(2, 0, BoardCellFlags.RoadEnd)
+            });
+            RoadPathSet paths = RoadPathFactory.CreatePaths(
+                new BoardSystem(new BoardViewStub(definition)));
+            EnemyDefinition regular = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(
+                "Assets/Config/Enemies/Basic.asset");
+            EnemyDefinition boss = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(
+                "Assets/Config/Enemies/SummonerBoss.asset");
+
+            {
+                Assert.That(
+                    paths.GetLaneIndex(7L, boss),
+                    Is.EqualTo(RoadPathSet.CenterLaneIndex),
+                    "Bosses must stay on the lane the road was drawn along.");
+                Assert.That(
+                    paths.GetLane(0, RoadPathSet.CenterLaneIndex).Start,
+                    Is.EqualTo(paths.Get(0).Start));
+
+                // The road runs east, so its lanes are separated along Z and only along Z.
+                Vector3 left = paths.GetLane(0, 0).Start;
+                Vector3 right = paths.GetLane(0, 2).Start;
+                Assert.That(left.x, Is.EqualTo(right.x).Within(0.0001f));
+                Assert.That(left.z, Is.Not.EqualTo(right.z));
+                Assert.That(
+                    paths.GetLaneIndex(7L, regular),
+                    Is.InRange(0, RoadPathSet.LaneCount - 1));
+            }
         }
 
         [Test]
@@ -112,6 +151,25 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(path.PointCount, Is.EqualTo(8));
             Assert.That(path.Start, Is.EqualTo(new Vector3(1.5f, 0f, 0.5f)));
             Assert.That(path.End, Is.EqualTo(new Vector3(2.5f, 0f, 2.5f)));
+        }
+
+        [Test]
+        public void CreatePaths_EmptyAuthoredRoute_FallsBackToTheExitArrows()
+        {
+            definition = CreateBoard(new[]
+            {
+                Cell(0, 0, BoardCellFlags.RoadSpawn, RoadExitDirection.East),
+                Cell(1, 0, BoardCellFlags.Road, RoadExitDirection.East),
+                Cell(2, 0, BoardCellFlags.RoadEnd)
+            });
+            // The Board Painter creates a route before anything is drawn into it. That must read
+            // as "not authored yet" and leave the board on its arrows, not stop the level loading.
+            SetField(definition, "routes", new[] { new BoardRouteDefinition(new GridCell[0]) });
+
+            RoadPath path = RoadPathFactory.Create(new BoardSystem(new BoardViewStub(definition)));
+
+            Assert.That(path.PointCount, Is.EqualTo(3));
+            Assert.That(path.Start, Is.EqualTo(new Vector3(0.5f, 0f, 0.5f)));
         }
 
         [Test]

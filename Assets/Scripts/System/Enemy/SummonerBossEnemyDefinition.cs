@@ -33,9 +33,18 @@ namespace TowerDefense3D.Enemies
 
         [SerializeField] private List<SummonPhase> summonPhases = new List<SummonPhase>();
         [SerializeField, Min(0.01f)] private float summonSkillDurationSeconds = 3f;
+        [Tooltip("How long after the cast begins the first summon appears. Set it to match the "
+            + "boss skill effect's own play delay so the enemies arrive with the effect.")]
+        [SerializeField, Min(0f)] private float summonSpawnStartDelaySeconds;
+        [Tooltip("Gap left between bodies when a summon steps out, in meters. The distance "
+            + "itself is measured from the boss's hit radius plus the summon's, so a summon "
+            + "never appears underneath the boss or on top of another summon.")]
+        [SerializeField, Min(0f)] private float summonSpawnClearanceMeters = 0.3f;
 
         public IReadOnlyList<SummonPhase> SummonPhases => summonPhases;
         public float SummonSkillDurationSeconds => summonSkillDurationSeconds;
+        public float SummonSpawnStartDelaySeconds => summonSpawnStartDelaySeconds;
+        public float SummonSpawnClearanceMeters => summonSpawnClearanceMeters;
 
         internal override void CollectSpecificValidationErrors(ICollection<string> errors)
         {

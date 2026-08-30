@@ -48,13 +48,13 @@ namespace TowerDefense3D.Enemies
         public EnemyInstance Spawn(EnemyDefinition definition)
         {
             long enemyId = ReserveEnemyId();
-            RoadPath route = roadPaths.GetForEnemy(enemyId);
+            RoadPath route = roadPaths.GetForEnemy(enemyId, definition);
             return SpawnAt(enemyId, definition, route.Start, 1, route);
         }
 
         internal EnemyInstance Spawn(long enemyId, EnemyDefinition definition)
         {
-            RoadPath route = roadPaths.GetForEnemy(enemyId);
+            RoadPath route = roadPaths.GetForEnemy(enemyId, definition);
             return SpawnAt(enemyId, definition, route.Start, 1, route);
         }
 
@@ -82,7 +82,9 @@ namespace TowerDefense3D.Enemies
                 spawn.Definition,
                 spawn.Position,
                 spawn.TargetPointIndex,
-                roadPaths.Get(spawn.RouteIndex),
+                roadPaths.GetLane(
+                    spawn.RouteIndex,
+                    roadPaths.GetLaneIndex(enemyId, spawn.Definition)),
                 isSummoned: true);
         }
 
@@ -323,12 +325,7 @@ namespace TowerDefense3D.Enemies
                     boss.SkillCastCompletedThisStep = true;
                 }
                 boss.SkillCastRemainingSeconds = boss.SummonCastRemainingSeconds;
-                if (boss.SummonCastRemainingSeconds > 0f)
-                {
-                    return;
-                }
-
-                AddSummons(definition.SummonPhases[boss.SummonPhaseIndex], boss);
+                ReleaseDueSummons(definition, boss);
                 return;
             }
 
@@ -347,23 +344,44 @@ namespace TowerDefense3D.Enemies
                 boss.SummonCastRemainingSeconds = definition.SummonSkillDurationSeconds;
                 boss.SkillCastRemainingSeconds = definition.SummonSkillDurationSeconds;
                 boss.SkillCastVersion++;
+                boss.SummonsSpawnedThisCast = 0;
+                BossSummonSchedule.Build(
+                    definition,
+                    phase,
+                    boss.Id,
+                    boss.SkillCastVersion,
+                    boss.SummonSchedule);
                 break;
             }
         }
 
-        private void AddSummons(SummonerBossEnemyDefinition.SummonPhase phase, EnemyInstance boss)
+        /// <summary>
+        /// Queues every summon whose turn has arrived. Positions are read now rather than when the
+        /// cast began, so each one steps out beside wherever the boss has walked to.
+        /// </summary>
+        private void ReleaseDueSummons(
+            SummonerBossEnemyDefinition definition,
+            EnemyInstance boss)
         {
-            for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+            float elapsed = definition.SummonSkillDurationSeconds
+                - boss.SummonCastRemainingSeconds;
+            while (boss.SummonsSpawnedThisCast < boss.SummonSchedule.Count
+                && boss.SummonSchedule[boss.SummonsSpawnedThisCast].DueSeconds <= elapsed)
             {
-                SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
-                for (int count = 0; count < entry.Count; count++)
-                {
-                    pendingSummons.Add(new PendingSummon(
-                        entry.Definition,
-                        boss.Position,
-                        boss.TargetPointIndex,
-                        boss.Route));
-                }
+                ScheduledSummon scheduled = boss.SummonSchedule[boss.SummonsSpawnedThisCast];
+                boss.SummonsSpawnedThisCast++;
+                BossSummonSchedule.GetSpawnPlacement(
+                    boss.Route,
+                    boss.TargetPointIndex,
+                    boss.Position,
+                    scheduled.ForwardOffsetMeters,
+                    out Vector3 spawnPosition,
+                    out int spawnTargetPointIndex);
+                pendingSummons.Add(new PendingSummon(
+                    scheduled.Definition,
+                    spawnPosition,
+                    spawnTargetPointIndex,
+                    boss.Route));
             }
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies
@@ -51,6 +52,8 @@ namespace TowerDefense3D.Enemies
         internal float SupportActivationRemainingSeconds { get; set; }
         internal float SpawnDelayRemainingSeconds { get; set; }
         internal float SkillCastRemainingSeconds { get; set; }
+        internal List<ScheduledSummon> SummonSchedule { get; } = new List<ScheduledSummon>();
+        internal int SummonsSpawnedThisCast { get; set; }
         internal bool SkillCastCompletedThisStep { get; set; }
     }
 }

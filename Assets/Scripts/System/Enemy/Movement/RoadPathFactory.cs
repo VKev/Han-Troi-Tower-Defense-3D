@@ -57,8 +57,11 @@ namespace TowerDefense3D.Enemies
                 }
             }
 
+            // An empty route is one the painter created but nobody has drawn yet. It is not a
+            // broken board, so it is ignored rather than refused; if that leaves no drawn route
+            // at all the board falls back to its exit arrows.
             IReadOnlyList<BoardRouteDefinition> authoredRoutes = boardSystem.Definition.Routes;
-            if (authoredRoutes.Count > 0)
+            if (CountDrawnRoutes(authoredRoutes) > 0)
             {
                 return CreateAuthoredRoutes(boardSystem, authoredRoutes, roadCells);
             }
@@ -88,6 +91,20 @@ namespace TowerDefense3D.Enemies
             return new RoadPathSet(paths);
         }
 
+        private static int CountDrawnRoutes(IReadOnlyList<BoardRouteDefinition> routes)
+        {
+            int count = 0;
+            for (int index = 0; index < routes.Count; index++)
+            {
+                if (routes[index].Cells.Count > 0)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         /// <summary>
         /// An authored route is walked exactly as drawn, so it can lap a closed loop or leave a
         /// junction differently from another route. Only adjacency is enforced; repeating a cell
@@ -98,10 +115,16 @@ namespace TowerDefense3D.Enemies
             IReadOnlyList<BoardRouteDefinition> routes,
             ISet<GridCell> roadCells)
         {
-            var paths = new RoadPath[routes.Count];
+            var paths = new RoadPath[CountDrawnRoutes(routes)];
+            int pathIndex = 0;
             for (int routeIndex = 0; routeIndex < routes.Count; routeIndex++)
             {
                 IReadOnlyList<GridCell> cells = routes[routeIndex].Cells;
+                if (cells.Count == 0)
+                {
+                    continue;
+                }
+
                 if (cells.Count < 2)
                 {
                     throw new InvalidOperationException(
@@ -128,7 +151,7 @@ namespace TowerDefense3D.Enemies
                     worldPoints[cellIndex] = boardSystem.Board.Mapper.CellToWorldCenter(cell);
                 }
 
-                paths[routeIndex] = new RoadPath(worldPoints);
+                paths[pathIndex++] = new RoadPath(worldPoints);
             }
 
             return new RoadPathSet(paths);

@@ -104,13 +104,14 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                     * support.ActivationDelaySeconds).Within(0.0001f));
             Assert.That(supportEnemy.Position.x, Is.Zero);
 
+            // The buffed enemy runs exactly auraRadiusMeters ahead by the time the aura turns
+            // on, so it leaves the aura on the very next step and falls back to its base speed.
             float positionBeforeBuff = basicEnemy.Position.x;
             system.Step(0.5f);
 
-            float expectedBasicDistance = basic.BaseMoveSpeed
-                * (1f + support.RegularSpeedBonusFraction)
-                * 0.5f;
+            float expectedBasicDistance = basic.BaseMoveSpeed * 0.5f;
             Assert.That(basicEnemy.Position.x - positionBeforeBuff, Is.EqualTo(expectedBasicDistance).Within(0.0001f));
+            Assert.That(basicEnemy.IsSpeedBuffed, Is.False);
             Assert.That(
                 supportEnemy.Position.x,
                 Is.Zero);
@@ -182,8 +183,16 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 }
             }
 
-            Assert.That(system.LivingCount, Is.EqualTo(3));
-            Assert.That(summonedCount, Is.EqualTo(2));
+            // Derived from the asset rather than hard-coded, so retuning how many enemies a
+            // phase summons stays a balance change instead of a failing test.
+            int authored = 0;
+            for (int index = 0; index < bossDefinition.SummonPhases[0].Entries.Count; index++)
+            {
+                authored += bossDefinition.SummonPhases[0].Entries[index].Count;
+            }
+
+            Assert.That(summonedCount, Is.EqualTo(authored));
+            Assert.That(system.LivingCount, Is.EqualTo(authored + 1));
         }
 
         private static EnemySystem CreateLongRoadSystem()
