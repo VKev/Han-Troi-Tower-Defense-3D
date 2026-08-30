@@ -77,6 +77,9 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterComponentInHierarchy<EnemyViewPool>()
                 .AsSelf()
                 .As<IEnemyViewPool>();
+            builder.RegisterComponentInHierarchy<SafeAreaView>()
+                .As<ISafeAreaView>();
+            builder.Register<SafeAreaSystem>(Lifetime.Scoped);
             builder.RegisterComponentInHierarchy<GridPlacementPresenter>();
             builder.RegisterInstance(placementView.WorldCamera);
             builder.RegisterInstance(waveSchedule);

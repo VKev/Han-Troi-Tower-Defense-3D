@@ -33,7 +33,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var gameplayView = new GameplayViewStub();
             var placementHudView = new PlacementHudViewStub();
             var towerHudView = new TowerNetworkHudViewStub();
-            var presenter = new TowerNetworkHudPresenter(towerNetworkSystem, towerHudView);
+            var presenter = new TowerNetworkHudPresenter(towerNetworkSystem, towerHudView, null);
             var waveSystem = new WaveSystemStub();
             var waveHudView = new WaveHudViewStub();
             var wavePresenter = new WaveHudPresenter(waveSystem, waveHudView);
@@ -169,6 +169,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public event Action<TowerPlacementPointerEvent> TowerDragEnded;
             public event Action<int> TowerDragCanceled;
             public event Action UnlinkRequested;
+            public event Action SellRequested;
             public event Action CancelPlacementRequested;
             public event Action ReturnToMenuRequested;
 

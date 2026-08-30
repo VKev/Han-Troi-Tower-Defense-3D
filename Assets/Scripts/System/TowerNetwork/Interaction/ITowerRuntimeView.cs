@@ -17,6 +17,17 @@ namespace TowerDefense3D.Towers
         Vector3 PresentationAnchor { get; }
         Vector3 ProjectileOrigin { get; }
 
+        /// <summary>
+        /// Turns the tower to look at a world position, flattened to the ground plane.
+        /// </summary>
+        void FaceTowards(Vector3 worldPosition);
+
+        /// <summary>
+        /// Removes the tower from the scene. Raises <see cref="Destroyed"/> like any other
+        /// teardown, so the network unregisters the node through its usual path.
+        /// </summary>
+        void Despawn();
+
         void Configure(TowerCombatDefinition definition);
         void BindNode(TowerNodeId nodeId);
         void ClearNodeBinding();

@@ -25,6 +25,7 @@ namespace TowerDefense3D.GameFlow
         event Action<TowerPlacementPointerEvent> TowerDragEnded;
         event Action<int> TowerDragCanceled;
         event Action UnlinkRequested;
+        event Action SellRequested;
         event Action CancelPlacementRequested;
         event Action ReturnToMenuRequested;
 

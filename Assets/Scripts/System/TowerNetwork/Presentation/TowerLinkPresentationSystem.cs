@@ -41,9 +41,28 @@ namespace TowerDefense3D.Towers
 
         public void LateTick()
         {
-            RefreshLinks();
+            IReadOnlyList<TowerLinkSnapshot> links = manager.CreateLinkSnapshot();
+            RefreshFacing(links);
+            RefreshLinks(links);
             RefreshSelection();
             RefreshPreview();
+        }
+
+        /// <summary>
+        /// A tower keeps looking down its link even while the wave runs and the link lines are
+        /// hidden, which is exactly when the player reads where a tower is pointing.
+        /// </summary>
+        private void RefreshFacing(IReadOnlyList<TowerLinkSnapshot> links)
+        {
+            for (int index = 0; index < links.Count; index++)
+            {
+                TowerLinkSnapshot link = links[index];
+                if (towerNetworkSystem.TryGetTowerView(link.Source, out ITowerRuntimeView source)
+                    && towerNetworkSystem.TryGetTowerView(link.Target, out ITowerRuntimeView target))
+                {
+                    source.FaceTowards(target.PresentationAnchor);
+                }
+            }
         }
 
         public void Dispose()
@@ -52,7 +71,7 @@ namespace TowerDefense3D.Towers
             view.Clear();
         }
 
-        private void RefreshLinks()
+        private void RefreshLinks(IReadOnlyList<TowerLinkSnapshot> links)
         {
             visibleLinks.Clear();
             if (waveSystem.IsRunning)
@@ -60,8 +79,6 @@ namespace TowerDefense3D.Towers
                 view.RenderLinks(visibleLinks);
                 return;
             }
-
-            IReadOnlyList<TowerLinkSnapshot> links = manager.CreateLinkSnapshot();
 
             for (int index = 0; index < links.Count; index++)
             {
@@ -96,15 +113,15 @@ namespace TowerDefense3D.Towers
 
         private void RefreshPreview()
         {
-            ITowerRuntimeView selectedTower = towerNetworkSystem.SelectedTower;
-            if (!interactionSystem.IsDraggingLink || selectedTower == null)
+            ITowerRuntimeView linkSource = interactionSystem.LinkSource;
+            if (!interactionSystem.IsDraggingLink || linkSource == null)
             {
                 view.HidePreview();
                 return;
             }
 
             view.ShowPreview(
-                selectedTower.PresentationAnchor,
+                linkSource.PresentationAnchor,
                 interactionSystem.PreviewWorldPosition,
                 interactionSystem.PreviewTarget != null);
         }

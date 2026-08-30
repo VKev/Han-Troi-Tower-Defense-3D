@@ -6,7 +6,12 @@ namespace TowerDefense3D.Towers
     [DisallowMultipleComponent]
     public sealed class TowerRuntimeView : MonoBehaviour, ITowerRuntimeView
     {
+        [Tooltip("Degrees per second the tower turns to face its link. Zero snaps instantly.")]
+        [SerializeField, Min(0f)] private float turnSpeedDegreesPerSecond = 540f;
+
         private TowerCombatDefinition combatDefinition;
+        private Quaternion authoredLocalRotation = Quaternion.identity;
+        private bool hasAuthoredRotation;
         private TowerNodeId nodeId;
         private Vector3 localPresentationAnchor;
         private Vector3 localProjectileOrigin;
@@ -19,6 +24,50 @@ namespace TowerDefense3D.Towers
         public bool IsRegistered => nodeId.IsValid;
         public Vector3 PresentationAnchor => transform.TransformPoint(localPresentationAnchor);
         public Vector3 ProjectileOrigin => transform.TransformPoint(localProjectileOrigin);
+
+        /// <summary>
+        /// Spins the tower about the world up axis only, layered on top of however the prefab was
+        /// authored. Assigning a look rotation outright would discard that authored orientation
+        /// and lay a tower on its side if its model is not built facing +Z upright.
+        ///
+        /// Aimed from the transform rather than from PresentationAnchor, because the anchor is
+        /// derived from this transform and steering by it would chase its own output.
+        /// </summary>
+        public void FaceTowards(Vector3 worldPosition)
+        {
+            EnsureAuthoredRotation();
+            Vector3 direction = worldPosition - transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            float yawDegrees = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+            Quaternion target = Quaternion.AngleAxis(yawDegrees, Vector3.up) * authoredLocalRotation;
+            transform.localRotation = turnSpeedDegreesPerSecond <= 0f
+                ? target
+                : Quaternion.RotateTowards(
+                    transform.localRotation,
+                    target,
+                    turnSpeedDegreesPerSecond * Time.deltaTime);
+        }
+
+        private void EnsureAuthoredRotation()
+        {
+            if (hasAuthoredRotation)
+            {
+                return;
+            }
+
+            authoredLocalRotation = transform.localRotation;
+            hasAuthoredRotation = true;
+        }
+
+        public void Despawn()
+        {
+            Destroy(gameObject);
+        }
 
         public void Configure(TowerCombatDefinition definition)
         {

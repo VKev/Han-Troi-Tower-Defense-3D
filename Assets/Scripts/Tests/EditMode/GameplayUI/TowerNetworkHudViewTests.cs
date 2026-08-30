@@ -66,13 +66,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Transform panel = safeArea.Find("Tower Network HUD");
             Assert.That(panel, Is.Not.Null);
             Assert.That(panel.parent, Is.EqualTo(safeArea));
-            Assert.That(panel.GetComponentsInChildren<Button>(true).Length, Is.EqualTo(catalog.Definitions.Count + 2));
+            Assert.That(panel.GetComponentsInChildren<Button>(true).Length, Is.EqualTo(catalog.Definitions.Count + 3));
             Assert.That(panel.Find("Tower Buttons").childCount, Is.EqualTo(catalog.Definitions.Count));
             Assert.That(
                 panel.GetComponentsInChildren<TowerPlacementDragButtonView>(true).Length,
                 Is.EqualTo(catalog.Definitions.Count));
             Assert.That(safeArea.Find("Select Tower"), Is.Null);
-            Assert.That(panel.Find("Unlink").GetComponent<Button>(), Is.Not.Null);
+            Assert.That(panel.Find("Tower Actions/Unlink").GetComponent<Button>(), Is.Not.Null);
+            Assert.That(panel.Find("Tower Actions/Sell").GetComponent<Button>(), Is.Not.Null);
             Assert.That(panel.Find("Start Wave").GetComponent<Button>(), Is.Not.Null);
 
             view.Initialize();
@@ -84,12 +85,15 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public void RenderAndButtons_ExposeNetworkActionsAndSimulationGate()
         {
             bool unlinkRequested = false;
+            bool sellRequested = false;
             view.UnlinkRequested += () => unlinkRequested = true;
+            view.SellRequested += () => sellRequested = true;
             view.Initialize();
 
             Transform panel = view.transform;
             Button firstTowerButton = panel.Find("Tower Buttons").GetChild(0).GetComponent<Button>();
-            Button unlinkButton = panel.Find("Unlink").GetComponent<Button>();
+            Button unlinkButton = panel.Find("Tower Actions/Unlink").GetComponent<Button>();
+            Button sellButton = panel.Find("Tower Actions/Sell").GetComponent<Button>();
             var state = new TowerNetworkHudState(
                 "Selected: Generator",
                 "Valid chains: 1",
@@ -97,19 +101,25 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 "Ready.",
                 towerSelectionEnabled: false,
                 unlinkEnabled: true,
-                cancelPlacementEnabled: true);
+                sellEnabled: true,
+                cancelPlacementEnabled: true,
+                towerActionsVisible: true,
+                towerActionsScreenPosition: new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
 
             view.Render(state);
 
             Assert.That(firstTowerButton.interactable, Is.False);
             Assert.That(unlinkButton.interactable, Is.True);
+            Assert.That(sellButton.interactable, Is.True);
             Assert.That(panel.Find("Selected Status").GetComponent<Text>().text, Is.EqualTo("Selected: Generator"));
             Assert.That(panel.Find("Chain Status").GetComponent<Text>().text, Is.EqualTo("Valid chains: 1"));
 
             firstTowerButton.onClick.Invoke();
             unlinkButton.onClick.Invoke();
+            sellButton.onClick.Invoke();
 
             Assert.That(unlinkRequested, Is.True);
+            Assert.That(sellRequested, Is.True);
         }
 
         [Test]

@@ -37,6 +37,12 @@ namespace TowerDefense3D.Towers
         }
 
         public bool IsDraggingLink { get; private set; }
+
+        /// <summary>
+        /// Tower the current gesture started on. The link preview is drawn from here rather than
+        /// from the selection, because pressing a tower to drag a link does not select it.
+        /// </summary>
+        public ITowerRuntimeView LinkSource => pressedTower;
         public ITowerRuntimeView PreviewTarget => previewTarget;
         public Vector3 PreviewWorldPosition => CalculatePreviewWorldPosition();
 
@@ -87,6 +93,8 @@ namespace TowerDefense3D.Towers
         {
             if (!TryPickTower(screenPosition, out ITowerRuntimeView tower))
             {
+                // Pressing bare ground dismisses the selected tower's actions.
+                towerNetworkSystem.ClearSelection();
                 return;
             }
 
@@ -98,8 +106,6 @@ namespace TowerDefense3D.Towers
             IsDraggingLink = false;
             inputSystem.SetMode(GameplayInputMode.TowerInteraction);
             towerNetworkSystem.CancelPlacement();
-            towerNetworkSystem.Select(tower);
-            towerNetworkSystem.ReportFeedback($"Selected {GetDisplayName(tower)}.");
         }
 
         private void MovePointer(Vector2 screenPosition)
@@ -124,6 +130,13 @@ namespace TowerDefense3D.Towers
             if (IsDraggingLink)
             {
                 CompleteLinkGesture();
+            }
+            else
+            {
+                // A press that never became a drag is a tap: that is what selects a tower and
+                // brings up its actions.
+                towerNetworkSystem.Select(pressedTower);
+                towerNetworkSystem.ReportFeedback($"Selected {GetDisplayName(pressedTower)}.");
             }
 
             ResetPointer();

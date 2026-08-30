@@ -1,5 +1,6 @@
 using System;
 using TowerDefense3D.Towers;
+using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -8,14 +9,22 @@ namespace TowerDefense3D.GameFlow
     /// </summary>
     public sealed class TowerNetworkHudPresenter
     {
+        /// <summary>
+        /// Lifts the action panel clear of the tower's own silhouette.
+        /// </summary>
+        private const float TowerActionsHeightMeters = 0.35f;
+
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly ITowerNetworkHudView towerNetworkHud;
+        private readonly Camera worldCamera;
         private Action requestReturnToMenu;
 
         public TowerNetworkHudPresenter(
             TowerNetworkSystem towerNetworkSystem,
-            ITowerNetworkHudView towerNetworkHud)
+            ITowerNetworkHudView towerNetworkHud,
+            Camera worldCamera)
         {
+            this.worldCamera = worldCamera;
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.towerNetworkHud = towerNetworkHud
@@ -35,6 +44,7 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.TowerDragEnded += HandleTowerDragEnded;
             towerNetworkHud.TowerDragCanceled += HandleTowerDragCanceled;
             towerNetworkHud.UnlinkRequested += HandleUnlinkRequested;
+            towerNetworkHud.SellRequested += HandleSellRequested;
             towerNetworkHud.CancelPlacementRequested += HandleCancelPlacement;
             towerNetworkHud.ReturnToMenuRequested += HandleReturnToMenu;
             towerNetworkHud.Show();
@@ -47,6 +57,7 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.TowerDragEnded -= HandleTowerDragEnded;
             towerNetworkHud.TowerDragCanceled -= HandleTowerDragCanceled;
             towerNetworkHud.UnlinkRequested -= HandleUnlinkRequested;
+            towerNetworkHud.SellRequested -= HandleSellRequested;
             towerNetworkHud.CancelPlacementRequested -= HandleCancelPlacement;
             towerNetworkHud.ReturnToMenuRequested -= HandleReturnToMenu;
         }
@@ -65,6 +76,9 @@ namespace TowerDefense3D.GameFlow
                 ? "Place towers, then drag one tower to another."
                 : towerNetworkSystem.LastFeedback;
             bool simulationRunning = towerNetworkSystem.IsRunning;
+            bool towerActionsVisible = TryGetTowerActionsPosition(
+                selectedTower,
+                out Vector2 towerActionsScreenPosition);
 
             towerNetworkHud.Render(new TowerNetworkHudState(
                 selectedText,
@@ -73,7 +87,10 @@ namespace TowerDefense3D.GameFlow
                 feedbackText,
                 !simulationRunning,
                 selectedTower != null && towerNetworkSystem.CanEditTopology,
-                !simulationRunning));
+                selectedTower != null && towerNetworkSystem.CanEditTopology,
+                !simulationRunning,
+                towerActionsVisible,
+                towerActionsScreenPosition));
         }
 
         private void HandleTowerDragBegan(
@@ -110,6 +127,37 @@ namespace TowerDefense3D.GameFlow
         {
             towerNetworkSystem.CancelPlacement();
             Refresh();
+        }
+
+        /// <summary>
+        /// Projects the selected tower's anchor to screen space. A tower behind the camera
+        /// projects to a mirrored point, so the negative depth case hides the panel instead.
+        /// </summary>
+        private bool TryGetTowerActionsPosition(
+            ITowerRuntimeView selectedTower,
+            out Vector2 screenPosition)
+        {
+            screenPosition = default;
+            if (selectedTower == null || worldCamera == null)
+            {
+                return false;
+            }
+
+            Vector3 anchor = selectedTower.PresentationAnchor
+                + Vector3.up * TowerActionsHeightMeters;
+            Vector3 projected = worldCamera.WorldToScreenPoint(anchor);
+            if (projected.z <= 0f)
+            {
+                return false;
+            }
+
+            screenPosition = new Vector2(projected.x, projected.y);
+            return true;
+        }
+
+        private void HandleSellRequested()
+        {
+            towerNetworkSystem.TrySellSelected(out _);
         }
 
         private void HandleUnlinkRequested()

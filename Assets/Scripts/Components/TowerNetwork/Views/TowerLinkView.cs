@@ -84,7 +84,7 @@ namespace TowerDefense3D.Towers
         public void ShowSelection(Vector3 center, float radius)
         {
             center.y += 0.08f;
-            selectionRing.ShowRing(center, radius, new Color(0.2f, 0.85f, 1f, 1f));
+            selectionRing.ShowRing(center, radius, new Color(0.25f, 1f, 0.35f, 1f));
         }
 
         public void HideSelection()

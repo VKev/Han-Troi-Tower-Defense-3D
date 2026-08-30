@@ -22,6 +22,7 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
         private readonly GameplayUISystem gameplayUISystem;
+        private readonly SafeAreaSystem safeAreaSystem;
 
         public LevelSystemGroup(
             BoardSystem boardSystem,
@@ -34,7 +35,8 @@ namespace TowerDefense3D.GameFlow
             EnemyPresentationSystem enemyPresentationSystem,
             TowerLinkPresentationSystem towerLinkPresentationSystem,
             TowerProjectilePresentationSystem towerProjectilePresentationSystem,
-            GameplayUISystem gameplayUISystem)
+            GameplayUISystem gameplayUISystem,
+            SafeAreaSystem safeAreaSystem)
         {
             this.boardSystem = boardSystem;
             this.boardCameraSystem = boardCameraSystem;
@@ -47,6 +49,7 @@ namespace TowerDefense3D.GameFlow
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
             this.gameplayUISystem = gameplayUISystem;
+            this.safeAreaSystem = safeAreaSystem;
         }
 
         public void Start()
@@ -59,10 +62,14 @@ namespace TowerDefense3D.GameFlow
             towerProjectilePresentationSystem.Start();
             enemyPresentationSystem.Start();
             gameplayUISystem.Start();
+            safeAreaSystem.Start();
         }
 
         public void Tick(float deltaTime)
         {
+            // Polled every frame: the device safe area changes when the screen rotates or the
+            // Device Simulator swaps device, and the level HUD has to follow it.
+            safeAreaSystem.Tick();
             gameplayInputSystem.Tick();
             gridPlacementSystem.Tick();
             towerInteractionSystem.Tick();

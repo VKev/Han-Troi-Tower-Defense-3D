@@ -107,7 +107,7 @@ namespace TowerDefense3D.GameFlow.Editor
                 "Selected Status",
                 "Network Feedback",
                 "Tower Buttons",
-                "Unlink",
+                "Tower Actions",
                 "Start Wave");
             OrderChildren(
                 safeArea,
@@ -329,14 +329,9 @@ namespace TowerDefense3D.GameFlow.Editor
 
         private static void BuildWaveControls(Transform hud)
         {
-            var unlink = (RectTransform)hud.Find("Unlink");
-            SetRect(
-                unlink,
-                new Vector2(1f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(-24f, 178f),
-                new Vector2(190f, 48f));
+            // The tower actions live in a panel that follows the selected tower, so their
+            // rects are driven by that panel's layout group rather than pinned here.
+            var unlink = (RectTransform)(hud.Find("Tower Actions/Unlink") ?? hud.Find("Unlink"));
             StyleButton(unlink, NeutralButtonColor);
             Text unlinkLabel = ConfigureText(
                 unlink.Find("Label").GetComponent<Text>(),

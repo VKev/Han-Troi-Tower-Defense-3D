@@ -15,6 +15,8 @@ namespace TowerDefense3D.Towers
         private readonly GridPlacementSystem placementSystem;
         private readonly LevelGoldSystem goldSystem;
         private readonly TowerRuntimeViewRegistry viewRegistry;
+        private readonly Dictionary<ITowerRuntimeView, int> placementOwnerByView =
+            new Dictionary<ITowerRuntimeView, int>();
         private readonly int levelNumber;
 
         private TowerCombatDefinition placementCombatDefinition;
@@ -229,6 +231,60 @@ namespace TowerDefense3D.Towers
             return succeeded;
         }
 
+        /// <summary>
+        /// Sells the selected tower: drops its links, hands back part of what it cost, frees the
+        /// cells it occupied and removes it from the scene. Refusing while a wave runs keeps the
+        /// board stable for the precomputed combat timeline.
+        /// </summary>
+        public bool TrySellSelected(out string error)
+        {
+            if (selectedTower == null)
+            {
+                error = "Select a tower before selling.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            if (!CanEditTopology)
+            {
+                error = "Stop the wave before selling a tower.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            ITowerRuntimeView tower = selectedTower;
+            TowerEconomyProfile economy = tower.CombatDefinition?.Core?.Economy;
+            if (economy == null || !economy.Sellable)
+            {
+                error = $"{GetDisplayName(tower)} cannot be sold.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            TowerNodeId nodeId = viewRegistry.GetNodeId(tower);
+            if (!manager.TryUnlinkAll(nodeId, out error))
+            {
+                ReportFeedback(error);
+                return false;
+            }
+
+            string displayName = GetDisplayName(tower);
+            int refund = Mathf.RoundToInt(
+                economy.BuildCost * manager.Catalog.CombatRules.SellRefundFraction);
+            if (placementOwnerByView.TryGetValue(tower, out int ownerId))
+            {
+                placementSystem.Occupancy.ReleaseOwner(ownerId);
+                placementOwnerByView.Remove(tower);
+            }
+
+            ClearSelection();
+            tower.Despawn();
+            goldSystem.Add(refund);
+            ReportFeedback($"Sold {displayName} for {refund} gold.");
+            error = string.Empty;
+            return true;
+        }
+
         public bool TryStartSimulation(out string error)
         {
             CancelPlacement();
@@ -279,6 +335,7 @@ namespace TowerDefense3D.Towers
             try
             {
                 viewRegistry.Register(nodeId, runtimeView);
+                placementOwnerByView[runtimeView] = placement.OwnerId;
                 ReportFeedback($"Placed {GetDisplayName(runtimeView)}.");
             }
             catch
