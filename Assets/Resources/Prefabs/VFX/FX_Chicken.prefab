@@ -1030,7 +1030,7 @@ ParticleSystem:
           m_PreInfinity: 2
           m_PostInfinity: 2
           m_RotationOrder: 0
-      cycleCount: 2
+      cycleCount: 4
       repeatInterval: 0.1
       probability: 1
   SizeModule:
@@ -10419,7 +10419,7 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 0
-    maxNumParticles: 75
+    maxNumParticles: 74
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
@@ -14886,7 +14886,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0.90588236, g: 0.23056324, b: 0, a: 0.6509804}
+      maxColor: {r: 1, g: 0.1469046, b: 0, a: 0.6509804}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -15693,7 +15693,7 @@ ParticleSystem:
           m_PreInfinity: 2
           m_PostInfinity: 2
           m_RotationOrder: 0
-      cycleCount: 2
+      cycleCount: 4
       repeatInterval: 0.1
       probability: 1
   SizeModule:
