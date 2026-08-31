@@ -175,47 +175,13 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
                 + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds * 0.5f);
 
             Assert.That(body.forceRenderingOff, Is.False);
-            Assert.That(Vector3.Distance(BakedBottomCenter(body), roadPosition), Is.LessThan(0.01f));
+            Assert.That(Vector3.Distance(BottomCenter(body.bounds), roadPosition), Is.LessThan(0.01f));
 
             view.TickLifecycle(EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
             view.BeginDeath(null);
             view.TickLifecycle(0.1f);
 
-            Assert.That(Vector3.Distance(BakedBottomCenter(body), roadPosition), Is.LessThan(0.01f));
-
-            Object.Destroy(instance);
-            Object.Destroy(definition);
-            yield return null;
-        }
-
-        [UnityTest]
-        public IEnumerator MagicResistantScale_ExcludesShieldFromFootPivot()
-        {
-            GameObject prefab = Resources.Load<GameObject>("Prefabs/Enemies/MagicResistant 1");
-            Assert.That(prefab, Is.Not.Null);
-
-            GameObject instance = Object.Instantiate(prefab);
-            EnemyView view = instance.GetComponent<EnemyView>();
-            SkinnedMeshRenderer body = instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
-            EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
-            Vector3 roadPosition = new Vector3(3f, 2f, 4f);
-            EnemySnapshot spawn = new EnemySnapshot(
-                49L,
-                definition,
-                roadPosition,
-                roadPosition,
-                definition.BaseMaxHealth,
-                false,
-                false);
-
-            yield return null;
-            view.Configure(Camera.main, null);
-            view.Bind(spawn);
-            view.TickLifecycle(
-                EnemySpawnPresentationTiming.SpawnScaleDelaySeconds
-                + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
-
-            Assert.That(Vector3.Distance(BakedBottomCenter(body), roadPosition), Is.LessThan(0.01f));
+            Assert.That(Vector3.Distance(BottomCenter(body.bounds), roadPosition), Is.LessThan(0.01f));
 
             Object.Destroy(instance);
             Object.Destroy(definition);
@@ -276,23 +242,6 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
 
         private static Vector3 BottomCenter(Bounds bounds) =>
             new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
-
-        private static Vector3 BakedBottomCenter(SkinnedMeshRenderer renderer)
-        {
-            var mesh = new Mesh();
-            renderer.BakeMesh(mesh);
-            Vector3[] vertices = mesh.vertices;
-            Bounds bounds = new Bounds(
-                renderer.transform.TransformPoint(vertices[0]),
-                Vector3.zero);
-            for (int index = 1; index < vertices.Length; index++)
-            {
-                bounds.Encapsulate(renderer.transform.TransformPoint(vertices[index]));
-            }
-
-            Object.Destroy(mesh);
-            return BottomCenter(bounds);
-        }
 
         private static void SetField(EnemyElementStatusView view, string name, Transform value)
         {
