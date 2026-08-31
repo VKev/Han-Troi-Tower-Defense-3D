@@ -22,7 +22,6 @@ namespace TowerDefense3D.Enemies
         private EnemySkillEffectView skillEffectView;
         private EnemySpeedTrailView speedTrailView;
         private Quaternion spawnLocalRotation;
-        private float spawnYawOffsetDegrees;
         private Vector3 spawnLocalScale;
         private Vector3 scalePivotLocal;
         private Vector3 scaleAnchorWorld;
@@ -63,7 +62,6 @@ namespace TowerDefense3D.Enemies
             skillEffectView = GetComponentInChildren<EnemySkillEffectView>(true);
             speedTrailView = GetComponentInChildren<EnemySpeedTrailView>(true);
             spawnLocalRotation = transform.localRotation;
-            spawnYawOffsetDegrees = transform.localEulerAngles.y;
             spawnLocalScale = transform.localScale;
         }
 
@@ -170,7 +168,7 @@ namespace TowerDefense3D.Enemies
             // Movement and Wind push affect yaw only; authored prefab facing stays intact.
             float movementYaw = Mathf.Atan2(movementDirection.x, movementDirection.z)
                 * Mathf.Rad2Deg;
-            return Quaternion.Euler(0f, movementYaw + spawnYawOffsetDegrees, 0f);
+            return Quaternion.Euler(0f, movementYaw, 0f);
         }
 
         private void ActivateHidden(EnemySnapshot enemy)

@@ -20,8 +20,7 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             EnemySnapshot enemy = Snapshot(Vector3.zero, new Vector3(1f, 5f, 0f));
             view.Render(enemy, 1f);
 
-            Quaternion expectedRotation = Quaternion.LookRotation(Vector3.right, Vector3.up)
-                * Quaternion.Euler(0f, 175f, 0f);
+            Quaternion expectedRotation = Quaternion.LookRotation(Vector3.right, Vector3.up);
             Assert.That(Quaternion.Angle(viewObject.transform.rotation, expectedRotation), Is.LessThan(0.01f));
 
             Object.Destroy(viewObject);
