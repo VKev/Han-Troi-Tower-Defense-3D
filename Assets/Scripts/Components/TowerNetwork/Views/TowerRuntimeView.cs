@@ -22,8 +22,15 @@ namespace TowerDefense3D.Towers
         public TowerNodeId NodeId => nodeId;
         public bool IsConfigured => combatDefinition != null;
         public bool IsRegistered => nodeId.IsValid;
+        public GameObject GameObject => gameObject;
         public Vector3 PresentationAnchor => transform.TransformPoint(localPresentationAnchor);
         public Vector3 ProjectileOrigin => transform.TransformPoint(localProjectileOrigin);
+        public Vector3 FootprintOrigin => transform.position;
+
+        public void SetFootprintOrigin(Vector3 worldPosition)
+        {
+            transform.position = worldPosition;
+        }
 
         /// <summary>
         /// Spins the tower about the world up axis only, layered on top of however the prefab was

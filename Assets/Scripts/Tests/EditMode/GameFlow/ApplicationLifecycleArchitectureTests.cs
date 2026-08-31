@@ -52,9 +52,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             var slot = new ActiveLevelSystemSlot();
             var first = new LevelSystemGroup(
-                null, null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null, null);
             var second = new LevelSystemGroup(
-                null, null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null, null);
 
             slot.Attach(first);
 

@@ -15,13 +15,27 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private string appVersion = string.Empty;
         [SerializeField] private int[] unlockedLevelNumbers = { UnlockProgress.InitiallyUnlockedLevel };
 
+        // Added after the first shipped saves, so a save written without it deserializes this
+        // as null and simply reports no level as cleared yet. That keeps schema version 1.
+        [SerializeField] private int[] clearedLevelNumbers = Array.Empty<int>();
+
         public int SchemaVersion => schemaVersion;
         public string SlotId => slotId;
         public string SavedAtUtc => savedAtUtc;
         public string AppVersion => appVersion;
         public int[] UnlockedLevelNumbers => unlockedLevelNumbers;
+        public int[] ClearedLevelNumbers => clearedLevelNumbers ?? Array.Empty<int>();
 
         public static SaveSnapshot Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
+        {
+            return Create(unlockedLevelNumbers, Array.Empty<int>(), savedAtUtc, appVersion);
+        }
+
+        public static SaveSnapshot Create(
+            int[] unlockedLevelNumbers,
+            int[] clearedLevelNumbers,
+            string savedAtUtc,
+            string appVersion)
         {
             return new SaveSnapshot
             {
@@ -29,7 +43,8 @@ namespace TowerDefense3D.GameFlow
                 slotId = AutosaveSlotId,
                 savedAtUtc = savedAtUtc ?? string.Empty,
                 appVersion = appVersion ?? string.Empty,
-                unlockedLevelNumbers = unlockedLevelNumbers ?? Array.Empty<int>()
+                unlockedLevelNumbers = unlockedLevelNumbers ?? Array.Empty<int>(),
+                clearedLevelNumbers = clearedLevelNumbers ?? Array.Empty<int>()
             };
         }
 
@@ -70,6 +85,16 @@ namespace TowerDefense3D.GameFlow
             {
                 error = "Save must include Level 1.";
                 return false;
+            }
+
+            int[] cleared = ClearedLevelNumbers;
+            for (int index = 0; index < cleared.Length; index++)
+            {
+                if (cleared[index] <= 0)
+                {
+                    error = $"Cleared level number at index {index} must be positive.";
+                    return false;
+                }
             }
 
             error = string.Empty;

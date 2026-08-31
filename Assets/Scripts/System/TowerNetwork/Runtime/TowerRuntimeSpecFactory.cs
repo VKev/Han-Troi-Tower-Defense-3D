@@ -122,6 +122,8 @@ namespace TowerDefense3D.Towers
                         ProjectilePayloadKind.Wind,
                         0f,
                         pushDistanceMeters: wind.BasePushDistanceMeters);
+                case HeroTowerDefinition hero:
+                    return CreateHeroPayload(hero);
                 case SoulNexusDefinition:
                     return new ProjectilePayload(ProjectilePayloadKind.Basic, 0f);
                 default:
@@ -139,6 +141,16 @@ namespace TowerDefense3D.Towers
 
             DamageProfile damage = generator.Generation.BasicDamage;
             return new ProjectilePayload(ProjectilePayloadKind.Basic, damage.Amount);
+        }
+
+        private static ProjectilePayload CreateHeroPayload(HeroTowerDefinition hero)
+        {
+            if (hero.AttackDamage == null)
+            {
+                throw new InvalidOperationException("Hero attack damage data is missing.");
+            }
+
+            return new ProjectilePayload(ProjectilePayloadKind.Basic, hero.AttackDamage.Amount);
         }
 
         private static ProjectilePayload CreateFirePayload(FireTowerDefinition fire)

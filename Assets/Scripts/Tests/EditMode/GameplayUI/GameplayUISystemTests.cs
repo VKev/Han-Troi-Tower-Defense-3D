@@ -33,7 +33,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var gameplayView = new GameplayViewStub();
             var placementHudView = new PlacementHudViewStub();
             var towerHudView = new TowerNetworkHudViewStub();
-            var presenter = new TowerNetworkHudPresenter(towerNetworkSystem, towerHudView, null);
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var presenter = new TowerNetworkHudPresenter(
+                towerNetworkSystem,
+                towerHudView,
+                null,
+                towerCatalog,
+                CreateSaveSystem());
             var waveSystem = new WaveSystemStub();
             var waveHudView = new WaveHudViewStub();
             var wavePresenter = new WaveHudPresenter(waveSystem, waveHudView);
@@ -102,6 +108,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             towerNetworkSystem.Dispose();
         }
 
+        /// <summary>
+        /// Fresh progress with nothing cleared, so unlock-gated towers report as locked.
+        /// </summary>
+        private static SaveSystem CreateSaveSystem()
+        {
+            var saveSystem = new SaveSystem(new SaveRepositoryStub(), "test");
+            saveSystem.Initialize();
+            return saveSystem;
+        }
+
         private static TowerNetworkSystem CreateTowerNetworkSystem()
         {
             BoardDefinition board = AssetDatabase.LoadAssetAtPath<BoardDefinition>(BoardPath);
@@ -121,6 +137,30 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 placementSystem,
                 1,
                 new LevelGoldSystem(1000));
+        }
+
+        private sealed class SaveRepositoryStub : ISaveRepository
+        {
+            private SaveSnapshot stored;
+
+            public SaveLoadResult Load()
+            {
+                return stored == null
+                    ? new SaveLoadResult(SaveLoadStatus.Missing, null, string.Empty)
+                    : new SaveLoadResult(SaveLoadStatus.Success, stored, string.Empty);
+            }
+
+            public SaveWriteResult Save(SaveSnapshot snapshot)
+            {
+                stored = snapshot;
+                return new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
+            }
+
+            public SaveWriteResult DeleteOwnedAutosave()
+            {
+                stored = null;
+                return new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
+            }
         }
 
         private sealed class GameplayViewStub : IGameplayUIView
@@ -178,9 +218,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public int ShowCount { get; private set; }
             public TowerNetworkHudState LastState { get; private set; }
 
+            public IReadOnlyList<TowerCombatDefinition> LastLockedDefinitions { get; private set; }
+
             public void Initialize()
             {
                 InitializeCount++;
+            }
+
+            public void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions)
+            {
+                LastLockedDefinitions = lockedDefinitions;
             }
 
             public void Render(TowerNetworkHudState state)

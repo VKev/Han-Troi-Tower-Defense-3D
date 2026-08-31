@@ -118,6 +118,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<CombatTimelineSystem>(Lifetime.Scoped);
             builder.Register<GameplaySimulationSystem>(Lifetime.Scoped);
             builder.Register<EnemyPresentationSystem>(Lifetime.Scoped);
+            builder.Register<HeroAttackPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkHudPresenter>(Lifetime.Scoped);
@@ -166,8 +167,43 @@ namespace TowerDefense3D.GameFlow
 
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();
+            AdoptAuthoredTowers(container.Resolve<TowerNetworkSystem>());
             activeLevelSystems.Attach(systems);
             attachedSystems = systems;
+        }
+
+        /// <summary>
+        /// Hands every tower the scene authored to the tower network, after its systems have
+        /// started and opened a level session. One that the board rejects is reported and left
+        /// as scenery rather than failing the whole level load.
+        /// </summary>
+        private void AdoptAuthoredTowers(TowerNetworkSystem towerNetworkSystem)
+        {
+            GameObject[] roots = gameObject.scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                AuthoredTowerView[] authoredTowers =
+                    roots[rootIndex].GetComponentsInChildren<AuthoredTowerView>(true);
+                for (int index = 0; index < authoredTowers.Length; index++)
+                {
+                    AuthoredTowerView authoredTower = authoredTowers[index];
+                    if (authoredTower.Definition == null)
+                    {
+                        Debug.LogError(
+                            $"'{authoredTower.name}' is an authored tower without a combat definition.",
+                            authoredTower);
+                        continue;
+                    }
+
+                    if (!towerNetworkSystem.TryRegisterAuthoredTower(
+                            authoredTower.RuntimeView,
+                            authoredTower.Definition,
+                            out string error))
+                    {
+                        Debug.LogWarning($"'{authoredTower.name}' was not adopted: {error}", authoredTower);
+                    }
+                }
+            }
         }
 
         private void BindLevelOutcomeHud(IObjectResolver container, GameFlowSystem gameFlowSystem)
@@ -181,7 +217,8 @@ namespace TowerDefense3D.GameFlow
                 hasNextLevel,
                 () => gameFlowSystem.RequestReplayLevel(currentLevelNumber),
                 () => gameFlowSystem.RequestPlayNextLevel(currentLevelNumber),
-                gameFlowSystem.RequestReturnToLevelMenu);
+                gameFlowSystem.RequestReturnToLevelMenu,
+                () => gameFlowSystem.ReportLevelCleared(currentLevelNumber));
         }
 
         private T FindSceneComponent<T>() where T : Component

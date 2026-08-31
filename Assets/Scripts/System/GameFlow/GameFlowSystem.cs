@@ -116,6 +116,15 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        /// <summary>
+        /// Records the level the player has just beaten. Progression gated behind clearing a
+        /// level - a hero tower, for instance - reads that record, so it has to survive the run.
+        /// </summary>
+        public void ReportLevelCleared(int levelNumber)
+        {
+            levelMenuFlow.MarkLevelCleared(levelNumber);
+        }
+
         public void RequestReturnToLevelMenu()
         {
             if (State == GameFlowState.Gameplay)

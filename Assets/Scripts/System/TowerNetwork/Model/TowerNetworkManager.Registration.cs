@@ -110,6 +110,35 @@ namespace TowerDefense3D.Towers
             return orderedNodeIds.ToArray();
         }
 
+        public IReadOnlyList<HeroAttackTowerSnapshot> CreateHeroAttackTowerSnapshot()
+        {
+            var snapshot = new List<HeroAttackTowerSnapshot>();
+            for (int index = 0; index < orderedNodeIds.Count; index++)
+            {
+                NodeState node = nodes[orderedNodeIds[index]];
+                if (node.Spec.Family != TowerFamily.Hero
+                    || !Catalog.TryGet(node.Spec.Family, out TowerCombatDefinition definition)
+                    || !(definition is HeroTowerDefinition hero))
+                {
+                    continue;
+                }
+
+                snapshot.Add(new HeroAttackTowerSnapshot(
+                    node.Id,
+                    node.Position,
+                    hero.AttackRangeMeters,
+                    hero.AttackDamage.Amount,
+                    hero.AttackAoeRadiusMeters,
+                    node.Spec.CycleTicks,
+                    hero.PrepareDurationSeconds,
+                    hero.LungeDurationSeconds,
+                    hero.ImpactHoldDurationSeconds,
+                    hero.ReturnDurationSeconds));
+            }
+
+            return snapshot;
+        }
+
         public bool TryPeekInputProjectile(TowerNodeId nodeId, int inputPort, out ProjectileQueueEntry entry)
         {
             if (!nodes.TryGetValue(nodeId, out NodeState node) || !node.InputBuffer.IsValidPort(inputPort))

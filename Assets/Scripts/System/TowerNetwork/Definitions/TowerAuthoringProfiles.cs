@@ -10,7 +10,8 @@ namespace TowerDefense3D.Towers
         Fire,
         Water,
         Wind,
-        SoulNexus
+        SoulNexus,
+        Hero
     }
 
     public enum TowerNetworkRole

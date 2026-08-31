@@ -108,6 +108,32 @@ namespace TowerDefense3D.Enemies
         public float DurationSeconds { get; }
     }
 
+    public readonly struct HeroAttackEvent
+    {
+        public HeroAttackEvent(
+            TowerNodeId towerNodeId,
+            Vector3 impactPosition,
+            float prepareDurationSeconds,
+            float lungeDurationSeconds,
+            float impactHoldDurationSeconds,
+            float returnDurationSeconds)
+        {
+            TowerNodeId = towerNodeId;
+            ImpactPosition = impactPosition;
+            PrepareDurationSeconds = prepareDurationSeconds;
+            LungeDurationSeconds = lungeDurationSeconds;
+            ImpactHoldDurationSeconds = impactHoldDurationSeconds;
+            ReturnDurationSeconds = returnDurationSeconds;
+        }
+
+        public TowerNodeId TowerNodeId { get; }
+        public Vector3 ImpactPosition { get; }
+        public float PrepareDurationSeconds { get; }
+        public float LungeDurationSeconds { get; }
+        public float ImpactHoldDurationSeconds { get; }
+        public float ReturnDurationSeconds { get; }
+    }
+
     internal sealed class CombatTimeline
     {
         private readonly Dictionary<long, List<PlannedEnemySpawn>> spawnsByTick =
@@ -118,6 +144,8 @@ namespace TowerDefense3D.Enemies
             new Dictionary<long, List<ProjectileImpactEvent>>();
         private readonly Dictionary<long, List<PlannedReactionEvent>> reactionsByTick =
             new Dictionary<long, List<PlannedReactionEvent>>();
+        private readonly Dictionary<long, List<HeroAttackEvent>> heroAttacksByTick =
+            new Dictionary<long, List<HeroAttackEvent>>();
 
         public IReadOnlyList<PlannedEnemySpawn> GetSpawns(long tick)
         {
@@ -139,6 +167,11 @@ namespace TowerDefense3D.Enemies
             return Get(reactionsByTick, tick);
         }
 
+        public IReadOnlyList<HeroAttackEvent> GetHeroAttacks(long tick)
+        {
+            return Get(heroAttacksByTick, tick);
+        }
+
         public void Add(long tick, PlannedEnemySpawn spawn)
         {
             GetOrCreate(spawnsByTick, tick).Add(spawn);
@@ -157,6 +190,11 @@ namespace TowerDefense3D.Enemies
         public void Add(long tick, PlannedReactionEvent reaction)
         {
             GetOrCreate(reactionsByTick, tick).Add(reaction);
+        }
+
+        public void Add(long tick, HeroAttackEvent attack)
+        {
+            GetOrCreate(heroAttacksByTick, tick).Add(attack);
         }
 
         private static IReadOnlyList<T> Get<T>(Dictionary<long, List<T>> source, long tick)
