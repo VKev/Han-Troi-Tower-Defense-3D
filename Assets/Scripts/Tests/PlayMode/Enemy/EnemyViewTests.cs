@@ -20,7 +20,8 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             EnemySnapshot enemy = Snapshot(Vector3.zero, new Vector3(1f, 5f, 0f));
             view.Render(enemy, 1f);
 
-            Quaternion expectedRotation = Quaternion.LookRotation(Vector3.right, Vector3.up);
+            Quaternion expectedRotation = Quaternion.LookRotation(Vector3.right, Vector3.up)
+                * Quaternion.Euler(0f, 175f, 0f);
             Assert.That(Quaternion.Angle(viewObject.transform.rotation, expectedRotation), Is.LessThan(0.01f));
 
             Object.Destroy(viewObject);
@@ -48,6 +49,26 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             Assert.That(completedTurnAngle, Is.GreaterThan(0f));
             Assert.That(completedTurnAngle, Is.LessThan(fullTurnAngle));
             Assert.That(remainingTurnAngle, Is.GreaterThan(0f));
+
+            Object.Destroy(viewObject);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Render_ReversePushRotatesOnlyAroundWorldUp()
+        {
+            var viewObject = new GameObject("Enemy View");
+            AddElementStatusView(viewObject);
+            EnemyView view = viewObject.AddComponent<EnemyView>();
+            yield return null;
+
+            view.Render(Snapshot(Vector3.zero, Vector3.forward), 1f);
+            yield return null;
+
+            view.Render(Snapshot(Vector3.forward, Vector3.forward * 0.5f), 1f);
+
+            Assert.That(Vector3.Dot(viewObject.transform.up, Vector3.up), Is.GreaterThan(0.999f));
+            Assert.That(view.RenderedMoveDirection, Is.EqualTo(Vector3.back));
 
             Object.Destroy(viewObject);
             yield return null;

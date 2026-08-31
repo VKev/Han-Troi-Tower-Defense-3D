@@ -22,6 +22,7 @@ namespace TowerDefense3D.Enemies
         private EnemySkillEffectView skillEffectView;
         private EnemySpeedTrailView speedTrailView;
         private Quaternion spawnLocalRotation;
+        private float spawnYawOffsetDegrees;
         private Vector3 spawnLocalScale;
         private Vector3 scalePivotLocal;
         private Vector3 scaleAnchorWorld;
@@ -62,6 +63,7 @@ namespace TowerDefense3D.Enemies
             skillEffectView = GetComponentInChildren<EnemySkillEffectView>(true);
             speedTrailView = GetComponentInChildren<EnemySpeedTrailView>(true);
             spawnLocalRotation = transform.localRotation;
+            spawnYawOffsetDegrees = transform.localEulerAngles.y;
             spawnLocalScale = transform.localScale;
         }
 
@@ -145,7 +147,7 @@ namespace TowerDefense3D.Enemies
             }
 
             renderedMoveDirection = movement.normalized;
-            Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.up);
+            Quaternion targetRotation = GetFacingRotation(renderedMoveDirection);
             if (!hasFacingDirection)
             {
                 transform.rotation = targetRotation;
@@ -161,6 +163,14 @@ namespace TowerDefense3D.Enemies
                 TurnSpeedDegreesPerSecond * Time.deltaTime);
             TickScaleTransition();
             SetRenderingVisible(true);
+        }
+
+        private Quaternion GetFacingRotation(Vector3 movementDirection)
+        {
+            // Movement and Wind push affect yaw only; authored prefab facing stays intact.
+            float movementYaw = Mathf.Atan2(movementDirection.x, movementDirection.z)
+                * Mathf.Rad2Deg;
+            return Quaternion.Euler(0f, movementYaw + spawnYawOffsetDegrees, 0f);
         }
 
         private void ActivateHidden(EnemySnapshot enemy)
@@ -368,7 +378,7 @@ namespace TowerDefense3D.Enemies
             }
 
             scalePivotLocal = transform.InverseTransformPoint(
-                new Vector3(bounds.center.x, bounds.min.y, bounds.center.z));
+                new Vector3(transform.position.x, bounds.min.y, transform.position.z));
         }
 
         private static void EncapsulateWorldBounds(
