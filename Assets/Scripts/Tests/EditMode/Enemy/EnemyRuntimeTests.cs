@@ -55,13 +55,17 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             var system = CreateLongRoadSystem();
             EnemyInstance enemy = system.Spawn(definition);
 
+            // Read the spawn point rather than assuming the road's origin: enemies are dealt
+            // into one of the road's parallel lanes, so where they start depends on their id.
+            Vector3 spawnPosition = enemy.Position;
+
             system.Step(EnemySpawnPresentationTiming.SpawnMovementDelaySeconds - 0.01f);
-            Assert.That(enemy.Position, Is.EqualTo(Vector3.zero));
+            Assert.That(enemy.Position, Is.EqualTo(spawnPosition));
 
             system.Step(0.02f);
             Assert.That(
                 enemy.Position.x,
-                Is.EqualTo(definition.BaseMoveSpeed * 0.01f).Within(0.0001f));
+                Is.EqualTo(spawnPosition.x + definition.BaseMoveSpeed * 0.01f).Within(0.0001f));
         }
 
         [Test]
