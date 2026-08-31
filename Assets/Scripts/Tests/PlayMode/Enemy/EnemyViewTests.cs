@@ -216,6 +216,48 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
 
             GameObject instance = Object.Instantiate(prefab);
             EnemyView view = instance.GetComponent<EnemyView>();
+            EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
+            Vector3 roadPosition = new Vector3(3f, 2f, 4f);
+            EnemySnapshot spawn = new EnemySnapshot(
+                1L,
+                definition,
+                roadPosition,
+                roadPosition,
+                definition.BaseMaxHealth,
+                false,
+                false);
+
+            yield return null;
+            view.Bind(spawn);
+            view.TickLifecycle(
+                EnemySpawnPresentationTiming.SpawnScaleDelaySeconds
+                + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
+
+            float lowestFootY = float.PositiveInfinity;
+            foreach (Transform bone in instance.GetComponentsInChildren<Transform>(true))
+            {
+                if (bone.name.ToLowerInvariant().EndsWith("leg2"))
+                {
+                    lowestFootY = Mathf.Min(lowestFootY, bone.position.y);
+                }
+            }
+
+            Assert.That(lowestFootY, Is.EqualTo(roadPosition.y).Within(0.01f));
+            Assert.That(instance.transform.position.y, Is.LessThan(roadPosition.y + 0.5f));
+
+            Object.Destroy(instance);
+            Object.Destroy(definition);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SpeedSupportScale_UsesLowestRigBoneWhenBoundsAreInvalid()
+        {
+            GameObject prefab = Resources.Load<GameObject>("Prefabs/Enemies/SpeedSupportEnemy");
+            Assert.That(prefab, Is.Not.Null);
+
+            GameObject instance = Object.Instantiate(prefab);
+            EnemyView view = instance.GetComponent<EnemyView>();
             SkinnedMeshRenderer body = instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
             EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
             Vector3 roadPosition = new Vector3(3f, 2f, 4f);
@@ -234,8 +276,14 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
                 EnemySpawnPresentationTiming.SpawnScaleDelaySeconds
                 + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
 
-            Assert.That(body.bounds.min.y, Is.EqualTo(roadPosition.y).Within(0.01f));
-            Assert.That(instance.transform.position.y, Is.LessThan(roadPosition.y + 5f));
+            float lowestBoneY = float.PositiveInfinity;
+            foreach (Transform bone in body.rootBone.GetComponentsInChildren<Transform>(true))
+            {
+                lowestBoneY = Mathf.Min(lowestBoneY, bone.position.y);
+            }
+
+            Assert.That(lowestBoneY, Is.EqualTo(roadPosition.y).Within(0.01f));
+            Assert.That(instance.transform.position.y, Is.LessThan(roadPosition.y + 0.5f));
 
             Object.Destroy(instance);
             Object.Destroy(definition);

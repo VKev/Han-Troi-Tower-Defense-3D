@@ -360,7 +360,14 @@ namespace TowerDefense3D.Enemies
                     }
                     else
                     {
-                        EncapsulateWorldBounds(skinnedRenderer.bounds, ref bounds, ref hasBounds);
+                        EncapsulateWorldBounds(
+                            TryGetFootGroundY(skinnedRenderer, out float footGroundY)
+                                ? new Bounds(
+                                    new Vector3(transform.position.x, footGroundY, transform.position.z),
+                                    Vector3.zero)
+                                : skinnedRenderer.bounds,
+                            ref bounds,
+                            ref hasBounds);
                     }
                 }
                 else
@@ -405,6 +412,47 @@ namespace TowerDefense3D.Enemies
             return bakedSize.x <= rendererSize.x * 4f + 1f
                 && bakedSize.y <= rendererSize.y * 4f + 1f
                 && bakedSize.z <= rendererSize.z * 4f + 1f;
+        }
+
+        private bool TryGetFootGroundY(
+            SkinnedMeshRenderer skinnedRenderer,
+            out float groundY)
+        {
+            groundY = float.PositiveInfinity;
+            float lowestBoneY = float.PositiveInfinity;
+            bool found = false;
+            Transform rootBone = skinnedRenderer.rootBone;
+            if (rootBone == null)
+            {
+                return false;
+            }
+
+            Transform[] bones = rootBone.GetComponentsInChildren<Transform>(true);
+            for (int index = 0; index < bones.Length; index++)
+            {
+                lowestBoneY = Mathf.Min(lowestBoneY, bones[index].position.y);
+                string name = bones[index].name.ToLowerInvariant();
+                if (!name.Contains("foot") && !name.Contains("toe") && !name.EndsWith("leg2"))
+                {
+                    continue;
+                }
+
+                groundY = Mathf.Min(groundY, bones[index].position.y);
+                found = true;
+            }
+
+            if (found)
+            {
+                return true;
+            }
+
+            if (float.IsPositiveInfinity(lowestBoneY))
+            {
+                return false;
+            }
+
+            groundY = lowestBoneY;
+            return true;
         }
 
         private static void EncapsulateWorldBounds(
