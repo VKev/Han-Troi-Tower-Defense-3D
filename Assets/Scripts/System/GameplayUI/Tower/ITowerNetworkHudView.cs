@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TowerDefense3D.Towers;
 using UnityEngine;
 
@@ -30,6 +31,13 @@ namespace TowerDefense3D.GameFlow
         event Action ReturnToMenuRequested;
 
         void Initialize();
+
+        /// <summary>
+        /// Marks the towers the player has not earned yet. A locked tower still appears in the
+        /// build bar, greyed out, so its existence reads as a goal rather than a missing button.
+        /// </summary>
+        void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions);
+
         void Render(TowerNetworkHudState state);
         void Show();
     }

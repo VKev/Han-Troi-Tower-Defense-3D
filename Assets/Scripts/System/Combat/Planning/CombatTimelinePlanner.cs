@@ -51,6 +51,8 @@ namespace TowerDefense3D.Enemies
             var timeline = new CombatTimeline();
             var enemies = new List<ShadowEnemy>();
             var projectiles = new List<ShadowProjectile>();
+            var heroAttacks = CreateHeroAttackStates(
+                towerNetworkManager.CreateHeroAttackTowerSnapshot());
             var pendingSummons = new List<ShadowSummon>();
             var hitCandidates = new List<ShadowHit>();
             var lastImpacts = new Dictionary<long, ProjectileImpactHistory>();
@@ -75,6 +77,7 @@ namespace TowerDefense3D.Enemies
                     timeline,
                     tick,
                     ref nextEnemyId);
+                StepHeroAttacks(heroAttacks, enemies, timeline, tick);
                 MoveProjectiles(projectiles, tick);
                 FindHits(projectiles, enemies, hitCandidates);
                 ResolveHits(
@@ -494,6 +497,140 @@ namespace TowerDefense3D.Enemies
                     summon.TargetPointIndex,
                     summon.RouteIndex));
             }
+        }
+
+        private static List<HeroAttackState> CreateHeroAttackStates(
+            IReadOnlyList<HeroAttackTowerSnapshot> towers)
+        {
+            var states = new List<HeroAttackState>(towers.Count);
+            for (int index = 0; index < towers.Count; index++)
+            {
+                states.Add(new HeroAttackState(towers[index]));
+            }
+
+            return states;
+        }
+
+        private void StepHeroAttacks(
+            List<HeroAttackState> heroAttacks,
+            List<ShadowEnemy> enemies,
+            CombatTimeline timeline,
+            long tick)
+        {
+            for (int index = 0; index < heroAttacks.Count; index++)
+            {
+                HeroAttackState attack = heroAttacks[index];
+                if (attack.HasPendingPrepare && tick >= attack.PrepareEndTick)
+                {
+                    ResolveHeroTarget(attack, enemies, timeline, tick);
+                    attack.HasPendingPrepare = false;
+                }
+
+                if (attack.HasPendingImpact && tick >= attack.ImpactTick)
+                {
+                    ResolveHeroImpact(attack, enemies);
+                    attack.HasPendingImpact = false;
+                }
+
+                if (attack.HasPendingPrepare || attack.HasPendingImpact || tick < attack.NextAttackStartTick
+                    || !TrySelectLeadingEnemy(attack.Tower, enemies, out ShadowEnemy target))
+                {
+                    continue;
+                }
+
+                attack.AttackStartTick = tick;
+                attack.PrepareEndTick = tick + SecondsToDurationTicks(attack.Tower.PrepareDurationSeconds);
+                attack.NextAttackStartTick = tick + attack.Tower.CycleTicks;
+                attack.BorderImpactPosition = CalculateBorderImpactPosition(attack.Tower, target.Position);
+                attack.HasPendingPrepare = true;
+            }
+        }
+
+        private void ResolveHeroTarget(
+            HeroAttackState attack,
+            List<ShadowEnemy> enemies,
+            CombatTimeline timeline,
+            long tick)
+        {
+            attack.ImpactPosition = TrySelectLeadingEnemy(attack.Tower, enemies, out ShadowEnemy target)
+                ? target.Position
+                : attack.BorderImpactPosition;
+            attack.ImpactTick = tick + SecondsToDurationTicks(attack.Tower.LungeDurationSeconds);
+            attack.HasPendingImpact = true;
+            timeline.Add(attack.AttackStartTick, new HeroAttackEvent(
+                attack.Tower.NodeId,
+                attack.ImpactPosition,
+                attack.Tower.PrepareDurationSeconds,
+                attack.Tower.LungeDurationSeconds,
+                attack.Tower.ImpactHoldDurationSeconds,
+                attack.Tower.ReturnDurationSeconds));
+        }
+
+        private void ResolveHeroImpact(
+            HeroAttackState attack,
+            List<ShadowEnemy> enemies)
+        {
+            float radius = attack.Tower.AoeRadiusMeters;
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                ShadowEnemy enemy = enemies[index];
+                if (enemy.Removal != PlannedEnemyRemoval.None || !enemy.IsAlive
+                    || !IsWithinRadiusXZ(enemy.Position, attack.ImpactPosition, radius))
+                {
+                    continue;
+                }
+
+                ApplyDamage(enemy, attack.Tower.Damage, isThermalShock: false);
+            }
+        }
+
+        private static bool TrySelectLeadingEnemy(
+            HeroAttackTowerSnapshot tower,
+            List<ShadowEnemy> enemies,
+            out ShadowEnemy target)
+        {
+            target = null;
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                ShadowEnemy candidate = enemies[index];
+                if (candidate.Removal != PlannedEnemyRemoval.None || !candidate.IsAlive
+                    || !IsWithinRadiusXZ(candidate.Position, ToVector3(tower.Position), tower.RangeMeters))
+                {
+                    continue;
+                }
+
+                if (target == null || IsFurtherAlongRoute(candidate, target))
+                {
+                    target = candidate;
+                }
+            }
+
+            return target != null;
+        }
+
+        private static bool IsFurtherAlongRoute(ShadowEnemy candidate, ShadowEnemy current)
+        {
+            if (candidate.TargetPointIndex != current.TargetPointIndex)
+            {
+                return candidate.TargetPointIndex > current.TargetPointIndex;
+            }
+
+            return candidate.Id < current.Id;
+        }
+
+        private static Vector3 CalculateBorderImpactPosition(
+            HeroAttackTowerSnapshot tower,
+            Vector3 targetPosition)
+        {
+            Vector3 towerPosition = ToVector3(tower.Position);
+            Vector3 direction = targetPosition - towerPosition;
+            direction.y = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                direction = Vector3.forward;
+            }
+
+            return towerPosition + direction.normalized * tower.RangeMeters;
         }
 
         private void MoveProjectiles(List<ShadowProjectile> projectiles, long tick)
@@ -1012,6 +1149,24 @@ namespace TowerDefense3D.Enemies
             }
 
             return selected;
+        }
+
+        private sealed class HeroAttackState
+        {
+            public HeroAttackState(HeroAttackTowerSnapshot tower)
+            {
+                Tower = tower;
+            }
+
+            public HeroAttackTowerSnapshot Tower { get; }
+            public long NextAttackStartTick { get; set; } = 1L;
+            public long AttackStartTick { get; set; }
+            public long PrepareEndTick { get; set; }
+            public long ImpactTick { get; set; }
+            public Vector3 BorderImpactPosition { get; set; }
+            public Vector3 ImpactPosition { get; set; }
+            public bool HasPendingPrepare { get; set; }
+            public bool HasPendingImpact { get; set; }
         }
 
         private sealed class ShadowEnemy

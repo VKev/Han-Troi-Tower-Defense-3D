@@ -21,6 +21,8 @@ namespace TowerDefense3D.GameFlow
         private Action requestReplayLevel;
         private Action requestNextLevel;
         private Action requestReturnToLevelMenu;
+        private Action reportLevelCleared;
+        private bool hasReportedLevelCleared;
 
         public LevelOutcomeHudPresenter(
             IWaveSystem waveSystem,
@@ -41,8 +43,31 @@ namespace TowerDefense3D.GameFlow
             Action requestNextLevel,
             Action requestReturnToLevelMenu)
         {
+            BindLevel(
+                levelDisplayName,
+                hasNextLevel,
+                requestReplayLevel,
+                requestNextLevel,
+                requestReturnToLevelMenu,
+                null);
+        }
+
+        /// <summary>
+        /// <paramref name="reportLevelCleared"/> fires once, the first time this attempt reaches
+        /// victory, so progression gated behind "beat this level" can be recorded.
+        /// </summary>
+        public void BindLevel(
+            string levelDisplayName,
+            bool hasNextLevel,
+            Action requestReplayLevel,
+            Action requestNextLevel,
+            Action requestReturnToLevelMenu,
+            Action reportLevelCleared)
+        {
             this.levelDisplayName = levelDisplayName ?? string.Empty;
             this.hasNextLevel = hasNextLevel;
+            this.reportLevelCleared = reportLevelCleared;
+            hasReportedLevelCleared = false;
             this.requestReplayLevel = requestReplayLevel
                 ?? throw new ArgumentNullException(nameof(requestReplayLevel));
             this.requestNextLevel = requestNextLevel
@@ -83,6 +108,12 @@ namespace TowerDefense3D.GameFlow
             }
 
             bool isVictory = phase == WavePhase.Victory;
+            if (isVictory && !hasReportedLevelCleared)
+            {
+                hasReportedLevelCleared = true;
+                reportLevelCleared?.Invoke();
+            }
+
             view.Render(new LevelOutcomeHudState(
                 true,
                 isVictory ? LevelOutcome.Victory : LevelOutcome.Defeat,

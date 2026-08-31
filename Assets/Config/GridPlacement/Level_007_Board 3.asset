@@ -190,19 +190,19 @@ MonoBehaviour:
       x: 28
       z: 23
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 29
       z: 23
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 30
       z: 23
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 31
@@ -352,19 +352,19 @@ MonoBehaviour:
       x: 28
       z: 24
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 29
       z: 24
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 30
       z: 24
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 31
@@ -496,37 +496,37 @@ MonoBehaviour:
       x: 52
       z: 24
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 53
       z: 24
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 54
       z: 24
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 28
       z: 25
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 29
       z: 25
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 30
       z: 25
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 31
@@ -658,19 +658,19 @@ MonoBehaviour:
       x: 52
       z: 25
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 53
       z: 25
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 54
       z: 25
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 28
@@ -820,19 +820,19 @@ MonoBehaviour:
       x: 52
       z: 26
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 53
       z: 26
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 54
       z: 26
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 55
@@ -1171,12 +1171,6 @@ MonoBehaviour:
     flags: 11
     roadExitDirection: 0
   - coordinate:
-      x: 55
-      z: 28
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 28
       z: 29
       y: 0
@@ -1270,13 +1264,13 @@ MonoBehaviour:
       x: 43
       z: 29
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 44
       z: 29
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 45
@@ -1339,12 +1333,6 @@ MonoBehaviour:
     flags: 11
     roadExitDirection: 0
   - coordinate:
-      x: 55
-      z: 29
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 28
       z: 30
       y: 0
@@ -1384,7 +1372,7 @@ MonoBehaviour:
       x: 34
       z: 30
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 35
@@ -1505,12 +1493,6 @@ MonoBehaviour:
       z: 30
       y: 0
     flags: 11
-    roadExitDirection: 0
-  - coordinate:
-      x: 55
-      z: 30
-      y: 0
-    flags: 3
     roadExitDirection: 0
   - coordinate:
       x: 28
@@ -1675,12 +1657,6 @@ MonoBehaviour:
     flags: 11
     roadExitDirection: 0
   - coordinate:
-      x: 55
-      z: 31
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 28
       z: 32
       y: 0
@@ -1841,12 +1817,6 @@ MonoBehaviour:
       z: 32
       y: 0
     flags: 11
-    roadExitDirection: 0
-  - coordinate:
-      x: 55
-      z: 32
-      y: 0
-    flags: 3
     roadExitDirection: 0
   - coordinate:
       x: 28
@@ -2011,12 +1981,6 @@ MonoBehaviour:
     flags: 11
     roadExitDirection: 0
   - coordinate:
-      x: 55
-      z: 33
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 28
       z: 34
       y: 0
@@ -2179,12 +2143,6 @@ MonoBehaviour:
     flags: 11
     roadExitDirection: 0
   - coordinate:
-      x: 55
-      z: 34
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 28
       z: 35
       y: 0
@@ -2254,7 +2212,7 @@ MonoBehaviour:
       x: 39
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 40
@@ -2758,19 +2716,19 @@ MonoBehaviour:
       x: 39
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 40
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 41
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 42
@@ -2806,19 +2764,19 @@ MonoBehaviour:
       x: 47
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 48
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 49
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 50
@@ -2836,7 +2794,7 @@ MonoBehaviour:
       x: 52
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 53

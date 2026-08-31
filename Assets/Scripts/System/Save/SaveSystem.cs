@@ -25,7 +25,9 @@ namespace TowerDefense3D.GameFlow
             SaveLoadResult loadResult = repository.Load();
             if (loadResult.IsSuccess)
             {
-                Progress = new UnlockProgress(loadResult.Data.UnlockedLevelNumbers);
+                Progress = new UnlockProgress(
+                    loadResult.Data.UnlockedLevelNumbers,
+                    loadResult.Data.ClearedLevelNumbers);
                 LastWriteResult = new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
                 return loadResult;
             }
@@ -51,6 +53,19 @@ namespace TowerDefense3D.GameFlow
             return unlockResult;
         }
 
+        /// <summary>
+        /// Records one level as beaten and persists it. Called once per victory, so a repeat
+        /// clear of the same level costs no write.
+        /// </summary>
+        public UnlockAttemptResult TryMarkClearedAndSave(int levelNumber, out SaveWriteResult writeResult)
+        {
+            UnlockAttemptResult clearResult = Progress.TryMarkCleared(levelNumber);
+            writeResult = clearResult == UnlockAttemptResult.Unlocked
+                ? SaveCurrent()
+                : new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
+            return clearResult;
+        }
+
         public SaveWriteResult RetrySave()
         {
             return SaveCurrent();
@@ -74,6 +89,7 @@ namespace TowerDefense3D.GameFlow
         {
             SaveSnapshot snapshot = SaveSnapshot.Create(
                 Progress.CreateSortedSnapshot(),
+                Progress.CreateSortedClearedSnapshot(),
                 DateTime.UtcNow.ToString("O"),
                 applicationVersion);
             LastWriteResult = repository.Save(snapshot);

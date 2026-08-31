@@ -17,13 +17,14 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
     public sealed class GameFlowPlayModeTests
     {
         // The level menu shows one button per level in the LevelCatalog, and the tower bar one
-        // button per element plus the generator and the soul nexus. Neither is reachable from a
-        // player build, so both are named here rather than left as bare numbers in the asserts.
+        // button per element plus the generator, the soul nexus and the hero. Neither is reachable
+        // from a player build, so both are named here rather than left as bare numbers.
         private const int LevelCount = 8;
         private const int ElementCount = 3;
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string LevelOneScenePath = "Assets/Scenes/Levels/Level_001.unity";
         private const string LevelTwoScenePath = "Assets/Scenes/Levels/Level_002.unity";
+        private const string LevelSevenScenePath = "Assets/Scenes/Levels/Level_007.unity";
         private const string ApplicationLifetimeScopeTypeName =
             "TowerDefense3D.GameFlow.ApplicationLifetimeScope";
         private const string LevelLifetimeScopeTypeName =
@@ -157,6 +158,32 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             yield return WaitForLevelMenu();
         }
 
+        [UnityTest]
+        public IEnumerator LevelSeven_AdoptsItsAuthoredHero_IntoTheTowerNetwork()
+        {
+            ClickLevel(7);
+            yield return WaitForLevelButtonLabel(7, "Play ");
+            ClickLevel(7);
+            yield return WaitForGameplay(LevelSevenScenePath);
+
+            AuthoredTowerView authoredHero = FindLoaded<AuthoredTowerView>();
+            Assert.That(authoredHero, Is.Not.Null, "Level 7 must author the crab hero.");
+            Assert.That(authoredHero.Definition, Is.InstanceOf<HeroTowerDefinition>());
+
+            TowerRuntimeView heroView = authoredHero.RuntimeView;
+            Assert.That(heroView.IsConfigured, Is.True, "the authored hero must be configured");
+            Assert.That(heroView.IsRegistered, Is.True, "the authored hero must own a network node");
+
+            // The hero holds the cells under its own footprint, so nothing can be dropped on it.
+            Assert.That(
+                heroView.CombatDefinition.Core.PlacementDefinition.Footprint,
+                Is.EqualTo(new TowerFootprint(3, 3, 2)));
+
+            GameplayUIView gameplayUi = FindLoaded<GameplayUIView>();
+            GetReturnToMenuButton(gameplayUi).onClick.Invoke();
+            yield return WaitForLevelMenu();
+        }
+
         private static void AssertMigratedGameplayUi(
             GameplayUIView view,
             string expectedBoardName)
@@ -176,9 +203,12 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             int elementButtons = 0;
             int generatorButtons = 0;
             int nexusButtons = 0;
+            int heroButtons = 0;
+            int lockedHeroButtons = 0;
             for (int index = 0; index < dragButtons.Length; index++)
             {
-                TowerCombatDefinition definition = dragButtons[index].Definition;
+                TowerPlacementDragButtonView dragButton = dragButtons[index];
+                TowerCombatDefinition definition = dragButton.Definition;
                 if (definition is ElementTowerDefinition)
                 {
                     elementButtons++;
@@ -191,6 +221,11 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
                 {
                     nexusButtons++;
                 }
+                else if (definition is HeroTowerDefinition)
+                {
+                    heroButtons++;
+                    lockedHeroButtons += dragButton.IsLocked ? 1 : 0;
+                }
             }
 
             // Checking what the bar is made of rather than how many buttons it has means a missing
@@ -198,7 +233,12 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(elementButtons, Is.EqualTo(ElementCount), "one drag button per element");
             Assert.That(generatorButtons, Is.EqualTo(1), "one generator drag button");
             Assert.That(nexusButtons, Is.EqualTo(1), "one soul nexus drag button");
-            Assert.That(dragButtons, Has.Length.EqualTo(ElementCount + 2));
+            Assert.That(heroButtons, Is.EqualTo(1), "one hero drag button");
+
+            // These levels run on a fresh save, so the hero's unlock level has not been cleared and
+            // its button has to load greyed out rather than be missing from the bar.
+            Assert.That(lockedHeroButtons, Is.EqualTo(1), "the hero drag button loads locked");
+            Assert.That(dragButtons, Has.Length.EqualTo(ElementCount + 3));
             Assert.That(view.transform.Find("Safe Area/Select Tower"), Is.Null);
             Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);

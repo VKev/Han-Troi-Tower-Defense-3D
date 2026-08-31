@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,6 +58,35 @@ namespace TowerDefense3D.GameFlow
             cancelPlacementButton.onClick.AddListener(HandleCancelPlacementRequested);
             returnToMenuButton.onClick.AddListener(HandleReturnToMenuRequested);
             isInitialized = true;
+        }
+
+        public void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions)
+        {
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView dragButton = towerDragButtons[index];
+                dragButton.SetLocked(Contains(lockedDefinitions, dragButton.Definition));
+            }
+        }
+
+        private static bool Contains(
+            IReadOnlyList<TowerCombatDefinition> definitions,
+            TowerCombatDefinition definition)
+        {
+            if (definitions == null || definition == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < definitions.Count; index++)
+            {
+                if (definitions[index] == definition)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void Render(TowerNetworkHudState state)

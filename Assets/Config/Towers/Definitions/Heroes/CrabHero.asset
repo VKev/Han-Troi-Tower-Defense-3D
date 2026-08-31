@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23f2106d05b0e2248953019070e24efb, type: 3}
+  m_Name: CrabHero
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Towers.HeroTowerDefinition
+  core:
+    stableId: hero_crab
+    displayName: Hero
+    placementDefinition: {fileID: 11400000, guid: 11a35a7a91ea05d4d8a85157a5022911, type: 2}
+    projectilePrefab: {fileID: 6931362497009039896, guid: ea7579228542a7a4185546a889a3c90d, type: 3}
+    hitEffectPrefab: {fileID: 70470799993891518, guid: 1d3735ddacd66574e8da4f14b1df068a, type: 3}
+    network:
+      inputPortCount: 0
+      outputPortCount: 1
+      queueCapacityPerInput: 0
+      createsBackpressure: 0
+    throughput:
+      cycleIntervalSeconds: 2
+      batchSize: 1
+      concurrentLines: 1
+      sequenceSpacingSeconds: 0
+    economy:
+      buildCost: 150
+      linearUpgradeCost: 0
+      maxInstancesPerLevel: 1
+      sellable: 1
+  attackRangeMeters: 6
+  attackDamage:
+    amount: 14
+  attackAoeRadiusMeters: 2
+  prepareDurationSeconds: 1
+  lungeFractionOfAttackInterval: 0.20833333
+  impactHoldFractionOfAttackInterval: 0.083333336
+  returnFractionOfAttackInterval: 0.20833333
+  unlockAfterClearingLevel: 7

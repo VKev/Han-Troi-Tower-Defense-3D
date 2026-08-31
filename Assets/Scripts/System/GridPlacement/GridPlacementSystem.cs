@@ -128,6 +128,37 @@ namespace TowerDefense3D.GridPlacement
             inputSystem.ClearMode(GameplayInputMode.GridPlacement);
         }
 
+        /// <summary>
+        /// Claims the cells under a tower the level authored into the scene, so the board treats
+        /// it like any built tower and the player cannot drop another one on top of it. The
+        /// snapped world position is handed back because an authored transform rarely lands
+        /// exactly on the footprint's own bottom center.
+        /// </summary>
+        public bool TryOccupyAuthoredTower(
+            Vector3 worldPosition,
+            TowerFootprint footprint,
+            out Vector3 snappedPosition,
+            out int ownerId)
+        {
+            snappedPosition = worldPosition;
+            ownerId = 0;
+            if (!model.TryWorldToCell(worldPosition, out GridCell cell)
+                || !model.Evaluate(cell, footprint).Succeeded
+                || !model.TryReserve(cell, footprint, out PlacementReservation reservation))
+            {
+                return false;
+            }
+
+            using (reservation)
+            {
+                ownerId = model.NextOwnerId();
+                reservation.Commit(ownerId);
+            }
+
+            snappedPosition = model.GetFootprintBottomCenter(cell, footprint);
+            return true;
+        }
+
         public bool BeginPlacementDrag(TowerDefinition definition, int pointerId)
         {
             CancelPlacement();

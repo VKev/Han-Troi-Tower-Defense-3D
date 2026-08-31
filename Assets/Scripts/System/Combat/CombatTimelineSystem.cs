@@ -30,11 +30,13 @@ namespace TowerDefense3D.Enemies
 
         internal event Action<ProjectileImpactEvent> ProjectileImpacted;
         public event Action<ElementReactionEvent> ReactionTriggered;
+        public event Action<HeroAttackEvent> HeroAttackStarted;
 
         public void Step()
         {
             long tick = towerNetworkManager.CurrentTick;
             ApplySpawns(timeline.GetSpawns(tick));
+            PublishHeroAttacks(timeline.GetHeroAttacks(tick));
             PublishImpacts(timeline.GetImpacts(tick));
             PublishReactions(timeline.GetReactions(tick));
             ApplyFrames(timeline.GetFrames(tick));
@@ -83,6 +85,14 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < impacts.Count; index++)
             {
                 ProjectileImpacted?.Invoke(impacts[index]);
+            }
+        }
+
+        private void PublishHeroAttacks(IReadOnlyList<HeroAttackEvent> attacks)
+        {
+            for (int index = 0; index < attacks.Count; index++)
+            {
+                HeroAttackStarted?.Invoke(attacks[index]);
             }
         }
 
