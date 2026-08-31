@@ -76,6 +76,9 @@ mono_crash.*
 *.aab
 *.unitypackage
 *.unitypackage.meta
+# ...except vendor installers that ship inside Assets/ (small, and Unity references their .meta)
+!/[Aa]ssets/**/*.unitypackage
+!/[Aa]ssets/**/*.unitypackage.meta
 *.app
 
 # Crashlytics generated file
@@ -106,9 +109,10 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# NuGetForUnity generated package payloads
-/[Pp]ackages/nuget-packages/InstalledPackages/
-/[Pp]ackages/nuget-packages/package.json
+# NuGetForUnity: nuget-packages is an EMBEDDED Unity package (see Packages/packages-lock.json
+# "nuget-packages": "file:nuget-packages"). package.json and the restored DLLs must be committed,
+# otherwise a fresh clone fails Package Manager resolution and ZLinq fails to compile.
+/[Pp]ackages/nuget-packages/.nuget/
 
 # Project-local AI agent and editor files
 /.agent/
@@ -136,17 +140,12 @@ InitTestScene*.unity*
 /.mcp.json
 /.vscode/
 
-# Agent instructions and all Markdown documentation
+# Agent instruction Markdown (AGENTS.md / CLAUDE.md) is agent-local, not shared.
+# Project documentation under Documents/ and the root README ARE shared.
 *.md
 *.md.meta
-!Documents/TechnicalSpec/BoardCameraFraming_Technical_Specification.md
-!Documents/TechnicalSpec/BoardCameraFramingLimits_Technical_Specification.md
-!Documents/TechnicalSpec/GameFlow_Technical_Specification.md
-!Documents/TechnicalSpec/TowerNetwork_Technical_Specification.md
-!Documents/AICollaboration/AI_Collaboration_Log_Prototype_15_08.md
-!Documents/AICollaboration/AI_Collaboration_Log_Prototype_16_08.md
-!Documents/AICollaboration/AI_Collaboration_Log_TowerNetwork_22_08.md
-!Documents/TechnicalSpec/BoardCameraFocusRegion_Technical_Specification.md
+!/README.md
+!/Documents/**/*.md
 
 # Beads / Dolt files (added by bd init)
 .dolt/
