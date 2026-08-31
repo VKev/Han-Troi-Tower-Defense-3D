@@ -24,6 +24,7 @@ namespace TowerDefense3D.Enemies
         private Quaternion spawnLocalRotation;
         private Vector3 spawnLocalScale;
         private Vector3 scalePivotLocal;
+        private Vector3 fullScaleAnchorOffsetLocal;
         private Vector3 scaleAnchorWorld;
         private Vector3 renderedRootPosition;
         private Vector3 renderedMoveDirection;
@@ -144,7 +145,7 @@ namespace TowerDefense3D.Enemies
             }
 
             renderedMoveDirection = movement.normalized;
-            Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.up);
+            Quaternion targetRotation = GetFacingRotation(movement);
             if (!hasFacingDirection)
             {
                 transform.rotation = targetRotation;
@@ -160,6 +161,30 @@ namespace TowerDefense3D.Enemies
                 TurnSpeedDegreesPerSecond * Time.deltaTime);
             TickScaleTransition();
             SetRenderingVisible(true);
+        }
+
+        /// <summary>
+        /// Facing is a yaw about world up, read straight off the direction of travel. It used to
+        /// be built as the rotation carrying the enemy's current forward onto the new one, which
+        /// leaves the axis undefined when the two are exactly opposed - which is precisely what a
+        /// wind tower's knockback produces on a straight stretch of road. Unity then picks a
+        /// horizontal axis and lays the enemy on its back, and since the next frame turns
+        /// relative to that pose, it never gets up again. A yaw cannot tilt the enemy at all, so
+        /// knockback spins it round instead of knocking it over.
+        /// </summary>
+        /// <summary>
+        /// Facing is a yaw about world up, read straight off the direction of travel. It used to
+        /// be built as the rotation carrying the enemy's current forward onto the new one, which
+        /// leaves the axis undefined when the two are exactly opposed - precisely what a wind
+        /// tower's knockback produces on a straight stretch of road. Unity then picks a
+        /// horizontal axis and lays the enemy on its back, and because the next frame turns
+        /// relative to that pose, it never gets up again. A yaw cannot tilt the enemy at all, so
+        /// knockback spins it round instead of knocking it over.
+        /// </summary>
+        private static Quaternion GetFacingRotation(Vector3 movement)
+        {
+            float yawDegrees = Mathf.Atan2(movement.x, movement.z) * Mathf.Rad2Deg;
+            return Quaternion.AngleAxis(yawDegrees, Vector3.up);
         }
 
         private void ActivateHidden(EnemySnapshot enemy)
@@ -209,7 +234,7 @@ namespace TowerDefense3D.Enemies
             isSpawning = false;
             isDying = true;
             deathCompletion = onComplete;
-            scaleAnchorWorld = transform.TransformPoint(scalePivotLocal);
+            scaleAnchorWorld = renderedRootPosition;
             if (scaleProgress < 1f)
             {
                 scaleProgress = 1f;
@@ -327,37 +352,69 @@ namespace TowerDefense3D.Enemies
             {
                 Renderer renderer = renderers[index];
                 if (renderer is ParticleSystemRenderer || renderer is TrailRenderer
-                    || renderer.GetComponentInParent<EnemyElementStatusView>() != null)
+                    || renderer.GetComponentInParent<EnemyElementStatusView>() != null
+                    || GetThermalShieldView()?.OwnsRenderer(renderer) == true)
                 {
                     continue;
                 }
 
-                if (!hasBounds)
-                {
-                    bounds = renderer.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(renderer.bounds);
-                }
+                // Renderer.bounds is already world space, skinned meshes included. Baking the
+                // skin and pushing the result back through the renderer's transform looked more
+                // precise but counted scale twice: BakeMesh writes its vertices into a space the
+                // rig has already scaled, so an enemy whose skin hangs under a hundredfold FBX
+                // scale came out with a pivot a hundred times too far from its root.
+                EncapsulateWorldBounds(renderer.bounds, ref bounds, ref hasBounds);
             }
 
             if (!hasBounds)
             {
                 scalePivotLocal = Vector3.zero;
+                fullScaleAnchorOffsetLocal = Vector3.zero;
                 return;
             }
 
             scalePivotLocal = transform.InverseTransformPoint(
                 new Vector3(bounds.center.x, bounds.min.y, bounds.center.z));
+
+            // Where that pivot ends up once the enemy is full size, kept in the enemy's own axes
+            // so it keeps swinging around as the enemy turns.
+            Vector3 parentScale = transform.parent != null
+                ? transform.parent.lossyScale
+                : Vector3.one;
+            fullScaleAnchorOffsetLocal = Vector3.Scale(
+                parentScale,
+                Vector3.Scale(spawnLocalScale, scalePivotLocal));
         }
 
+        private static void EncapsulateWorldBounds(
+            Bounds source,
+            ref Bounds target,
+            ref bool hasBounds)
+        {
+            if (!hasBounds)
+            {
+                target = source;
+                hasBounds = true;
+                return;
+            }
+
+            target.Encapsulate(source);
+        }
+
+        /// <summary>
+        /// Grows or shrinks the enemy while keeping the model planted where it stands at full
+        /// size. The correction is the gap between the pivot's offset now and its offset at full
+        /// size, so it fades to nothing as the enemy finishes growing. Anything still left at
+        /// full scale would be a permanent sideways shove: it would walk the enemy alongside its
+        /// lane rather than down it, and swing it wide of every corner as the offset turned with
+        /// the enemy.
+        /// </summary>
         private void ApplyScaleAroundAnchor(float progress)
         {
             transform.localScale = spawnLocalScale * progress;
-            Vector3 currentAnchorWorld = transform.TransformPoint(scalePivotLocal);
-            transform.position += scaleAnchorWorld - currentAnchorWorld;
+            Vector3 fullScaleOffset = transform.rotation * fullScaleAnchorOffsetLocal;
+            Vector3 currentOffset = transform.TransformPoint(scalePivotLocal) - transform.position;
+            transform.position = scaleAnchorWorld + fullScaleOffset - currentOffset;
         }
 
         private void SetRenderingVisible(bool value)

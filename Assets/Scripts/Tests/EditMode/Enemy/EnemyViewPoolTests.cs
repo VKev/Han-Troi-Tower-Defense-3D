@@ -83,7 +83,10 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             pool.Render(new[] { enemy }, 1f);
 
-            Assert.That(view.gameObject.activeSelf, Is.False);
+            // The first render moves the view onto its gameplay position and wakes it up, but
+            // rendering stays off: the enemy has to stay unseen until it pops with the spawn
+            // effect, and being switched on early is what lets it animate under cover.
+            Assert.That(renderer.forceRenderingOff, Is.True);
             Assert.That(view.transform.position, Is.EqualTo(position));
 
             pool.Render(new[] { enemy }, 1f);
@@ -113,6 +116,36 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
             pool.TickLifecycle(0.1f);
             Assert.That(view.gameObject.activeSelf, Is.False);
+        }
+
+        [Test]
+        public void Render_KeepsAKnockedBackEnemyOnItsFeet()
+        {
+            EnemyViewPool pool = poolObject.AddComponent<EnemyViewPool>();
+            EnemySnapshot resting = Snapshot(1L, firstDefinition, Vector3.zero);
+            pool.Spawn(resting);
+            pool.Render(new[] { resting }, 1f);
+            pool.Render(new[] { resting }, 1f);
+
+            // A wind tower knocks the enemy straight back down the road it walked up, so its
+            // direction of travel reverses exactly. Turning by the rotation that carries the old
+            // forward onto the new one has no defined axis at exactly 180 degrees, and the
+            // horizontal one Unity picks lays the enemy on its back for good.
+            var knockedBack = new EnemySnapshot(
+                1L,
+                firstDefinition,
+                Vector3.forward,
+                Vector3.zero,
+                firstDefinition.BaseMaxHealth,
+                false,
+                false);
+            pool.Render(new[] { knockedBack }, 1f);
+
+            EnemyView view = FindView(pool, 1L);
+            Assert.That(
+                Vector3.Angle(view.transform.up, Vector3.up),
+                Is.LessThan(0.01f),
+                "A knocked back enemy has to stay on its feet, not be laid on its back.");
         }
 
         private static GameObject CreateViewPrefab(string name)
