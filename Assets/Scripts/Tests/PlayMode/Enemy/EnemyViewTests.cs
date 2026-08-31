@@ -208,6 +208,40 @@ namespace TowerDefense3D.Enemies.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator SummonerBossScale_FallsBackFromInvalidSkinnedBounds()
+        {
+            GameObject prefab = Resources.Load<GameObject>("Prefabs/Enemies/SummonerBossEnemy");
+            Assert.That(prefab, Is.Not.Null);
+
+            GameObject instance = Object.Instantiate(prefab);
+            EnemyView view = instance.GetComponent<EnemyView>();
+            SkinnedMeshRenderer body = instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();
+            Vector3 roadPosition = new Vector3(3f, 2f, 4f);
+            EnemySnapshot spawn = new EnemySnapshot(
+                1L,
+                definition,
+                roadPosition,
+                roadPosition,
+                definition.BaseMaxHealth,
+                false,
+                false);
+
+            yield return null;
+            view.Bind(spawn);
+            view.TickLifecycle(
+                EnemySpawnPresentationTiming.SpawnScaleDelaySeconds
+                + EnemySpawnPresentationTiming.SpawnScaleDurationSeconds);
+
+            Assert.That(body.bounds.min.y, Is.EqualTo(roadPosition.y).Within(0.01f));
+            Assert.That(instance.transform.position.y, Is.LessThan(roadPosition.y + 5f));
+
+            Object.Destroy(instance);
+            Object.Destroy(definition);
+            yield return null;
+        }
+
         private static EnemySnapshot Snapshot(Vector3 previousPosition, Vector3 position) =>
             new EnemySnapshot(
                 1L,

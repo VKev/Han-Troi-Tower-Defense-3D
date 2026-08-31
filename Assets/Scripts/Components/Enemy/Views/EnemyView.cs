@@ -353,14 +353,14 @@ namespace TowerDefense3D.Enemies
                         bakedBoundsMesh.hideFlags = HideFlags.HideAndDontSave;
                     }
 
-                    skinnedRenderer.BakeMesh(bakedBoundsMesh);
-                    Vector3[] vertices = bakedBoundsMesh.vertices;
-                    for (int vertexIndex = 0; vertexIndex < vertices.Length; vertexIndex++)
+                    Bounds bakedBounds;
+                    if (TryGetBakedWorldBounds(skinnedRenderer, out bakedBounds))
                     {
-                        EncapsulateWorldPoint(
-                            skinnedRenderer.transform.TransformPoint(vertices[vertexIndex]),
-                            ref bounds,
-                            ref hasBounds);
+                        EncapsulateWorldBounds(bakedBounds, ref bounds, ref hasBounds);
+                    }
+                    else
+                    {
+                        EncapsulateWorldBounds(skinnedRenderer.bounds, ref bounds, ref hasBounds);
                     }
                 }
                 else
@@ -379,6 +379,34 @@ namespace TowerDefense3D.Enemies
                 new Vector3(transform.position.x, bounds.min.y, transform.position.z));
         }
 
+        private bool TryGetBakedWorldBounds(
+            SkinnedMeshRenderer skinnedRenderer,
+            out Bounds bakedBounds)
+        {
+            skinnedRenderer.BakeMesh(bakedBoundsMesh);
+            Vector3[] vertices = bakedBoundsMesh.vertices;
+            if (vertices.Length == 0)
+            {
+                bakedBounds = default;
+                return false;
+            }
+
+            bakedBounds = new Bounds(
+                skinnedRenderer.transform.TransformPoint(vertices[0]),
+                Vector3.zero);
+            for (int vertexIndex = 1; vertexIndex < vertices.Length; vertexIndex++)
+            {
+                bakedBounds.Encapsulate(
+                    skinnedRenderer.transform.TransformPoint(vertices[vertexIndex]));
+            }
+
+            Vector3 rendererSize = skinnedRenderer.bounds.size;
+            Vector3 bakedSize = bakedBounds.size;
+            return bakedSize.x <= rendererSize.x * 4f + 1f
+                && bakedSize.y <= rendererSize.y * 4f + 1f
+                && bakedSize.z <= rendererSize.z * 4f + 1f;
+        }
+
         private static void EncapsulateWorldBounds(
             Bounds source,
             ref Bounds target,
@@ -392,21 +420,6 @@ namespace TowerDefense3D.Enemies
             }
 
             target.Encapsulate(source);
-        }
-
-        private static void EncapsulateWorldPoint(
-            Vector3 point,
-            ref Bounds target,
-            ref bool hasBounds)
-        {
-            if (!hasBounds)
-            {
-                target = new Bounds(point, Vector3.zero);
-                hasBounds = true;
-                return;
-            }
-
-            target.Encapsulate(point);
         }
 
         private void OnDestroy()
