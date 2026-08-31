@@ -1,1 +1,2 @@
-**/*.unitypackage filter=lfs diff=lfs merge=lfs -text
+# No Git LFS: the few vendor *.unitypackage installers in Assets/ total ~2.6 MB and are
+# stored as normal Git blobs, so a plain `git clone` needs no git-lfs install.
