@@ -29,6 +29,7 @@ namespace TowerDefense3D.Enemies
         private Vector3 renderedMoveDirection;
         private float scaleProgress = 1f;
         private float spawnScaleDelayRemainingSeconds;
+        private Mesh bakedBoundsMesh;
         private bool isSpawning;
         private bool isDying;
         private bool isAwaitingActivation;
@@ -327,19 +328,36 @@ namespace TowerDefense3D.Enemies
             {
                 Renderer renderer = renderers[index];
                 if (renderer is ParticleSystemRenderer || renderer is TrailRenderer
-                    || renderer.GetComponentInParent<EnemyElementStatusView>() != null)
+                    || renderer.GetComponentInParent<EnemyElementStatusView>() != null
+                    || GetThermalShieldView()?.OwnsRenderer(renderer) == true)
                 {
                     continue;
                 }
 
-                if (!hasBounds)
+                if (renderer is SkinnedMeshRenderer skinnedRenderer)
                 {
-                    bounds = renderer.bounds;
-                    hasBounds = true;
+                    if (bakedBoundsMesh == null)
+                    {
+                        bakedBoundsMesh = new Mesh
+                        {
+                            name = "Enemy View Baked Bounds"
+                        };
+                        bakedBoundsMesh.hideFlags = HideFlags.HideAndDontSave;
+                    }
+
+                    skinnedRenderer.BakeMesh(bakedBoundsMesh);
+                    Vector3[] vertices = bakedBoundsMesh.vertices;
+                    for (int vertexIndex = 0; vertexIndex < vertices.Length; vertexIndex++)
+                    {
+                        EncapsulateWorldPoint(
+                            skinnedRenderer.transform.TransformPoint(vertices[vertexIndex]),
+                            ref bounds,
+                            ref hasBounds);
+                    }
                 }
                 else
                 {
-                    bounds.Encapsulate(renderer.bounds);
+                    EncapsulateWorldBounds(renderer.bounds, ref bounds, ref hasBounds);
                 }
             }
 
@@ -351,6 +369,55 @@ namespace TowerDefense3D.Enemies
 
             scalePivotLocal = transform.InverseTransformPoint(
                 new Vector3(bounds.center.x, bounds.min.y, bounds.center.z));
+        }
+
+        private static void EncapsulateWorldBounds(
+            Bounds source,
+            ref Bounds target,
+            ref bool hasBounds)
+        {
+            if (!hasBounds)
+            {
+                target = source;
+                hasBounds = true;
+                return;
+            }
+
+            target.Encapsulate(source);
+        }
+
+        private static void EncapsulateWorldPoint(
+            Vector3 point,
+            ref Bounds target,
+            ref bool hasBounds)
+        {
+            if (!hasBounds)
+            {
+                target = new Bounds(point, Vector3.zero);
+                hasBounds = true;
+                return;
+            }
+
+            target.Encapsulate(point);
+        }
+
+        private void OnDestroy()
+        {
+            if (bakedBoundsMesh == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(bakedBoundsMesh);
+            }
+            else
+            {
+                DestroyImmediate(bakedBoundsMesh);
+            }
+
+            bakedBoundsMesh = null;
         }
 
         private void ApplyScaleAroundAnchor(float progress)

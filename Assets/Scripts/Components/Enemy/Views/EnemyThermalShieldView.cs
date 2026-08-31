@@ -81,6 +81,20 @@ namespace TowerDefense3D.Enemies
             SetVisible(false);
         }
 
+        internal bool OwnsRenderer(Renderer candidate)
+        {
+            EnsureInitialized();
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                if (renderers[index] == candidate)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private float CalculateFlashAmount()
         {
             if (flashRemainingSeconds <= 0f)
