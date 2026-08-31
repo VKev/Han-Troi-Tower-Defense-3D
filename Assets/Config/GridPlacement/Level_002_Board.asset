@@ -18,7 +18,7 @@ MonoBehaviour:
     height: 8
   cellSize: 1
   heightUnit: 1
-  visualizeInScene: 1
+  visualizeInScene: 0
   maxCameraGridXSpan: 13
   maxCameraGridYSpan: 13
   cameraPositionOffset: {x: 0, y: -0.8, z: 0}
