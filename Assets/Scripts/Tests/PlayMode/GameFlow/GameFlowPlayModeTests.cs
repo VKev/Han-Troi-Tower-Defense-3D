@@ -16,6 +16,11 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 {
     public sealed class GameFlowPlayModeTests
     {
+        // The level menu shows one button per level in the LevelCatalog, and the tower bar one
+        // button per element plus the generator and the soul nexus. Neither is reachable from a
+        // player build, so both are named here rather than left as bare numbers in the asserts.
+        private const int LevelCount = 8;
+        private const int ElementCount = 3;
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string LevelOneScenePath = "Assets/Scenes/Levels/Level_001.unity";
         private const string LevelTwoScenePath = "Assets/Scenes/Levels/Level_002.unity";
@@ -81,7 +86,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(CountLoadedByFullName(LevelLifetimeScopeTypeName), Is.Zero);
-            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
+            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(LevelCount));
             Assert.That(CountLoaded<SafeAreaView>(), Is.EqualTo(1));
             Assert.That(
                 Application.targetFrameRate,
@@ -124,7 +129,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<TowerProjectilePoolView>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
-            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(2));
+            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(LevelCount));
         }
 
         [UnityTest]
@@ -168,7 +173,32 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             BoardView boardView = UnityEngine.Object.FindFirstObjectByType<BoardView>();
             Assert.That(boardView, Is.Not.Null);
             Assert.That(boardView.Board.name, Is.EqualTo(expectedBoardName));
-            Assert.That(dragButtons, Has.Length.EqualTo(6));
+            int elementButtons = 0;
+            int generatorButtons = 0;
+            int nexusButtons = 0;
+            for (int index = 0; index < dragButtons.Length; index++)
+            {
+                TowerCombatDefinition definition = dragButtons[index].Definition;
+                if (definition is ElementTowerDefinition)
+                {
+                    elementButtons++;
+                }
+                else if (definition is GeneratorTowerDefinition)
+                {
+                    generatorButtons++;
+                }
+                else if (definition is SoulNexusDefinition)
+                {
+                    nexusButtons++;
+                }
+            }
+
+            // Checking what the bar is made of rather than how many buttons it has means a missing
+            // or stray element reads as exactly that, instead of as a count to puzzle over.
+            Assert.That(elementButtons, Is.EqualTo(ElementCount), "one drag button per element");
+            Assert.That(generatorButtons, Is.EqualTo(1), "one generator drag button");
+            Assert.That(nexusButtons, Is.EqualTo(1), "one soul nexus drag button");
+            Assert.That(dragButtons, Has.Length.EqualTo(ElementCount + 2));
             Assert.That(view.transform.Find("Safe Area/Select Tower"), Is.Null);
             Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);
