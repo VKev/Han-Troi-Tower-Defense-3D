@@ -84,7 +84,8 @@ namespace TowerDefense3D.Towers
         /// Adopts a tower the level authored straight into its scene - a hero standing on the
         /// board before the first wave, for instance. It costs no Gold, but otherwise becomes
         /// an ordinary node: selectable, linkable, and holding the cells under its footprint.
-        /// Returns false when the board refuses the cells the authored transform sits on.
+        /// A Hero authored beside a road may be registered without grid occupancy when no valid
+        /// footprint exists there, so its direct combat still participates in precomputation.
         /// </summary>
         public bool TryRegisterAuthoredTower(
             ITowerRuntimeView runtimeView,
@@ -108,17 +109,22 @@ namespace TowerDefense3D.Towers
             }
 
             runtimeView.Configure(definition);
-            if (!placementSystem.TryOccupyAuthoredTower(
-                    runtimeView.FootprintOrigin,
-                    placementDefinition.Footprint,
-                    out Vector3 snappedPosition,
-                    out int ownerId))
+            bool hasPlacement = placementSystem.TryOccupyAuthoredTower(
+                runtimeView.FootprintOrigin,
+                placementDefinition.Footprint,
+                out Vector3 snappedPosition,
+                out int ownerId);
+            if (!hasPlacement && !(definition is HeroTowerDefinition))
             {
                 error = $"{definition.Core.DisplayName} does not fit the board where the level placed it.";
                 return false;
             }
 
-            runtimeView.SetFootprintOrigin(snappedPosition);
+            if (hasPlacement)
+            {
+                runtimeView.SetFootprintOrigin(snappedPosition);
+            }
+
             Vector3 origin = runtimeView.ProjectileOrigin;
             TowerNodeId nodeId = manager.RegisterTower(
                 definition,
@@ -127,12 +133,19 @@ namespace TowerDefense3D.Towers
             try
             {
                 viewRegistry.Register(nodeId, runtimeView);
-                placementOwnerByView[runtimeView] = ownerId;
+                if (hasPlacement)
+                {
+                    placementOwnerByView[runtimeView] = ownerId;
+                }
             }
             catch
             {
                 manager.UnregisterTower(nodeId);
-                placementSystem.Occupancy.ReleaseOwner(ownerId);
+                if (hasPlacement)
+                {
+                    placementSystem.Occupancy.ReleaseOwner(ownerId);
+                }
+
                 throw;
             }
 

@@ -21,7 +21,7 @@ namespace TowerDefense3D.Towers
             new TowerThroughputProfile(1.2f, 1, 1),
             new TowerEconomyProfile(150, 0, 1, true));
         [Tooltip("How far, in meters, the hero reaches from its own position.")]
-        [SerializeField, Min(0.01f)] private float attackRangeMeters = 6f;
+        [SerializeField, Min(0.01f)] private float attackRangeMeters = 4f;
         [SerializeField] private DamageProfile attackDamage = new DamageProfile(14f);
         [SerializeField, Min(0f)] private float attackAoeRadiusMeters = 2f;
         [SerializeField, Min(0.01f)] private float prepareDurationSeconds = 1f;
