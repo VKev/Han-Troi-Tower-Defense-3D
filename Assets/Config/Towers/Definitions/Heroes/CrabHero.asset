@@ -33,7 +33,7 @@ MonoBehaviour:
       linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 1
-  attackRangeMeters: 6
+  attackRangeMeters: 4
   attackDamage:
     amount: 14
   attackAoeRadiusMeters: 2
