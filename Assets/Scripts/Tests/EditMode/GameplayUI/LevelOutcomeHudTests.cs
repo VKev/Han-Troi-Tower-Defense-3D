@@ -178,7 +178,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 var view = owner.GetComponentInChildren<LevelOutcomeHudView>(true);
                 Assert.That(view, Is.Not.Null, "Gameplay UI prefab must author a LevelOutcomeHudView.");
 
-                Transform hud = owner.transform.Find("Safe Area/Outcome HUD");
+                // Hangs off the canvas, not the safe area, so its dim runs edge to edge - see
+                // FullBleedOverlayTests.
+                Transform hud = owner.transform.Find("Outcome HUD");
                 Assert.That(hud, Is.Not.Null);
                 Assert.That(hud.gameObject.activeSelf, Is.True, "The view owner must stay active for injection.");
                 Assert.That(

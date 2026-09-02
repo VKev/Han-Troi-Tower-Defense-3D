@@ -94,7 +94,7 @@ namespace TowerDefense3D.GameFlow.Editor
             BuildWaveControls(hud);
             BuildStatusCluster(safeArea);
             BuildCornerButtons(safeArea);
-            BuildLevelOutcomeHud(safeArea);
+            BuildLevelOutcomeHud(root.transform, safeArea);
 
             // Backdrops first so the text and controls above them stay visible.
             OrderChildren(
@@ -118,8 +118,10 @@ namespace TowerDefense3D.GameFlow.Editor
                 "Pause Button",
                 "Return To Level Menu",
                 "Skip Waves Cheat",
-                "Cancel",
-                "Outcome HUD");
+                "Cancel");
+
+            // The outcome overlay draws over the safe area, not inside it.
+            OrderChildren(root.transform, "Safe Area", "Outcome HUD");
             WireViews(root, hud);
         }
 
@@ -526,16 +528,33 @@ namespace TowerDefense3D.GameFlow.Editor
             StretchToParent((RectTransform)cancelLabel.transform);
         }
 
-        private static void BuildLevelOutcomeHud(Transform safeArea)
+        /// <summary>
+        /// The victory and defeat panel. It hangs off the canvas rather than off the safe area so
+        /// its dim runs edge to edge - under the notch included - instead of leaving a border of
+        /// live gameplay around a screen that is meant to be over. The card it dims behind is
+        /// centred and far narrower than the display, so nothing readable lands under a cutout.
+        /// </summary>
+        private static void BuildLevelOutcomeHud(Transform canvas, Transform safeArea)
         {
             // Superseded by the shared victory/defeat panel below.
             DeleteChild(safeArea, "Victory HUD");
 
-            Transform hud = safeArea.Find("Outcome HUD");
+            Transform hud = canvas.Find("Outcome HUD");
+            if (hud == null)
+            {
+                // Earlier layouts kept it inside the safe area; carry that one across whole so the
+                // wiring already on it survives.
+                hud = safeArea.Find("Outcome HUD");
+                if (hud != null)
+                {
+                    hud.SetParent(canvas, false);
+                }
+            }
+
             if (hud == null)
             {
                 var created = new GameObject("Outcome HUD", typeof(RectTransform), typeof(LevelOutcomeHudView));
-                created.transform.SetParent(safeArea, false);
+                created.transform.SetParent(canvas, false);
                 hud = created.transform;
             }
 
@@ -543,8 +562,15 @@ namespace TowerDefense3D.GameFlow.Editor
 
             RectTransform overlay = EnsurePanel(hud, "Outcome Root", DimColor);
             StretchToParent(overlay);
+            Image dim = overlay.GetComponent<Image>();
+
+            // A plain quad, not the sliced rounded sprite the panels use: at full screen that
+            // sprite rounds the display corners and leaves a hairline of gameplay along every edge.
+            dim.sprite = null;
+            dim.type = Image.Type.Simple;
+
             // Blocks board and HUD input while the outcome panel is up.
-            overlay.GetComponent<Image>().raycastTarget = true;
+            dim.raycastTarget = true;
 
             RectTransform card = EnsurePanel(overlay, "Outcome Card", CardColor);
             SetRect(
