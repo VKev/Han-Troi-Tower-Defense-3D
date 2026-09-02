@@ -16,10 +16,10 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 {
     public sealed class GameFlowPlayModeTests
     {
-        // The level menu shows one button per level in the LevelCatalog, and the tower bar one
-        // button per element plus the generator, the soul nexus and the hero. Neither is reachable
-        // from a player build, so both are named here rather than left as bare numbers.
-        private const int LevelCount = 8;
+        // The tower bar shows one button per element plus the generator, the soul nexus and the
+        // hero. It is not reachable from a player build, so it is named here rather than left as a
+        // bare number. The level menu's count is read from the catalog instead - see
+        // <see cref="GetAuthoredLevelCount"/> - because that one grows every time a level is added.
         private const int ElementCount = 3;
         private const string BootstrapScenePath = "Assets/Scenes/Bootstrap.unity";
         private const string LevelOneScenePath = "Assets/Scenes/Levels/Level_001.unity";
@@ -87,7 +87,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(CountLoadedByFullName(LevelLifetimeScopeTypeName), Is.Zero);
-            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(LevelCount));
+            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(GetAuthoredLevelCount()));
             Assert.That(CountLoaded<SafeAreaView>(), Is.EqualTo(1));
             Assert.That(
                 Application.targetFrameRate,
@@ -130,7 +130,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<TowerProjectilePoolView>(), Is.Zero);
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
-            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(LevelCount));
+            Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(GetAuthoredLevelCount()));
         }
 
         [UnityTest]
@@ -394,6 +394,35 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// One menu button per authored level, read from the catalog the booted application is
+        /// actually running on. Hard-coding the number here means every new level breaks these
+        /// tests for a reason that has nothing to do with what they cover.
+        /// </summary>
+        private static int GetAuthoredLevelCount()
+        {
+            Component[] values = Resources.FindObjectsOfTypeAll<Component>();
+            for (int index = 0; index < values.Length; index++)
+            {
+                Component value = values[index];
+                if (!IsLoadedSceneObject(value)
+                    || !string.Equals(
+                        value.GetType().FullName,
+                        ApplicationLifetimeScopeTypeName,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var catalog = GetPrivateField<LevelCatalog>(value, "levelCatalog");
+                Assert.That(catalog, Is.Not.Null, "The application scope must author a LevelCatalog.");
+                return catalog.Levels.Count;
+            }
+
+            throw new InvalidOperationException(
+                "No loaded ApplicationLifetimeScope to read the level catalog from.");
         }
 
         private static int CountLoaded<T>() where T : Component
