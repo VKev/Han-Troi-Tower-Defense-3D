@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using TowerDefense3D.Economy;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.Waves;
 using UnityEditor;
 using UnityEngine;
@@ -124,6 +125,48 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(view.LastState.NextLevelVisible, Is.False);
             Assert.That(nextLevelCount, Is.Zero);
+        }
+
+        [Test]
+        public void Presenter_WaitsForFrogEscapeBeforeShowingVictory()
+        {
+            var waveSystem = new WaveSystemStub { Phase = WavePhase.Victory };
+            var view = new LevelOutcomeHudViewStub();
+            var escape = new VictoryEscapeViewStub();
+            var presenter = new LevelOutcomeHudPresenter(
+                waveSystem,
+                new LevelGoldSystem(0),
+                new LevelBaseHealthSystem(10),
+                view,
+                escape);
+            int levelClearedCount = 0;
+            presenter.BindLevel(
+                "Level 1",
+                false,
+                () => { },
+                () => { },
+                () => { },
+                () => levelClearedCount++);
+
+            presenter.Connect();
+
+            Assert.That(escape.PlayCount, Is.EqualTo(1));
+            Assert.That(view.LastState.IsVisible, Is.False);
+            Assert.That(levelClearedCount, Is.Zero);
+
+            // The frog's escape spans many frames, and every one of them refreshes the HUD. None of
+            // them may raise the panel, and none may restart the escape.
+            presenter.Refresh();
+            presenter.Refresh();
+
+            Assert.That(escape.PlayCount, Is.EqualTo(1));
+            Assert.That(view.LastState.IsVisible, Is.False);
+
+            escape.Complete();
+
+            Assert.That(view.LastState.IsVisible, Is.True);
+            Assert.That(view.LastState.Outcome, Is.EqualTo(LevelOutcome.Victory));
+            Assert.That(levelClearedCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -263,6 +306,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 StateChanged?.Invoke();
                 return true;
             }
+
+            public void ForceVictory()
+            {
+                Phase = WavePhase.Victory;
+                StateChanged?.Invoke();
+            }
         }
 
         private sealed class LevelOutcomeHudViewStub : ILevelOutcomeHudView
@@ -303,6 +352,23 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public void RaiseReturnToLevelMenu()
             {
                 ReturnToLevelMenuRequested?.Invoke();
+            }
+        }
+
+        private sealed class VictoryEscapeViewStub : ILevelVictoryEscapeView
+        {
+            public event Action EscapeCompleted;
+
+            public int PlayCount { get; private set; }
+
+            public void PlayEscape()
+            {
+                PlayCount++;
+            }
+
+            public void Complete()
+            {
+                EscapeCompleted?.Invoke();
             }
         }
     }

@@ -15,6 +15,7 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelGoldSystem goldSystem;
         private readonly LevelBaseHealthSystem healthSystem;
         private readonly ILevelOutcomeHudView view;
+        private readonly ILevelVictoryEscapeView victoryEscapeView;
 
         private string levelDisplayName = string.Empty;
         private bool hasNextLevel;
@@ -23,6 +24,8 @@ namespace TowerDefense3D.GameFlow
         private Action requestReturnToLevelMenu;
         private Action reportLevelCleared;
         private bool hasReportedLevelCleared;
+        private bool hasStartedVictoryEscape;
+        private bool hasCompletedVictoryEscape;
 
         public LevelOutcomeHudPresenter(
             IWaveSystem waveSystem,
@@ -34,6 +37,18 @@ namespace TowerDefense3D.GameFlow
             this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
             this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
             this.view = view ?? throw new ArgumentNullException(nameof(view));
+        }
+
+        public LevelOutcomeHudPresenter(
+            IWaveSystem waveSystem,
+            LevelGoldSystem goldSystem,
+            LevelBaseHealthSystem healthSystem,
+            ILevelOutcomeHudView view,
+            ILevelVictoryEscapeView victoryEscapeView)
+            : this(waveSystem, goldSystem, healthSystem, view)
+        {
+            this.victoryEscapeView = victoryEscapeView
+                ?? throw new ArgumentNullException(nameof(victoryEscapeView));
         }
 
         public void BindLevel(
@@ -68,6 +83,8 @@ namespace TowerDefense3D.GameFlow
             this.hasNextLevel = hasNextLevel;
             this.reportLevelCleared = reportLevelCleared;
             hasReportedLevelCleared = false;
+            hasStartedVictoryEscape = false;
+            hasCompletedVictoryEscape = false;
             this.requestReplayLevel = requestReplayLevel
                 ?? throw new ArgumentNullException(nameof(requestReplayLevel));
             this.requestNextLevel = requestNextLevel
@@ -82,6 +99,11 @@ namespace TowerDefense3D.GameFlow
             view.PlayAgainRequested += HandlePlayAgainRequested;
             view.NextLevelRequested += HandleNextLevelRequested;
             view.ReturnToLevelMenuRequested += HandleReturnToLevelMenuRequested;
+            if (victoryEscapeView != null)
+            {
+                victoryEscapeView.EscapeCompleted += HandleVictoryEscapeCompleted;
+            }
+
             Refresh();
         }
 
@@ -90,6 +112,11 @@ namespace TowerDefense3D.GameFlow
             view.PlayAgainRequested -= HandlePlayAgainRequested;
             view.NextLevelRequested -= HandleNextLevelRequested;
             view.ReturnToLevelMenuRequested -= HandleReturnToLevelMenuRequested;
+            if (victoryEscapeView != null)
+            {
+                victoryEscapeView.EscapeCompleted -= HandleVictoryEscapeCompleted;
+            }
+
             view.Shutdown();
         }
 
@@ -108,6 +135,26 @@ namespace TowerDefense3D.GameFlow
             }
 
             bool isVictory = phase == WavePhase.Victory;
+            if (isVictory && victoryEscapeView != null && !hasCompletedVictoryEscape)
+            {
+                if (!hasStartedVictoryEscape)
+                {
+                    hasStartedVictoryEscape = true;
+                    victoryEscapeView.PlayEscape();
+                }
+
+                if (!hasCompletedVictoryEscape)
+                {
+                    view.Render(new LevelOutcomeHudState(
+                        false,
+                        LevelOutcome.Victory,
+                        string.Empty,
+                        string.Empty,
+                        false));
+                    return;
+                }
+            }
+
             if (isVictory && !hasReportedLevelCleared)
             {
                 hasReportedLevelCleared = true;
@@ -157,6 +204,12 @@ namespace TowerDefense3D.GameFlow
         private void HandleReturnToLevelMenuRequested()
         {
             requestReturnToLevelMenu?.Invoke();
+        }
+
+        private void HandleVictoryEscapeCompleted()
+        {
+            hasCompletedVictoryEscape = true;
+            Refresh();
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
+using TowerDefense3D.Frog;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Simulation;
@@ -74,6 +75,8 @@ namespace TowerDefense3D.GameFlow
                 .As<ITowerNetworkHudView>();
             builder.RegisterComponentInHierarchy<WaveHudView>()
                 .As<IWaveHudView>();
+            builder.RegisterComponentInHierarchy<FrogVictoryEscapeView>()
+                .As<ILevelVictoryEscapeView>();
             builder.RegisterComponentInHierarchy<EnemyViewPool>()
                 .AsSelf()
                 .As<IEnemyViewPool>();
