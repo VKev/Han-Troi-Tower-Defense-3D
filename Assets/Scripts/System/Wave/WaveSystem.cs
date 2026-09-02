@@ -173,6 +173,40 @@ namespace TowerDefense3D.Waves
             StateChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Development cheat: wipes the board and reports every wave beaten. Phases are walked
+        /// rather than jumped because the state machine only accepts Victory out of Running, and
+        /// routing through the real transitions keeps the simulation shut down the same way a
+        /// genuine clear does.
+        /// </summary>
+        public void ForceVictory()
+        {
+            if (Phase == WavePhase.Victory)
+            {
+                return;
+            }
+
+            towerNetworkSystem.StopSimulation();
+            enemySystem.Reset();
+            currentPlan = Array.Empty<WaveSpawnOrder>();
+            nextSpawnIndex = 0;
+            elapsedSeconds = 0f;
+            nextWaveIndex = schedule.Waves.Count;
+
+            if (Phase == WavePhase.Defeat)
+            {
+                stateMachine.TransitionTo(WavePhase.Preparation);
+            }
+
+            if (Phase == WavePhase.Preparation)
+            {
+                stateMachine.TransitionTo(WavePhase.Running);
+            }
+
+            stateMachine.TransitionTo(WavePhase.Victory);
+            StateChanged?.Invoke();
+        }
+
         public void Reset()
         {
             towerNetworkSystem.StopSimulation();
@@ -191,7 +225,7 @@ namespace TowerDefense3D.Waves
                 && currentPlan[nextSpawnIndex].TimeSeconds <= elapsedSeconds)
             {
                 WaveSpawnOrder order = currentPlan[nextSpawnIndex];
-                enemySystem.Spawn(order.EnemyId, order.Enemy);
+                enemySystem.Spawn(order.EnemyId, order.Enemy, order.SpawnPointIndex);
                 nextSpawnIndex++;
             }
         }
