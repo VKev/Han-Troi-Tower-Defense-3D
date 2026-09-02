@@ -576,7 +576,7 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < enemies.Count; index++)
             {
                 ShadowEnemy enemy = enemies[index];
-                if (enemy.Removal != PlannedEnemyRemoval.None || !enemy.IsAlive
+                if (enemy.Removal != PlannedEnemyRemoval.None || !enemy.IsAlive || enemy.IsHidden
                     || !IsWithinRadiusXZ(enemy.Position, attack.ImpactPosition, radius))
                 {
                     continue;
@@ -596,6 +596,7 @@ namespace TowerDefense3D.Enemies
             {
                 ShadowEnemy candidate = enemies[index];
                 if (candidate.Removal != PlannedEnemyRemoval.None || !candidate.IsAlive
+                    || candidate.IsHidden
                     || !IsWithinRadiusXZ(candidate.Position, ToVector3(tower.Position), tower.RangeMeters))
                 {
                     continue;
