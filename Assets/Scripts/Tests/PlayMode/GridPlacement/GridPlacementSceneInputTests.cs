@@ -15,6 +15,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 {
     public sealed class GridPlacementSceneInputTests
     {
+        private readonly List<InputDevice> suspendedMice = new List<InputDevice>();
+
         private Mouse testMouse;
 
         [TearDown]
@@ -26,6 +28,42 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             }
 
             testMouse = null;
+
+            for (int index = 0; index < suspendedMice.Count; index++)
+            {
+                InputSystem.EnableDevice(suspendedMice[index]);
+            }
+
+            suspendedMice.Clear();
+        }
+
+        /// <summary>
+        /// Adds a mouse for the test to drive, and suspends the machine's own for the duration.
+        ///
+        /// The input this test reads comes from <c>Mouse.current</c>, which follows whichever mouse
+        /// last sent input. The editor runs on a machine with a real mouse attached, so any stray
+        /// movement of it while the test ran handed <c>current</c> back to the hardware and left the
+        /// queued state on this one invisible. That is what made this test fail every so often -
+        /// more often in a full run, simply because a full run gives the hand at the desk longer to
+        /// interfere.
+        /// </summary>
+        private Mouse AddIsolatedTestMouse()
+        {
+            for (int index = 0; index < InputSystem.devices.Count; index++)
+            {
+                InputDevice device = InputSystem.devices[index];
+                if (device is Mouse && device.enabled)
+                {
+                    suspendedMice.Add(device);
+                }
+            }
+
+            for (int index = 0; index < suspendedMice.Count; index++)
+            {
+                InputSystem.DisableDevice(suspendedMice[index]);
+            }
+
+            return InputSystem.AddDevice<Mouse>();
         }
 
         [UnityTest]
@@ -77,7 +115,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.Occupancy, Is.Not.Null);
             Assert.That(controller.SelectedTower, Is.Not.Null);
 
-            testMouse = InputSystem.AddDevice<Mouse>();
+            testMouse = AddIsolatedTestMouse();
             Mouse mouse = testMouse;
             Assert.That(
                 TryFindValidPlacementScreenPoint(
@@ -93,8 +131,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Is.True,
                 "The placement view must project the selected screen point onto the authored board.");
 
-            QueueMouseState(mouse, screenPoint, isPressed: true);
             yield return null;
+            QueueMouseState(mouse, screenPoint, isPressed: true);
             inputSystem.Tick();
             Assert.That(inputSystem.Current.HasPointerInput, Is.True);
             Assert.That(inputSystem.Current.WasPressed, Is.True);
@@ -104,8 +142,8 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.True);
 
-            QueueMouseState(mouse, screenPoint, isPressed: false);
             yield return null;
+            QueueMouseState(mouse, screenPoint, isPressed: false);
             inputSystem.Tick();
             placementSystem.Tick();
 
@@ -113,12 +151,12 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             Assert.That(controller.HasCandidate, Is.True);
             Assert.That(controller.CandidateIsValid, Is.False);
 
-            QueueMouseState(mouse, screenPoint, isPressed: true);
             yield return null;
+            QueueMouseState(mouse, screenPoint, isPressed: true);
             inputSystem.Tick();
             placementSystem.Tick();
-            QueueMouseState(mouse, screenPoint, isPressed: false);
             yield return null;
+            QueueMouseState(mouse, screenPoint, isPressed: false);
             inputSystem.Tick();
             placementSystem.Tick();
 
@@ -278,6 +316,17 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             return false;
         }
 
+        /// <summary>
+        /// Queues one mouse state and applies it there and then.
+        ///
+        /// A queued event only reaches the device on the next input update, and the press it
+        /// carries is readable as <c>wasPressedThisFrame</c> for exactly that one update. Leaving
+        /// that to the player loop made this a race the test lost every so often: the caller reads
+        /// the device on the next frame, and whether the input update had landed by then - or had
+        /// already been followed by another that cleared the edge - was not something the test
+        /// controlled. Applying it here means the caller reads the press in the same frame it was
+        /// applied, with nothing in between.
+        /// </summary>
         private static void QueueMouseState(Mouse mouse, Vector2 position, bool isPressed)
         {
             MouseState state = new MouseState
@@ -285,6 +334,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 position = position
             }.WithButton(MouseButton.Left, isPressed);
             InputSystem.QueueStateEvent(mouse, state);
+            InputSystem.Update();
         }
 
         private static bool IsOverUi(
