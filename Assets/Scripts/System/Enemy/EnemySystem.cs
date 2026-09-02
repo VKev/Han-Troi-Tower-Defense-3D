@@ -54,7 +54,15 @@ namespace TowerDefense3D.Enemies
 
         internal EnemyInstance Spawn(long enemyId, EnemyDefinition definition)
         {
-            RoadPath route = roadPaths.GetForEnemy(enemyId, definition);
+            return Spawn(enemyId, definition, -1);
+        }
+
+        internal EnemyInstance Spawn(
+            long enemyId,
+            EnemyDefinition definition,
+            int spawnPointIndex)
+        {
+            RoadPath route = roadPaths.GetForEnemy(enemyId, definition, spawnPointIndex);
             return SpawnAt(enemyId, definition, route.Start, 1, route);
         }
 

@@ -14,8 +14,14 @@ namespace TowerDefense3D.GridPlacement
     public struct BoardRouteDefinition
     {
         [SerializeField] private GridCell[] cells;
+        [SerializeField, Min(1)] private int weight;
 
         public BoardRouteDefinition(IReadOnlyList<GridCell> cells)
+            : this(cells, 1)
+        {
+        }
+
+        public BoardRouteDefinition(IReadOnlyList<GridCell> cells, int weight)
         {
             if (cells == null)
             {
@@ -27,8 +33,11 @@ namespace TowerDefense3D.GridPlacement
             {
                 this.cells[index] = cells[index];
             }
+
+            this.weight = Mathf.Max(1, weight);
         }
 
         public IReadOnlyList<GridCell> Cells => cells ?? Array.Empty<GridCell>();
+        public int Weight => Mathf.Max(1, weight);
     }
 }

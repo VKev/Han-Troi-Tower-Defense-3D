@@ -83,6 +83,24 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         }
 
         [Test]
+        public void RoadPathSet_SelectedRoadSpawn_OnlyChoosesItsWeightedRoutes()
+        {
+            var paths = new RoadPathSet(
+                new[]
+                {
+                    new RoadPath(new[] { Vector3.zero, Vector3.right }),
+                    new RoadPath(new[] { Vector3.zero, Vector3.forward }),
+                    new RoadPath(new[] { Vector3.one, Vector3.one + Vector3.right })
+                },
+                new[] { 1, 3, 1 },
+                new[] { 0, 0, 1 });
+
+            Assert.That(paths.SpawnPointCount, Is.EqualTo(2));
+            Assert.That(paths.GetRouteIndex(7L, 1), Is.EqualTo(2));
+            Assert.That(paths.GetRouteIndex(7L, 0), Is.InRange(0, 1));
+        }
+
+        [Test]
         public void CreatePaths_SplitsEachRoadIntoLanesWithTheBossOnTheCentre()
         {
             definition = CreateBoard(new[]

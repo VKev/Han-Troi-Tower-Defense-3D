@@ -167,7 +167,9 @@ namespace TowerDefense3D.Enemies
                 && SecondsToTick(wavePlan[nextSpawnIndex].TimeSeconds) <= tick)
             {
                 WaveSpawnOrder order = wavePlan[nextSpawnIndex++];
-                int routeIndex = roadPaths.GetRouteIndex(order.EnemyId);
+                int routeIndex = roadPaths.GetRouteIndex(
+                    order.EnemyId,
+                    order.SpawnPointIndex);
                 RoadPath lane = roadPaths.GetLane(
                     routeIndex,
                     roadPaths.GetLaneIndex(order.EnemyId, order.Enemy));

@@ -417,10 +417,19 @@ namespace TowerDefense3D.GridPlacement.Editor
                 var labels = new string[routeCount];
                 for (int index = 0; index < routeCount; index++)
                 {
-                    labels[index] = $"Route {index}  ({document.GetRoute(index).Count} cells)";
+                    labels[index] = $"Route {index + 1}  (Spawn {document.GetRouteSpawnPointIndex(index)}, "
+                        + $"{document.GetRoute(index).Count} cells, Weight {document.GetRouteWeight(index)})";
                 }
 
                 selectedRouteIndex = EditorGUILayout.Popup("Route", selectedRouteIndex, labels);
+                int weight = EditorGUILayout.IntField(
+                    "Weight",
+                    document.GetRouteWeight(selectedRouteIndex));
+                if (weight != document.GetRouteWeight(selectedRouteIndex))
+                {
+                    document.SetRouteWeight(selectedRouteIndex, weight);
+                    document.Commit("Set Route Weight");
+                }
             }
 
             using (new EditorGUILayout.HorizontalScope())
@@ -455,8 +464,9 @@ namespace TowerDefense3D.GridPlacement.Editor
             }
 
             EditorGUILayout.LabelField(
-                "Left-click or drag along the road to record the walk in order. Right-click "
-                + "removes the last recorded cell. Once a board has routes they replace its exit "
+                "Left-click or drag along the road to record numbered steps. Routes may share "
+                + "their early cells, then diverge at a junction; their weights decide which "
+                + "branch an enemy must take. Once a board has routes they replace its exit "
                 + "arrows at runtime.",
                 EditorStyles.wordWrappedMiniLabel);
             DrawRouteIssues();

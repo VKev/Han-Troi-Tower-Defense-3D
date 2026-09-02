@@ -12,11 +12,14 @@ namespace TowerDefense3D.Waves
         [SerializeField, Min(1)] private int count = 1;
         [SerializeField, Min(0f)] private float startTimeSeconds;
         [SerializeField, Min(0f)] private float spawnWindowSeconds;
+        [Tooltip("-1 uses weighted automatic route selection; 0+ selects an authored Road Spawn index.")]
+        [SerializeField, Min(-1)] private int spawnPointIndex = -1;
 
         public EnemyDefinition Enemy => enemy;
         public int Count => count;
         public float StartTimeSeconds => startTimeSeconds;
         public float SpawnWindowSeconds => spawnWindowSeconds;
+        public int SpawnPointIndex => spawnPointIndex;
 
         internal void CollectValidationErrors(ICollection<string> errors, string context)
         {
