@@ -93,15 +93,68 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
                 Application.targetFrameRate,
                 Is.EqualTo(TowerDefense3D.Mobile.FramePacingSystem.TargetFrameRate));
             Assert.That(QualitySettings.vSyncCount, Is.Zero);
-            Assert.That(GetLevelButtonLabel(1), Does.StartWith("Play "));
-            Assert.That(GetLevelButtonLabel(2), Does.StartWith("Unlock "));
+            Assert.That(GetLevelButtonLabel(1), Is.EqualTo("01"));
+            Assert.That(GetLevelButtonLabel(2), Is.EqualTo("02"));
             yield break;
         }
 
         [UnityTest]
-        public IEnumerator LevelOne_FirstTapLoads_AndReturnRestoresMenuWithoutDuplicates()
+        public IEnumerator LevelMenu_AnyEmptySpotOnTheMap_DragsTheJourneyTrail()
+        {
+            var scroll = FindLoaded<ScrollRect>();
+            Assert.That(scroll, Is.Not.Null, "The level menu needs a journey scroll view.");
+            Assert.That(EventSystem.current, Is.Not.Null);
+
+            // Sweeps the whole map rather than one hand-picked pixel. What this guards against is a
+            // map that can only be dragged by grabbing a node, which is what happens when the blank
+            // stretches between the nodes are not raycast targets.
+            var corners = new Vector3[4];
+            scroll.viewport.GetWorldCorners(corners);
+            Vector3 across = corners[3] - corners[0];
+            Vector3 up = corners[1] - corners[0];
+
+            var hits = new List<RaycastResult>();
+            int sampled = 0;
+            for (int column = 1; column < 12; column++)
+            {
+                for (int row = 1; row < 8; row++)
+                {
+                    Vector3 point = corners[0] + (across * (column / 12f)) + (up * (row / 8f));
+                    var pointer = new PointerEventData(EventSystem.current)
+                    {
+                        position = new Vector2(point.x, point.y)
+                    };
+
+                    hits.Clear();
+                    EventSystem.current.RaycastAll(pointer, hits);
+                    Assert.That(hits, Is.Not.Empty, "Nothing to grab at " + pointer.position + ".");
+
+                    GameObject top = hits[0].gameObject;
+                    if (!top.transform.IsChildOf(scroll.transform))
+                    {
+                        // A chrome button sits over the map here; it is meant to take the press.
+                        continue;
+                    }
+
+                    Assert.That(
+                        ExecuteEvents.GetEventHandler<IDragHandler>(top),
+                        Is.EqualTo(scroll.gameObject),
+                        "Dead spot at " + pointer.position + ": a press there reaches " + top.name
+                        + ", which does not drag the journey.");
+                    sampled++;
+                }
+            }
+
+            Assert.That(sampled, Is.GreaterThan(20), "The sweep never landed on the map itself.");
+            yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator LevelOne_SelectThenEnterLoads_AndReturnRestoresMenuWithoutDuplicates()
         {
             ClickLevel(1);
+            Assert.That(IsSceneLoaded(LevelOneScenePath), Is.False);
+            ClickEnterMap();
             yield return WaitForGameplay(LevelOneScenePath);
 
             Assert.That(IsSceneLoaded(LevelOneScenePath), Is.True);
@@ -137,12 +190,13 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         public IEnumerator LevelTwo_FirstTapUnlocks_SecondTapLoads_AndUnlockPersists()
         {
             ClickLevel(2);
-            yield return WaitForLevelButtonLabel(2, "Play ");
+            yield return WaitForLevelUnlocked(2);
 
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(FindLevelButton(2), Is.Not.Null);
 
             ClickLevel(2);
+            ClickEnterMap();
             yield return WaitForGameplay(LevelTwoScenePath);
 
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(LevelTwoScenePath));
@@ -162,8 +216,9 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         public IEnumerator LevelSeven_AdoptsItsAuthoredHero_IntoTheTowerNetwork()
         {
             ClickLevel(7);
-            yield return WaitForLevelButtonLabel(7, "Play ");
+            yield return WaitForLevelUnlocked(7);
             ClickLevel(7);
+            ClickEnterMap();
             yield return WaitForGameplay(LevelSevenScenePath);
 
             AuthoredTowerView authoredHero = FindLoaded<AuthoredTowerView>();
@@ -319,13 +374,22 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.Fail("Timed out waiting for gameplay scene " + scenePath + ".");
         }
 
-        private static IEnumerator WaitForLevelButtonLabel(int levelNumber, string prefix)
+        /// <summary>
+        /// Waits for a journey node to stop being shut. The padlock is what says so: the tick next
+        /// to it marks a level as beaten, which the level the player has only just reached is not.
+        /// </summary>
+        private static IEnumerator WaitForLevelUnlocked(int levelNumber)
         {
             for (int frame = 0; frame < TransitionFrameBudget; frame++)
             {
                 FailIfBlockingError("level button " + levelNumber);
-                string label = GetLevelButtonLabel(levelNumber);
-                if (!string.IsNullOrEmpty(label) && label.StartsWith(prefix, StringComparison.Ordinal))
+                LevelButtonView view = FindLevelButton(levelNumber);
+                GameObject padlock = view != null
+                    ? GetPrivateField<GameObject>(view, "lockedIndicator")
+                    : null;
+                if (padlock != null
+                    && view.gameObject.activeInHierarchy
+                    && !padlock.activeInHierarchy)
                 {
                     yield break;
                 }
@@ -333,7 +397,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
                 yield return null;
             }
 
-            Assert.Fail("Timed out waiting for level button label " + levelNumber + ".");
+            Assert.Fail("Timed out waiting for level button " + levelNumber + " to unlock.");
         }
 
         private static void FailIfBlockingError(string expected)
@@ -357,6 +421,14 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             LevelButtonView view = FindLevelButton(levelNumber);
             Assert.That(view, Is.Not.Null, "Missing bound level button " + levelNumber);
             view.GetComponent<Button>().onClick.Invoke();
+        }
+
+        private static void ClickEnterMap()
+        {
+            LevelMenuView menu = FindLoaded<LevelMenuView>();
+            Button enterMap = GetPrivateField<Button>(menu, "enterMapButton");
+            Assert.That(enterMap, Is.Not.Null, "Level menu requires an Enter Map button.");
+            enterMap.onClick.Invoke();
         }
 
         private static LevelButtonView FindLevelButton(int levelNumber)
