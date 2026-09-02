@@ -37,8 +37,8 @@ MonoBehaviour:
   attackDamage:
     amount: 14
   attackAoeRadiusMeters: 2
-  prepareDurationSeconds: 1
-  lungeFractionOfAttackInterval: 0.20833333
+  prepareDurationSeconds: 0.6
+  lungeFractionOfAttackInterval: 0.087
   impactHoldFractionOfAttackInterval: 0.083333336
   returnFractionOfAttackInterval: 0.20833333
   unlockAfterClearingLevel: 7

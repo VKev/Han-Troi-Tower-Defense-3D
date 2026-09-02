@@ -10,27 +10,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.72
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.72
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.72
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 13.95
+      value: 0.01
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.96
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.38
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 99ca1724346ca0241a6739854894c5a5, type: 3}
       propertyPath: m_LocalRotation.w
@@ -119,10 +119,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.CrabFiringClawSequence
   firingClawPrefab: {fileID: 6436013415121981815, guid: 01bd664f6d959ba4682edb635f59cafc, type: 3}
+  hitEffectPrefab: {fileID: 7960052923638380698, guid: 758768d7c5c9bf243af0920a243f2718, type: 3}
   impactHeightMeters: 0
   minimumArcHeightMeters: 0.75
   minimumReachScale: 0.2
-  maximumReachScale: 8
+  maximumReachScale: 3
   raiseFractionOfLunge: 0.65
   raisedScaleFraction: 0.45
   bodyTurnSpeedDegreesPerSecond: 540
