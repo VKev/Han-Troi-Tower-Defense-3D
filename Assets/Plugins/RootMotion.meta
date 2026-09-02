@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Packages/nuget-packages/InstalledPackages/System.Runtime.CompilerServices.Unsafe.6.1.2.meta
+guid: a943b42f33964ff46a722083c5f64271
+========
+guid: 217cad82ab5bf3a4b82b00cdb6de59e1
+>>>>>>>> ec4f924a4f045d103d97ba19c6f880a64e4e6268:Assets/Plugins/RootMotion.meta
+folderAsset: yes
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

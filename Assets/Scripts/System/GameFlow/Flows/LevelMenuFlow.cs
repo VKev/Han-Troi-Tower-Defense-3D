@@ -71,6 +71,23 @@ namespace TowerDefense3D.GameFlow
             gameFlowSystem.BeginLevelLoad(new LevelLoadRequest(entry.LevelNumber, entry.ScenePath));
         }
 
+        /// <summary>
+        /// Persists one level as beaten. Replaying a level already cleared costs no save write.
+        /// </summary>
+        public void MarkLevelCleared(int levelNumber)
+        {
+            if (saveSystem.Progress.IsCleared(levelNumber))
+            {
+                return;
+            }
+
+            saveSystem.TryMarkClearedAndSave(levelNumber, out SaveWriteResult writeResult);
+            if (!writeResult.IsSuccess)
+            {
+                gameFlowSystem.ShowSaveWarning(writeResult.Error);
+            }
+        }
+
         public void PlayNextLevel(int currentLevelNumber)
         {
             if (levelCatalog.TryGetNextLevel(currentLevelNumber, out LevelCatalogEntry entry))

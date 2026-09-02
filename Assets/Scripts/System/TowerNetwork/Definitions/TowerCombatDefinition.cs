@@ -9,6 +9,12 @@ namespace TowerDefense3D.Towers
         public abstract TowerNetworkRole NetworkRole { get; }
         public abstract TowerCoreProfile Core { get; }
 
+        /// <summary>
+        /// Level the player has to clear before this tower may be built. Zero, the default,
+        /// leaves the tower buildable from the first level.
+        /// </summary>
+        public virtual int UnlockAfterClearingLevelNumber => 0;
+
         internal abstract void CollectSpecificValidationErrors(List<string> errors);
     }
 
