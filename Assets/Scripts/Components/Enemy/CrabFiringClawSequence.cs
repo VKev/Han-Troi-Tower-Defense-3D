@@ -12,6 +12,7 @@ namespace TowerDefense3D.Enemies
         private static readonly int IdleState = Animator.StringToHash("Idle");
 
         [SerializeField] private GameObject firingClawPrefab;
+        [SerializeField] private GameObject hitEffectPrefab;
         [SerializeField, Min(0f)] private float impactHeightMeters;
         [SerializeField, Min(0f)] private float minimumArcHeightMeters = 0.75f;
         [SerializeField, Min(0.01f)] private float minimumReachScale = 0.2f;
@@ -24,6 +25,7 @@ namespace TowerDefense3D.Enemies
         private TowerRuntimeView towerView;
         private HeroTowerDefinition authoredHero;
         private Transform bodyAimTransform;
+        private TowerProjectilePoolView hitEffectPool;
         private GameObject firingClawInstance;
         private Coroutine sequence;
         private Vector3 aimPosition;
@@ -183,6 +185,7 @@ namespace TowerDefense3D.Enemies
                     attack.ImpactPosition,
                     attack.LungeDurationSeconds,
                     true);
+                PlayHitEffect(attack.ImpactPosition);
                 yield return new WaitForSeconds(attack.ImpactHoldDurationSeconds);
                 yield return MoveClawTargetAlongArc(
                     firingClawReturnPosition,
@@ -440,6 +443,32 @@ namespace TowerDefense3D.Enemies
                 1f,
                 firingClawReachScale,
                 progress);
+        }
+
+        private void PlayHitEffect(Vector3 fallbackPosition)
+        {
+            if (hitEffectPrefab == null)
+            {
+                return;
+            }
+
+            if (hitEffectPool == null)
+            {
+                hitEffectPool = FindFirstObjectByType<TowerProjectilePoolView>(
+                    FindObjectsInactive.Include);
+            }
+
+            if (hitEffectPool == null)
+            {
+                return;
+            }
+
+            Transform target = firingClawInstance != null
+                ? firingClawInstance.transform.Find("Animation Rig/IK Target")
+                : null;
+            hitEffectPool.PlayHitEffect(
+                hitEffectPrefab,
+                target != null ? target.position : fallbackPosition);
         }
 
         private Vector3 GetOriginalTipPosition()
