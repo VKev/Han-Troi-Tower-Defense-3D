@@ -30,6 +30,7 @@ namespace TowerDefense3D.GameFlow.Editor
         private static readonly Color DimColor = new Color(0.01f, 0.02f, 0.03f, 0.78f);
         private static readonly Color CardColor = new Color(0.09f, 0.10f, 0.13f, 0.98f);
         private static readonly Color NextLevelColor = new Color(0.13f, 0.52f, 0.30f, 1f);
+        private static readonly Color CheatButtonColor = new Color(0.34f, 0.18f, 0.46f, 0.94f);
 
         private static readonly Dictionary<string, Color> TowerColorsByName =
             new Dictionary<string, Color>
@@ -116,6 +117,7 @@ namespace TowerDefense3D.GameFlow.Editor
                 "Level Status HUD",
                 "Pause Button",
                 "Return To Level Menu",
+                "Skip Waves Cheat",
                 "Cancel",
                 "Outcome HUD");
             WireViews(root, hud);
@@ -476,6 +478,34 @@ namespace TowerDefense3D.GameFlow.Editor
                 FontStyle.Bold);
             menuLabel.text = "MENU";
             StretchToParent((RectTransform)menuLabel.transform);
+
+            // Development cheat, parked immediately left of MENU so it reads as part of the same
+            // corner cluster while its colour keeps it from being mistaken for a real control.
+            RectTransform skip = EnsureButton(safeArea, "Skip Waves Cheat");
+            SetRect(
+                skip,
+                new Vector2(1f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(-224f, -24f),
+                new Vector2(128f, 64f));
+            StyleButton(skip, CheatButtonColor);
+            Text skipLabel = Label(
+                skip,
+                "Label",
+                "SKIP WAVES",
+                Vector2.zero,
+                Vector2.zero,
+                15,
+                TextColor,
+                TextAnchor.MiddleCenter,
+                FontStyle.Bold);
+            skipLabel.text = "SKIP WAVES";
+            StretchToParent((RectTransform)skipLabel.transform);
+            SetObjectReference(
+                EnsureComponent<LevelSkipCheatView>(skip),
+                "skipButton",
+                skip.GetComponent<Button>());
 
             var cancel = (RectTransform)safeArea.Find("Cancel");
             SetRect(
@@ -844,6 +874,32 @@ namespace TowerDefense3D.GameFlow.Editor
             {
                 Object.DestroyImmediate(renderer);
             }
+        }
+
+        private static RectTransform EnsureButton(Transform parent, string name)
+        {
+            Transform existing = parent.Find(name);
+            if (existing != null)
+            {
+                return (RectTransform)existing;
+            }
+
+            var created = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Button));
+            created.transform.SetParent(parent, false);
+            created.GetComponent<Button>().targetGraphic = created.GetComponent<Image>();
+            return (RectTransform)created.transform;
+        }
+
+        private static T EnsureComponent<T>(Component target)
+            where T : Component
+        {
+            T existing = target.GetComponent<T>();
+            return existing != null ? existing : target.gameObject.AddComponent<T>();
         }
 
         private static void DeleteChild(Transform parent, string name)

@@ -67,6 +67,8 @@ namespace TowerDefense3D.GameFlow
                 .As<ILevelStatusHudView>();
             builder.RegisterComponentInHierarchy<PauseHudView>()
                 .As<IPauseHudView>();
+            builder.RegisterComponentInHierarchy<LevelSkipCheatView>()
+                .As<ILevelSkipCheatView>();
             builder.RegisterComponentInHierarchy<LevelOutcomeHudView>()
                 .As<ILevelOutcomeHudView>();
             builder.RegisterComponentInHierarchy<PlacementHudView>()
@@ -126,6 +128,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkHudPresenter>(Lifetime.Scoped);
             builder.Register<WaveHudPresenter>(Lifetime.Scoped);
+            builder.Register<LevelSkipCheatPresenter>(Lifetime.Scoped);
             builder.Register<LevelOutcomeHudPresenter>(Lifetime.Scoped);
             builder.Register<GameplayUISystem>(Lifetime.Scoped);
             builder.Register<LevelSystemGroup>(Lifetime.Scoped);

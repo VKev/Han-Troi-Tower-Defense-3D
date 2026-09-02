@@ -24,6 +24,7 @@ namespace TowerDefense3D.GameFlow
         private readonly ILevelStatusHudView statusHudView;
         private readonly GameplaySimulationSystem simulationSystem;
         private readonly IPauseHudView pauseHudView;
+        private readonly LevelSkipCheatPresenter skipCheatPresenter;
         private readonly LevelOutcomeHudPresenter levelOutcomeHudPresenter;
 
         private bool isDirty;
@@ -69,6 +70,7 @@ namespace TowerDefense3D.GameFlow
             ILevelStatusHudView statusHudView,
             GameplaySimulationSystem simulationSystem,
             IPauseHudView pauseHudView,
+            LevelSkipCheatPresenter skipCheatPresenter,
             LevelOutcomeHudPresenter levelOutcomeHudPresenter)
             : this(
                 gameplayView,
@@ -85,6 +87,8 @@ namespace TowerDefense3D.GameFlow
             this.simulationSystem = simulationSystem
                 ?? throw new ArgumentNullException(nameof(simulationSystem));
             this.pauseHudView = pauseHudView ?? throw new ArgumentNullException(nameof(pauseHudView));
+            this.skipCheatPresenter = skipCheatPresenter
+                ?? throw new ArgumentNullException(nameof(skipCheatPresenter));
             this.levelOutcomeHudPresenter = levelOutcomeHudPresenter
                 ?? throw new ArgumentNullException(nameof(levelOutcomeHudPresenter));
         }
@@ -116,6 +120,8 @@ namespace TowerDefense3D.GameFlow
                 pauseHudView.Show();
                 pauseHudView.PauseToggleRequested += HandlePauseToggleRequested;
             }
+
+            skipCheatPresenter?.Connect();
             levelOutcomeHudPresenter?.Connect();
             isStarted = true;
             isDirty = true;
@@ -131,6 +137,7 @@ namespace TowerDefense3D.GameFlow
             isDirty = false;
             towerNetworkHudPresenter.Refresh();
             waveHudPresenter.Refresh();
+            skipCheatPresenter?.Refresh();
             levelOutcomeHudPresenter?.Refresh();
         }
 
@@ -154,6 +161,8 @@ namespace TowerDefense3D.GameFlow
                 pauseHudView.PauseToggleRequested -= HandlePauseToggleRequested;
                 pauseHudView.Shutdown();
             }
+
+            skipCheatPresenter?.Disconnect();
             levelOutcomeHudPresenter?.Disconnect();
             towerNetworkHudPresenter.Disconnect();
             waveHudPresenter.Disconnect();
