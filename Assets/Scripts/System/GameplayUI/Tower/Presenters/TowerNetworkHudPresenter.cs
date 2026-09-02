@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TowerDefense3D.Towers;
 using UnityEngine;
 
@@ -17,14 +18,20 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly ITowerNetworkHudView towerNetworkHud;
         private readonly Camera worldCamera;
+        private readonly TowerCatalog towerCatalog;
+        private readonly SaveSystem saveSystem;
         private Action requestReturnToMenu;
 
         public TowerNetworkHudPresenter(
             TowerNetworkSystem towerNetworkSystem,
             ITowerNetworkHudView towerNetworkHud,
-            Camera worldCamera)
+            Camera worldCamera,
+            TowerCatalog towerCatalog,
+            SaveSystem saveSystem)
         {
             this.worldCamera = worldCamera;
+            this.towerCatalog = towerCatalog ?? throw new ArgumentNullException(nameof(towerCatalog));
+            this.saveSystem = saveSystem ?? throw new ArgumentNullException(nameof(saveSystem));
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.towerNetworkHud = towerNetworkHud
@@ -39,6 +46,7 @@ namespace TowerDefense3D.GameFlow
         public void Connect()
         {
             towerNetworkHud.Initialize();
+            towerNetworkHud.ApplyTowerLocks(CollectLockedDefinitions());
             towerNetworkHud.TowerDragBegan += HandleTowerDragBegan;
             towerNetworkHud.TowerDragMoved += HandleTowerDragMoved;
             towerNetworkHud.TowerDragEnded += HandleTowerDragEnded;
@@ -91,6 +99,28 @@ namespace TowerDefense3D.GameFlow
                 !simulationRunning,
                 towerActionsVisible,
                 towerActionsScreenPosition));
+        }
+
+        /// <summary>
+        /// A tower stays locked until the player has actually beaten the level it is gated on.
+        /// Unlocking is evaluated once per level entry: progress cannot change mid-level, and a
+        /// tower unlocked here would otherwise appear the instant its own level is won.
+        /// </summary>
+        private IReadOnlyList<TowerCombatDefinition> CollectLockedDefinitions()
+        {
+            var locked = new List<TowerCombatDefinition>();
+            IReadOnlyList<TowerCombatDefinition> definitions = towerCatalog.Definitions;
+            for (int index = 0; index < definitions.Count; index++)
+            {
+                TowerCombatDefinition definition = definitions[index];
+                int requiredLevel = definition == null ? 0 : definition.UnlockAfterClearingLevelNumber;
+                if (requiredLevel > 0 && !saveSystem.Progress.IsCleared(requiredLevel))
+                {
+                    locked.Add(definition);
+                }
+            }
+
+            return locked;
         }
 
         private void HandleTowerDragBegan(

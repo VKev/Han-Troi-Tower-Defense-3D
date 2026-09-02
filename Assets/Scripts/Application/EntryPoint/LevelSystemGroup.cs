@@ -19,6 +19,7 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerInteractionSystem towerInteractionSystem;
         private readonly GameplaySimulationSystem gameplaySimulationSystem;
         private readonly EnemyPresentationSystem enemyPresentationSystem;
+        private readonly HeroAttackPresentationSystem heroAttackPresentationSystem;
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
         private readonly GameplayUISystem gameplayUISystem;
@@ -33,6 +34,7 @@ namespace TowerDefense3D.GameFlow
             TowerInteractionSystem towerInteractionSystem,
             GameplaySimulationSystem gameplaySimulationSystem,
             EnemyPresentationSystem enemyPresentationSystem,
+            HeroAttackPresentationSystem heroAttackPresentationSystem,
             TowerLinkPresentationSystem towerLinkPresentationSystem,
             TowerProjectilePresentationSystem towerProjectilePresentationSystem,
             GameplayUISystem gameplayUISystem,
@@ -46,6 +48,7 @@ namespace TowerDefense3D.GameFlow
             this.towerInteractionSystem = towerInteractionSystem;
             this.gameplaySimulationSystem = gameplaySimulationSystem;
             this.enemyPresentationSystem = enemyPresentationSystem;
+            this.heroAttackPresentationSystem = heroAttackPresentationSystem;
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
             this.gameplayUISystem = gameplayUISystem;
@@ -61,6 +64,7 @@ namespace TowerDefense3D.GameFlow
             towerLinkPresentationSystem.Start();
             towerProjectilePresentationSystem.Start();
             enemyPresentationSystem.Start();
+            heroAttackPresentationSystem.Start();
             gameplayUISystem.Start();
             safeAreaSystem.Start();
         }

@@ -88,6 +88,40 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
+        public void HeroAttackSnapshot_UsesAuthoredCrabCombatValues()
+        {
+            system.Start();
+            RegisterTower(TowerFamily.Hero, Vector3.zero, 1);
+
+            var heroes = manager.CreateHeroAttackTowerSnapshot();
+
+            Assert.That(heroes, Has.Count.EqualTo(1));
+            Assert.That(heroes[0].RangeMeters, Is.EqualTo(4f));
+            Assert.That(heroes[0].Damage, Is.EqualTo(14f));
+            Assert.That(heroes[0].AoeRadiusMeters, Is.EqualTo(2f));
+            Assert.That(heroes[0].CycleTicks, Is.EqualTo(40));
+            Assert.That(heroes[0].PrepareDurationSeconds, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void AuthoredHeroOutsideBuildableCells_RegistersForDirectCombat()
+        {
+            system.Start();
+            Assert.That(towerCatalog.TryGet(TowerFamily.Hero, out TowerCombatDefinition hero), Is.True);
+            var heroObject = new GameObject("Authored Crab Hero");
+            heroObject.transform.SetParent(owner.transform, false);
+            heroObject.transform.position = new Vector3(-100f, 0f, -100f);
+            TowerRuntimeView heroView = heroObject.AddComponent<TowerRuntimeView>();
+
+            bool registered = system.TryRegisterAuthoredTower(heroView, hero, out string error);
+
+            Assert.That(registered, Is.True, error);
+            Assert.That(heroView.IsRegistered, Is.True);
+            Assert.That(system.RegisteredTowerCount, Is.EqualTo(1));
+            Assert.That(manager.CreateHeroAttackTowerSnapshot(), Has.Count.EqualTo(1));
+        }
+
+        [Test]
         public void Dispose_ClearsRuntimeViewRegistryAndNodeBinding()
         {
             system.Start();

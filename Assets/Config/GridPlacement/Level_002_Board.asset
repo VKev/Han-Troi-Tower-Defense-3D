@@ -1929,6 +1929,31 @@ MonoBehaviour:
       y: 0
     prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
   - coordinate:
+      x: 66
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 67
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 68
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 69
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 70
+      z: 29
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
       x: 37
       z: 30
       y: 0
@@ -1941,6 +1966,61 @@ MonoBehaviour:
   - coordinate:
       x: 37
       z: 32
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 9
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 10
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 11
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 12
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 13
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 14
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 15
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 16
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 17
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 18
+      z: 33
+      y: 0
+    prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  - coordinate:
+      x: 19
+      z: 33
       y: 0
     prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
   - coordinate:

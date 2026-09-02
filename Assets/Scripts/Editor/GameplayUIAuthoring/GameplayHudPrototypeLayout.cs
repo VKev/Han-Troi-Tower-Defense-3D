@@ -38,7 +38,8 @@ namespace TowerDefense3D.GameFlow.Editor
                 { "Fire", new Color(0.55f, 0.13f, 0.18f, 1f) },
                 { "Water", new Color(0.08f, 0.42f, 0.48f, 1f) },
                 { "Wind", new Color(0.11f, 0.42f, 0.28f, 1f) },
-                { "Soul Nexus", new Color(0.34f, 0.15f, 0.50f, 1f) }
+                { "Soul Nexus", new Color(0.34f, 0.15f, 0.50f, 1f) },
+                { "Hero", new Color(0.62f, 0.36f, 0.10f, 1f) }
             };
 
         private static Font uiFont;
@@ -254,12 +255,8 @@ namespace TowerDefense3D.GameFlow.Editor
             for (int index = 0; index < catalog.Definitions.Count; index++)
             {
                 TowerCombatDefinition definition = catalog.Definitions[index];
-                TowerPlacementDragButtonView view = FindButtonView(buttons, definition);
-                if (view == null)
-                {
-                    Debug.LogWarning("No tower build button authored for " + definition.name);
-                    continue;
-                }
+                TowerPlacementDragButtonView view = FindButtonView(buttons, definition)
+                    ?? CreateButtonView(buttons, definition);
 
                 view.transform.SetSiblingIndex(placedButtons.Count);
                 placedButtons.Add(view);
@@ -655,6 +652,34 @@ namespace TowerDefense3D.GameFlow.Editor
                 root.GetComponent<PlacementHudView>(),
                 "root",
                 hud.Find("Selected Panel").gameObject);
+        }
+
+        /// <summary>
+        /// Authors the build button for a tower the catalog gained since this prefab was last
+        /// rebuilt. The button is named after the tower's display name because the colour table
+        /// and the button label both key off that name.
+        /// </summary>
+        private static TowerPlacementDragButtonView CreateButtonView(
+            Transform buttons,
+            TowerCombatDefinition definition)
+        {
+            var created = new GameObject(
+                definition.Core.DisplayName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image),
+                typeof(Button),
+                typeof(TowerPlacementDragButtonView));
+            created.transform.SetParent(buttons, false);
+
+            var button = created.GetComponent<Button>();
+            button.targetGraphic = created.GetComponent<Image>();
+
+            var view = created.GetComponent<TowerPlacementDragButtonView>();
+            SetObjectReference(view, "button", button);
+            SetObjectReference(view, "definition", definition);
+            Debug.Log("Added the missing tower build button " + created.name + ".");
+            return view;
         }
 
         private static TowerPlacementDragButtonView FindButtonView(

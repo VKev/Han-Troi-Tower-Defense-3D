@@ -80,6 +80,79 @@ namespace TowerDefense3D.Towers
             manager.EndLevelSession();
         }
 
+        /// <summary>
+        /// Adopts a tower the level authored straight into its scene - a hero standing on the
+        /// board before the first wave, for instance. It costs no Gold, but otherwise becomes
+        /// an ordinary node: selectable, linkable, and holding the cells under its footprint.
+        /// A Hero authored beside a road may be registered without grid occupancy when no valid
+        /// footprint exists there, so its direct combat still participates in precomputation.
+        /// </summary>
+        public bool TryRegisterAuthoredTower(
+            ITowerRuntimeView runtimeView,
+            TowerCombatDefinition definition,
+            out string error)
+        {
+            if (runtimeView == null)
+            {
+                throw new ArgumentNullException(nameof(runtimeView));
+            }
+
+            if (definition == null)
+            {
+                throw new ArgumentNullException(nameof(definition));
+            }
+
+            TowerDefinition placementDefinition = definition.Core.PlacementDefinition;
+            if (placementDefinition == null)
+            {
+                throw new InvalidOperationException(definition.name + " requires a placement definition.");
+            }
+
+            runtimeView.Configure(definition);
+            bool hasPlacement = placementSystem.TryOccupyAuthoredTower(
+                runtimeView.FootprintOrigin,
+                placementDefinition.Footprint,
+                out Vector3 snappedPosition,
+                out int ownerId);
+            if (!hasPlacement && !(definition is HeroTowerDefinition))
+            {
+                error = $"{definition.Core.DisplayName} does not fit the board where the level placed it.";
+                return false;
+            }
+
+            if (hasPlacement)
+            {
+                runtimeView.SetFootprintOrigin(snappedPosition);
+            }
+
+            Vector3 origin = runtimeView.ProjectileOrigin;
+            TowerNodeId nodeId = manager.RegisterTower(
+                definition,
+                new TowerWorldPosition(origin.x, origin.y, origin.z));
+
+            try
+            {
+                viewRegistry.Register(nodeId, runtimeView);
+                if (hasPlacement)
+                {
+                    placementOwnerByView[runtimeView] = ownerId;
+                }
+            }
+            catch
+            {
+                manager.UnregisterTower(nodeId);
+                if (hasPlacement)
+                {
+                    placementSystem.Occupancy.ReleaseOwner(ownerId);
+                }
+
+                throw;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
         public IReadOnlyList<ITowerRuntimeView> CreateTowerViewSnapshot()
         {
             return viewRegistry.CreateSnapshot(manager.CreateNodeIdSnapshot());
