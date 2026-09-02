@@ -51,10 +51,12 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
 
                 Assert.That(timeline.GetHeroAttacks(1L), Has.Count.EqualTo(1));
                 Assert.That(timeline.GetHeroAttacks(1L)[0].TowerNodeId, Is.EqualTo(hero));
-                Assert.That(timeline.GetHeroAttacks(1L)[0].PrepareDurationSeconds, Is.EqualTo(1f));
+                Assert.That(timeline.GetHeroAttacks(1L)[0].PrepareDurationSeconds, Is.EqualTo(0.6f));
 
-                const long impactTick = 30L;
-                IReadOnlyList<PlannedEnemyFrame> frames = timeline.GetFrames(impactTick);
+                // Comfortably past the lunge, and still inside the first attack cycle of 40 ticks,
+                // so exactly one impact has landed by here however the crab's timings are tuned.
+                const long afterImpactTick = 30L;
+                IReadOnlyList<PlannedEnemyFrame> frames = timeline.GetFrames(afterImpactTick);
                 Assert.That(frames, Has.Count.EqualTo(2));
                 Assert.That(frames[0].Health, Is.EqualTo(2f));
                 Assert.That(frames[1].Health, Is.EqualTo(2f));

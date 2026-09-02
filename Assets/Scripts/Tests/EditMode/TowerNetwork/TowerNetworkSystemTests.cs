@@ -100,7 +100,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(heroes[0].Damage, Is.EqualTo(14f));
             Assert.That(heroes[0].AoeRadiusMeters, Is.EqualTo(2f));
             Assert.That(heroes[0].CycleTicks, Is.EqualTo(40));
-            Assert.That(heroes[0].PrepareDurationSeconds, Is.EqualTo(1f));
+            Assert.That(heroes[0].PrepareDurationSeconds, Is.EqualTo(0.6f));
         }
 
         [Test]
