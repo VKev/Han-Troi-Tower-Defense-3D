@@ -19,6 +19,12 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
         /// <summary>Frog_Jump runs frames 0-35, so the touchdown frame sits here in the clip.</summary>
         private const float TouchdownNormalizedTime = TouchdownFrame / 35f;
 
+        /// <summary>
+        /// The least slack a touchdown reading is allowed, for a frame rate high enough that three
+        /// frames of the clip would be an unreasonably tight window.
+        /// </summary>
+        private const float TouchdownSlackFloor = 0.1f;
+
         private static readonly int JumpStateHash = Animator.StringToHash("Jump");
         private static readonly int IdleStateHash = Animator.StringToHash("Idle");
         private static readonly IEqualityComparer<Vector3> PositionComparer = new ApproximatePosition();
@@ -167,9 +173,15 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
                     "Every hop must report where in the clip its movement ended.");
                 for (int index = 0; index < fixture.TouchdownNormalizedTimes.Count; index++)
                 {
+                    // Three frames of the clip, because the reading is late by up to two and the
+                    // third is headroom. A hop timed to the wrong end of the clip misses by twenty
+                    // frames, so this still catches what the test is for.
+                    float slack = Mathf.Max(
+                        TouchdownSlackFloor,
+                        3f * fixture.TouchdownClipAdvances[index]);
                     Assert.That(
                         fixture.TouchdownNormalizedTimes[index],
-                        Is.EqualTo(TouchdownNormalizedTime).Within(0.1f),
+                        Is.EqualTo(TouchdownNormalizedTime).Within(slack),
                         $"Hop {index} stopped moving at the wrong point in the Jump clip.");
                 }
             }
@@ -291,6 +303,7 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
             private readonly List<int> restFrameCounts = new List<int>();
             private readonly List<Vector3> restPositions = new List<Vector3>();
             private readonly List<float> touchdownNormalizedTimes = new List<float>();
+            private readonly List<float> touchdownClipAdvances = new List<float>();
 
             public GameObject Frog { get; private set; }
             public GameObject RoadObject { get; private set; }
@@ -304,6 +317,16 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
             public IReadOnlyList<Vector3> RestPositions => restPositions;
             public IReadOnlyList<int> RestFrameCounts => restFrameCounts;
             public IReadOnlyList<float> TouchdownNormalizedTimes => touchdownNormalizedTimes;
+
+            /// <summary>
+            /// How far the Jump clip moved over the frame each touchdown was sampled on. Where the
+            /// clip stands can only be read once a frame, and the reading is a frame or two late by
+            /// construction: the hop's last step overshoots its end, and the rest is not spotted
+            /// until the frame after that. So the slack a touchdown is allowed has to be measured
+            /// in rendered frames, not in a fixed slice of the clip - a fixed slice is several
+            /// frames of headroom at a good frame rate and barely one during a hitch.
+            /// </summary>
+            public IReadOnlyList<float> TouchdownClipAdvances => touchdownClipAdvances;
 
             /// <summary>
             /// A camera framing the whole road and a little past its end, so the frog completes
@@ -372,6 +395,7 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
                 // actually moved, so that slack is not mistaken for the first landing.
                 bool hasMoved = false;
                 int restRunLength = 0;
+                float previousNormalizedTime = Animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
                 while ((CompletedCount == 0 && elapsedSeconds < budgetSeconds)
                     || (CompletedCount > 0 && completedSeconds < SecondsAfterCompletion))
                 {
@@ -400,6 +424,8 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
                                 // First frame of a rest: the hop's movement has just ended, so
                                 // this is where the clip stood when the frog touched down.
                                 touchdownNormalizedTimes.Add(state.normalizedTime);
+                                touchdownClipAdvances.Add(
+                                    Mathf.Abs(state.normalizedTime - previousNormalizedTime));
                             }
 
                             restRunLength++;
@@ -419,6 +445,7 @@ namespace TowerDefense3D.Frog.Tests.PlayMode
                     }
 
                     previousPosition = position;
+                    previousNormalizedTime = state.normalizedTime;
                 }
 
                 if (restRunLength > 0)
