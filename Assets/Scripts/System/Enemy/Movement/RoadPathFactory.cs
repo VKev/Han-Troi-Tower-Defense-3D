@@ -116,6 +116,8 @@ namespace TowerDefense3D.Enemies
             ISet<GridCell> roadCells)
         {
             var paths = new RoadPath[CountDrawnRoutes(routes)];
+            var weights = new int[paths.Length];
+            var starts = new GridCell[paths.Length];
             int pathIndex = 0;
             for (int routeIndex = 0; routeIndex < routes.Count; routeIndex++)
             {
@@ -152,9 +154,52 @@ namespace TowerDefense3D.Enemies
                 }
 
                 paths[pathIndex++] = new RoadPath(worldPoints);
+                weights[pathIndex - 1] = routes[routeIndex].Weight;
+                starts[pathIndex - 1] = cells[0];
             }
 
-            return new RoadPathSet(paths);
+            var orderedSpawns = new List<GridCell>();
+            for (int index = 0; index < starts.Length; index++)
+            {
+                if (!Contains(orderedSpawns, starts[index]))
+                {
+                    orderedSpawns.Add(starts[index]);
+                }
+            }
+
+            orderedSpawns.Sort(CompareCells);
+            var spawnIndices = new int[starts.Length];
+            for (int index = 0; index < starts.Length; index++)
+            {
+                spawnIndices[index] = orderedSpawns.IndexOf(starts[index]);
+            }
+
+            return new RoadPathSet(paths, weights, spawnIndices);
+        }
+
+        private static bool Contains(IReadOnlyList<GridCell> cells, GridCell target)
+        {
+            for (int index = 0; index < cells.Count; index++)
+            {
+                if (cells[index] == target)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int CompareCells(GridCell left, GridCell right)
+        {
+            int x = left.X.CompareTo(right.X);
+            if (x != 0)
+            {
+                return x;
+            }
+
+            int z = left.Z.CompareTo(right.Z);
+            return z != 0 ? z : left.Y.CompareTo(right.Y);
         }
 
         private static bool IsAdjacent(GridCell left, GridCell right)

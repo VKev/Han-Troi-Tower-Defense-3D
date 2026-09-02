@@ -36,7 +36,8 @@ namespace TowerDefense3D.Waves
                     orders.Add(new WaveSpawnOrder(
                         batch.StartTimeSeconds + offset,
                         batch.Enemy,
-                        sequence++));
+                        sequence++,
+                        batch.SpawnPointIndex));
                 }
             }
 

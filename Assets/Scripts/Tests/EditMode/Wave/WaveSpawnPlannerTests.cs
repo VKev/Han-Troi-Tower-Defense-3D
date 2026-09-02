@@ -42,6 +42,23 @@ namespace TowerDefense3D.Waves.Tests.EditMode
             }
         }
 
+        [Test]
+        public void CreatePlan_PreservesSelectedRoadSpawn()
+        {
+            var serialized = new SerializedObject(schedule);
+            SerializedProperty batch = serialized.FindProperty("waves")
+                .GetArrayElementAtIndex(0)
+                .FindPropertyRelative("spawnBatches")
+                .GetArrayElementAtIndex(0);
+            batch.FindPropertyRelative("spawnPointIndex").intValue = 1;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var plan = new WaveSpawnPlanner().CreatePlan(schedule, 0);
+
+            Assert.That(plan, Is.Not.Empty);
+            Assert.That(plan[0].SpawnPointIndex, Is.EqualTo(1));
+        }
+
         private void ConfigureSchedule()
         {
             var serialized = new SerializedObject(schedule);

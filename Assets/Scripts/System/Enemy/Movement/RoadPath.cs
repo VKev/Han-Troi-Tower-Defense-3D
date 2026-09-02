@@ -54,7 +54,7 @@ namespace TowerDefense3D.Enemies
             return targetPointIndex >= points.Length;
         }
 
-        internal Vector3 GetPoint(int index)
+        public Vector3 GetPoint(int index)
         {
             return points[index];
         }

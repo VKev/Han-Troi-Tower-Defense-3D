@@ -30,8 +30,19 @@ namespace TowerDefense3D.Enemies
 
         private readonly RoadPath[] paths;
         private readonly RoadPath[][] lanesByRoute;
+        private readonly int[] routeWeights;
+        private readonly int[] spawnPointByRoute;
+        private readonly int spawnPointCount;
 
         public RoadPathSet(IReadOnlyList<RoadPath> paths)
+            : this(paths, null, null)
+        {
+        }
+
+        public RoadPathSet(
+            IReadOnlyList<RoadPath> paths,
+            IReadOnlyList<int> routeWeights,
+            IReadOnlyList<int> spawnPointByRoute)
         {
             if (paths == null || paths.Count == 0)
             {
@@ -40,25 +51,92 @@ namespace TowerDefense3D.Enemies
 
             this.paths = new RoadPath[paths.Count];
             lanesByRoute = new RoadPath[paths.Count][];
+            this.routeWeights = new int[paths.Count];
+            this.spawnPointByRoute = new int[paths.Count];
+            int highestSpawnPoint = -1;
             for (int index = 0; index < paths.Count; index++)
             {
                 this.paths[index] = paths[index]
                     ?? throw new ArgumentException("Road paths cannot contain null.", nameof(paths));
                 lanesByRoute[index] = BuildLanes(this.paths[index]);
+                this.routeWeights[index] = routeWeights != null && routeWeights.Count == paths.Count
+                    ? Mathf.Max(1, routeWeights[index])
+                    : 1;
+                this.spawnPointByRoute[index] = spawnPointByRoute != null
+                    && spawnPointByRoute.Count == paths.Count
+                    ? Mathf.Max(0, spawnPointByRoute[index])
+                    : index;
+                highestSpawnPoint = Mathf.Max(highestSpawnPoint, this.spawnPointByRoute[index]);
             }
+
+            spawnPointCount = highestSpawnPoint + 1;
         }
 
         public int Count => paths.Length;
+        public int SpawnPointCount => spawnPointCount;
         public RoadPath Primary => paths[0];
 
-        public int GetRouteIndex(long enemyId)
+        public int GetRouteIndex(long enemyId, int spawnPointIndex = -1)
         {
             if (enemyId <= 0L)
             {
                 throw new ArgumentOutOfRangeException(nameof(enemyId));
             }
 
-            return (int)((enemyId - 1L) % paths.Length);
+            int candidateCount = 0;
+            int totalWeight = 0;
+            bool hasCustomWeight = false;
+            for (int index = 0; index < paths.Length; index++)
+            {
+                if (spawnPointIndex >= 0 && spawnPointByRoute[index] != spawnPointIndex)
+                {
+                    continue;
+                }
+
+                candidateCount++;
+                totalWeight += routeWeights[index];
+                hasCustomWeight |= routeWeights[index] != 1;
+            }
+
+            if (candidateCount == 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(spawnPointIndex),
+                    "The selected Road Spawn has no authored route.");
+            }
+
+            if (!hasCustomWeight)
+            {
+                int selection = (int)((enemyId - 1L) % candidateCount);
+                for (int index = 0; index < paths.Length; index++)
+                {
+                    if (spawnPointIndex < 0 || spawnPointByRoute[index] == spawnPointIndex)
+                    {
+                        if (selection-- == 0)
+                        {
+                            return index;
+                        }
+                    }
+                }
+            }
+
+            int weightedSelection = (int)(Scatter(enemyId) % (uint)totalWeight);
+            for (int index = 0; index < paths.Length; index++)
+            {
+                if (spawnPointIndex >= 0 && spawnPointByRoute[index] != spawnPointIndex)
+                {
+                    continue;
+                }
+
+                if (weightedSelection < routeWeights[index])
+                {
+                    return index;
+                }
+
+                weightedSelection -= routeWeights[index];
+            }
+
+            throw new InvalidOperationException("Could not select a road route.");
         }
 
         /// <summary>
@@ -101,9 +179,14 @@ namespace TowerDefense3D.Enemies
             return lanesByRoute[routeIndex][laneIndex];
         }
 
-        public RoadPath GetForEnemy(long enemyId, EnemyDefinition definition)
+        public RoadPath GetForEnemy(
+            long enemyId,
+            EnemyDefinition definition,
+            int spawnPointIndex = -1)
         {
-            return GetLane(GetRouteIndex(enemyId), GetLaneIndex(enemyId, definition));
+            return GetLane(
+                GetRouteIndex(enemyId, spawnPointIndex),
+                GetLaneIndex(enemyId, definition));
         }
 
         /// <summary>

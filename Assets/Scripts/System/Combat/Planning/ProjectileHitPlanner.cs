@@ -50,7 +50,10 @@ namespace TowerDefense3D.Enemies
             for (int index = 0; index < wavePlan.Count; index++)
             {
                 WaveSpawnOrder order = wavePlan[index];
-                RoadPath route = roadPaths.GetForEnemy(order.EnemyId, order.Enemy);
+                RoadPath route = roadPaths.GetForEnemy(
+                    order.EnemyId,
+                    order.Enemy,
+                    order.SpawnPointIndex);
                 long spawnTick = Math.Max(1L, SecondsToTick(order.TimeSeconds));
                 seeds[index] = new EnemyTrajectorySeed(
                     order.EnemyId,

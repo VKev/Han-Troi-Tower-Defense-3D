@@ -26,6 +26,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private readonly Dictionary<GridCell, GameObject> gridPlaceables =
             new Dictionary<GridCell, GameObject>();
         private readonly List<List<GridCell>> routes = new List<List<GridCell>>();
+        private readonly List<int> routeWeights = new List<int>();
 
         public BoardAuthoringDocument(BoardDefinition asset)
         {
@@ -54,6 +55,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             roadExitDirections.Clear();
             gridPlaceables.Clear();
             routes.Clear();
+            routeWeights.Clear();
             DuplicateCoordinateCount = 0;
             SerializedNoneEntryCount = 0;
             DuplicateGridPlaceableCoordinateCount = 0;
@@ -152,6 +154,12 @@ namespace TowerDefense3D.GridPlacement.Editor
                 }
 
                 routes.Add(route);
+                SerializedProperty weightProperty = serializedRoutes
+                    .GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("weight");
+                routeWeights.Add(weightProperty != null
+                    ? Mathf.Max(1, weightProperty.intValue)
+                    : 1);
             }
         }
 
@@ -164,9 +172,44 @@ namespace TowerDefense3D.GridPlacement.Editor
                 : Array.Empty<GridCell>();
         }
 
+        public int GetRouteWeight(int routeIndex) =>
+            routeIndex >= 0 && routeIndex < routeWeights.Count
+                ? routeWeights[routeIndex]
+                : 1;
+
+        public int GetRouteSpawnPointIndex(int routeIndex)
+        {
+            IReadOnlyList<GridCell> route = GetRoute(routeIndex);
+            if (route.Count == 0)
+            {
+                return -1;
+            }
+
+            var starts = new List<GridCell>();
+            for (int index = 0; index < routes.Count; index++)
+            {
+                if (routes[index].Count > 0 && !starts.Contains(routes[index][0]))
+                {
+                    starts.Add(routes[index][0]);
+                }
+            }
+
+            starts.Sort(CompareCells);
+            return starts.IndexOf(route[0]);
+        }
+
+        public void SetRouteWeight(int routeIndex, int weight)
+        {
+            if (routeIndex >= 0 && routeIndex < routeWeights.Count)
+            {
+                routeWeights[routeIndex] = Mathf.Max(1, weight);
+            }
+        }
+
         public int AddRoute()
         {
             routes.Add(new List<GridCell>());
+            routeWeights.Add(1);
             return routes.Count - 1;
         }
 
@@ -175,6 +218,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (routeIndex >= 0 && routeIndex < routes.Count)
             {
                 routes.RemoveAt(routeIndex);
+                routeWeights.RemoveAt(routeIndex);
             }
         }
 
@@ -627,8 +671,9 @@ namespace TowerDefense3D.GridPlacement.Editor
                 serializedRoutes.arraySize = routes.Count;
                 for (int i = 0; i < routes.Count; i++)
                 {
-                    SerializedProperty routeCells = serializedRoutes
-                        .GetArrayElementAtIndex(i)
+                    SerializedProperty route = serializedRoutes.GetArrayElementAtIndex(i);
+                    route.FindPropertyRelative("weight").intValue = GetRouteWeight(i);
+                    SerializedProperty routeCells = route
                         .FindPropertyRelative("cells");
                     routeCells.arraySize = routes[i].Count;
                     for (int cellIndex = 0; cellIndex < routes[i].Count; cellIndex++)
@@ -672,6 +717,18 @@ namespace TowerDefense3D.GridPlacement.Editor
                     : left.Key.X.CompareTo(right.Key.X);
             });
             return ordered;
+        }
+
+        private static int CompareCells(GridCell left, GridCell right)
+        {
+            int x = left.X.CompareTo(right.X);
+            if (x != 0)
+            {
+                return x;
+            }
+
+            int z = left.Z.CompareTo(right.Z);
+            return z != 0 ? z : left.Y.CompareTo(right.Y);
         }
 
         private List<KeyValuePair<GridCell, GameObject>>
