@@ -29,15 +29,13 @@ Shader "TheVayuputra/ToonShader"
             #pragma vertex vert
             #pragma fragment frag
 
-            #pragma multi_compile _ _SHADOWS_SOFT
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+            // Brings in Core/Lighting/Shadows plus the whole baked-lighting keyword set.
+            // Without those keywords the SAMPLE_* macros below compile down to "no baked
+            // data" and the scene's lightmaps, shadowmask and probe volumes are ignored.
+            #include_with_pragmas "Assets/Shaders/ToonBakedLighting.hlsl"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
@@ -64,6 +62,7 @@ Shader "TheVayuputra/ToonShader"
                 float3 normalOS   : NORMAL;
                 float4 tangentOS  : TANGENT;
                 float2 uv         : TEXCOORD0;
+                float2 staticLightmapUV : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -74,6 +73,9 @@ Shader "TheVayuputra/ToonShader"
                 float3 viewDirWS : TEXCOORD2;
                 half fogCoord : TEXCOORD3;
                 float3 positionWS : TEXCOORD4;
+                // Becomes a lightmap UV when LIGHTMAP_ON, else per-vertex SH.
+                DECLARE_LIGHTMAP_OR_SH(staticLightmapUV, vertexSH, 5);
+                TOON_PROBE_OCCLUSION_VARYING(6)
                 float4 positionCS : SV_POSITION;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -95,6 +97,8 @@ Shader "TheVayuputra/ToonShader"
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
 
                 output.fogCoord = ComputeFogFactor(posInput.positionCS.z);
+
+                TOON_TRANSFER_BAKED(input, output, posInput.positionWS, output.normalWS);
 
                 return output;
             }
@@ -122,16 +126,27 @@ Shader "TheVayuputra/ToonShader"
                     NH
                 );
 
+                // Baked indirect light, plus the baked occlusion of the mixed main light.
+                // The mask defaults to "lit" so variants carrying no baked shadow data fall
+                // back to the realtime shadow alone rather than to black.
+                half4 shadowMask = half4(1, 1, 1, 1);
+                half3 bakedGI = half3(0, 0, 0);
+                TOON_RESOLVE_BAKED(input, N, input.positionWS, V, bakedGI, shadowMask);
+
                 // Computed per-fragment (not interpolated from the vertex stage) so cascade
                 // selection is correct per pixel; a per-vertex shadow coordinate is only valid
                 // when a single cascade covers the whole triangle, and produces visibly warped,
                 // blocky shadows once the object spans or crosses a cascade boundary.
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
-                float shadow = MainLightRealtimeShadow(shadowCoord);
+                // Mixes the realtime shadow with the baked one and cross-fades to baked at the
+                // shadow distance, so static geometry keeps its shadows past the last cascade.
+                float shadow = MainLightShadow(shadowCoord, input.positionWS, shadowMask, _MainLightOcclusionProbes);
 
                 float3 diffuse = _MainLightColor.rgb * baseMap * _BaseColor.rgb * shadeFactor * shadow;
                 float3 specular = _GlossTint.rgb * shadow * shadeFactor * glossFactor;
-                float3 ambient = SampleSH(N) * _BaseColor.rgb * baseMap;
+                // In Shadowmask mode the lightmap holds indirect only - the mixed light's
+                // direct term stays in `diffuse` above, so this does not double count it.
+                float3 ambient = bakedGI * _BaseColor.rgb * baseMap;
 
                 float3 finalColor = diffuse + ambient + specular;
                 finalColor = lerp(
@@ -141,6 +156,54 @@ Shader "TheVayuputra/ToonShader"
                 finalColor = MixFog(finalColor, input.fogCoord);
 
                 return float4(finalColor, 1.0);
+            }
+
+            ENDHLSL
+        }
+
+        // Feeds albedo to the lightmapper. Without a Meta pass the bake sees no surface
+        // colour here, so bounces off these materials came back black and the indirect
+        // contribution was thrown away no matter how many bounces were configured.
+        Pass
+        {
+            Name "Meta"
+            Tags { "LightMode"="Meta" }
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex UniversalVertexMeta
+            #pragma fragment ToonFragmentMeta
+            #pragma shader_feature EDITOR_VISUALIZATION
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+
+            // Kept identical to the forward pass so the SRP Batcher still considers the
+            // shader compatible; the batcher validates every pass, not just the lit one.
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _BaseColor;
+                float _ShadeThreshold;
+                float _ShadeSoftness;
+                float _GlossThreshold;
+                float _GlossSoftness;
+                float4 _GlossTint;
+                float4 _DamageFlashColor;
+                float _DamageFlashAmount;
+            CBUFFER_END
+
+            // Declares Attributes/Varyings and UniversalVertexMeta, which transforms uv0
+            // with _BaseMap_ST - so it has to come after the buffer above.
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UniversalMetaPass.hlsl"
+
+            half4 ToonFragmentMeta(Varyings input) : SV_Target
+            {
+                MetaInput metaInput = (MetaInput)0;
+                metaInput.Albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb * _BaseColor.rgb;
+                return UniversalFragmentMeta(input, metaInput);
             }
 
             ENDHLSL
