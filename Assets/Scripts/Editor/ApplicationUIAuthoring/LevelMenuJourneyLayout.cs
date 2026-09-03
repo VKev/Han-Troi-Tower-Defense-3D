@@ -443,7 +443,7 @@ namespace TowerDefense3D.GameFlow.Editor
             Text title = Label(
                 node,
                 "Journey Title",
-                entry.DisplayName.ToUpperInvariant(),
+                entry.DisplayName,
                 Vector2.zero,
                 new Vector2(250f, 40f),
                 20,
@@ -852,7 +852,7 @@ namespace TowerDefense3D.GameFlow.Editor
             Label(
                 panel,
                 "Selected Title",
-                "LĂNG 01 — LEVEL 1",
+                "Đồng Nứt",
                 new Vector2(28f, -50f),
                 new Vector2(410f, 44f),
                 32,

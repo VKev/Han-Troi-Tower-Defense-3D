@@ -14,52 +14,52 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.GameFlow.Runtime::TowerDefense3D.GameFlow.LevelCatalog
   levels:
   - levelNumber: 1
-    displayName: Level 1
+    displayName: "\u0110\u1ED3ng N\u1EE9t"
     scenePath: Assets/Scenes/Levels/Level_001.unity
     startingGold: 940
     startingHealth: 20
   - levelNumber: 2
-    displayName: Level 2
+    displayName: "B\xE3i C\xE1t B\u1ECFng"
     scenePath: Assets/Scenes/Levels/Level_002.unity
     startingGold: 950
     startingHealth: 20
   - levelNumber: 3
-    displayName: Level 3
+    displayName: "\u0110\xE1 \u0110\u1ECF"
     scenePath: Assets/Scenes/Levels/Level_003.unity
     startingGold: 970
     startingHealth: 15
   - levelNumber: 4
-    displayName: Level 4
+    displayName: "Su\u1ED1i C\u1EA1n"
     scenePath: Assets/Scenes/Levels/Level_004.unity
     startingGold: 990
     startingHealth: 15
   - levelNumber: 5
-    displayName: Level 5
+    displayName: "\u0110\u1ED3i Tr\u1ECDc"
     scenePath: Assets/Scenes/Levels/Level_005.unity
     startingGold: 1010
     startingHealth: 10
   - levelNumber: 6
-    displayName: Level 6
+    displayName: "R\u1EEBng Tre Kh\xF4"
     scenePath: Assets/Scenes/Levels/Level_006.unity
     startingGold: 1030
     startingHealth: 10
   - levelNumber: 7
-    displayName: Level 7
+    displayName: "V\xE1ch \u0110\xE1 V\xE0ng"
     scenePath: Assets/Scenes/Levels/Level_007.unity
     startingGold: 1050
     startingHealth: 10
   - levelNumber: 8
-    displayName: Level 8
+    displayName: "V\u1EF1c Gi\xF3"
     scenePath: Assets/Scenes/Levels/Level_008.unity
     startingGold: 1080
     startingHealth: 10
   - levelNumber: 9
-    displayName: Level 9
+    displayName: "C\u1ED5ng Tr\u1EDDi"
     scenePath: Assets/Scenes/Levels/Level_009.unity
     startingGold: 1130
     startingHealth: 10
   - levelNumber: 10
-    displayName: Level 10
+    displayName: "Ngai Thi\xEAn L\xF4i"
     scenePath: Assets/Scenes/Levels/Level_010.unity
     startingGold: 1160
     startingHealth: 10

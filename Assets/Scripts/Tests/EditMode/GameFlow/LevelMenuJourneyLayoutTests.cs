@@ -144,11 +144,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             menu.Show(states, _ => { });
 
-            // The menu opens on the level the player is up to.
+            // The menu opens on the level the player is up to. Only the chapter line numbers
+            // it - the title carries the level's authored name, read back off the catalog so
+            // renaming a level does not need this test edited too.
             string number = UnlockedThrough.ToString("00");
+            LevelMenuItemState selected = states.Find(state => state.LevelNumber == UnlockedThrough);
+            // LevelMenuItemState is a struct, so a miss returns default rather than null.
+            Assert.That(selected.LevelNumber, Is.EqualTo(UnlockedThrough));
+            Assert.That(selected.DisplayName, Is.Not.Empty);
             Assert.That(GetPrivateField<GameObject>(menu, "selectionPanel").activeSelf, Is.True);
             Assert.That(ReadText(menu, "selectionChapter"), Does.Contain(number));
-            Assert.That(ReadText(menu, "selectionTitle"), Does.Contain(number));
+            Assert.That(ReadText(menu, "selectionTitle"), Is.EqualTo(selected.DisplayName));
             Assert.That(ReadText(menu, "selectionDetails"), Is.Not.Empty);
         }
 

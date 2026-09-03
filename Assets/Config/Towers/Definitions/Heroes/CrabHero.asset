@@ -19,8 +19,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 6931362497009039896, guid: ea7579228542a7a4185546a889a3c90d, type: 3}
     hitEffectPrefab: {fileID: 70470799993891518, guid: 1d3735ddacd66574e8da4f14b1df068a, type: 3}
     network:
-      inputPortCount: 1
-      outputPortCount: 0
+      inputPortCount: 0
+      outputPortCount: 1
       queueCapacityPerInput: 0
       createsBackpressure: 0
     throughput:

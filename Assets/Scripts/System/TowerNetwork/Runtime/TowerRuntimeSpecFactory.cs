@@ -116,12 +116,9 @@ namespace TowerDefense3D.Towers
                 case FireTowerDefinition fire:
                     return CreateFirePayload(fire);
                 case WaterTowerDefinition water:
-                    return new ProjectilePayload(ProjectilePayloadKind.Water, 0f);
+                    return CreateWaterPayload(water);
                 case WindTowerDefinition wind:
-                    return new ProjectilePayload(
-                        ProjectilePayloadKind.Wind,
-                        0f,
-                        pushDistanceMeters: wind.BasePushDistanceMeters);
+                    return CreateWindPayload(wind);
                 case HeroTowerDefinition hero:
                     return CreateHeroPayload(hero);
                 case SoulNexusDefinition:
@@ -151,6 +148,43 @@ namespace TowerDefense3D.Towers
             }
 
             return new ProjectilePayload(ProjectilePayloadKind.Basic, hero.AttackDamage.Amount);
+        }
+
+        /// <summary>
+        /// Water and Wind used to hard-code zero damage here, so their Game Balance Center
+        /// columns would have been decoration. Reading the authored profiles instead means a
+        /// designer raising the number sees it land, and leaving it at zero keeps today's
+        /// behaviour byte for byte.
+        /// </summary>
+        private static ProjectilePayload CreateWaterPayload(WaterTowerDefinition water)
+        {
+            if (water.DirectDamage == null || water.Burn == null)
+            {
+                throw new InvalidOperationException("Water direct damage or burn data is missing.");
+            }
+
+            return new ProjectilePayload(
+                ProjectilePayloadKind.Water,
+                water.DirectDamage.Amount,
+                water.Burn.DamagePerTick,
+                water.Burn.TickIntervalSeconds,
+                water.Burn.DurationSeconds);
+        }
+
+        private static ProjectilePayload CreateWindPayload(WindTowerDefinition wind)
+        {
+            if (wind.DirectDamage == null || wind.Burn == null)
+            {
+                throw new InvalidOperationException("Wind direct damage or burn data is missing.");
+            }
+
+            return new ProjectilePayload(
+                ProjectilePayloadKind.Wind,
+                wind.DirectDamage.Amount,
+                wind.Burn.DamagePerTick,
+                wind.Burn.TickIntervalSeconds,
+                wind.Burn.DurationSeconds,
+                wind.BasePushDistanceMeters);
         }
 
         private static ProjectilePayload CreateFirePayload(FireTowerDefinition fire)
