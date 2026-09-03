@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,9 +24,14 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private GameObject backdrop;
         [SerializeField] private LevelButtonView[] levelButtons = Array.Empty<LevelButtonView>();
         [SerializeField] private GameObject selectionPanel;
-        [SerializeField] private Text selectionChapter;
-        [SerializeField] private Text selectionTitle;
-        [SerializeField] private Text selectionDetails;
+
+        // The selection panel is the one part of this screen on TextMeshPro: its three lines are
+        // the largest type on the menu, where uGUI's bitmap glyphs showed their edges. Typed as
+        // TMP_Text rather than TextMeshProUGUI so a swap to the non-Canvas variant needs no edit
+        // here. The rest of the screen is still uGUI Text, on purpose - see subtitleLabel below.
+        [SerializeField] private TMP_Text selectionChapter;
+        [SerializeField] private TMP_Text selectionTitle;
+        [SerializeField] private TMP_Text selectionDetails;
         [SerializeField] private Button enterMapButton;
         [SerializeField] private Text subtitleLabel;
         [SerializeField] private Text progressLabel;

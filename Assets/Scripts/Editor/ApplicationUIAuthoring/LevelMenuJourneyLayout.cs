@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +19,13 @@ namespace TowerDefense3D.GameFlow.Editor
     public static class LevelMenuJourneyLayout
     {
         public const string PrefabPath = "Assets/Resources/Prefabs/ApplicationUI.prefab";
+
+        // Dynamic-atlas TMP assets, so Vietnamese diacritics are pulled from the TTF on demand.
+        // The serif carries the level name; the sans carries every supporting line.
+        private const string SelectionDisplayFontPath =
+            "Assets/Font/TMP/CormorantGaramond-SemiBold SDF.asset";
+        private const string SelectionBodyFontPath =
+            "Assets/Font/TMP/Montserrat-SemiBold SDF.asset";
         private const string LevelCatalogPath = "Assets/Config/GameFlow/LevelCatalog.asset";
         private const string BackdropTexturePath = "Assets/Art/UI/UI_Lv_BG.png";
 
@@ -839,36 +847,39 @@ namespace TowerDefense3D.GameFlow.Editor
                 new Vector2(0f, 28f),
                 new Vector2(720f, 172f));
 
-            Label(
+            TMP_FontAsset displayFont = LoadFontAsset(SelectionDisplayFontPath);
+            TMP_FontAsset bodyFont = LoadFontAsset(SelectionBodyFontPath);
+
+            TmpLabel(
                 panel,
                 "Selected Chapter",
                 "HỒI 01 · ĐANG CHỌN",
                 new Vector2(28f, -20f),
                 new Vector2(410f, 24f),
-                18,
+                18f,
                 GoldColor,
-                TextAnchor.UpperLeft,
-                FontStyle.Bold);
-            Label(
+                TextAlignmentOptions.TopLeft,
+                bodyFont);
+            TmpLabel(
                 panel,
                 "Selected Title",
                 "Đồng Nứt",
                 new Vector2(28f, -50f),
                 new Vector2(410f, 44f),
-                32,
+                32f,
                 TextColor,
-                TextAnchor.UpperLeft,
-                FontStyle.Bold);
-            Label(
+                TextAlignmentOptions.TopLeft,
+                displayFont);
+            TmpLabel(
                 panel,
                 "Selected Details",
                 "ĐỢT — · ĐỘ KHÓ — · THƯỞNG —",
                 new Vector2(28f, -102f),
                 new Vector2(410f, 28f),
-                18,
+                18f,
                 MutedColor,
-                TextAnchor.UpperLeft,
-                FontStyle.Normal);
+                TextAlignmentOptions.TopLeft,
+                bodyFont);
 
             RectTransform enterMap = EnsureButton(panel, "Enter Map Button");
             SetRect(
@@ -881,16 +892,16 @@ namespace TowerDefense3D.GameFlow.Editor
             StyleButton(enterMap, EnterMapColor);
             EnsureComponent<Button>(enterMap).targetGraphic = enterMap.GetComponent<Image>();
 
-            Text enterTitle = Label(
+            TextMeshProUGUI enterTitle = TmpLabel(
                 enterMap,
                 "Label",
                 "XUẤT QUÂN",
                 Vector2.zero,
                 Vector2.zero,
-                26,
+                26f,
                 TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
+                TextAlignmentOptions.Center,
+                bodyFont);
             enterTitle.text = "XUẤT QUÂN";
             SetRect(
                 (RectTransform)enterTitle.transform,
@@ -900,16 +911,16 @@ namespace TowerDefense3D.GameFlow.Editor
                 new Vector2(0f, -26f),
                 new Vector2(0f, 36f));
 
-            Text enterSub = Label(
+            TextMeshProUGUI enterSub = TmpLabel(
                 enterMap,
                 "Sub",
                 "ENTER MAP",
                 Vector2.zero,
                 Vector2.zero,
-                15,
+                15f,
                 new Color(0.82f, 0.92f, 0.86f, 1f),
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
+                TextAlignmentOptions.Center,
+                bodyFont);
             enterSub.text = "ENTER MAP";
             SetRect(
                 (RectTransform)enterSub.transform,
@@ -994,15 +1005,15 @@ namespace TowerDefense3D.GameFlow.Editor
             SetObjectReference(
                 menu,
                 "selectionChapter",
-                selected.Find("Selected Chapter").GetComponent<Text>());
+                selected.Find("Selected Chapter").GetComponent<TMP_Text>());
             SetObjectReference(
                 menu,
                 "selectionTitle",
-                selected.Find("Selected Title").GetComponent<Text>());
+                selected.Find("Selected Title").GetComponent<TMP_Text>());
             SetObjectReference(
                 menu,
                 "selectionDetails",
-                selected.Find("Selected Details").GetComponent<Text>());
+                selected.Find("Selected Details").GetComponent<TMP_Text>());
             SetObjectReference(
                 menu,
                 "enterMapButton",
@@ -1103,6 +1114,88 @@ namespace TowerDefense3D.GameFlow.Editor
             }
 
             return text;
+        }
+
+        /// <summary>
+        /// Builds a TextMeshPro label, converting the object in place if it still carries the
+        /// legacy uGUI <see cref="Text"/>.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately a sibling of <see cref="Label"/> rather than a replacement: only the
+        /// selection panel has moved to TMP so far, and the rest of the journey still authors
+        /// uGUI text. Stripping the old Text component matters - leaving both on one object
+        /// draws the string twice, once per renderer, which reads as a bold ghost.
+        ///
+        /// Fonts are looked up by path instead of a serialized reference because this is an
+        /// authoring routine with no inspector of its own; a missing font asset is reported
+        /// rather than silently falling back to LiberationSans, whose atlas has no Vietnamese
+        /// glyphs and would render every level name as boxes.
+        /// </remarks>
+        private static TextMeshProUGUI TmpLabel(
+            Transform parent,
+            string name,
+            string content,
+            Vector2 position,
+            Vector2 size,
+            float fontSize,
+            Color color,
+            TextAlignmentOptions alignment,
+            TMP_FontAsset font)
+        {
+            Transform existing = parent.Find(name);
+            RectTransform holder = existing != null
+                ? (RectTransform)existing
+                : EnsureChild(parent, name);
+
+            Text legacy = holder.GetComponent<Text>();
+            if (legacy != null)
+            {
+                UnityEngine.Object.DestroyImmediate(legacy, true);
+            }
+
+            var text = EnsureComponent<TextMeshProUGUI>(holder);
+            if (string.IsNullOrEmpty(text.text))
+            {
+                text.text = content;
+            }
+
+            if (font != null)
+            {
+                text.font = font;
+            }
+
+            text.fontSize = fontSize;
+            text.color = color;
+            text.alignment = alignment;
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Overflow;
+            text.raycastTarget = false;
+
+            if (size != Vector2.zero)
+            {
+                SetRect(
+                    (RectTransform)text.transform,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f),
+                    position,
+                    size);
+            }
+
+            return text;
+        }
+
+        private static TMP_FontAsset LoadFontAsset(string path)
+        {
+            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
+            if (font == null)
+            {
+                Debug.LogError(
+                    $"Level menu needs the TMP font asset at '{path}'. Without it TMP falls back "
+                    + "to LiberationSans, which has no Vietnamese glyphs.");
+            }
+
+            return font;
         }
 
         private static RectTransform EnsurePanel(Transform parent, string name, Color color)

@@ -8,7 +8,8 @@
         "UnityEngine.TestRunner",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
-        "Unity.ugui"
+        "Unity.ugui",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
