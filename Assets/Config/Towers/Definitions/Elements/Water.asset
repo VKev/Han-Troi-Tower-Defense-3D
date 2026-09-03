@@ -37,3 +37,11 @@ MonoBehaviour:
     tierOneCost: 60
     tierTwoCost: 90
     tierThreeCost: 140
+  directDamage:
+    amount: 0
+  burn:
+    damagePerTick: 0
+    tickIntervalSeconds: 0.5
+    durationSeconds: 0
+    snapshotsDamageOnApply: 1
+    stackingRule: 0
