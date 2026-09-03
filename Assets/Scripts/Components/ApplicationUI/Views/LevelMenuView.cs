@@ -25,13 +25,16 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private LevelButtonView[] levelButtons = Array.Empty<LevelButtonView>();
         [SerializeField] private GameObject selectionPanel;
 
-        // The selection panel is the one part of this screen on TextMeshPro: its three lines are
-        // the largest type on the menu, where uGUI's bitmap glyphs showed their edges. Typed as
+        // The selection panel is the one part of this screen on TextMeshPro: its lines are the
+        // largest type on the menu, where uGUI's bitmap glyphs showed their edges. Typed as
         // TMP_Text rather than TextMeshProUGUI so a swap to the non-Canvas variant needs no edit
         // here. The rest of the screen is still uGUI Text, on purpose - see subtitleLabel below.
+        //
+        // The panel's third line, "Selected Details", is deliberately absent: it reads the same
+        // for every level, so it is authored once in the prefab and no field here points at it.
+        // Holding a reference the view never writes only invites someone to start writing it.
         [SerializeField] private TMP_Text selectionChapter;
         [SerializeField] private TMP_Text selectionTitle;
-        [SerializeField] private TMP_Text selectionDetails;
         [SerializeField] private Button enterMapButton;
         [SerializeField] private Text subtitleLabel;
         [SerializeField] private Text progressLabel;
@@ -324,12 +327,6 @@ namespace TowerDefense3D.GameFlow
                 // as authored - the catalog already capitalises each word, and shouting a
                 // Vietnamese name in full caps loses the diacritics' shape.
                 selectionTitle.text = selected.DisplayName;
-            }
-
-            if (selectionDetails != null)
-            {
-                // TODO: show the wave count, difficulty and reward once levels carry them.
-                selectionDetails.text = "ĐỢT — · ĐỘ KHÓ — · THƯỞNG —";
             }
         }
 

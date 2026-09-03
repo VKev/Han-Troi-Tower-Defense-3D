@@ -156,7 +156,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(GetPrivateField<GameObject>(menu, "selectionPanel").activeSelf, Is.True);
             Assert.That(ReadText(menu, "selectionChapter"), Does.Contain(number));
             Assert.That(ReadText(menu, "selectionTitle"), Is.EqualTo(selected.DisplayName));
-            Assert.That(ReadText(menu, "selectionDetails"), Is.Not.Empty);
+            // "Selected Details" is authored content the view never writes, so there is no
+            // field to read here; EveryAuthoredLabelSaysSomething still guards it from going
+            // blank.
         }
 
         [Test]
