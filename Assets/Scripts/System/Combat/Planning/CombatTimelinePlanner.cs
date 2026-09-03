@@ -763,15 +763,17 @@ namespace TowerDefense3D.Enemies
             }
 
             ApplyDamage(enemy, payload.Damage, isThermalShock: false);
-            if (payload.Kind == ProjectilePayloadKind.Fire)
-            {
-                ApplyBurn(
-                    enemy,
-                    payload.BurnDamagePerTick,
-                    payload.BurnTickIntervalSeconds,
-                    payload.BurnDurationSeconds,
-                    tick);
-            }
+
+            // Gated on the authored numbers rather than on Fire, now that Water and Wind carry
+            // damage-per-tick knobs of their own. ApplyBurn already returns early when any of
+            // the three is zero, so this is a no-op for a tower whose burn is left unauthored -
+            // which is every non-Fire tower today.
+            ApplyBurn(
+                enemy,
+                payload.BurnDamagePerTick,
+                payload.BurnTickIntervalSeconds,
+                payload.BurnDurationSeconds,
+                tick);
 
             if (TryGetElement(payload.Kind, out ElementType incoming))
             {

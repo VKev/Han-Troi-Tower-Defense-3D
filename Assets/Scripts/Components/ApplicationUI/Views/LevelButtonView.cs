@@ -66,7 +66,9 @@ namespace TowerDefense3D.GameFlow
             label.text = state.LevelNumber.ToString("00");
             if (titleLabel != null)
             {
-                titleLabel.text = state.DisplayName.ToUpperInvariant();
+                // Printed as authored, matching the selection panel: the catalog already
+                // capitalises each word.
+                titleLabel.text = state.DisplayName;
             }
 
             bool isLocked = progress == LevelNodeProgress.Locked;
