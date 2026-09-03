@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Packages/nuget-packages/InstalledPackages/System.Runtime.CompilerServices.Unsafe.6.1.2/buildTransitive/net461.meta
 guid: ac44d6027b3e07945893ecf286f7e965
-========
-guid: a65b58110d4fca7479ce457ea2537cbb
->>>>>>>> ec4f924a4f045d103d97ba19c6f880a64e4e6268:Packages/nuget-packages/InstalledPackages/System.Runtime.CompilerServices.Unsafe.6.1.2/buildTransitive.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
