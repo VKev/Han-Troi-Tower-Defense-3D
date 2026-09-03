@@ -873,7 +873,7 @@ namespace TowerDefense3D.GameFlow.Editor
             TmpLabel(
                 panel,
                 "Selected Details",
-                "ĐỢT — · ĐỘ KHÓ — · THƯỞNG —",
+                "SẴN SÀNG XUẤT QUÂN",
                 new Vector2(28f, -102f),
                 new Vector2(410f, 28f),
                 18f,
@@ -1010,10 +1010,8 @@ namespace TowerDefense3D.GameFlow.Editor
                 menu,
                 "selectionTitle",
                 selected.Find("Selected Title").GetComponent<TMP_Text>());
-            SetObjectReference(
-                menu,
-                "selectionDetails",
-                selected.Find("Selected Details").GetComponent<TMP_Text>());
+            // "Selected Details" is intentionally not wired: it says the same thing for every
+            // level, so it stays authored content and LevelMenuView holds no field for it.
             SetObjectReference(
                 menu,
                 "enterMapButton",
