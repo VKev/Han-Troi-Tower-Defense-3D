@@ -24,12 +24,12 @@ MonoBehaviour:
       queueCapacityPerInput: 3
       createsBackpressure: 1
     throughput:
-      cycleIntervalSeconds: 0.85
+      cycleIntervalSeconds: 0.65
       batchSize: 1
       concurrentLines: 1
       sequenceSpacingSeconds: 0
     economy:
-      buildCost: 70
+      buildCost: 200
       linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1

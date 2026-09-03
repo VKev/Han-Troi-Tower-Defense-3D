@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Speed Support
   rank: 0
   viewPrefab: {fileID: 7777708168483902492, guid: 411654595bf60cf409b3563c038b8ba1, type: 3}
-  baseMaxHealth: 14
+  baseMaxHealth: 10
   baseMoveSpeed: 1.9
   baseHitRadius: 0.85
   thermalShockHitsToBreakShield: 0

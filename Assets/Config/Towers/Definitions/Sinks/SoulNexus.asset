@@ -16,6 +16,8 @@ MonoBehaviour:
     stableId: soul_nexus
     displayName: Soul Nexus
     placementDefinition: {fileID: 11400000, guid: e277bfa8018eded42bd8c71b5dfbdd93, type: 2}
+    projectilePrefab: {fileID: 0}
+    hitEffectPrefab: {fileID: 0}
     network:
       inputPortCount: 2
       outputPortCount: 0
@@ -28,7 +30,7 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 0
-      linearUpgradeCost: 80
+      linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 0
   maximumSoul: 50

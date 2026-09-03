@@ -29,18 +29,18 @@ MonoBehaviour:
       concurrentLines: 1
       sequenceSpacingSeconds: 0
     economy:
-      buildCost: 70
+      buildCost: 200
       linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
   upgradeCosts:
-    tierOneCost: 60
-    tierTwoCost: 90
-    tierThreeCost: 140
+    tierOneCost: 280
+    tierTwoCost: 420
+    tierThreeCost: 780
   directDamage:
-    amount: 5
+    amount: 10
   burn:
-    damagePerTick: 1
+    damagePerTick: 2
     tickIntervalSeconds: 0.5
     durationSeconds: 2
     snapshotsDamageOnApply: 1
