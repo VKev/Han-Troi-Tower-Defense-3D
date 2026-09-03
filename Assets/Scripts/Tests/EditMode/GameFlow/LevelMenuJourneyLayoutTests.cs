@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -163,22 +164,48 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             menu.Show(states, _ => { });
 
-            var labels = new List<Text>();
-            labels.AddRange(menu.GetComponentsInChildren<Text>(true));
-            labels.AddRange(
-                GetPrivateField<GameObject>(menu, "backdrop").GetComponentsInChildren<Text>(true));
-            Assert.That(labels, Is.Not.Empty);
-            for (int index = 0; index < labels.Count; index++)
+            GameObject backdrop = GetPrivateField<GameObject>(menu, "backdrop");
+
+            // Swept separately because the two stacks type their font differently, and a screen
+            // that is half TMP would otherwise leave half its labels unchecked.
+            var uguiLabels = new List<Text>();
+            uguiLabels.AddRange(menu.GetComponentsInChildren<Text>(true));
+            uguiLabels.AddRange(backdrop.GetComponentsInChildren<Text>(true));
+
+            var tmpLabels = new List<TMP_Text>();
+            tmpLabels.AddRange(menu.GetComponentsInChildren<TMP_Text>(true));
+            tmpLabels.AddRange(backdrop.GetComponentsInChildren<TMP_Text>(true));
+
+            Assert.That(uguiLabels.Count + tmpLabels.Count, Is.GreaterThan(0));
+            Assert.That(tmpLabels, Is.Not.Empty, "The selection panel is authored on TextMeshPro.");
+
+            for (int index = 0; index < uguiLabels.Count; index++)
             {
                 Assert.That(
-                    labels[index].text,
+                    uguiLabels[index].text,
                     Is.Not.Empty,
-                    "Blank label at " + BuildPath(labels[index].transform)
+                    "Blank label at " + BuildPath(uguiLabels[index].transform)
                     + ": an authored panel with nothing in it reads as a broken screen.");
                 Assert.That(
-                    labels[index].font,
+                    uguiLabels[index].font,
                     Is.Not.Null,
-                    "Fontless label at " + BuildPath(labels[index].transform));
+                    "Fontless label at " + BuildPath(uguiLabels[index].transform));
+            }
+
+            for (int index = 0; index < tmpLabels.Count; index++)
+            {
+                Assert.That(
+                    tmpLabels[index].text,
+                    Is.Not.Empty,
+                    "Blank label at " + BuildPath(tmpLabels[index].transform)
+                    + ": an authored panel with nothing in it reads as a broken screen.");
+
+                // An unset TMP font falls back to LiberationSans, whose atlas carries no
+                // Vietnamese glyphs - every level name would render as boxes.
+                Assert.That(
+                    tmpLabels[index].font,
+                    Is.Not.Null,
+                    "Fontless TMP label at " + BuildPath(tmpLabels[index].transform));
             }
         }
 
@@ -211,11 +238,27 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             return part.gameObject.activeSelf;
         }
 
+        /// <summary>
+        /// Reads a label field whichever text component it holds. The selection panel moved to
+        /// TextMeshPro while the rest of the screen is still uGUI, so this screen is mixed and
+        /// the test should not care which half a field belongs to.
+        /// </summary>
         private static string ReadText(Object target, string fieldName)
         {
-            Text label = GetPrivateField<Text>(target, fieldName);
+            object label = GetPrivateField<object>(target, fieldName);
             Assert.That(label, Is.Not.Null, "Missing label '" + fieldName + "'.");
-            return label.text;
+            switch (label)
+            {
+                case TMP_Text tmp:
+                    return tmp.text;
+                case Text legacy:
+                    return legacy.text;
+                default:
+                    Assert.Fail(
+                        "Field '" + fieldName + "' holds a " + label.GetType().Name
+                        + ", which is not a text component.");
+                    return null;
+            }
         }
 
         private static string BuildPath(Transform node)
