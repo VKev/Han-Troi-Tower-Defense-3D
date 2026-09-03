@@ -14,7 +14,7 @@ namespace TowerDefense3D.GameBalance.Editor
 {
     /// <summary>
     /// Shows a whole balance section as one spreadsheet. Rows are the smallest repeated thing a
-    /// designer tunes rather than the asset file: a catalog of eight levels reads as eight rows,
+    /// designer tunes rather than the asset file: a catalog of ten levels reads as ten rows,
     /// and a wave schedule reads as one row per spawn batch. Nested profile structs are flattened
     /// into their own columns so every authored number is visible and editable in place.
     /// </summary>
