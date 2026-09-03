@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 196b90abdad5b3646ba8a4afaab3ccf5, type: 3}
+  m_Name: Level_009_Waves
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Waves.WaveScheduleDefinition
+  randomSeed: 22002
+  waves:
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 8
+      startTimeSeconds: 0
+      spawnWindowSeconds: 4
+  - clearGoldReward: 130
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
+      count: 6
+      startTimeSeconds: 0
+      spawnWindowSeconds: 4
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 4
+      startTimeSeconds: 2
+      spawnWindowSeconds: 3
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+      count: 6
+      startTimeSeconds: 0
+      spawnWindowSeconds: 4
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 4
+      startTimeSeconds: 2
+      spawnWindowSeconds: 3
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: b111ebd2a63e5374791b768be64fe3ee, type: 2}
+      count: 8
+      startTimeSeconds: 0
+      spawnWindowSeconds: 6
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: 95175cd02ddf7af4cb6e933188c03abf, type: 2}
+      count: 2
+      startTimeSeconds: 1
+      spawnWindowSeconds: 5
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 10
+      startTimeSeconds: 0
+      spawnWindowSeconds: 8
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 8
+      startTimeSeconds: 0
+      spawnWindowSeconds: 7
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: 14f998cb656be094b9f009a48ab36a2f, type: 2}
+      count: 1
+      startTimeSeconds: 1
+      spawnWindowSeconds: 0
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 3
+      startTimeSeconds: 0
+      spawnWindowSeconds: 2
+  - clearGoldReward: 100
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}
+      count: 1
+      startTimeSeconds: 1
+      spawnWindowSeconds: 0
