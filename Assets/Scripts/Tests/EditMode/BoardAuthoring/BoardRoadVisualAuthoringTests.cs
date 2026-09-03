@@ -564,10 +564,14 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             Assert.That(renderer, Is.Not.Null);
             Assert.That(renderer.sharedMaterial, Is.SameAs(expectedMaterial));
             Assert.That(renderer.sharedMaterial.name, Does.Not.Contain("(Instance)"));
+            // The road lies flat on the ground, so it has nothing to cast onto - but it does
+            // have to receive. The Progressive Lightmapper honours Receive Shadows: while this
+            // was off, every road cell baked a fully unoccluded shadowmask chart, so the path
+            // stayed lit even where the surrounding ground was in shadow.
             Assert.That(
                 renderer.shadowCastingMode,
                 Is.EqualTo(UnityEngine.Rendering.ShadowCastingMode.Off));
-            Assert.That(renderer.receiveShadows, Is.False);
+            Assert.That(renderer.receiveShadows, Is.True);
             Assert.That(renderer.sortingOrder, Is.EqualTo(0));
         }
 
