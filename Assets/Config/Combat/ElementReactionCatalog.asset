@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ElementReactionCatalog
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.ElementReactionCatalog
   elementMarkDurationSeconds: 4
-  reactionCooldownSeconds: 0.5
+  reactionCooldownSeconds: 1.5
   definitions:
   - {fileID: 11400000, guid: 18f85c864aa0d8c43a4d0a188fdf486d, type: 2}
   - {fileID: 11400000, guid: f59dbf6541b34cf4ebece8954687ebfd, type: 2}

@@ -19,8 +19,8 @@ MonoBehaviour:
     projectilePrefab: {fileID: 6931362497009039896, guid: ea7579228542a7a4185546a889a3c90d, type: 3}
     hitEffectPrefab: {fileID: 70470799993891518, guid: 1d3735ddacd66574e8da4f14b1df068a, type: 3}
     network:
-      inputPortCount: 0
-      outputPortCount: 1
+      inputPortCount: 1
+      outputPortCount: 0
       queueCapacityPerInput: 0
       createsBackpressure: 0
     throughput:
@@ -29,14 +29,14 @@ MonoBehaviour:
       concurrentLines: 1
       sequenceSpacingSeconds: 0
     economy:
-      buildCost: 150
+      buildCost: 300
       linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 1
   attackRangeMeters: 4
   attackDamage:
-    amount: 14
-  attackAoeRadiusMeters: 2
+    amount: 5
+  attackAoeRadiusMeters: 3
   prepareDurationSeconds: 0.6
   lungeFractionOfAttackInterval: 0.087
   impactHoldFractionOfAttackInterval: 0.083333336

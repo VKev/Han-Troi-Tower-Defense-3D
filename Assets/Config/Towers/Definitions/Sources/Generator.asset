@@ -29,13 +29,13 @@ MonoBehaviour:
       concurrentLines: 1
       sequenceSpacingSeconds: 0.08
     economy:
-      buildCost: 90
-      linearUpgradeCost: 80
+      buildCost: 220
+      linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
   generation:
     basicDamage:
-      amount: 8
+      amount: 5
     generatesWithoutEnemy: 1
     requiresValidChain: 1
     upgradedBatchSize: 2
