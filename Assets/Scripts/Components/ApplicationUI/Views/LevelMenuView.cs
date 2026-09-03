@@ -314,8 +314,10 @@ namespace TowerDefense3D.GameFlow
             if (selectionTitle != null)
             {
                 // The level's own name carries the panel; the chapter line above already
-                // numbers it, so repeating the number here only crowded the title.
-                selectionTitle.text = selected.DisplayName.ToUpperInvariant();
+                // numbers it, so repeating the number here only crowded the title. Printed
+                // as authored - the catalog already capitalises each word, and shouting a
+                // Vietnamese name in full caps loses the diacritics' shape.
+                selectionTitle.text = selected.DisplayName;
             }
 
             if (selectionDetails != null)

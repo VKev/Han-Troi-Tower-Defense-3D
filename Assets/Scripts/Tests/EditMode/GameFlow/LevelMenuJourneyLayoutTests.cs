@@ -154,9 +154,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(selected.DisplayName, Is.Not.Empty);
             Assert.That(GetPrivateField<GameObject>(menu, "selectionPanel").activeSelf, Is.True);
             Assert.That(ReadText(menu, "selectionChapter"), Does.Contain(number));
-            Assert.That(
-                ReadText(menu, "selectionTitle"),
-                Is.EqualTo(selected.DisplayName.ToUpperInvariant()));
+            Assert.That(ReadText(menu, "selectionTitle"), Is.EqualTo(selected.DisplayName));
             Assert.That(ReadText(menu, "selectionDetails"), Is.Not.Empty);
         }
 
