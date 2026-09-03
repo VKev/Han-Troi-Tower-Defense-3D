@@ -852,7 +852,7 @@ namespace TowerDefense3D.GameFlow.Editor
             Label(
                 panel,
                 "Selected Title",
-                "LĂNG 01 — LEVEL 1",
+                "ĐỒNG NỨT",
                 new Vector2(28f, -50f),
                 new Vector2(410f, 44f),
                 32,

@@ -313,8 +313,9 @@ namespace TowerDefense3D.GameFlow
 
             if (selectionTitle != null)
             {
-                selectionTitle.text =
-                    $"LĂNG {selected.LevelNumber:00} — {selected.DisplayName.ToUpperInvariant()}";
+                // The level's own name carries the panel; the chapter line above already
+                // numbers it, so repeating the number here only crowded the title.
+                selectionTitle.text = selected.DisplayName.ToUpperInvariant();
             }
 
             if (selectionDetails != null)
