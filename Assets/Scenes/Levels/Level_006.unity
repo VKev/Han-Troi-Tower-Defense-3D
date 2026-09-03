@@ -93,8 +93,8 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
-  m_LightingSettings: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 72a44dbc83e83e445b3715780c838cf0, type: 2}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: d198a75c3ff3b644b88a93ba18c0e1dc, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -127,6 +127,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 216.342
@@ -830,6 +834,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (1)
@@ -969,6 +977,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 216.342
@@ -1466,6 +1478,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 17)
@@ -1852,6 +1868,82 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6731087487509297192, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
   m_PrefabInstance: {fileID: 211886214}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &213835002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 213835004}
+  - component: {fileID: 213835003}
+  m_Layer: 0
+  m_Name: Adaptive Probe Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &213835003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 213835002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cded085d155cde949b60f67a11dbc3bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.ProbeVolume
+  version: 2
+  globalVolume: 0
+  mode: 2
+  size: {x: 31.253422, y: 5.3652925, z: 18.129372}
+  overrideRendererFilters: 0
+  minRendererVolumeSize: 0.1
+  objectLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  lowestSubdivLevelOverride: 0
+  highestSubdivLevelOverride: 3
+  overridesSubdivLevels: 0
+  mightNeedRebaking: 0
+  cachedTransform:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: -24.19639
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 1.2353706
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: -25.407532
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
+  cachedHashCode: -109180907
+  fillEmptySpaces: 0
+--- !u!4 &213835004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 213835002}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24.19639, y: -1.2353706, z: 25.407532}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &224206519
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2134,6 +2226,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6576595336786135002, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2242,6 +2338,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 01) (1)
@@ -2865,6 +2965,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 01)
@@ -2952,6 +3056,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (1)
@@ -3296,10 +3404,10 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
+  m_BounceIntensity: 1.3
   m_ColorTemperature: 5814
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 3.67342e-40, y: 1.4546743e-37, z: 9.1858e-41, w: 1.4546743e-37}
@@ -3512,6 +3620,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1687109165805968441, guid: 4f28769b9d57f6a46887cb85df640eb7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3537,6 +3649,10 @@ PrefabInstance:
     - target: {fileID: 209484922550442129, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
@@ -3608,6 +3724,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09) (1)
@@ -3768,6 +3888,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09) (5)
@@ -4521,6 +4645,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09)
@@ -4755,6 +4883,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 17) (1)
@@ -4895,6 +5027,56 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2609221848365967354, guid: 58dc5ceb3004f7a4b80db8698c5ca5a7, type: 3}
   m_PrefabInstance: {fileID: 595457203}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &600749930
+GameObject:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 600749932}
+  - component: {fileID: 600749931}
+  m_Layer: 0
+  m_Name: ProbeVolumePerSceneData
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &600749931
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600749930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a83d2f7ae04ab6f4f99b0d85377be998, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.ProbeVolumePerSceneData
+  serializedBakingSet: {fileID: 11400000, guid: f1a74b7948d7c3446a3edc437edd8783, type: 2}
+  sceneGUID: 7e1b8718ab8e2284fbc46447fb7bd8db
+  obsoleteAsset: {fileID: 0}
+  obsoleteCellSharedDataAsset: {fileID: 0}
+  obsoleteCellSupportDataAsset: {fileID: 0}
+  obsoleteSerializedScenarios: []
+--- !u!4 &600749932
+Transform:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600749930}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &611415520
 GameObject:
   m_ObjectHideFlags: 0
@@ -5283,6 +5465,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8922887184631428936, guid: 876f7e3dc54164140b9547dce21b43dd, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5301,6 +5487,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 228.36104
@@ -5618,6 +5808,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (3)
@@ -5948,6 +6142,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (2)
@@ -6463,6 +6661,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 01) (3)
@@ -6987,6 +7189,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (Decoration 18)
@@ -7123,6 +7329,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 03) (1)
@@ -7284,6 +7494,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7440,6 +7654,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 6329247718419996489, guid: f5b119337a90ace458f9114b3e89d571, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7520,6 +7738,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5408803644675931317, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6576595336786135002, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
+      propertyPath: m_CastShadows
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -8075,6 +8297,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 2512901586959407192, guid: 6cc154755d5f3e4479676eb7658a0793, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3644734197960336183, guid: 6cc154755d5f3e4479676eb7658a0793, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.7900002
@@ -8261,6 +8487,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 297.4
@@ -8433,6 +8663,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 297.4
@@ -8676,6 +8910,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
       value: 179.30005
@@ -8746,6 +8984,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04
@@ -9311,6 +9553,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 216.342
@@ -9655,6 +9901,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9826,6 +10076,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 01) (2)
@@ -10181,6 +10435,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (13)
@@ -10391,6 +10649,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 228.36104
@@ -10547,6 +10809,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (2)
@@ -10612,6 +10878,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 14)
@@ -10773,6 +11043,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 03)
@@ -11751,6 +12025,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11853,6 +12131,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 228.36104
@@ -12195,6 +12477,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04
@@ -12350,6 +12636,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09) (2)
@@ -12622,6 +12912,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 29840930668952072, guid: e6796f19640598c40a1edb55659c0711, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1162255223185850727, guid: e6796f19640598c40a1edb55659c0711, type: 3}
       propertyPath: m_LocalPosition.x
       value: 30.31
@@ -13427,6 +13721,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 01) (13)
@@ -14351,6 +14649,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 06) (1)
@@ -14500,6 +14802,10 @@ PrefabInstance:
     - target: {fileID: 5536891192371822236, guid: f5b119337a90ace458f9114b3e89d571, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 6329247718419996489, guid: f5b119337a90ace458f9114b3e89d571, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14795,6 +15101,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (1)
@@ -15239,6 +15549,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (4)
@@ -15321,6 +15635,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 06)
@@ -16285,6 +16603,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7208677166992387820, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8377101490607822211, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
       propertyPath: m_LocalScale.x
       value: 50.2
@@ -16370,6 +16692,10 @@ PrefabInstance:
     - target: {fileID: 209484922550442129, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
@@ -17171,6 +17497,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (Decoration 18)
@@ -17236,6 +17566,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock
@@ -17946,6 +18280,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18014,6 +18352,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5408803644675931317, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6576595336786135002, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
+      propertyPath: m_CastShadows
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -18410,6 +18752,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 5740718092282717262, guid: 5ed74df78262f384599325c04e5eec3c, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18423,6 +18769,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig
@@ -18504,6 +18854,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3024618206531246892, guid: 7630d7611a2dceb4e88b8c647af4097b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3673079447228447481, guid: 7630d7611a2dceb4e88b8c647af4097b, type: 3}
       propertyPath: m_Name
       value: Rock_01
@@ -18569,6 +18923,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04
@@ -18686,6 +19044,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 6329247718419996489, guid: f5b119337a90ace458f9114b3e89d571, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18706,6 +19068,10 @@ PrefabInstance:
     - target: {fileID: 4047035073477350537, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 7134255533225855746, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7372069491336549432, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
       propertyPath: m_Mesh
@@ -18766,3 +19132,5 @@ SceneRoots:
   - {fileID: 1331288970}
   - {fileID: 3383031754083853657}
   - {fileID: 180353321}
+  - {fileID: 213835004}
+  - {fileID: 600749932}

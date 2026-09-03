@@ -93,8 +93,8 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
-  m_LightingSettings: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: d0cf478e714d775469582c0553cb9563, type: 2}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: d198a75c3ff3b644b88a93ba18c0e1dc, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -127,6 +127,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 4103567018726165380, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7442829751515100135, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
       propertyPath: m_LocalScale.x
       value: 211.44002
@@ -205,6 +209,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 29840930668952072, guid: e6796f19640598c40a1edb55659c0711, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1162255223185850727, guid: e6796f19640598c40a1edb55659c0711, type: 3}
       propertyPath: m_LocalScale.x
       value: 84.2
@@ -504,6 +512,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -55.8
       objectReference: {fileID: 0}
+    - target: {fileID: 9133664304641075927, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -634,6 +646,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 29840930668952072, guid: e6796f19640598c40a1edb55659c0711, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1162255223185850727, guid: e6796f19640598c40a1edb55659c0711, type: 3}
       propertyPath: m_LocalPosition.x
       value: 25.98
@@ -1628,6 +1644,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 17)
@@ -2051,6 +2071,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock
@@ -2343,6 +2367,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7208677166992387820, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8377101490607822211, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
       propertyPath: m_LocalScale.x
       value: 76.7
@@ -2632,6 +2660,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -55.8
       objectReference: {fileID: 0}
+    - target: {fileID: 9133664304641075927, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2642,6 +2674,82 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7965292786441523640, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
   m_PrefabInstance: {fileID: 272302549}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &277747658
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 277747660}
+  - component: {fileID: 277747659}
+  m_Layer: 0
+  m_Name: Adaptive Probe Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &277747659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 277747658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cded085d155cde949b60f67a11dbc3bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.ProbeVolume
+  version: 2
+  globalVolume: 0
+  mode: 2
+  size: {x: 31.253422, y: 5.3652925, z: 18.965265}
+  overrideRendererFilters: 0
+  minRendererVolumeSize: 0.1
+  objectLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  lowestSubdivLevelOverride: 0
+  highestSubdivLevelOverride: 3
+  overridesSubdivLevels: 0
+  mightNeedRebaking: 0
+  cachedTransform:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: -24.19639
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 1.2353706
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: -24.989586
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
+  cachedHashCode: -9470926
+  fillEmptySpaces: 0
+--- !u!4 &277747660
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 277747658}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24.19639, y: -1.2353706, z: 24.989586}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &280246835
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2806,6 +2914,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 4103567018726165380, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7442829751515100135, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
       propertyPath: m_LocalScale.x
       value: 320.2
@@ -3417,6 +3529,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (1)
@@ -3637,10 +3753,10 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
+  m_BounceIntensity: 1.3
   m_ColorTemperature: 5814
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 3.67342e-40, y: 1.4546743e-37, z: 9.1858e-41, w: 1.4546743e-37}
@@ -3739,6 +3855,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 4103567018726165380, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7442829751515100135, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
       propertyPath: m_LocalScale.x
       value: 143.02002
@@ -3865,6 +3985,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1687109165805968441, guid: 4f28769b9d57f6a46887cb85df640eb7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3973,6 +4097,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (1)
@@ -4301,6 +4429,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4577,6 +4709,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -110.2
       objectReference: {fileID: 0}
+    - target: {fileID: 2280203575165226107, guid: 799e69f8081dd924a994c2d48029b9da, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4817,6 +4953,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09)
@@ -4910,6 +5050,10 @@ PrefabInstance:
     - target: {fileID: 209484922550442129, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
@@ -5253,6 +5397,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (5)
@@ -5476,6 +5624,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7208677166992387820, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8377101490607822211, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
       propertyPath: m_LocalScale.x
       value: 95.98
@@ -5834,6 +5986,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (3)
@@ -5904,6 +6060,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 4103567018726165380, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7442829751515100135, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
       propertyPath: m_LocalScale.x
       value: 316.4
@@ -6170,6 +6330,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9133664304641075927, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6251,6 +6415,10 @@ PrefabInstance:
     - target: {fileID: 843006603915137442, guid: de937093aad163d4d9370930d5728c71, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6410,6 +6578,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 291.62
@@ -6884,6 +7056,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 4103567018726165380, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7442829751515100135, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
       propertyPath: m_LocalScale.x
       value: 286.6
@@ -7127,6 +7303,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7358,6 +7538,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (Decoration 18)
@@ -7788,6 +7972,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8023,6 +8211,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -55.8
       objectReference: {fileID: 0}
+    - target: {fileID: 9133664304641075927, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8209,6 +8401,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 29.46
       objectReference: {fileID: 0}
+    - target: {fileID: 2280203575165226107, guid: 799e69f8081dd924a994c2d48029b9da, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8301,6 +8497,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (3)
@@ -8572,6 +8772,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6576595336786135002, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8804,6 +9008,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 283933330202871855, guid: e8e76c5715aed14409e6e6adcc27c18b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1421896136485843776, guid: e8e76c5715aed14409e6e6adcc27c18b, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.6700001
@@ -9523,6 +9731,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 17) (2)
@@ -9799,6 +10011,56 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1195773173}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1205425856
+GameObject:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1205425858}
+  - component: {fileID: 1205425857}
+  m_Layer: 0
+  m_Name: ProbeVolumePerSceneData
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1205425857
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205425856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a83d2f7ae04ab6f4f99b0d85377be998, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.ProbeVolumePerSceneData
+  serializedBakingSet: {fileID: 11400000, guid: b6a07c94585bf604498cbf9c28ae44a0, type: 2}
+  sceneGUID: c84168a859aaf494c9a1450c9c79a164
+  obsoleteAsset: {fileID: 0}
+  obsoleteCellSharedDataAsset: {fileID: 0}
+  obsoleteCellSupportDataAsset: {fileID: 0}
+  obsoleteSerializedScenarios: []
+--- !u!4 &1205425858
+Transform:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205425856}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1207585317
 GameObject:
   m_ObjectHideFlags: 0
@@ -10427,6 +10689,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
       value: 344.7
@@ -10662,6 +10928,10 @@ PrefabInstance:
     - target: {fileID: 1148353921733064468, guid: 799e69f8081dd924a994c2d48029b9da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 29.46
+      objectReference: {fileID: 0}
+    - target: {fileID: 2280203575165226107, guid: 799e69f8081dd924a994c2d48029b9da, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10958,6 +11228,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 1203035569681346679, guid: de937093aad163d4d9370930d5728c71, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11162,6 +11436,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7208677166992387820, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8377101490607822211, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
       propertyPath: m_LocalScale.x
       value: 106.35999
@@ -11667,6 +11945,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
       value: 412.2
@@ -11783,6 +12065,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7965292786441523640, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9133664304641075927, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
+      propertyPath: m_CastShadows
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -11951,6 +12237,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09) (1)
@@ -12111,6 +12401,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7476440683597233518, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8613851083934565889, guid: 981ae254212a96a4b9d03c10e5ebe5d8, type: 3}
       propertyPath: m_LocalScale.x
       value: 316.3
@@ -12453,6 +12747,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7704562992398350222, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8209190519917090395, guid: 44edbbade6c6994498548e7f4b4eb680, type: 3}
       propertyPath: m_Name
       value: BigRock (Decoration 01) (13)
@@ -13338,6 +13636,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 6329247718419996489, guid: f5b119337a90ace458f9114b3e89d571, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13446,6 +13748,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 2512901586959407192, guid: 6cc154755d5f3e4479676eb7658a0793, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3644734197960336183, guid: 6cc154755d5f3e4479676eb7658a0793, type: 3}
       propertyPath: m_LocalPosition.x
       value: 42.14
@@ -13795,6 +14101,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -101.2
       objectReference: {fileID: 0}
+    - target: {fileID: 9133664304641075927, guid: 9cc89cb461b1bbc46be0b55dd73e3192, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13869,6 +14179,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 138.616
       objectReference: {fileID: 0}
+    - target: {fileID: 4495736001335470795, guid: 23b22bbe6246be04fb1d4b9a6a5c45a5, type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4495736001335470795, guid: 23b22bbe6246be04fb1d4b9a6a5c45a5, type: 3}
+      propertyPath: m_StaticShadowCaster
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13894,6 +14212,10 @@ PrefabInstance:
     - target: {fileID: 209484922550442129, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
@@ -14039,6 +14361,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 29840930668952072, guid: e6796f19640598c40a1edb55659c0711, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1162255223185850727, guid: e6796f19640598c40a1edb55659c0711, type: 3}
       propertyPath: m_LocalPosition.x
       value: 19.297876
@@ -14105,6 +14431,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5668735241557855778, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6173195779673747447, guid: 291f12ea87210cc4486f9c82658150b6, type: 3}
       propertyPath: m_Name
       value: SmallRock (Decoration 17) (1)
@@ -14187,6 +14517,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04 (Decoration 18)
@@ -14443,6 +14777,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig (Decoration 09) (7)
@@ -15363,6 +15701,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 7208677166992387820, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8377101490607822211, guid: 872c4580ef6d18841b7ed38350530694, type: 3}
       propertyPath: m_LocalScale.x
       value: 165
@@ -15701,6 +16043,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 4103567018726165380, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7442829751515100135, guid: 4813868f342ef494da5457f82e904ce7, type: 3}
       propertyPath: m_LocalScale.x
       value: 271.30002
@@ -15860,6 +16206,10 @@ PrefabInstance:
     - target: {fileID: 209484922550442129, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 3760963730565531257, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5101673760389907589, guid: fedfd3f794a5a374f98e1a0b8a040a8e, type: 3}
       propertyPath: m_LocalScale.x
@@ -16067,6 +16417,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5408803644675931317, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6576595336786135002, guid: 0a085f1c15f127846acb9d7dbae81a83, type: 3}
+      propertyPath: m_CastShadows
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -16468,6 +16822,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 5740718092282717262, guid: 5ed74df78262f384599325c04e5eec3c, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -16481,6 +16839,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 5662542361147696965, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6167002625123337872, guid: 5f276275d23298f4899b03ca82fdd821, type: 3}
       propertyPath: m_Name
       value: VerticalTwig
@@ -16562,6 +16924,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 177316904}
     m_Modifications:
+    - target: {fileID: 3248498408712962229, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3896740021548196192, guid: 0b1f242f05cac8c4689d272c5b4b6c4b, type: 3}
       propertyPath: m_Name
       value: Rock_04
@@ -16679,6 +17045,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 6329247718419996489, guid: f5b119337a90ace458f9114b3e89d571, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -16699,6 +17069,10 @@ PrefabInstance:
     - target: {fileID: 4047035073477350537, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 7134255533225855746, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7372069491336549432, guid: 3ea7c2e27b0207848b7e46dd4c2d9f69, type: 3}
       propertyPath: m_Mesh
@@ -16759,3 +17133,5 @@ SceneRoots:
   - {fileID: 1331288970}
   - {fileID: 3383031754083853657}
   - {fileID: 180353321}
+  - {fileID: 277747660}
+  - {fileID: 1205425858}
