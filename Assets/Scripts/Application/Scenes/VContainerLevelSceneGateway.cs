@@ -48,9 +48,13 @@ namespace TowerDefense3D.GameFlow
             }
             catch (Exception exception)
             {
+                Debug.LogException(exception);
                 completion(
                     default,
-                    CreateResult(LevelTransitionStatus.LoadFailed, request.LevelNumber, exception.Message));
+                    CreateResult(
+                        LevelTransitionStatus.LoadFailed,
+                        request.LevelNumber,
+                        DescribeFailure(exception)));
                 return;
             }
 
@@ -98,7 +102,11 @@ namespace TowerDefense3D.GameFlow
             }
             catch (Exception exception)
             {
-                completion(CreateResult(LevelTransitionStatus.UnloadFailed, handle.LevelNumber, exception.Message));
+                Debug.LogException(exception);
+                completion(CreateResult(
+                    LevelTransitionStatus.UnloadFailed,
+                    handle.LevelNumber,
+                    DescribeFailure(exception)));
                 return;
             }
 
@@ -196,10 +204,16 @@ namespace TowerDefense3D.GameFlow
             }
             catch (Exception exception)
             {
+                // The console gets the whole chain and the stack; the retry dialog gets the
+                // root cause, which is the only part naming the asset a designer has to fix.
+                Debug.LogException(exception, scope);
                 CleanupFailedScene(
                     loadedScene,
                     scope,
-                    CreateResult(LevelTransitionStatus.InitializationFailed, request.LevelNumber, exception.Message),
+                    CreateResult(
+                        LevelTransitionStatus.InitializationFailed,
+                        request.LevelNumber,
+                        DescribeFailure(exception)),
                     completion);
                 return;
             }
@@ -287,6 +301,31 @@ namespace TowerDefense3D.GameFlow
             }
 
             return scopes;
+        }
+
+        /// <summary>
+        /// Digs the real reason out of an exception chain.
+        /// </summary>
+        /// <remarks>
+        /// VContainer resolves registrations by reflection, so a constructor that rejects its
+        /// input - every "requires an authored ..." guard in <see cref="LevelLifetimeScope"/>,
+        /// and every validator a system runs on its own data - reaches this class wrapped in a
+        /// TargetInvocationException. That wrapper's own message is the useless "Exception has
+        /// been thrown by the target of an invocation.", which is what the retry dialog used to
+        /// show: the player saw a level refuse to load and no one could tell which asset was at
+        /// fault. The innermost message is the one that names it.
+        /// </remarks>
+        private static string DescribeFailure(Exception exception)
+        {
+            Exception rootCause = exception;
+            while (rootCause.InnerException != null)
+            {
+                rootCause = rootCause.InnerException;
+            }
+
+            return string.IsNullOrWhiteSpace(rootCause.Message)
+                ? exception.Message
+                : rootCause.Message;
         }
 
         private static LevelTransitionResult CreateResult(
