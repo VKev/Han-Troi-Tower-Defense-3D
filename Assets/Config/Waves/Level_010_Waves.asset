@@ -37,7 +37,7 @@ MonoBehaviour:
       count: 6
       startTimeSeconds: 0
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 1
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 5
       startTimeSeconds: 3
@@ -54,7 +54,7 @@ MonoBehaviour:
       count: 6
       startTimeSeconds: 0
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 0
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 4
       startTimeSeconds: 2
@@ -163,4 +163,9 @@ MonoBehaviour:
       spawnWindowSeconds: 6
       spawnPointIndex: 1
   - clearGoldReward: 0
-    spawnBatches: []
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 1
+      startTimeSeconds: 0
+      spawnWindowSeconds: 0
+      spawnPointIndex: 0

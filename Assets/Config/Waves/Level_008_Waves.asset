@@ -27,7 +27,7 @@ MonoBehaviour:
       count: 6
       startTimeSeconds: 1
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 1
     - enemy: {fileID: 11400000, guid: b111ebd2a63e5374791b768be64fe3ee, type: 2}
       count: 7
       startTimeSeconds: 2
@@ -39,7 +39,7 @@ MonoBehaviour:
       count: 6
       startTimeSeconds: 1
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 2
     - enemy: {fileID: 11400000, guid: b111ebd2a63e5374791b768be64fe3ee, type: 2}
       count: 3
       startTimeSeconds: 2
