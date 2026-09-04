@@ -32,6 +32,11 @@ namespace TowerDefense3D.GameFlow.Editor
         private static readonly Color NextLevelColor = new Color(0.13f, 0.52f, 0.30f, 1f);
         private static readonly Color CheatButtonColor = new Color(0.34f, 0.18f, 0.46f, 0.94f);
 
+        // One build button, authored rather than derived: the prefab owns the hit area, the two
+        // labels and the coin pip, which are the same for every tower.
+        private const string TowerButtonPrefabPath =
+            "Assets/Resources/Prefabs/TowerBuildButton.prefab";
+
         private static readonly Dictionary<string, Color> TowerColorsByName =
             new Dictionary<string, Color>
             {
@@ -282,49 +287,25 @@ namespace TowerDefense3D.GameFlow.Editor
                 placedButtons);
         }
 
+        /// <summary>
+        /// Colours one build button and lets it read its own labels off its definition.
+        /// </summary>
+        /// <remarks>
+        /// The button used to be assembled here out of a background, a name, a coin pip and a cost
+        /// line. The prefab at <see cref="TowerButtonPrefabPath"/> owns all of that now, so the
+        /// only thing left to decide is the tint, which is the one piece that genuinely differs
+        /// per tower. Placing instances rather than re-deriving them means a tweak made to the
+        /// prefab survives the next rebuild.
+        /// </remarks>
         private static void BuildTowerButton(TowerPlacementDragButtonView view)
         {
             Transform button = view.transform;
             Image background = button.GetComponent<Image>();
             Color color;
-            StylePanelImage(
-                background,
-                TowerColorsByName.TryGetValue(button.name, out color) ? color : NeutralButtonColor);
-            background.raycastTarget = true;
+            background.color = TowerColorsByName.TryGetValue(button.name, out color)
+                ? color
+                : NeutralButtonColor;
 
-            DeleteChild(button, "Label");
-
-            Text nameText = Label(button, "Name", button.name.ToUpperInvariant(), Vector2.zero, Vector2.zero,
-                15, TextColor, TextAnchor.MiddleCenter, FontStyle.Bold);
-            SetRect(
-                (RectTransform)nameText.transform,
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -16f),
-                new Vector2(-14f, 44f));
-
-            RectTransform coin = EnsurePanel(button, "Coin", GoldColor);
-            SetRect(
-                coin,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(1f, 0.5f),
-                new Vector2(-4f, 28f),
-                new Vector2(13f, 13f));
-
-            Text cost = Label(button, "Cost", "0", Vector2.zero, Vector2.zero,
-                17, GoldColor, TextAnchor.MiddleLeft, FontStyle.Bold);
-            SetRect(
-                (RectTransform)cost.transform,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 0.5f),
-                new Vector2(2f, 28f),
-                new Vector2(70f, 24f));
-
-            SetObjectReference(view, "nameText", nameText);
-            SetObjectReference(view, "costText", cost);
             view.ApplyDefinitionLabels();
         }
 
@@ -719,20 +700,19 @@ namespace TowerDefense3D.GameFlow.Editor
             Transform buttons,
             TowerCombatDefinition definition)
         {
-            var created = new GameObject(
-                definition.Core.DisplayName,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image),
-                typeof(Button),
-                typeof(TowerPlacementDragButtonView));
-            created.transform.SetParent(buttons, false);
+            GameObject template = AssetDatabase.LoadAssetAtPath<GameObject>(TowerButtonPrefabPath);
+            if (template == null)
+            {
+                Debug.LogError($"Tower build button prefab is missing from '{TowerButtonPrefabPath}'.");
+                return null;
+            }
 
-            var button = created.GetComponent<Button>();
-            button.targetGraphic = created.GetComponent<Image>();
+            var created = (GameObject)PrefabUtility.InstantiatePrefab(template, buttons);
+            created.name = definition.Core.DisplayName;
 
+            // The definition is the only reference a button carries that the prefab cannot: the
+            // button, name and cost fields all point inside the button, so they travel with it.
             var view = created.GetComponent<TowerPlacementDragButtonView>();
-            SetObjectReference(view, "button", button);
             SetObjectReference(view, "definition", definition);
             Debug.Log("Added the missing tower build button " + created.name + ".");
             return view;
