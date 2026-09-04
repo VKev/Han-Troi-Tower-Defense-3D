@@ -39,7 +39,13 @@ namespace TowerDefense3D.GameFlow
             {
                 LevelCatalogEntry entry = orderedLevels[index];
                 bool isUnlocked = saveSystem.Progress.IsUnlocked(entry.LevelNumber);
-                items.Add(new LevelMenuItemState(entry.LevelNumber, entry.DisplayName, isUnlocked, false));
+                bool isCleared = saveSystem.Progress.IsCleared(entry.LevelNumber);
+                items.Add(new LevelMenuItemState(
+                    entry.LevelNumber,
+                    entry.DisplayName,
+                    isUnlocked,
+                    isCleared,
+                    false));
             }
 
             gameFlowSystem.SetState(GameFlowState.LevelMenu);

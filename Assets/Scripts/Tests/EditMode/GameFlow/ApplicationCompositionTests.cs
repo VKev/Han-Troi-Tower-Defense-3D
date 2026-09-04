@@ -241,6 +241,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                         entry.LevelNumber,
                         entry.DisplayName,
                         isUnlocked: index == 0,
+                        isCleared: false,
                         isBusy: false));
                 }
 

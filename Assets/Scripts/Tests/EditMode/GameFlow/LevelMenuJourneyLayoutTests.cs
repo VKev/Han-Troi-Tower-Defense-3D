@@ -41,10 +41,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             for (int index = 0; index < catalog.Levels.Count; index++)
             {
                 LevelCatalogEntry entry = catalog.Levels[index];
+                // Everything below the level the player is up to counts as beaten, that level
+                // itself as open-but-unbeaten, and the rest as shut - so one fixture exercises
+                // all three node states.
                 states.Add(new LevelMenuItemState(
                     entry.LevelNumber,
                     entry.DisplayName,
                     isUnlocked: entry.LevelNumber <= UnlockedThrough,
+                    isCleared: entry.LevelNumber < UnlockedThrough,
                     isBusy: false));
             }
         }
@@ -114,30 +118,81 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 GetPrivateField<Image>(menu, "progressFill").fillAmount,
                 Is.EqualTo(UnlockedThrough / (float)states.Count).Within(0.001f));
             Assert.That(ReadText(menu, "subtitleLabel"), Does.StartWith(states.Count.ToString()));
-            Assert.That(ReadText(menu, "starLabel"), Does.Contain("/" + (states.Count * 3)));
         }
 
+        /// <summary>
+        /// A node has to say which of its five states it is in, and say only one of them: the
+        /// states are five sibling objects, so the failure worth catching is two showing at once
+        /// or none showing at all.
+        /// </summary>
         [Test]
-        public void Show_MarksBeatenCurrentAndLockedNodesApart()
+        public void Show_DrawsBeatenOpenAndShutNodesWithDifferentArt()
         {
             menu.Show(states, _ => { });
 
-            LevelButtonView beaten = FindNode(UnlockedThrough - 1);
-            Assert.That(IsShowing(beaten, "unlockedIndicator"), Is.True, "A beaten node needs its tick.");
-            Assert.That(IsShowingLabel(beaten, "starsLabel"), Is.True, "A beaten node needs its stars.");
-            Assert.That(IsShowing(beaten, "currentBadge"), Is.False);
-            Assert.That(IsShowing(beaten, "lockedIndicator"), Is.False);
+            // Show opens on the level the player is up to, so that node already wears its ring.
+            // The plain open look therefore has to be read after putting the node back.
+            LevelButtonView openNode = FindNode(UnlockedThrough);
+            Assert.That(ActiveState(FindNode(UnlockedThrough - 1)), Is.EqualTo("clearedNode"));
+            Assert.That(ActiveState(openNode), Is.EqualTo("unlockedSelectedNode"));
+            Assert.That(ActiveState(FindNode(UnlockedThrough + 1)), Is.EqualTo("lockedNode"));
 
-            LevelButtonView current = FindNode(UnlockedThrough);
-            Assert.That(IsShowing(current, "currentBadge"), Is.True, "The current node needs its badge.");
-            Assert.That(IsShowing(current, "ringIndicator"), Is.True, "The current node needs its ring.");
-            Assert.That(IsShowing(current, "lockedIndicator"), Is.False);
+            openNode.SetSelected(false);
+            Assert.That(ActiveState(openNode), Is.EqualTo("unlockedNode"));
 
-            LevelButtonView locked = FindNode(UnlockedThrough + 1);
-            Assert.That(IsShowing(locked, "lockedIndicator"), Is.True, "A locked node needs its padlock.");
-            Assert.That(IsShowingLabel(locked, "requirementLabel"), Is.True);
-            Assert.That(IsShowing(locked, "ringIndicator"), Is.False);
-            Assert.That(IsShowing(locked, "unlockedIndicator"), Is.False);
+            // A shut node must not be clickable, or the menu would select a level the player
+            // has not reached.
+            Assert.That(
+                GetPrivateField<Button>(FindNode(UnlockedThrough + 1), "button").interactable,
+                Is.False,
+                "A shut node must not be selectable.");
+
+            // The beaten state has a ring of its own, so a level the player goes back to does
+            // not fall back to the plain green body.
+            LevelButtonView beatenNode = FindNode(UnlockedThrough - 1);
+            beatenNode.SetSelected(true);
+            Assert.That(ActiveState(beatenNode), Is.EqualTo("clearedSelectedNode"));
+
+            // Selecting a shut node is not a thing the menu can do, but if it ever did the node
+            // must stay grey rather than sprout a ring it cannot honour.
+            LevelButtonView shutNode = FindNode(UnlockedThrough + 1);
+            shutNode.SetSelected(true);
+            Assert.That(ActiveState(shutNode), Is.EqualTo("lockedNode"));
+        }
+
+        /// <summary>
+        /// The name of the one state field whose object is showing, failing if that is not
+        /// exactly one of them.
+        /// </summary>
+        private static string ActiveState(LevelButtonView view)
+        {
+            Assert.That(view, Is.Not.Null, "Missing node.");
+            string showing = null;
+            foreach (string field in new[]
+                     {
+                         "lockedNode",
+                         "unlockedNode",
+                         "unlockedSelectedNode",
+                         "clearedNode",
+                         "clearedSelectedNode"
+                     })
+            {
+                GameObject state = GetPrivateField<GameObject>(view, field);
+                Assert.That(state, Is.Not.Null, view.name + " has no " + field + " artwork.");
+                if (!state.activeSelf)
+                {
+                    continue;
+                }
+
+                Assert.That(
+                    showing,
+                    Is.Null,
+                    view.name + " shows " + showing + " and " + field + " at the same time.");
+                showing = field;
+            }
+
+            Assert.That(showing, Is.Not.Null, view.name + " shows no state at all.");
+            return showing;
         }
 
         [Test]

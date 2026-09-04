@@ -30,16 +30,16 @@ namespace TowerDefense3D.GameFlow
         // TMP_Text rather than TextMeshProUGUI so a swap to the non-Canvas variant needs no edit
         // here. The rest of the screen is still uGUI Text, on purpose - see subtitleLabel below.
         //
-        // The panel's third line, "Selected Details", is deliberately absent: it reads the same
-        // for every level, so it is authored once in the prefab and no field here points at it.
-        // Holding a reference the view never writes only invites someone to start writing it.
+        // The panel's third line, "Selected Details", is deliberately absent, and so is the star
+        // panel's label: both read the same whatever the run has done, so they are authored once
+        // in the prefab and no field here points at them. Holding a reference the view never
+        // writes only invites someone to start writing it.
         [SerializeField] private TMP_Text selectionChapter;
         [SerializeField] private TMP_Text selectionTitle;
         [SerializeField] private Button enterMapButton;
         [SerializeField] private Text subtitleLabel;
         [SerializeField] private Text progressLabel;
         [SerializeField] private Image progressFill;
-        [SerializeField] private Text starLabel;
 
         private readonly List<LevelMenuItemState> levels = new();
         private Action<int> onLevelSelected;
@@ -69,7 +69,6 @@ namespace TowerDefense3D.GameFlow
             this.levels.Clear();
             this.onLevelSelected = onLevelSelected;
 
-            int currentLevelNumber = FindCurrentLevelNumber(levels);
             for (int index = 0; index < levelButtons.Length; index++)
             {
                 LevelButtonView view = levelButtons[index];
@@ -79,7 +78,7 @@ namespace TowerDefense3D.GameFlow
                 {
                     LevelMenuItemState state = levels[index];
                     this.levels.Add(state);
-                    view.Bind(state, ReadProgress(state, currentLevelNumber), HandleLevelNodeClicked);
+                    view.Bind(state, ReadProgress(state), HandleLevelNodeClicked);
                 }
             }
 
@@ -103,36 +102,27 @@ namespace TowerDefense3D.GameFlow
         }
 
         /// <summary>
-        /// The level the player is on: the last one unlocked. Everything unlocked before it had to
-        /// be beaten to get here, which is all the trail needs in order to read.
+        /// Reads a node's state straight off the save data.
         /// </summary>
-        private static int FindCurrentLevelNumber(IReadOnlyList<LevelMenuItemState> levels)
-        {
-            int current = 0;
-            for (int index = 0; index < levels.Count; index++)
-            {
-                if (levels[index].IsUnlocked && levels[index].LevelNumber > current)
-                {
-                    current = levels[index].LevelNumber;
-                }
-            }
-
-            return current;
-        }
-
-        private static LevelNodeProgress ReadProgress(LevelMenuItemState state, int currentLevelNumber)
+        /// <remarks>
+        /// This used to guess: the highest unlocked level was "current" and everything below it
+        /// was "completed". That guess is wrong the moment a player opens a level and loses -
+        /// the level below still showed as beaten. The save has carried
+        /// <see cref="LevelMenuItemState.IsCleared"/> all along, so the nodes now read it.
+        /// </remarks>
+        private static LevelNodeProgress ReadProgress(LevelMenuItemState state)
         {
             if (!state.IsUnlocked)
             {
                 return LevelNodeProgress.Locked;
             }
 
-            return state.LevelNumber < currentLevelNumber
-                ? LevelNodeProgress.Completed
-                : LevelNodeProgress.Current;
+            return state.IsCleared
+                ? LevelNodeProgress.Cleared
+                : LevelNodeProgress.Unlocked;
         }
 
-        /// <summary>How much of the journey is open, and what the run has to show for it.</summary>
+        /// <summary>How much of the journey is open.</summary>
         private void RenderStanding()
         {
             int unlockedCount = 0;
@@ -159,12 +149,6 @@ namespace TowerDefense3D.GameFlow
                 progressFill.fillAmount = levels.Count > 0
                     ? unlockedCount / (float)levels.Count
                     : 0f;
-            }
-
-            if (starLabel != null)
-            {
-                // TODO: count the stars actually earned once level results are saved.
-                starLabel.text = $"★ 0/{levels.Count * 3}";
             }
         }
 
