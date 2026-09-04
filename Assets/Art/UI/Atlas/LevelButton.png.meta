@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: f37694fbb04bafd409e2a6ba363bc2ae
+guid: d2b24a2e34b076e45b0c22b385b92474
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -43,7 +43,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -134,12 +134,144 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: LevelButton_0
+      rect:
+        serializedVersion: 2
+        x: 91
+        y: 607
+        width: 317
+        height: 347
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6f26cb71a20373c488fff6d59d3da78b
+      internalID: 1671357829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: LevelButton_1
+      rect:
+        serializedVersion: 2
+        x: 566
+        y: 607
+        width: 317
+        height: 347
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 99664f5d8d5082143a9d5ed4ed40fa83
+      internalID: -220760372
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: LevelButton_2
+      rect:
+        serializedVersion: 2
+        x: 1040
+        y: 603
+        width: 317
+        height: 347
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b3928bd0dbd914c44ab0a65e5c44c86d
+      internalID: -615076445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: LevelButton_3
+      rect:
+        serializedVersion: 2
+        x: 25
+        y: 161
+        width: 449
+        height: 375
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a9b63f377ecb3994e89f59f731bb0d3c
+      internalID: -838726368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: LevelButton_4
+      rect:
+        serializedVersion: 2
+        x: 500
+        y: 159
+        width: 449
+        height: 375
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8ad4c5b69c62a1e439d6d01ac19be98c
+      internalID: -534941990
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: LevelButton_5
+      rect:
+        serializedVersion: 2
+        x: 972
+        y: 160
+        width: 449
+        height: 375
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fdcc6a58b48188141bf7a667dd6c94b3
+      internalID: -523003352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 09f16b9f84fe1e24a9d7c6c6222a225e
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +280,13 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      LevelButton_0: 1671357829
+      LevelButton_1: -220760372
+      LevelButton_2: -615076445
+      LevelButton_3: -838726368
+      LevelButton_4: -534941990
+      LevelButton_5: -523003352
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
