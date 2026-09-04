@@ -15,6 +15,15 @@ namespace TowerDefense3D.GameFlow
     ///
     /// Two kinds of child are left alone: anything named Fog, which is a wash meant to sit still,
     /// and the scroll view itself, which is the trail this parallaxes against.
+    ///
+    /// A layer can also sit in FRONT of the trail. Being nearer than the trail, a foreground band
+    /// has to slide further than the trail rather than less, so it is taken off the depth ramp
+    /// and given <see cref="foregroundFactor"/> instead. Adding one leaves every background
+    /// layer at the speed it already had.
+    ///
+    /// A layer carrying a <see cref="CloudDriftView"/> also wanders on its own while nothing is
+    /// being dragged. That offset is added here rather than written by the drift itself, because
+    /// this component rewrites the layer's position outright and would otherwise erase it.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
@@ -31,9 +40,15 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("Share of the trail's movement taken by the nearest layer.")]
         [SerializeField] private float fastestFactor = 0.5f;
 
+        [Tooltip("Share of the trail's movement taken by a foreground layer. Above one so it outruns the trail, which is what reads as being nearer than the nodes.")]
+        [SerializeField] private float foregroundFactor = 1.3f;
+
         private readonly List<RectTransform> layers = new();
         private readonly List<Vector2> homePositions = new();
         private readonly List<float> factors = new();
+        private readonly List<bool> foregrounds = new();
+        private readonly List<CloudDriftView> drifts = new();
+        private bool hasDrift;
         private bool hasApplied;
         private float appliedTravel;
 
@@ -46,12 +61,17 @@ namespace TowerDefense3D.GameFlow
         private void OnDisable()
         {
             SendLayersHome();
+            ReleaseDrifts();
         }
 
         private void LateUpdate()
         {
             float travel = ReadTravel();
-            if (hasApplied && Mathf.Approximately(travel, appliedTravel))
+
+            // A drifting layer moves on its own clock, so a still trail is no longer proof that
+            // nothing has changed. Without a drift the early-out stands and an idle map costs
+            // nothing.
+            if (hasApplied && Mathf.Approximately(travel, appliedTravel) && !hasDrift)
             {
                 return;
             }
@@ -67,9 +87,13 @@ namespace TowerDefense3D.GameFlow
         private void Collect()
         {
             SendLayersHome();
+            ReleaseDrifts();
             layers.Clear();
             homePositions.Clear();
             factors.Clear();
+            foregrounds.Clear();
+            drifts.Clear();
+            hasDrift = false;
 
             if (scroll == null)
             {
@@ -97,19 +121,69 @@ namespace TowerDefense3D.GameFlow
                 }
 
                 layers.Add(child);
+
+                // Claimed before the position is read: taking the layer over puts it back at its
+                // authored spot, and reading first would take a drifted position for home and let
+                // the layer creep a little further away every time the screen is shown.
+                CloudDriftView drift = child.GetComponent<CloudDriftView>();
+                if (drift != null)
+                {
+                    drift.SetDrivenExternally(true);
+                    hasDrift = true;
+                }
+
+                drifts.Add(drift);
                 homePositions.Add(child.anchoredPosition);
+
+                // A foreground layer is one that draws above the chrome, and the only way a
+                // child of the map can do that is to carry its own sorting canvas. Read off that
+                // component rather than off a name, so the layer that looks nearest and the layer
+                // that moves nearest cannot drift apart.
+                foregrounds.Add(
+                    child.TryGetComponent(out Canvas sorting) && sorting.overrideSorting);
             }
 
-            for (int index = 0; index < layers.Count; index++)
-            {
-                factors.Add(ParallaxDepthRamp.ResolveFactor(
-                    index,
-                    layers.Count,
-                    slowestFactor,
-                    fastestFactor));
-            }
+            RampFactors();
 
             hasApplied = false;
+        }
+
+        /// <summary>
+        /// Spreads the depth ramp across the background layers only, and hands every foreground
+        /// layer the one factor that puts it in front of the trail.
+        /// </summary>
+        /// <remarks>
+        /// Counting the backgrounds on their own is what keeps a foreground band from being a
+        /// breaking change: were the ramp spread over all the layers, hanging one in front would
+        /// quietly slow every band behind it and the tuning would have to be redone.
+        /// </remarks>
+        private void RampFactors()
+        {
+            int backgroundCount = 0;
+            for (int index = 0; index < foregrounds.Count; index++)
+            {
+                if (!foregrounds[index])
+                {
+                    backgroundCount++;
+                }
+            }
+
+            int backgroundIndex = 0;
+            for (int index = 0; index < layers.Count; index++)
+            {
+                if (foregrounds[index])
+                {
+                    factors.Add(foregroundFactor);
+                    continue;
+                }
+
+                factors.Add(ParallaxDepthRamp.ResolveFactor(
+                    backgroundIndex,
+                    backgroundCount,
+                    slowestFactor,
+                    fastestFactor));
+                backgroundIndex++;
+            }
         }
 
         /// <summary>
@@ -128,12 +202,30 @@ namespace TowerDefense3D.GameFlow
         {
             for (int index = 0; index < layers.Count; index++)
             {
+                CloudDriftView drift = drifts[index];
+                Vector2 wander = drift != null && drift.isActiveAndEnabled ? drift.Offset : Vector2.zero;
+
                 layers[index].anchoredPosition =
-                    homePositions[index] + new Vector2(travel * factors[index], 0f);
+                    homePositions[index] + new Vector2(travel * factors[index], 0f) + wander;
             }
 
             appliedTravel = travel;
             hasApplied = true;
+        }
+
+        /// <summary>
+        /// Hands every claimed layer back to its own drift, so a cloud left in the hierarchy after
+        /// this component is switched off keeps moving instead of freezing.
+        /// </summary>
+        private void ReleaseDrifts()
+        {
+            for (int index = 0; index < drifts.Count; index++)
+            {
+                if (drifts[index] != null)
+                {
+                    drifts[index].SetDrivenExternally(false);
+                }
+            }
         }
 
         private void SendLayersHome()
