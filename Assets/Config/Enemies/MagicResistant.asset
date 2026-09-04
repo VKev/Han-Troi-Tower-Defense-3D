@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Magic Resistant
   rank: 0
   viewPrefab: {fileID: 5197172185660305575, guid: bd31f13383383f548b8101292730a5ba, type: 3}
-  baseMaxHealth: 24
+  baseMaxHealth: 30
   baseMoveSpeed: 1.8
   baseHitRadius: 0.371
   thermalShockHitsToBreakShield: 2

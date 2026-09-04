@@ -22,4 +22,5 @@ MonoBehaviour:
   burnTickIntervalSeconds: 0
   burnDurationSeconds: 0
   liftDurationSeconds: 0
-  liftImmunitySeconds: 0
+  liftImmunitySeconds: 1
+  liftHeightMeters: 1.2
