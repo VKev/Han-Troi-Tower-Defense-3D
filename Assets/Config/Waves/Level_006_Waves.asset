@@ -27,7 +27,7 @@ MonoBehaviour:
       count: 6
       startTimeSeconds: 0
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 0
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 7
       startTimeSeconds: 0
@@ -39,7 +39,7 @@ MonoBehaviour:
       count: 6
       startTimeSeconds: 0
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 0
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 7
       startTimeSeconds: 0
@@ -68,12 +68,12 @@ MonoBehaviour:
       count: 2
       startTimeSeconds: 3
       spawnWindowSeconds: 2
-      spawnPointIndex: -1
+      spawnPointIndex: 1
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 6
       startTimeSeconds: 0
       spawnWindowSeconds: 4
-      spawnPointIndex: -1
+      spawnPointIndex: 1
   - clearGoldReward: 0
     spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
@@ -90,7 +90,7 @@ MonoBehaviour:
       count: 3
       startTimeSeconds: 0
       spawnWindowSeconds: 1
-      spawnPointIndex: -1
+      spawnPointIndex: 0
   - clearGoldReward: 100
     spawnBatches:
     - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
@@ -107,12 +107,12 @@ MonoBehaviour:
       count: 2
       startTimeSeconds: 9
       spawnWindowSeconds: 2
-      spawnPointIndex: -1
+      spawnPointIndex: 1
     - enemy: {fileID: 11400000, guid: b111ebd2a63e5374791b768be64fe3ee, type: 2}
       count: 2
       startTimeSeconds: 6
       spawnWindowSeconds: 2
-      spawnPointIndex: -1
+      spawnPointIndex: 0
     - enemy: {fileID: 11400000, guid: 95175cd02ddf7af4cb6e933188c03abf, type: 2}
       count: 1
       startTimeSeconds: 12
