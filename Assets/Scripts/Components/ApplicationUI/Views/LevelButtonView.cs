@@ -5,44 +5,58 @@ using UnityEngine.UI;
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
-    /// How far along the journey a node sits. The menu works this out from the unlock state alone:
-    /// the highest unlocked level is the one the player is on, everything unlocked before it has
-    /// been beaten, and the rest is still shut.
+    /// How far along the journey a node sits, read from the save rather than inferred.
     /// </summary>
     public enum LevelNodeProgress
     {
+        /// <summary>Not reachable yet.</summary>
         Locked,
-        Current,
-        Completed
+
+        /// <summary>Open but not beaten.</summary>
+        Unlocked,
+
+        /// <summary>Beaten.</summary>
+        Cleared
     }
 
     /// <summary>
-    /// One node on the journey map. The node body carries the level number; the trimmings around it
-    /// say which of the three states it is in - beaten, current, or locked.
+    /// One node on the journey map: five states, each its own child object, exactly one of them
+    /// shown at a time.
     /// </summary>
+    /// <remarks>
+    /// The five could have been one Image swapping between five sprites, and were at first. Five
+    /// children is the friendlier shape to author against: every state is visible in the
+    /// hierarchy, can be toggled by hand to see what it looks like, and can be restyled or
+    /// resized on its own - the ringed states are half again as wide as the plain ones, so the
+    /// gold ring reaches outside the body instead of squeezing it.
+    /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
     public sealed class LevelButtonView : MonoBehaviour
     {
         [SerializeField] private Button button;
         [SerializeField] private Text label;
-        [SerializeField] private Text titleLabel;
-        [SerializeField] private Image nodeImage;
-        [SerializeField] private GameObject lockedIndicator;
-        [SerializeField] private GameObject unlockedIndicator;
-        [SerializeField] private GameObject ringIndicator;
-        [SerializeField] private GameObject currentBadge;
-        [SerializeField] private Text starsLabel;
-        [SerializeField] private Text requirementLabel;
 
-        [SerializeField] private Color completedColor = new(0.16f, 0.52f, 0.40f, 1f);
-        [SerializeField] private Color currentColor = new(0.92f, 0.66f, 0.16f, 1f);
-        [SerializeField] private Color lockedColor = new(0.24f, 0.23f, 0.21f, 1f);
-        [SerializeField] private Color selectedColor = new(0.96f, 0.80f, 0.30f, 1f);
+        [Header("Node states - exactly one is shown at a time")]
+        [Tooltip("Grey body with the padlock: the level is not reachable yet.")]
+        [SerializeField] private GameObject lockedNode;
+
+        [Tooltip("Red body: reachable but not beaten.")]
+        [SerializeField] private GameObject unlockedNode;
+
+        [Tooltip("Red body inside the gold ring: picked, not beaten.")]
+        [SerializeField] private GameObject unlockedSelectedNode;
+
+        [Tooltip("Green body: beaten.")]
+        [SerializeField] private GameObject clearedNode;
+
+        [Tooltip("Green body inside the gold ring: picked and beaten.")]
+        [SerializeField] private GameObject clearedSelectedNode;
 
         private Action<int> onSelected;
         private int levelNumber;
         private LevelNodeProgress progress;
+        private bool isSelected;
 
         private void Awake()
         {
@@ -63,36 +77,12 @@ namespace TowerDefense3D.GameFlow
             onSelected = selected;
             this.progress = progress;
 
+            // The number is the only thing the node says; the level's name is left to the
+            // selection panel, which has the room to set it properly.
             label.text = state.LevelNumber.ToString("00");
-            if (titleLabel != null)
-            {
-                // Printed as authored, matching the selection panel: the catalog already
-                // capitalises each word.
-                titleLabel.text = state.DisplayName;
-            }
 
-            bool isLocked = progress == LevelNodeProgress.Locked;
-            lockedIndicator.SetActive(isLocked);
-            unlockedIndicator.SetActive(progress == LevelNodeProgress.Completed);
-            SetActiveIfPresent(ringIndicator, progress == LevelNodeProgress.Current);
-            SetActiveIfPresent(currentBadge, progress == LevelNodeProgress.Current);
-
-            if (starsLabel != null)
-            {
-                // TODO: show the stars actually earned once level results are saved. Until then the
-                // row keeps its place on beaten nodes with an empty score.
-                starsLabel.gameObject.SetActive(progress == LevelNodeProgress.Completed);
-                starsLabel.text = "☆☆☆";
-            }
-
-            if (requirementLabel != null)
-            {
-                // TODO: show the real star requirement once levels carry one.
-                requirementLabel.gameObject.SetActive(isLocked);
-                requirementLabel.text = "CHƯA MỞ";
-            }
-
-            button.interactable = !state.IsBusy;
+            // A locked node is not selectable, so its ringed states are never reachable.
+            button.interactable = !state.IsBusy && progress != LevelNodeProgress.Locked;
             SetSelected(false);
         }
 
@@ -101,36 +91,35 @@ namespace TowerDefense3D.GameFlow
             onSelected = null;
             levelNumber = 0;
             progress = LevelNodeProgress.Locked;
+            isSelected = false;
         }
 
         public void SetSelected(bool isSelected)
         {
-            if (nodeImage == null)
-            {
-                return;
-            }
-
-            nodeImage.color = isSelected ? selectedColor : BaseColor();
+            this.isSelected = isSelected;
+            ApplyState();
         }
 
-        private Color BaseColor()
+        private void ApplyState()
         {
-            switch (progress)
-            {
-                case LevelNodeProgress.Completed:
-                    return completedColor;
-                case LevelNodeProgress.Current:
-                    return currentColor;
-                default:
-                    return lockedColor;
-            }
+            bool locked = progress == LevelNodeProgress.Locked;
+            bool unlocked = progress == LevelNodeProgress.Unlocked;
+            bool cleared = progress == LevelNodeProgress.Cleared;
+
+            // A locked node has no selected state of its own: it cannot be picked, so showing a
+            // ring around it would promise something the button refuses to do.
+            Show(lockedNode, locked);
+            Show(unlockedNode, unlocked && !isSelected);
+            Show(unlockedSelectedNode, unlocked && isSelected);
+            Show(clearedNode, cleared && !isSelected);
+            Show(clearedSelectedNode, cleared && isSelected);
         }
 
-        private static void SetActiveIfPresent(GameObject target, bool isActive)
+        private static void Show(GameObject node, bool visible)
         {
-            if (target != null)
+            if (node != null && node.activeSelf != visible)
             {
-                target.SetActive(isActive);
+                node.SetActive(visible);
             }
         }
 

@@ -375,21 +375,26 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         }
 
         /// <summary>
-        /// Waits for a journey node to stop being shut. The padlock is what says so: the tick next
-        /// to it marks a level as beaten, which the level the player has only just reached is not.
+        /// Waits for a journey node to stop being shut.
         /// </summary>
+        /// <remarks>
+        /// Read off the button rather than a padlock object: the padlock is now painted into the
+        /// locked sprite, and LevelButtonView refuses interaction on a shut node, so
+        /// interactable is the state that actually says "reachable". It deliberately does not
+        /// say "beaten" - a level the player has only just reached is open and unbeaten.
+        /// </remarks>
         private static IEnumerator WaitForLevelUnlocked(int levelNumber)
         {
             for (int frame = 0; frame < TransitionFrameBudget; frame++)
             {
                 FailIfBlockingError("level button " + levelNumber);
                 LevelButtonView view = FindLevelButton(levelNumber);
-                GameObject padlock = view != null
-                    ? GetPrivateField<GameObject>(view, "lockedIndicator")
+                Button button = view != null
+                    ? GetPrivateField<Button>(view, "button")
                     : null;
-                if (padlock != null
+                if (button != null
                     && view.gameObject.activeInHierarchy
-                    && !padlock.activeInHierarchy)
+                    && button.interactable)
                 {
                     yield break;
                 }
