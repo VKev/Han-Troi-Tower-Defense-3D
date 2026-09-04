@@ -29,14 +29,14 @@ MonoBehaviour:
       concurrentLines: 1
       sequenceSpacingSeconds: 0
     economy:
-      buildCost: 150
+      buildCost: 300
       linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 1
   attackRangeMeters: 4
   attackDamage:
-    amount: 14
-  attackAoeRadiusMeters: 2
+    amount: 5
+  attackAoeRadiusMeters: 3
   prepareDurationSeconds: 0.6
   lungeFractionOfAttackInterval: 0.087
   impactHoldFractionOfAttackInterval: 0.083333336

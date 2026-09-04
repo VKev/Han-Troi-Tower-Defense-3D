@@ -29,13 +29,13 @@ MonoBehaviour:
       concurrentLines: 1
       sequenceSpacingSeconds: 0
     economy:
-      buildCost: 70
+      buildCost: 200
       linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
   upgradeCosts:
-    tierOneCost: 60
-    tierTwoCost: 90
+    tierOneCost: 280
+    tierTwoCost: 420
     tierThreeCost: 140
   directDamage:
     amount: 0
