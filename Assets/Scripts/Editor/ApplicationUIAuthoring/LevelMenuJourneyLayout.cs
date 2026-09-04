@@ -20,6 +20,14 @@ namespace TowerDefense3D.GameFlow.Editor
     {
         public const string PrefabPath = "Assets/Resources/Prefabs/ApplicationUI.prefab";
 
+        // One journey node, authored rather than derived: the prefab owns the five state
+        // sprites, the hit area and the number label.
+        private const string NodePrefabPath = "Assets/Resources/Prefabs/LevelButton.prefab";
+
+        // The two loadout buttons are the same button twice over, so they share one prefab; it
+        // owns their size, styling and how far in from the left edge they sit.
+        private const string LoadoutPrefabPath = "Assets/Resources/Prefabs/LoadoutButton.prefab";
+
         // Dynamic-atlas TMP assets, so Vietnamese diacritics are pulled from the TTF on demand.
         // The serif carries the level name; the sans carries every supporting line.
         private const string SelectionDisplayFontPath =
@@ -56,8 +64,6 @@ namespace TowerDefense3D.GameFlow.Editor
         /// </summary>
         private static readonly Color StarColor = new Color(0.42f, 0.27f, 0.13f, 1f);
         private static readonly Color EnterMapColor = new Color(0.16f, 0.52f, 0.40f, 1f);
-        private static readonly Color LoadoutColor = new Color(0.19f, 0.17f, 0.14f, 0.96f);
-        private static readonly Color DisabledTextColor = new Color(0.52f, 0.48f, 0.42f, 1f);
 
         /// <summary>Horizontal gap between one node and the next, in canvas units.</summary>
         private const float NodeSpacing = 300f;
@@ -340,206 +346,54 @@ namespace TowerDefense3D.GameFlow.Editor
                 nodes.Add(BuildNode(
                     content,
                     entry,
-                    nodePositions[index],
-                    isFinale: index == catalog.Levels.Count - 1));
+                    nodePositions[index]));
             }
 
             return nodes;
         }
 
+        /// <summary>
+        /// Drops one journey node onto the trail as an instance of the level-button prefab.
+        /// </summary>
+        /// <remarks>
+        /// The node used to be assembled here out of ten objects - a ring, a body, a padlock built
+        /// from two shapes, a ready pip, a star row, a badge, a title and a requirement line. The
+        /// artwork now draws all of that itself, so a node is one Image whose sprite says which of
+        /// the five states it is in, and <see cref="NodePrefabPath"/> is the single place that
+        /// decides how it looks. Placing instances rather than re-deriving the node means a tweak
+        /// made to the prefab survives the next rebuild.
+        /// </remarks>
         private static LevelButtonView BuildNode(
             RectTransform content,
             LevelCatalogEntry entry,
-            Vector2 position,
-            bool isFinale)
+            Vector2 position)
         {
-            RectTransform node = EnsureChild(content, "Level " + entry.LevelNumber + " Button");
+            GameObject template = AssetDatabase.LoadAssetAtPath<GameObject>(NodePrefabPath);
+            if (template == null)
+            {
+                Debug.LogError($"Journey node prefab is missing from '{NodePrefabPath}'.");
+                return null;
+            }
+
+            var node = (GameObject)PrefabUtility.InstantiatePrefab(template, content);
+            node.name = "Level " + entry.LevelNumber + " Button";
             SetRect(
-                node,
+                (RectTransform)node.transform,
                 new Vector2(0f, 0.5f),
                 new Vector2(0f, 0.5f),
                 new Vector2(0.5f, 0.5f),
                 position,
                 new Vector2(NodeDiameter, NodeDiameter));
 
-            // A clear image over the node square: it gives the button something to hit test against
-            // without covering the ring and body drawn beneath it.
-            Image hitArea = EnsureComponent<Image>(node);
-            hitArea.sprite = null;
-            hitArea.color = Color.clear;
-            hitArea.raycastTarget = true;
+            // The prefab carries a placeholder number. Stamping the real one makes the rebuilt
+            // trail readable in the editor, before anything has run to bind it.
+            Transform label = node.transform.Find("Label");
+            if (label != null)
+            {
+                label.GetComponent<Text>().text = entry.LevelNumber.ToString("00");
+            }
 
-            var button = EnsureComponent<Button>(node);
-            button.targetGraphic = hitArea;
-            button.transition = Selectable.Transition.None;
-
-            // The last stop sits inside a diamond, so the end of the trail reads as an arrival
-            // rather than as one more village.
-            RectTransform finale = EnsureChild(node, "Finale");
-            Center(finale, Vector2.zero);
-            finale.sizeDelta = new Vector2(162f, 162f);
-            finale.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            Image finaleImage = EnsureComponent<Image>(finale);
-            StylePanelImage(finaleImage, new Color(GoldColor.r, GoldColor.g, GoldColor.b, 0.28f));
-            finaleImage.raycastTarget = false;
-            finale.gameObject.SetActive(isFinale);
-
-            RectTransform ring = Circle(node, "Ring", NodeDiameter + 34f, CurrentColor);
-            RectTransform body = Circle(node, "Body", NodeDiameter, LockedColor);
-
-            Text number = Label(
-                node,
-                "Label",
-                entry.LevelNumber.ToString("00"),
-                Vector2.zero,
-                new Vector2(NodeDiameter, NodeDiameter),
-                40,
-                TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            Center((RectTransform)number.transform, Vector2.zero);
-
-            Text stars = Label(
-                node,
-                "Stars",
-                "☆☆☆",
-                Vector2.zero,
-                new Vector2(180f, 30f),
-                26,
-                StarColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            Center((RectTransform)stars.transform, new Vector2(0f, 76f));
-
-            RectTransform badge = EnsurePanel(node, "Badge", CurrentColor);
-            Center(badge, new Vector2(0f, 104f));
-            badge.sizeDelta = new Vector2(164f, 36f);
-            Text badgeLabel = Label(
-                badge,
-                "Label",
-                "ĐANG TỚI",
-                Vector2.zero,
-                Vector2.zero,
-                18,
-                new Color(0.12f, 0.10f, 0.06f, 1f),
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            StretchToParent((RectTransform)badgeLabel.transform);
-
-            RectTransform tick = EnsureChild(node, "Ready");
-            Center(tick, new Vector2(40f, 40f));
-            tick.sizeDelta = new Vector2(38f, 38f);
-            Image tickBacking = EnsureComponent<Image>(tick);
-            tickBacking.sprite = circleSprite;
-            tickBacking.type = Image.Type.Simple;
-            tickBacking.color = CompletedColor;
-            tickBacking.raycastTarget = false;
-            Text tickLabel = Label(
-                tick,
-                "Label",
-                "✓",
-                Vector2.zero,
-                Vector2.zero,
-                24,
-                TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            StretchToParent((RectTransform)tickLabel.transform);
-
-            RectTransform padlock = BuildPadlock(node);
-
-            Text title = Label(
-                node,
-                "Journey Title",
-                entry.DisplayName,
-                Vector2.zero,
-                new Vector2(250f, 40f),
-                20,
-                InkColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            Center((RectTransform)title.transform, new Vector2(0f, -84f));
-
-            Text requirement = Label(
-                node,
-                "Requirement",
-                "CHƯA MỞ",
-                Vector2.zero,
-                new Vector2(250f, 28f),
-                16,
-                InkMutedColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            Center((RectTransform)requirement.transform, new Vector2(0f, -116f));
-
-            // Ring behind the body, body behind everything the node says about itself.
-            OrderChildren(
-                node,
-                "Finale",
-                "Ring",
-                "Body",
-                "Label",
-                "Lock",
-                "Ready",
-                "Stars",
-                "Badge",
-                "Journey Title",
-                "Requirement");
-
-            var view = EnsureComponent<LevelButtonView>(node);
-            SetObjectReference(view, "button", button);
-            SetObjectReference(view, "label", number);
-            SetObjectReference(view, "titleLabel", title);
-            SetObjectReference(view, "nodeImage", body.GetComponent<Image>());
-            SetObjectReference(view, "lockedIndicator", padlock.gameObject);
-            SetObjectReference(view, "unlockedIndicator", tick.gameObject);
-            SetObjectReference(view, "ringIndicator", ring.gameObject);
-            SetObjectReference(view, "currentBadge", badge.gameObject);
-            SetObjectReference(view, "starsLabel", stars);
-            SetObjectReference(view, "requirementLabel", requirement);
-            SetColor(view, "completedColor", CompletedColor);
-            SetColor(view, "currentColor", CurrentColor);
-            SetColor(view, "lockedColor", LockedColor);
-            SetColor(view, "selectedColor", SelectedColor);
-            return view;
-        }
-
-        /// <summary>
-        /// A padlock built out of a ring and a box, because the builtin UI sprites have no lock and
-        /// the runtime font has no glyph for one.
-        /// </summary>
-        private static RectTransform BuildPadlock(RectTransform node)
-        {
-            RectTransform padlock = EnsureChild(node, "Lock");
-            Center(padlock, Vector2.zero);
-            padlock.sizeDelta = new Vector2(46f, 52f);
-
-            RectTransform shackle = EnsureChild(padlock, "Shackle");
-            SetRect(
-                shackle,
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 14f),
-                new Vector2(28f, 28f));
-            Image shackleImage = EnsureComponent<Image>(shackle);
-            shackleImage.sprite = circleSprite;
-            shackleImage.type = Image.Type.Simple;
-            shackleImage.color = MutedColor;
-            shackleImage.raycastTarget = false;
-
-            RectTransform body = EnsureChild(padlock, "Body");
-            SetRect(
-                body,
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -8f),
-                new Vector2(40f, 30f));
-            Image bodyImage = EnsureComponent<Image>(body);
-            StylePanelImage(bodyImage, MutedColor);
-            bodyImage.raycastTarget = false;
-            return padlock;
+            return node.GetComponent<LevelButtonView>();
         }
 
         /// <summary>The dotted trail, laid fresh so it follows wherever the nodes were just put.</summary>
@@ -714,32 +568,11 @@ namespace TowerDefense3D.GameFlow.Editor
             StretchToParent(fill);
             ConfigureFillImage(EnsureComponent<Image>(fill), GoldColor);
 
-            RectTransform stars = TopRightPanel(chrome, "Star Panel", -246f, 190f);
-            Label(
-                stars,
-                "Label",
-                "★ 0/30",
-                Vector2.zero,
-                Vector2.zero,
-                24,
-                GoldColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            StretchToParent((RectTransform)stars.Find("Label"));
-
-            RectTransform coins = TopRightPanel(chrome, "Coin Panel", -40f, 190f);
-            // TODO: show the gold the run has banked once the save carries it.
-            Label(
-                coins,
-                "Label",
-                "◆ —",
-                Vector2.zero,
-                Vector2.zero,
-                24,
-                GoldColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            StretchToParent((RectTransform)coins.Find("Label"));
+            // These two keep whatever label has been authored into them: their lines are being
+            // styled by hand, and a rebuild that re-stamped the text would undo that work every
+            // time. Only the panels are laid out here, so the top-right cluster stays aligned.
+            TopRightPanel(chrome, "Star Panel", -246f, 190f);
+            TopRightPanel(chrome, "Coin Panel", -40f, 190f);
         }
 
         private static RectTransform TopRightPanel(
@@ -766,10 +599,20 @@ namespace TowerDefense3D.GameFlow.Editor
         /// </summary>
         private static void BuildLoadoutButtons(RectTransform chrome)
         {
-            BuildLoadoutButton(chrome, "Hero Select Button", "CHỌN TƯỚNG", "HERO SELECT", 124f);
+            BuildLoadoutButton(chrome, "Hero Select Button", "CHỌN TƯỚNG", "HERO SELECT", 147f);
             BuildLoadoutButton(chrome, "Tower Upgrade Button", "NÂNG CẤP TRỤ", "TOWER UPGRADE", 28f);
         }
 
+        /// <summary>
+        /// Places one loadout button as an instance of the shared prefab.
+        /// </summary>
+        /// <remarks>
+        /// The pair used to be built here twice from the same twenty lines, which meant restyling
+        /// them was a code edit and the two could drift apart. Only what actually differs between
+        /// them is decided here - the name, the two lines they say and the height off the bottom
+        /// edge; <see cref="LoadoutPrefabPath"/> owns everything else. Placing an instance rather
+        /// than re-deriving the button means a tweak made to the prefab survives the next rebuild.
+        /// </remarks>
         private static void BuildLoadoutButton(
             RectTransform chrome,
             string name,
@@ -777,63 +620,37 @@ namespace TowerDefense3D.GameFlow.Editor
             string subtitle,
             float bottom)
         {
-            RectTransform owner = EnsureButton(chrome, name);
-            SetRect(
-                owner,
-                new Vector2(0f, 0f),
-                new Vector2(0f, 0f),
-                new Vector2(0f, 0f),
-                new Vector2(48f, bottom),
-                new Vector2(300f, 84f));
-            StyleButton(owner, LoadoutColor);
+            GameObject template = AssetDatabase.LoadAssetAtPath<GameObject>(LoadoutPrefabPath);
+            if (template == null)
+            {
+                Debug.LogError($"Loadout button prefab is missing from '{LoadoutPrefabPath}'.");
+                return;
+            }
 
-            var button = EnsureComponent<Button>(owner);
-            button.targetGraphic = owner.GetComponent<Image>();
+            // Started fresh rather than reused: a button left over from an earlier pass may not be
+            // an instance of the prefab at all, and there is nothing on it worth keeping.
+            DeleteChild(chrome, name);
 
-            // No transition, because Unity tints a non-interactable Selectable to its disabled
-            // colour - half alpha by default - and a half-transparent button over a bright backdrop
-            // reads as a rendering fault rather than as something not available yet. The muted label
-            // colours say that instead.
-            button.transition = Selectable.Transition.None;
-            button.interactable = false;
+            var owner = (GameObject)PrefabUtility.InstantiatePrefab(template, chrome);
+            owner.name = name;
 
-            Text titleLabel = Label(
-                owner,
-                "Label",
-                title,
-                new Vector2(0f, -14f),
-                new Vector2(300f, 30f),
-                21,
-                DisabledTextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            titleLabel.text = title;
-            SetRect(
-                (RectTransform)titleLabel.transform,
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -14f),
-                new Vector2(0f, 30f));
+            var rect = (RectTransform)owner.transform;
+            rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, bottom);
 
-            Text subtitleLabel = Label(
-                owner,
-                "Sub",
-                subtitle,
-                Vector2.zero,
-                Vector2.zero,
-                15,
-                MutedColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            subtitleLabel.text = subtitle;
-            SetRect(
-                (RectTransform)subtitleLabel.transform,
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 16f),
-                new Vector2(0f, 24f));
+            SetLabel(rect, "Label", title);
+            SetLabel(rect, "Sub", subtitle);
+        }
+
+        private static void SetLabel(Transform owner, string childName, string content)
+        {
+            Transform child = owner.Find(childName);
+            if (child == null)
+            {
+                Debug.LogWarning($"Loadout button prefab has no '{childName}' child.");
+                return;
+            }
+
+            child.GetComponent<Text>().text = content;
         }
 
         private static void BuildSelectedLevelPanel(RectTransform chrome)
@@ -1028,28 +845,6 @@ namespace TowerDefense3D.GameFlow.Editor
                 menu,
                 "progressFill",
                 chrome.Find("Progress Panel/Bar Background/Bar Fill").GetComponent<Image>());
-            SetObjectReference(
-                menu,
-                "starLabel",
-                chrome.Find("Star Panel/Label").GetComponent<Text>());
-        }
-
-        private static RectTransform Circle(Transform parent, string name, float diameter, Color color)
-        {
-            RectTransform circle = EnsureChild(parent, name);
-            SetRect(
-                circle,
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(diameter, diameter));
-            Image image = EnsureComponent<Image>(circle);
-            image.sprite = circleSprite;
-            image.type = Image.Type.Simple;
-            image.color = color;
-            image.raycastTarget = false;
-            return circle;
         }
 
         private static void Center(RectTransform rect, Vector2 position)
@@ -1182,6 +977,7 @@ namespace TowerDefense3D.GameFlow.Editor
 
             return text;
         }
+
 
         private static TMP_FontAsset LoadFontAsset(string path)
         {
