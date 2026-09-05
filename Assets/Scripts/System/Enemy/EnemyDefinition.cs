@@ -23,6 +23,9 @@ namespace TowerDefense3D.Enemies
         [Header("Presentation")]
         [SerializeField] private GameObject viewPrefab;
 
+        [Tooltip("Portrait shown in the next-wave preview. Left empty, the enemy simply takes no slot, so an unillustrated wave previews as an empty grid rather than as broken art.")]
+        [SerializeField] private Sprite icon;
+
         [Header("Base Stats")]
         [SerializeField, Min(0.01f)] private float baseMaxHealth = 16f;
         [SerializeField, Min(0.01f)] private float baseMoveSpeed = 2f;
@@ -42,6 +45,7 @@ namespace TowerDefense3D.Enemies
         public string DisplayName => displayName;
         public EnemyRank Rank => rank;
         public GameObject ViewPrefab => viewPrefab;
+        public Sprite Icon => icon;
         public float BaseMaxHealth => baseMaxHealth;
         public float BaseMoveSpeed => baseMoveSpeed;
         public float BaseHitRadius => baseHitRadius;

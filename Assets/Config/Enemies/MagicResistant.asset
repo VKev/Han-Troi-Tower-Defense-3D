@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Magic Resistant
   rank: 0
   viewPrefab: {fileID: 5197172185660305575, guid: bd31f13383383f548b8101292730a5ba, type: 3}
+  icon: {fileID: -1266565625, guid: 12a0acacaf946254aa7c2ff18679e1b7, type: 3}
   baseMaxHealth: 30
   baseMoveSpeed: 1.8
   baseHitRadius: 0.371

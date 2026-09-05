@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Basic
   rank: 0
   viewPrefab: {fileID: 4335825930434105279, guid: 8462596efaaeab6438481e013751921e, type: 3}
+  icon: {fileID: -742769141, guid: 12a0acacaf946254aa7c2ff18679e1b7, type: 3}
   baseMaxHealth: 20
   baseMoveSpeed: 2
   baseHitRadius: 1.0877
