@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Armored
   rank: 0
   viewPrefab: {fileID: 4908893629078330938, guid: 50901bde7e200eb47832491eb480a1fe, type: 3}
+  icon: {fileID: 1680695649, guid: 12a0acacaf946254aa7c2ff18679e1b7, type: 3}
   baseMaxHealth: 30
   baseMoveSpeed: 1.7
   baseHitRadius: 0.7954

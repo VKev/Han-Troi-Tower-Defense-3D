@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Summoner Boss
   rank: 2
   viewPrefab: {fileID: 6883415940259301562, guid: 1d980e33de5cb7643b1094a93e32d6f8, type: 3}
+  icon: {fileID: -222825757, guid: 12a0acacaf946254aa7c2ff18679e1b7, type: 3}
   baseMaxHealth: 600
   baseMoveSpeed: 0.8
   baseHitRadius: 1.172
@@ -47,4 +48,4 @@ MonoBehaviour:
       count: 1
   summonSkillDurationSeconds: 3
   summonSpawnStartDelaySeconds: 1.833333
-  summonSpawnOffsetMeters: 0.9
+  summonSpawnClearanceMeters: 0.3
