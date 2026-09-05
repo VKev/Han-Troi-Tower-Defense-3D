@@ -6,17 +6,33 @@ namespace TowerDefense3D.Towers
     {
         private sealed class NodeState
         {
-            public NodeState(TowerNodeId id, TowerRuntimeSpec spec, TowerWorldPosition position)
+            public NodeState(
+                TowerNodeId id,
+                TowerRuntimeSpec spec,
+                TowerWorldPosition position,
+                TowerCombatDefinition definition)
             {
                 Id = id;
                 Spec = spec ?? throw new ArgumentNullException(nameof(spec));
                 Position = position;
+                Definition = definition;
+                UpgradeLevel = 0;
                 InputBuffer = new TowerInputBuffer(spec.InputPortCount, spec.QueueCapacityPerInput);
                 CycleProgressTicks = 0;
             }
 
             public TowerNodeId Id { get; }
-            public TowerRuntimeSpec Spec { get; }
+
+            /// <summary>
+            /// Replaced when the tower is upgraded. Port counts come from the same definition, so
+            /// the input buffer built for the old spec still fits the new one.
+            /// </summary>
+            public TowerRuntimeSpec Spec { get; set; }
+
+            /// <summary>Kept so an upgrade can rebuild the spec from the same authoring data.</summary>
+            public TowerCombatDefinition Definition { get; }
+
+            public int UpgradeLevel { get; set; }
             public TowerWorldPosition Position { get; }
             public TowerInputBuffer InputBuffer { get; }
             public int CycleProgressTicks { get; set; }

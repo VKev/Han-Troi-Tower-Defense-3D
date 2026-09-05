@@ -260,9 +260,20 @@ namespace TowerDefense3D.Towers
             placementSystem.CancelPlacement();
         }
 
+        /// <summary>
+        /// Selects a tower, which is what raises its sell and unlink actions.
+        /// </summary>
+        /// <remarks>
+        /// Only while the board can still be edited. A running wave is committed to a combat
+        /// timeline computed before it started, so both actions are refused anyway; letting the
+        /// selection through would only float a panel of two dead buttons over the tower. Tapping
+        /// a tower mid-wave therefore clears the selection rather than making one.
+        /// </remarks>
         public void Select(ITowerRuntimeView tower)
         {
-            ITowerRuntimeView nextSelection = tower != null && tower.IsRegistered ? tower : null;
+            ITowerRuntimeView nextSelection = tower != null && tower.IsRegistered && CanEditTopology
+                ? tower
+                : null;
             if (ReferenceEquals(selectedTower, nextSelection))
             {
                 return;
@@ -354,6 +365,108 @@ namespace TowerDefense3D.Towers
             tower.Despawn();
             goldSystem.Add(refund);
             ReportFeedback($"Sold {displayName} for {refund} gold.");
+            error = string.Empty;
+            return true;
+        }
+
+        /// <summary>
+        /// Describes the selected tower's next upgrade for the HUD.
+        /// </summary>
+        /// <remarks>
+        /// The HUD needs three separate answers, not one boolean: what it costs, whether the
+        /// player can afford it, and whether there is anything left to buy. A button that is dark
+        /// because the tower is maxed out and one that is dark because the purse is short are the
+        /// same pixel but not the same message.
+        /// </remarks>
+        public bool TryDescribeSelectedUpgrade(out int cost, out bool affordable, out bool atMaxLevel)
+        {
+            cost = 0;
+            affordable = false;
+            atMaxLevel = false;
+            if (selectedTower == null)
+            {
+                return false;
+            }
+
+            TowerUpgradeProfile upgrade = selectedTower.CombatDefinition?.Core?.Upgrade;
+            if (upgrade == null || !upgrade.IsUpgradable)
+            {
+                return false;
+            }
+
+            int level = manager.GetUpgradeLevel(viewRegistry.GetNodeId(selectedTower));
+            atMaxLevel = level >= upgrade.MaxLevel;
+            cost = upgrade.CostToReach(level);
+            affordable = goldSystem.Balance >= cost;
+            return true;
+        }
+
+        /// <summary>What selling the selected tower would hand back, for the button to advertise.</summary>
+        public int DescribeSelectedSellRefund()
+        {
+            TowerEconomyProfile economy = selectedTower?.CombatDefinition?.Core?.Economy;
+            if (economy == null || !economy.Sellable)
+            {
+                return 0;
+            }
+
+            return Mathf.RoundToInt(economy.BuildCost * manager.Catalog.CombatRules.SellRefundFraction);
+        }
+
+        /// <summary>
+        /// Buys one upgrade for the selected tower, charging its cost.
+        /// </summary>
+        /// <remarks>
+        /// Gold is spent only after the network accepts the upgrade, so a refusal cannot leave the
+        /// player paying for a level they did not get.
+        /// </remarks>
+        public bool TryUpgradeSelected(out string error)
+        {
+            if (selectedTower == null)
+            {
+                error = "Select a tower before upgrading.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            if (!CanEditTopology)
+            {
+                error = "Stop the wave before upgrading a tower.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            if (!TryDescribeSelectedUpgrade(out int cost, out bool affordable, out bool atMaxLevel))
+            {
+                error = $"{GetDisplayName(selectedTower)} cannot be upgraded.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            if (atMaxLevel)
+            {
+                error = $"{GetDisplayName(selectedTower)} is already at its highest level.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            if (!affordable)
+            {
+                error = $"Upgrading {GetDisplayName(selectedTower)} costs {cost} gold.";
+                ReportFeedback(error);
+                return false;
+            }
+
+            TowerNodeId nodeId = viewRegistry.GetNodeId(selectedTower);
+            if (!manager.TryUpgradeTower(nodeId, out error))
+            {
+                ReportFeedback(error);
+                return false;
+            }
+
+            goldSystem.TrySpend(cost);
+            ReportFeedback(
+                $"Upgraded {GetDisplayName(selectedTower)} to level {manager.GetUpgradeLevel(nodeId)}.");
             error = string.Empty;
             return true;
         }

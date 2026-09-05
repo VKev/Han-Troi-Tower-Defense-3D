@@ -53,7 +53,7 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.TowerDragCanceled += HandleTowerDragCanceled;
             towerNetworkHud.UnlinkRequested += HandleUnlinkRequested;
             towerNetworkHud.SellRequested += HandleSellRequested;
-            towerNetworkHud.CancelPlacementRequested += HandleCancelPlacement;
+            towerNetworkHud.UpgradeRequested += HandleUpgradeRequested;
             towerNetworkHud.ReturnToMenuRequested += HandleReturnToMenu;
             towerNetworkHud.Show();
         }
@@ -66,7 +66,7 @@ namespace TowerDefense3D.GameFlow
             towerNetworkHud.TowerDragCanceled -= HandleTowerDragCanceled;
             towerNetworkHud.UnlinkRequested -= HandleUnlinkRequested;
             towerNetworkHud.SellRequested -= HandleSellRequested;
-            towerNetworkHud.CancelPlacementRequested -= HandleCancelPlacement;
+            towerNetworkHud.UpgradeRequested -= HandleUpgradeRequested;
             towerNetworkHud.ReturnToMenuRequested -= HandleReturnToMenu;
         }
 
@@ -77,9 +77,6 @@ namespace TowerDefense3D.GameFlow
                 ? "Selected: None"
                 : $"Selected: {selectedTower.CombatDefinition.Core.DisplayName} "
                     + $"({selectedTower.CombatDefinition.NetworkRole})";
-            string chainText = $"Valid chains: {towerNetworkSystem.ValidChainCount}"
-                + $"   Towers: {towerNetworkSystem.RegisteredTowerCount}";
-            string queueText = CreateQueueText(towerNetworkSystem, selectedTower);
             string feedbackText = string.IsNullOrWhiteSpace(towerNetworkSystem.LastFeedback)
                 ? "Place towers, then drag one tower to another."
                 : towerNetworkSystem.LastFeedback;
@@ -87,18 +84,24 @@ namespace TowerDefense3D.GameFlow
             bool towerActionsVisible = TryGetTowerActionsPosition(
                 selectedTower,
                 out Vector2 towerActionsScreenPosition);
+            bool canEdit = towerNetworkSystem.CanEditTopology;
+            bool hasUpgrade = towerNetworkSystem.TryDescribeSelectedUpgrade(
+                out int upgradeCost,
+                out bool affordable,
+                out bool atMaxLevel);
 
             towerNetworkHud.Render(new TowerNetworkHudState(
                 selectedText,
-                chainText,
-                queueText,
                 feedbackText,
                 !simulationRunning,
                 selectedTower != null && towerNetworkSystem.CanEditTopology,
                 selectedTower != null && towerNetworkSystem.CanEditTopology,
-                !simulationRunning,
                 towerActionsVisible,
-                towerActionsScreenPosition));
+                towerActionsScreenPosition,
+                canEdit && hasUpgrade && !atMaxLevel && affordable,
+                CreateUpgradeCostText(hasUpgrade, atMaxLevel, upgradeCost),
+                towerNetworkSystem.DescribeSelectedSellRefund().ToString(),
+                hasUpgrade && !atMaxLevel));
         }
 
         /// <summary>
@@ -153,12 +156,6 @@ namespace TowerDefense3D.GameFlow
             towerNetworkSystem.CancelTowerPlacementDrag(pointerId);
         }
 
-        private void HandleCancelPlacement()
-        {
-            towerNetworkSystem.CancelPlacement();
-            Refresh();
-        }
-
         /// <summary>
         /// Projects the selected tower's anchor to screen space. A tower behind the camera
         /// projects to a mirrored point, so the negative depth case hides the panel instead.
@@ -185,14 +182,54 @@ namespace TowerDefense3D.GameFlow
             return true;
         }
 
+        /// <summary>
+        /// Sells the selected tower, and says so when it refuses.
+        /// </summary>
+        /// <remarks>
+        /// The HUD lost its feedback line, so a refusal used to be dropped on the floor: the
+        /// button looked dead rather than declined, which is indistinguishable from a broken
+        /// button. Until there is somewhere on screen to print it, the reason goes to the log
+        /// so a refusal is at least diagnosable instead of invisible.
+        /// </remarks>
+        /// <summary>
+        /// What the upgrade button says: a price, or MAX once the tower has no level left to buy.
+        /// </summary>
+        /// <remarks>
+        /// Printing the price of a level that cannot be bought would read as a purchase the
+        /// player merely cannot afford, which is a different problem with a different fix.
+        /// </remarks>
+        private static string CreateUpgradeCostText(bool hasUpgrade, bool atMaxLevel, int cost)
+        {
+            if (!hasUpgrade)
+            {
+                return string.Empty;
+            }
+
+            return atMaxLevel ? "MAX" : cost.ToString();
+        }
+
+        private void HandleUpgradeRequested()
+        {
+            if (!towerNetworkSystem.TryUpgradeSelected(out string error))
+            {
+                Debug.LogWarning("Upgrade refused: " + error);
+            }
+        }
+
         private void HandleSellRequested()
         {
-            towerNetworkSystem.TrySellSelected(out _);
+            if (!towerNetworkSystem.TrySellSelected(out string error))
+            {
+                Debug.LogWarning("Sell refused: " + error);
+            }
         }
 
         private void HandleUnlinkRequested()
         {
-            towerNetworkSystem.TryUnlinkSelected(out _);
+            if (!towerNetworkSystem.TryUnlinkSelected(out string error))
+            {
+                Debug.LogWarning("Unlink refused: " + error);
+            }
         }
 
         private void HandleReturnToMenu()
@@ -201,27 +238,5 @@ namespace TowerDefense3D.GameFlow
             requestReturnToMenu();
         }
 
-        private static string CreateQueueText(
-            TowerNetworkSystem system,
-            ITowerRuntimeView selectedTower)
-        {
-            if (selectedTower == null)
-            {
-                return "Queue: select a tower";
-            }
-
-            if (!system.TryCreateSelectedQueueSummary(out TowerQueueSummary queue))
-            {
-                return "Queue: unavailable";
-            }
-
-            if (queue.Capacity == 0)
-            {
-                return "Queue: source tower has no input queue";
-            }
-
-            return $"Queue: {queue.QueuedProjectileCount} queued + {queue.ReservedProjectileCount} reserved"
-                + $" / {queue.Capacity}";
-        }
     }
 }

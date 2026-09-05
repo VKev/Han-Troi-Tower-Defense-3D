@@ -33,6 +33,10 @@ MonoBehaviour:
       linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
+    upgrade:
+      maxLevel: 2
+      costPerLevel: 100
+      damageBonusPerLevel: 0.35
   upgradeCosts:
     tierOneCost: 60
     tierTwoCost: 90

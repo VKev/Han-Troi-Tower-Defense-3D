@@ -184,6 +184,57 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(system.LastFeedback, Is.EqualTo("Not enough Gold."));
         }
 
+        /// <summary>
+        /// The sink is sellable like every other tower. It is the one the player is most likely
+        /// to want gone, and its economy profile once said otherwise.
+        /// </summary>
+        [Test]
+        public void SoulNexus_CanBeSelectedAndSold()
+        {
+            system.Start();
+            TowerRuntimeView generatorView = RegisterTower(TowerFamily.Generator, Vector3.zero, 1);
+            TowerRuntimeView nexusView = RegisterTower(TowerFamily.SoulNexus, Vector3.right, 2);
+            Assert.That(system.TryRewire(generatorView, nexusView, out string linkError), Is.True, linkError);
+
+            system.Select(nexusView);
+            Assert.That(
+                system.SelectedTower,
+                Is.SameAs(nexusView),
+                "The sink has to be selectable before it can be sold.");
+
+            Assert.That(system.TrySellSelected(out string sellError), Is.True, sellError);
+            Assert.That(system.SelectedTower, Is.Null);
+            Assert.That(
+                manager.LinkCount,
+                Is.Zero,
+                "Selling a tower has to drop the links that fed it.");
+        }
+
+        /// <summary>
+        /// A running wave refuses both tower actions, so it refuses the selection that raises
+        /// them rather than floating a panel of two dead buttons over the board.
+        /// </summary>
+        [Test]
+        public void SelectingATower_IsRefusedWhileTheWaveRuns()
+        {
+            system.Start();
+            TowerRuntimeView generatorView = RegisterTower(TowerFamily.Generator, Vector3.zero, 1);
+            TowerRuntimeView nexusView = RegisterTower(TowerFamily.SoulNexus, Vector3.right, 2);
+            Assert.That(system.TryRewire(generatorView, nexusView, out string linkError), Is.True, linkError);
+
+            system.Select(generatorView);
+            Assert.That(system.SelectedTower, Is.SameAs(generatorView), "Preparation allows it.");
+
+            Assert.That(system.TryStartSimulation(out string startError), Is.True, startError);
+            Assert.That(system.SelectedTower, Is.Null, "Starting a wave drops the selection.");
+
+            system.Select(generatorView);
+            Assert.That(
+                system.SelectedTower,
+                Is.Null,
+                "Tapping a tower mid-wave must not raise its actions.");
+        }
+
         private TowerRuntimeView RegisterTower(TowerFamily family, Vector3 position, int ownerId)
         {
             Assert.That(towerCatalog.TryGet(family, out TowerCombatDefinition definition), Is.True);
