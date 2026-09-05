@@ -5,8 +5,13 @@ using UnityEngine.Rendering;
 namespace TowerDefense3D.GridPlacement
 {
     /// <summary>
-    /// Candidate-only presentation using one combined footprint mesh and one ghost volume.
+    /// Candidate-only presentation: the footprint the tower will stand on, and nothing above it.
     /// </summary>
+    /// <remarks>
+    /// The ghost volume that used to rise to the tower's height is built and kept, but never
+    /// drawn. What the player is choosing is a cell, and a translucent box floating over the
+    /// board read as an object already placed rather than as a target.
+    /// </remarks>
     public sealed class GridPlacementView : MonoBehaviour, IGridPlacementView
     {
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -284,7 +289,8 @@ namespace TowerDefense3D.GridPlacement
 
             if (ghostRenderer != null)
             {
-                ghostRenderer.enabled = visible;
+                // Never shown: only the footprint marks the candidate.
+                ghostRenderer.enabled = false;
             }
         }
 

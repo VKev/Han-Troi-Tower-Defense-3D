@@ -7,9 +7,13 @@ namespace TowerDefense3D.GridPlacement
     /// <summary>
     /// Unity input and placement-view boundary bound directly by LevelLifetimeScope.
     /// </summary>
+    /// <remarks>
+    /// Entering a level arms nothing. Binding used to select an authored default tower, so the
+    /// board answered the very first tap by building something the player never asked for.
+    /// Placement now starts only when a build button hands over a definition.
+    /// </remarks>
     public sealed class GridPlacementPresenter : MonoBehaviour
     {
-        [SerializeField] private TowerDefinition initialTower;
         [SerializeField] private Camera worldCamera;
 
         private GridPlacementSystem placementSystem;
@@ -38,11 +42,6 @@ namespace TowerDefense3D.GridPlacement
             placementSystem = system ?? throw new ArgumentNullException(nameof(system));
             placementView = view ?? throw new ArgumentNullException(nameof(view));
             placementSystem.TowerPlaced += HandleTowerPlaced;
-
-            if (initialTower != null)
-            {
-                placementSystem.SelectTower(initialTower);
-            }
         }
 
         public void Shutdown()

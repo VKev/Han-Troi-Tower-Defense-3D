@@ -113,6 +113,12 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             controller.Bind(placementSystem, placementView);
 
             Assert.That(controller.Occupancy, Is.Not.Null);
+            Assert.That(
+                controller.SelectedTower,
+                Is.Null,
+                "Entering a level must not arm a tower on its own.");
+
+            controller.SelectTower(CreateTestPlacementDefinition());
             Assert.That(controller.SelectedTower, Is.Not.Null);
 
             testMouse = AddIsolatedTestMouse();
@@ -213,6 +219,12 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             inputSystem.Start();
             controller.Bind(placementSystem, placementView);
 
+            Assert.That(
+                controller.SelectedTower,
+                Is.Null,
+                "Entering a level must not arm a tower on its own.");
+
+            controller.SelectTower(CreateTestPlacementDefinition());
             Assert.That(controller.SelectedTower, Is.Not.Null);
 
             TowerDefinition placementDefinition = controller.SelectedTower;
@@ -269,6 +281,21 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             {
                 Object.DestroyImmediate(combatDefinition);
             }
+        }
+
+        /// <summary>
+        /// Stands in for what a build button hands over, now that binding arms nothing.
+        /// </summary>
+        /// <remarks>
+        /// A prefab is required only because the candidate is refused without one; the placement
+        /// factory in these tests is a stub, so nothing is ever spawned from it.
+        /// </remarks>
+        private static TowerDefinition CreateTestPlacementDefinition()
+        {
+            var definition = ScriptableObject.CreateInstance<TowerDefinition>();
+            SetPrivateField(definition, "prefab", new GameObject("Test Tower Prefab"));
+            SetPrivateField(definition, "footprint", new TowerFootprint(1, 1, 1));
+            return definition;
         }
 
         private static bool TryFindValidPlacementScreenPoint(
