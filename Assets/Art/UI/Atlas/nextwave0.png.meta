@@ -1,7 +1,13 @@
 fileFormatVersion: 2
-guid: 58db6475de9aded4f809d88d72fac838
+guid: 0e56a59b270ed9d47966228016f8d141
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: -5128640507609809200
+    second: NextWavePlaque
+  - first:
+      213: -7722565602001306837
+    second: NextWaveChevron
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -95,7 +101,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 256
     resizeAlgorithm: 0
     textureFormat: 50
     textureCompression: 1
@@ -136,45 +142,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StartCoin_0
+      name: NextWavePlaque
       rect:
         serializedVersion: 2
-        x: 35
-        y: 252
-        width: 684
-        height: 663
+        x: 24
+        y: 415
+        width: 1489
+        height: 553
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 114, y: 126, z: 117, w: 108}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: ff044be1cb55e454e93398c883d3e689
-      internalID: 1664346689
+      spriteID: 0defc3b81a863d8b0800000000000000
+      internalID: -5128640507609809200
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StartCoin_1
+      name: NextWaveChevron
       rect:
         serializedVersion: 2
-        x: 789
-        y: 235
-        width: 634
-        height: 626
+        x: 1140
+        y: 139
+        width: 211
+        height: 143
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: f446e263cb076404ca79145a13f90269
-      internalID: -1989779678
+      spriteID: b2bbf0a308fe3d490800000000000000
+      internalID: -7722565602001306837
       vertices: []
       indices: 
       edges: []
@@ -183,7 +189,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5880c321d3db4e04ab89f9581e5bdf9f
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -191,10 +197,14 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      StartCoin_0: 1664346689
-      StartCoin_1: -1989779678
+      NextWaveChevron: -7722565602001306837
+      NextWavePlaque: -5128640507609809200
+      nextwave0_0: 1365371318
+      nextwave0_1: 778879953
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

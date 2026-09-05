@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Waves;
+using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -10,7 +10,6 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly IWaveSystem waveSystem;
         private readonly IWaveHudView view;
-        private string feedback = string.Empty;
 
         public WaveHudPresenter(IWaveSystem waveSystem, IWaveHudView view)
         {
@@ -33,22 +32,22 @@ namespace TowerDefense3D.GameFlow
         public void Refresh()
         {
             WaveState state = waveSystem.CreateState();
+
             view.Render(new WaveHudState(
                 CreateWaveCounterText(state),
                 CreateStatusText(state),
                 CreateWaveProgress(state),
-                state.LivingEnemyCount.ToString("00"),
+                state.RemainingEnemyCount.ToString("00"),
                 CreateStartWaveText(state),
                 CreateStartWaveBonusText(state),
-                CreatePreviewText(state),
+                CreatePreviewIcons(),
                 state.CanStartWave));
         }
 
         private void HandleStartWaveRequested()
         {
-            feedback = waveSystem.TryStartWave(out string error)
-                ? string.Empty
-                : error;
+            // The error is dropped on purpose: the HUD no longer carries a line to print it on.
+            waveSystem.TryStartWave(out _);
             Refresh();
         }
 
@@ -111,64 +110,37 @@ namespace TowerDefense3D.GameFlow
                 : string.Empty;
         }
 
-        private string CreatePreviewText(WaveState state)
+        /// <summary>
+        /// One portrait per distinct enemy in the wave on show, in schedule order.
+        /// </summary>
+        /// <remarks>
+        /// Distinct rather than one per batch: a wave that sends the same enemy in three waves of
+        /// stragglers is still one kind of thing to brace for, and three copies of the same
+        /// portrait would just crowd out the kinds the player has not seen yet.
+        ///
+        /// An enemy with no portrait assigned is skipped. That keeps a half-illustrated catalog
+        /// previewing as fewer slots rather than as broken art, and it is why the grid is filled
+        /// from a list instead of indexed by batch.
+        ///
+        /// Filled in every phase, including mid-wave. The grid belongs to the player now: they
+        /// open and shut it when they like, so it must never be open over nothing.
+        /// </remarks>
+        private IReadOnlyList<Sprite> CreatePreviewIcons()
         {
-            if (!string.IsNullOrWhiteSpace(feedback))
-            {
-                return feedback;
-            }
-
-            if (state.Phase == WavePhase.Running)
-            {
-                return "Network is locked until the wave ends.";
-            }
-
-            if (state.Phase == WavePhase.Victory)
-            {
-                return "All waves cleared.";
-            }
-
-            if (state.Phase == WavePhase.Defeat)
-            {
-                return "The Toad has no HP remaining.";
-            }
-
-            IReadOnlyList<EnemySpawnBatchDefinition> batches =
-                waveSystem.GetNextWavePreview();
-            var summary = new StringBuilder();
+            IReadOnlyList<EnemySpawnBatchDefinition> batches = waveSystem.GetNextWavePreview();
+            var icons = new List<Sprite>(batches.Count);
             for (int index = 0; index < batches.Count; index++)
             {
-                if (index > 0)
+                EnemyDefinition enemy = batches[index].Enemy;
+                if (enemy == null || enemy.Icon == null || icons.Contains(enemy.Icon))
                 {
-                    summary.Append('\n');
+                    continue;
                 }
 
-                EnemySpawnBatchDefinition batch = batches[index];
-                summary.Append("• ")
-                    .Append(batch.Enemy.DisplayName)
-                    .Append("  ×")
-                    .Append(batch.Count)
-                    .Append(GetWarning(batch.Enemy));
+                icons.Add(enemy.Icon);
             }
 
-            return summary.ToString();
-        }
-
-        private static string GetWarning(EnemyDefinition enemy)
-        {
-            if (enemy is SpeedSupportEnemyDefinition)
-            {
-                return " [SPEED AURA]";
-            }
-
-            if (enemy is StealthEnemyDefinition)
-            {
-                return " [STEALTH]";
-            }
-
-            return enemy.Rank == EnemyRank.Regular
-                ? string.Empty
-                : $" [{enemy.Rank}]";
+            return icons;
         }
     }
 }

@@ -32,7 +32,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             EnemyDefinition enemyDefinition = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(EnemyPath);
             Assert.That(enemyDefinition, Is.Not.Null);
             var gameplayView = new GameplayViewStub();
-            var placementHudView = new PlacementHudViewStub();
             var towerHudView = new TowerNetworkHudViewStub();
             TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
             var presenter = new TowerNetworkHudPresenter(
@@ -47,7 +46,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var statusHudView = new LevelStatusHudViewStub();
             var gameplayUISystem = new GameplayUISystem(
                 gameplayView,
-                placementHudView,
                 towerNetworkSystem,
                 presenter,
                 waveSystem,
@@ -65,7 +63,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             gameplayUISystem.RefreshIfDirty();
 
             Assert.That(gameplayView.ShowCount, Is.EqualTo(1));
-            Assert.That(placementHudView.ShowCount, Is.EqualTo(1));
             Assert.That(towerHudView.InitializeCount, Is.EqualTo(1));
             Assert.That(towerHudView.ShowCount, Is.EqualTo(1));
             Assert.That(towerHudView.RenderCount, Is.EqualTo(1));
@@ -342,16 +339,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
         }
 
-        private sealed class PlacementHudViewStub : IPlacementHudView
-        {
-            public int ShowCount { get; private set; }
-
-            public void Show()
-            {
-                ShowCount++;
-            }
-        }
-
         private sealed class LevelStatusHudViewStub : ILevelStatusHudView
         {
             public int LastGold { get; private set; }
@@ -379,7 +366,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public event Action<int> TowerDragCanceled;
             public event Action UnlinkRequested;
             public event Action SellRequested;
-            public event Action CancelPlacementRequested;
+            public event Action UpgradeRequested;
             public event Action ReturnToMenuRequested;
 
             public int InitializeCount { get; private set; }

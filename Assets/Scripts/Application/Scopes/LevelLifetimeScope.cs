@@ -71,8 +71,8 @@ namespace TowerDefense3D.GameFlow
                 .As<ILevelSkipCheatView>();
             builder.RegisterComponentInHierarchy<LevelOutcomeHudView>()
                 .As<ILevelOutcomeHudView>();
-            builder.RegisterComponentInHierarchy<PlacementHudView>()
-                .As<IPlacementHudView>();
+            builder.RegisterComponentInHierarchy<PauseMenuHudView>()
+                .As<IPauseMenuHudView>();
             builder.RegisterComponentInHierarchy<TowerNetworkHudView>()
                 .As<ITowerNetworkHudView>();
             builder.RegisterComponentInHierarchy<WaveHudView>()
@@ -130,6 +130,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<WaveHudPresenter>(Lifetime.Scoped);
             builder.Register<LevelSkipCheatPresenter>(Lifetime.Scoped);
             builder.Register<LevelOutcomeHudPresenter>(Lifetime.Scoped);
+            builder.Register<PauseMenuHudPresenter>(Lifetime.Scoped);
             builder.Register<GameplayUISystem>(Lifetime.Scoped);
             builder.Register<LevelSystemGroup>(Lifetime.Scoped);
             builder.RegisterBuildCallback(AttachLevelSystems);
@@ -170,6 +171,7 @@ namespace TowerDefense3D.GameFlow
             container.Resolve<GameplayUISystem>()
                 .BindReturnToMenu(gameFlowSystem.RequestReturnToLevelMenu);
             BindLevelOutcomeHud(container, gameFlowSystem);
+            BindPauseMenuHud(container, gameFlowSystem);
 
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();
@@ -225,6 +227,18 @@ namespace TowerDefense3D.GameFlow
                 () => gameFlowSystem.RequestPlayNextLevel(currentLevelNumber),
                 gameFlowSystem.RequestReturnToLevelMenu,
                 () => gameFlowSystem.ReportLevelCleared(currentLevelNumber));
+        }
+
+        /// <summary>
+        /// Binds the pause modal's two navigation commands. Resume is not one of them: it stays
+        /// inside the HUD, where the pause button and the modal move together.
+        /// </summary>
+        private void BindPauseMenuHud(IObjectResolver container, GameFlowSystem gameFlowSystem)
+        {
+            int currentLevelNumber = levelNumber;
+            container.Resolve<PauseMenuHudPresenter>().BindLevel(
+                () => gameFlowSystem.RequestReplayLevel(currentLevelNumber),
+                gameFlowSystem.RequestReturnToLevelMenu);
         }
 
         private T FindSceneComponent<T>() where T : Component

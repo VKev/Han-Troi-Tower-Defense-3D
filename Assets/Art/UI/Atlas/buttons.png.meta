@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 58db6475de9aded4f809d88d72fac838
+guid: 6b056e58d0d945541a1ef83d04da061c
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -95,7 +95,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: 50
     textureCompression: 1
@@ -136,13 +136,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StartCoin_0
+      name: buttons_0
       rect:
         serializedVersion: 2
-        x: 35
-        y: 252
-        width: 684
-        height: 663
+        x: 117
+        y: 232
+        width: 607
+        height: 279
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -151,20 +151,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ff044be1cb55e454e93398c883d3e689
-      internalID: 1664346689
+      spriteID: 305932e18e1521341b23c3602c7b5854
+      internalID: 907005512
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StartCoin_1
+      name: buttons_1
       rect:
         serializedVersion: 2
-        x: 789
-        y: 235
-        width: 634
-        height: 626
+        x: 781
+        y: 233
+        width: 611
+        height: 279
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -173,8 +173,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f446e263cb076404ca79145a13f90269
-      internalID: -1989779678
+      spriteID: ac1304df66d4d69469174c8db6bbac2b
+      internalID: -785810895
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: buttons_2
+      rect:
+        serializedVersion: 2
+        x: 1447
+        y: 234
+        width: 611
+        height: 279
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b14caca3fc0f4294fad19c67e5838911
+      internalID: -1245681491
       vertices: []
       indices: 
       edges: []
@@ -183,7 +205,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5880c321d3db4e04ab89f9581e5bdf9f
+    spriteID: 7e21f901f0898224789ba12433e47f48
     internalID: 0
     vertices: []
     indices: 
@@ -193,8 +215,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      StartCoin_0: 1664346689
-      StartCoin_1: -1989779678
+      buttons_0: 907005512
+      buttons_1: -785810895
+      buttons_2: -1245681491
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -61,7 +61,49 @@ namespace TowerDefense3D.Waves
                 WaveCount,
                 enemySystem.LivingCount,
                 Phase == WavePhase.Preparation && towerNetworkSystem.HasValidChain,
-                NextWaveClearGold);
+                NextWaveClearGold,
+                RemainingEnemyCount);
+        }
+
+        /// <summary>
+        /// How many enemies are left to deal with in the wave the HUD is showing.
+        /// </summary>
+        /// <remarks>
+        /// Before the wave starts this is the wave's whole roster, so the plaque advertises the
+        /// size of what is coming instead of a living count that is necessarily zero.
+        ///
+        /// While it runs the number is the unspawned remainder plus what is on the board. A spawn
+        /// therefore moves nothing - one leaves the queue exactly as one arrives - and only a
+        /// death or a leak brings it down. A summoner is the one thing that pushes it back up,
+        /// because its brood enters through the combat timeline rather than the wave plan and so
+        /// was never in the queue this counts.
+        /// </remarks>
+        private int RemainingEnemyCount
+        {
+            get
+            {
+                if (Phase == WavePhase.Running)
+                {
+                    return currentPlan.Count - nextSpawnIndex + enemySystem.LivingCount;
+                }
+
+                // Past the last wave there is no roster left to read, and nextWaveIndex has
+                // walked off the end of the schedule.
+                if (Phase == WavePhase.Victory)
+                {
+                    return 0;
+                }
+
+                IReadOnlyList<EnemySpawnBatchDefinition> batches =
+                    schedule.Waves[nextWaveIndex].SpawnBatches;
+                int roster = 0;
+                for (int index = 0; index < batches.Count; index++)
+                {
+                    roster += batches[index].Count;
+                }
+
+                return roster;
+            }
         }
 
         private int NextWaveClearGold => Phase == WavePhase.Victory

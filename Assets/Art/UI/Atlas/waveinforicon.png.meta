@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 58db6475de9aded4f809d88d72fac838
+guid: 1143826a77d713743b11b9f71c8b8089
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -95,7 +95,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 256
     resizeAlgorithm: 0
     textureFormat: 50
     textureCompression: 1
@@ -136,45 +136,89 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StartCoin_0
+      name: waveinforicon_0
       rect:
         serializedVersion: 2
-        x: 35
-        y: 252
-        width: 684
-        height: 663
+        x: 40
+        y: 76
+        width: 596
+        height: 631
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ff044be1cb55e454e93398c883d3e689
-      internalID: 1664346689
+      spriteID: bf1e9877766c92741b6c7c0397d750ed
+      internalID: -950082356
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StartCoin_1
+      name: waveinforicon_1
       rect:
         serializedVersion: 2
-        x: 789
-        y: 235
-        width: 634
-        height: 626
+        x: 907
+        y: 76
+        width: 635
+        height: 552
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f446e263cb076404ca79145a13f90269
-      internalID: -1989779678
+      spriteID: d913e563e87e08f4c9bd249c61233098
+      internalID: -1034119875
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: waveinforicon_2
+      rect:
+        serializedVersion: 2
+        x: 1904
+        y: 32
+        width: 159
+        height: 673
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a83589c1f4fd674b861581932da6dc2
+      internalID: 619965488
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: waveinforicon_3
+      rect:
+        serializedVersion: 2
+        x: 191
+        y: 56
+        width: 6
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0539f5ef60c207e4984ea0c09571c508
+      internalID: 90820722
       vertices: []
       indices: 
       edges: []
@@ -183,7 +227,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5880c321d3db4e04ab89f9581e5bdf9f
+    spriteID: c1289372650d4144da2afff4809bf432
     internalID: 0
     vertices: []
     indices: 
@@ -191,10 +235,14 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      StartCoin_0: 1664346689
-      StartCoin_1: -1989779678
+      waveinforicon_0: -950082356
+      waveinforicon_1: -1034119875
+      waveinforicon_2: 619965488
+      waveinforicon_3: 90820722
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
