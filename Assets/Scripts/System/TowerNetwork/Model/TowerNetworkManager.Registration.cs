@@ -26,11 +26,58 @@ namespace TowerDefense3D.Towers
             TowerNodeId nodeId = new TowerNodeId(nextNodeId);
             nextNodeId++;
 
-            nodes.Add(nodeId, new NodeState(nodeId, spec, position));
+            nodes.Add(nodeId, new NodeState(nodeId, spec, position, definition));
             orderedNodeIds.Add(nodeId);
             RebuildValidChains();
             PublishStateChanged();
             return nodeId;
+        }
+
+        /// <summary>
+        /// Raises one tower a level and rebuilds its spec so the simulation picks up the change.
+        /// </summary>
+        /// <remarks>
+        /// Refused while a wave runs, like every other topology edit: the combat timeline is
+        /// planned before the wave starts, so a tower that grew mid-wave would be simulated with
+        /// numbers the plan never saw.
+        /// </remarks>
+        public bool TryUpgradeTower(TowerNodeId nodeId, out string error)
+        {
+            if (!CanEditTopology(out error))
+            {
+                return false;
+            }
+
+            if (!nodeId.IsValid || !nodes.TryGetValue(nodeId, out NodeState node))
+            {
+                error = "Tower is not registered.";
+                return false;
+            }
+
+            if (node.Definition == null)
+            {
+                error = "Tower has no definition to upgrade from.";
+                return false;
+            }
+
+            TowerUpgradeProfile upgrade = node.Definition.Core.Upgrade;
+            if (!upgrade.IsUpgradable || node.UpgradeLevel >= upgrade.MaxLevel)
+            {
+                error = "Tower is already at its highest level.";
+                return false;
+            }
+
+            node.UpgradeLevel++;
+            node.Spec = TowerRuntimeSpecFactory.Create(node.Definition, tickSeconds, node.UpgradeLevel);
+            PublishStateChanged();
+            error = string.Empty;
+            return true;
+        }
+
+        /// <summary>The tower's current level, or zero when it is unknown or never upgraded.</summary>
+        public int GetUpgradeLevel(TowerNodeId nodeId)
+        {
+            return nodes.TryGetValue(nodeId, out NodeState node) ? node.UpgradeLevel : 0;
         }
 
         public bool UnregisterTower(TowerNodeId nodeId)

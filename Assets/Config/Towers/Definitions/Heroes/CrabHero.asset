@@ -33,6 +33,10 @@ MonoBehaviour:
       linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 1
+    upgrade:
+      maxLevel: 2
+      costPerLevel: 150
+      damageBonusPerLevel: 0.35
   attackRangeMeters: 4
   attackDamage:
     amount: 5

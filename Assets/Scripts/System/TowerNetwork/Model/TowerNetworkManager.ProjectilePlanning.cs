@@ -58,9 +58,15 @@ namespace TowerDefense3D.Towers
             {
                 TowerNodeId nodeId = orderedNodeIds[index];
                 NodeState node = nodes[nodeId];
-                simulation.nodes.Add(
-                    nodeId,
-                    new NodeState(nodeId, node.Spec, node.Position));
+
+                // The clone copies the live spec, so a tower that has been upgraded plans with
+                // its upgraded numbers. Its definition and level ride along to keep the copy a
+                // faithful one; planning never upgrades anything itself.
+                var clone = new NodeState(nodeId, node.Spec, node.Position, node.Definition)
+                {
+                    UpgradeLevel = node.UpgradeLevel
+                };
+                simulation.nodes.Add(nodeId, clone);
                 simulation.orderedNodeIds.Add(nodeId);
             }
 

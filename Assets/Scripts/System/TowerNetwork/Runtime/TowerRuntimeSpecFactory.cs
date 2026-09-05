@@ -5,7 +5,18 @@ namespace TowerDefense3D.Towers
 {
     public static class TowerRuntimeSpecFactory
     {
-        public static TowerRuntimeSpec Create(TowerCombatDefinition definition, float tickSeconds)
+        /// <summary>
+        /// Builds the simulation spec for one tower at one upgrade level.
+        /// </summary>
+        /// <remarks>
+        /// A level scales the payload rather than the cycle, so the simulation never has to know
+        /// levels exist: it reads the same payload it always did, and an upgraded tower simply
+        /// hits harder. Rebuilding the spec is how an upgrade takes effect.
+        /// </remarks>
+        public static TowerRuntimeSpec Create(
+            TowerCombatDefinition definition,
+            float tickSeconds,
+            int upgradeLevel = 0)
         {
             ValidateInput(definition, tickSeconds);
 
@@ -20,7 +31,9 @@ namespace TowerDefense3D.Towers
             int reservationCount = outputProjectileCount;
             int sequenceSpacingTicks = GetSequenceSpacingTicks(
                 throughput, outputProjectileCount, tickSeconds);
-            ProjectilePayload outputPayload = CreateOutputPayload(definition);
+            ProjectilePayload outputPayload = ScalePayload(
+                CreateOutputPayload(definition),
+                core.Upgrade.DamageMultiplier(upgradeLevel));
 
             return new TowerRuntimeSpec(
                 definition.Family, definition.NetworkRole, core.StableId, network.InputPortCount,
@@ -105,6 +118,29 @@ namespace TowerDefense3D.Towers
             }
 
             return seconds == 0f ? 0 : ConvertPositiveSecondsToTicks(seconds, tickSeconds);
+        }
+
+        /// <summary>
+        /// Multiplies every damage number a payload carries, leaving its timings alone.
+        /// </summary>
+        /// <remarks>
+        /// Burn ticks harder too, but burns no longer or faster: an upgrade should raise output,
+        /// not quietly rewrite the status durations the reaction rules are balanced against.
+        /// </remarks>
+        private static ProjectilePayload ScalePayload(ProjectilePayload payload, float multiplier)
+        {
+            if (multiplier <= 0f || Math.Abs(multiplier - 1f) < 0.0001f)
+            {
+                return payload;
+            }
+
+            return new ProjectilePayload(
+                payload.Kind,
+                payload.Damage * multiplier,
+                payload.BurnDamagePerTick * multiplier,
+                payload.BurnTickIntervalSeconds,
+                payload.BurnDurationSeconds,
+                payload.PushDistanceMeters);
         }
 
         private static ProjectilePayload CreateOutputPayload(TowerCombatDefinition definition)

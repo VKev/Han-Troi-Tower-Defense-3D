@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 namespace TowerDefense3D.Towers
-{
+{ 
     public sealed partial class TowerNetworkManager
     {
 

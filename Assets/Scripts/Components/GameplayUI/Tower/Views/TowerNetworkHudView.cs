@@ -13,14 +13,22 @@ namespace TowerDefense3D.GameFlow
             Array.Empty<TowerPlacementDragButtonView>();
         [SerializeField] private Button unlinkButton;
         [SerializeField] private Button sellButton;
+
+        [Tooltip("Buys the selected tower a level. Its label is the price, or MAX when the tower has no level left.")]
+        [SerializeField] private Button upgradeButton;
+
+        [Tooltip("Price printed on the upgrade button.")]
+        [SerializeField] private Text upgradeCostText;
+
+        [Tooltip("Coin beside that price. Hidden along with it, because a coin next to nothing - or next to MAX - reads as a price that is missing rather than one that does not exist.")]
+        [SerializeField] private GameObject upgradeCostIcon;
+
+        [Tooltip("Refund printed on the sell button.")]
+        [SerializeField] private Text sellRefundText;
         [Tooltip("Panel holding the per-tower actions, moved over the selected tower each frame.")]
         [SerializeField] private RectTransform towerActionsPanel;
-        [SerializeField] private Button cancelPlacementButton;
+        [Tooltip("Optional. The HUD's own menu button is gone - the pause modal carries that command now - so this is left unwired unless a screen puts one back.")]
         [SerializeField] private Button returnToMenuButton;
-        [SerializeField] private Text selectedText;
-        [SerializeField] private Text chainText;
-        [SerializeField] private Text queueText;
-        [SerializeField] private Text feedbackText;
 
         private bool isInitialized;
         private Canvas rootCanvas;
@@ -31,7 +39,7 @@ namespace TowerDefense3D.GameFlow
         public event Action<int> TowerDragCanceled;
         public event Action UnlinkRequested;
         public event Action SellRequested;
-        public event Action CancelPlacementRequested;
+        public event Action UpgradeRequested;
         public event Action ReturnToMenuRequested;
 
         public bool IsInitialized => isInitialized;
@@ -55,8 +63,16 @@ namespace TowerDefense3D.GameFlow
             rootCanvas = GetComponentInParent<Canvas>();
             unlinkButton.onClick.AddListener(HandleUnlinkRequested);
             sellButton.onClick.AddListener(HandleSellRequested);
-            cancelPlacementButton.onClick.AddListener(HandleCancelPlacementRequested);
-            returnToMenuButton.onClick.AddListener(HandleReturnToMenuRequested);
+            if (upgradeButton != null)
+            {
+                upgradeButton.onClick.AddListener(HandleUpgradeRequested);
+            }
+
+            if (returnToMenuButton != null)
+            {
+                returnToMenuButton.onClick.AddListener(HandleReturnToMenuRequested);
+            }
+
             isInitialized = true;
         }
 
@@ -91,14 +107,29 @@ namespace TowerDefense3D.GameFlow
 
         public void Render(TowerNetworkHudState state)
         {
-            selectedText.text = state.SelectedText;
-            chainText.text = state.ChainText;
-            queueText.text = state.QueueText;
-            feedbackText.text = state.FeedbackText;
             unlinkButton.interactable = state.UnlinkEnabled;
             sellButton.interactable = state.SellEnabled;
+            if (upgradeButton != null)
+            {
+                upgradeButton.interactable = state.UpgradeEnabled;
+            }
+
+            if (upgradeCostText != null)
+            {
+                upgradeCostText.text = state.UpgradeCostText;
+            }
+
+            if (upgradeCostIcon != null)
+            {
+                upgradeCostIcon.SetActive(state.UpgradeShowsPrice);
+            }
+
+            if (sellRefundText != null)
+            {
+                sellRefundText.text = state.SellRefundText;
+            }
+
             RenderTowerActions(state);
-            cancelPlacementButton.interactable = state.CancelPlacementEnabled;
 
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
@@ -180,8 +211,16 @@ namespace TowerDefense3D.GameFlow
 
             unlinkButton.onClick.RemoveListener(HandleUnlinkRequested);
             sellButton.onClick.RemoveListener(HandleSellRequested);
-            cancelPlacementButton.onClick.RemoveListener(HandleCancelPlacementRequested);
-            returnToMenuButton.onClick.RemoveListener(HandleReturnToMenuRequested);
+            if (upgradeButton != null)
+            {
+                upgradeButton.onClick.RemoveListener(HandleUpgradeRequested);
+            }
+
+            if (returnToMenuButton != null)
+            {
+                returnToMenuButton.onClick.RemoveListener(HandleReturnToMenuRequested);
+            }
+
             isInitialized = false;
         }
 
@@ -212,14 +251,14 @@ namespace TowerDefense3D.GameFlow
             SellRequested?.Invoke();
         }
 
+        private void HandleUpgradeRequested()
+        {
+            UpgradeRequested?.Invoke();
+        }
+
         private void HandleUnlinkRequested()
         {
             UnlinkRequested?.Invoke();
-        }
-
-        private void HandleCancelPlacementRequested()
-        {
-            CancelPlacementRequested?.Invoke();
         }
 
         private void HandleReturnToMenuRequested()
