@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -10,6 +11,10 @@ namespace TowerDefense3D.GameplayInput
     public sealed class GameplayInputSource : MonoBehaviour, IGameplayInputSource
     {
         private const int MousePointerId = -1;
+
+        // Reused so the per-frame hit test does not allocate.
+        private static readonly List<RaycastResult> UiHits = new List<RaycastResult>();
+        private static PointerEventData uiProbe;
 
         private bool wasInterrupted;
 
@@ -37,7 +42,7 @@ namespace TowerDefense3D.GameplayInput
                         wasReleased,
                         pointerId,
                         touch.position.ReadValue(),
-                        IsPointerOverUi(pointerId));
+                        IsPointerOverUi(touch.position.ReadValue()));
                 }
             }
 
@@ -57,7 +62,7 @@ namespace TowerDefense3D.GameplayInput
                         wasReleased,
                         MousePointerId,
                         mouse.position.ReadValue(),
-                        IsPointerOverUi(MousePointerId));
+                        IsPointerOverUi(mouse.position.ReadValue()));
                 }
             }
 
@@ -95,7 +100,19 @@ namespace TowerDefense3D.GameplayInput
                 isPointerOverUi);
         }
 
-        private static bool IsPointerOverUi(int pointerId)
+        /// <summary>
+        /// Whether a tap at this position lands on UI rather than on the board.
+        /// </summary>
+        /// <remarks>
+        /// Raycast directly rather than asking EventSystem.IsPointerOverGameObject, which reports
+        /// what the event system resolved on the *previous* frame. A touch that began this frame
+        /// has no previous frame, so that call answers false for the one frame that matters - the
+        /// press - and gameplay then treats a tap on a button as a tap on bare ground. That is
+        /// what made the Sell button look dead: pressing it cleared the tower selection the sale
+        /// needed, while Unlink, sitting closer to the tower, still fell inside the pick radius
+        /// and re-selected it instead.
+        /// </remarks>
+        private static bool IsPointerOverUi(Vector2 screenPosition)
         {
             EventSystem eventSystem = EventSystem.current;
             if (eventSystem == null)
@@ -103,9 +120,15 @@ namespace TowerDefense3D.GameplayInput
                 return false;
             }
 
-            return pointerId == MousePointerId
-                ? eventSystem.IsPointerOverGameObject()
-                : eventSystem.IsPointerOverGameObject(pointerId);
+            if (uiProbe == null)
+            {
+                uiProbe = new PointerEventData(eventSystem);
+            }
+
+            uiProbe.position = screenPosition;
+            UiHits.Clear();
+            eventSystem.RaycastAll(uiProbe, UiHits);
+            return UiHits.Count > 0;
         }
 
         private bool ConsumeInterruption()
