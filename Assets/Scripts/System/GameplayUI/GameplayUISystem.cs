@@ -13,7 +13,6 @@ namespace TowerDefense3D.GameFlow
     public sealed class GameplayUISystem : IDisposable
     {
         private readonly IGameplayUIView gameplayView;
-        private readonly IPlacementHudView placementHudView;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly TowerNetworkHudPresenter towerNetworkHudPresenter;
         private readonly IWaveSystem waveSystem;
@@ -26,13 +25,13 @@ namespace TowerDefense3D.GameFlow
         private readonly IPauseHudView pauseHudView;
         private readonly LevelSkipCheatPresenter skipCheatPresenter;
         private readonly LevelOutcomeHudPresenter levelOutcomeHudPresenter;
+        private readonly PauseMenuHudPresenter pauseMenuHudPresenter;
 
         private bool isDirty;
         private bool isStarted;
 
         public GameplayUISystem(
             IGameplayUIView gameplayView,
-            IPlacementHudView placementHudView,
             TowerNetworkSystem towerNetworkSystem,
             TowerNetworkHudPresenter towerNetworkHudPresenter,
             IWaveSystem waveSystem,
@@ -43,7 +42,6 @@ namespace TowerDefense3D.GameFlow
             ILevelStatusHudView statusHudView)
         {
             this.gameplayView = gameplayView ?? throw new ArgumentNullException(nameof(gameplayView));
-            this.placementHudView = placementHudView ?? throw new ArgumentNullException(nameof(placementHudView));
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.towerNetworkHudPresenter = towerNetworkHudPresenter
@@ -59,7 +57,6 @@ namespace TowerDefense3D.GameFlow
 
         public GameplayUISystem(
             IGameplayUIView gameplayView,
-            IPlacementHudView placementHudView,
             TowerNetworkSystem towerNetworkSystem,
             TowerNetworkHudPresenter towerNetworkHudPresenter,
             IWaveSystem waveSystem,
@@ -71,10 +68,10 @@ namespace TowerDefense3D.GameFlow
             GameplaySimulationSystem simulationSystem,
             IPauseHudView pauseHudView,
             LevelSkipCheatPresenter skipCheatPresenter,
-            LevelOutcomeHudPresenter levelOutcomeHudPresenter)
+            LevelOutcomeHudPresenter levelOutcomeHudPresenter,
+            PauseMenuHudPresenter pauseMenuHudPresenter)
             : this(
                 gameplayView,
-                placementHudView,
                 towerNetworkSystem,
                 towerNetworkHudPresenter,
                 waveSystem,
@@ -91,6 +88,8 @@ namespace TowerDefense3D.GameFlow
                 ?? throw new ArgumentNullException(nameof(skipCheatPresenter));
             this.levelOutcomeHudPresenter = levelOutcomeHudPresenter
                 ?? throw new ArgumentNullException(nameof(levelOutcomeHudPresenter));
+            this.pauseMenuHudPresenter = pauseMenuHudPresenter
+                ?? throw new ArgumentNullException(nameof(pauseMenuHudPresenter));
         }
 
         public void BindReturnToMenu(Action requestReturnToMenu)
@@ -101,7 +100,6 @@ namespace TowerDefense3D.GameFlow
         public void Start()
         {
             gameplayView.Show();
-            placementHudView.Show();
             towerNetworkHudPresenter.Connect();
             waveHudPresenter.Connect();
             towerNetworkSystem.StateChanged += MarkDirty;
@@ -123,6 +121,11 @@ namespace TowerDefense3D.GameFlow
 
             skipCheatPresenter?.Connect();
             levelOutcomeHudPresenter?.Connect();
+            pauseMenuHudPresenter?.Connect();
+            if (pauseMenuHudPresenter != null)
+            {
+                pauseMenuHudPresenter.ResumeRequested += HandleResumeRequested;
+            }
             isStarted = true;
             isDirty = true;
         }
@@ -164,6 +167,12 @@ namespace TowerDefense3D.GameFlow
 
             skipCheatPresenter?.Disconnect();
             levelOutcomeHudPresenter?.Disconnect();
+            if (pauseMenuHudPresenter != null)
+            {
+                pauseMenuHudPresenter.ResumeRequested -= HandleResumeRequested;
+            }
+
+            pauseMenuHudPresenter?.Disconnect();
             towerNetworkHudPresenter.Disconnect();
             waveHudPresenter.Disconnect();
         }
@@ -195,8 +204,28 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            simulationSystem.SetPaused(!simulationSystem.IsPaused);
+            SetPaused(!simulationSystem.IsPaused);
+        }
+
+        private void HandleResumeRequested()
+        {
+            if (simulationSystem == null || pauseHudView == null)
+            {
+                return;
+            }
+
+            SetPaused(false);
+        }
+
+        /// <summary>
+        /// The one place the pause state changes, because three things have to move together:
+        /// the simulation, the button's glyph, and the modal that follows the pause state.
+        /// </summary>
+        private void SetPaused(bool isPaused)
+        {
+            simulationSystem.SetPaused(isPaused);
             pauseHudView.Render(simulationSystem.IsPaused);
+            pauseMenuHudPresenter?.Refresh();
         }
     }
 }

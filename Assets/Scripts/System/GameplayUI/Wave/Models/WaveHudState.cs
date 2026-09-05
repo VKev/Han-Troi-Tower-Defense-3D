@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using UnityEngine;
+
 namespace TowerDefense3D.GameFlow
 {
     public readonly struct WaveHudState
@@ -9,7 +12,7 @@ namespace TowerDefense3D.GameFlow
             string enemiesLeftText,
             string startWaveText,
             string startWaveBonusText,
-            string previewText,
+            IReadOnlyList<Sprite> previewIcons,
             bool startWaveEnabled)
         {
             WaveCounterText = waveCounterText;
@@ -18,7 +21,7 @@ namespace TowerDefense3D.GameFlow
             EnemiesLeftText = enemiesLeftText;
             StartWaveText = startWaveText;
             StartWaveBonusText = startWaveBonusText;
-            PreviewText = previewText;
+            PreviewIcons = previewIcons;
             StartWaveEnabled = startWaveEnabled;
         }
 
@@ -28,7 +31,17 @@ namespace TowerDefense3D.GameFlow
         public string EnemiesLeftText { get; }
         public string StartWaveText { get; }
         public string StartWaveBonusText { get; }
-        public string PreviewText { get; }
+
+        /// <summary>
+        /// One portrait per distinct enemy in the wave on show, in the order the schedule sends
+        /// them. Enemies with no portrait assigned are left out rather than drawn as a hole.
+        /// </summary>
+        /// <remarks>
+        /// Filled in every phase. The grid is the player's to open and shut, so it has to have
+        /// something to show whenever they choose to open it.
+        /// </remarks>
+        public IReadOnlyList<Sprite> PreviewIcons { get; }
+
         public bool StartWaveEnabled { get; }
     }
 }

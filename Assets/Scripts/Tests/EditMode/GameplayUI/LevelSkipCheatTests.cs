@@ -62,7 +62,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void Prefab_AuthorsTheSkipCheatButtonBesideTheMenuButton()
+        public void Prefab_AuthorsTheSkipCheatButtonInvisibleButStillHittable()
         {
             GameObject owner = PrefabUtility.LoadPrefabContents(GameplayUiPrefabPath);
             try
@@ -81,18 +81,28 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                     Is.SameAs(skip.GetComponent<Button>()),
                     "The view must be wired to its own button.");
 
-                Transform menu = safeArea.Find("Return To Level Menu");
-                Assert.That(menu, Is.Not.Null);
+                Assert.That(
+                    safeArea.Find("Return To Level Menu"),
+                    Is.Null,
+                    "The HUD's menu button is gone; the pause modal carries that command.");
+
+                // Invisible but live: a developer who knows it is there can still tap it.
+                var background = skip.GetComponent<Image>();
+                Assert.That(background.color.a, Is.Zero, "The cheat must not be drawn.");
+                Assert.That(background.enabled, Is.True, "A disabled Graphic cannot be hit.");
+                Assert.That(background.raycastTarget, Is.True);
+                Assert.That(
+                    background.alphaHitTestMinimumThreshold,
+                    Is.Zero,
+                    "A threshold above zero would reject the tap on a transparent button.");
+                Assert.That(
+                    skip.Find("Label").GetComponent<Text>().color.a,
+                    Is.Zero,
+                    "The label must not be drawn either.");
+
                 var skipRect = (RectTransform)skip;
-                var menuRect = (RectTransform)menu;
-                Assert.That(
-                    skipRect.anchoredPosition.y,
-                    Is.EqualTo(menuRect.anchoredPosition.y).Within(0.01f),
-                    "The cheat must sit on the same row as MENU.");
-                Assert.That(
-                    skipRect.anchoredPosition.x,
-                    Is.LessThan(menuRect.anchoredPosition.x - menuRect.sizeDelta.x),
-                    "The cheat must sit clear of MENU rather than overlapping it.");
+                Assert.That(skipRect.sizeDelta.x, Is.GreaterThan(0f));
+                Assert.That(skipRect.sizeDelta.y, Is.GreaterThan(0f));
             }
             finally
             {

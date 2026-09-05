@@ -247,7 +247,6 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             TowerNetworkHudView hud = view.GetComponentInChildren<TowerNetworkHudView>(true);
             TowerPlacementDragButtonView[] dragButtons =
                 view.GetComponentsInChildren<TowerPlacementDragButtonView>(true);
-            Button cancel = GetCancelPlacementButton(view);
             Button returnButton = GetReturnToMenuButton(view);
 
             Assert.That(hud, Is.Not.Null);
@@ -295,21 +294,18 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(lockedHeroButtons, Is.EqualTo(1), "the hero drag button loads locked");
             Assert.That(dragButtons, Has.Length.EqualTo(ElementCount + 3));
             Assert.That(view.transform.Find("Safe Area/Select Tower"), Is.Null);
-            Assert.That(cancel, Is.Not.Null);
             Assert.That(returnButton, Is.Not.Null);
             Assert.That(view.GetComponentInChildren<SafeAreaView>(true), Is.Not.Null);
         }
 
-        private static Button GetCancelPlacementButton(GameplayUIView view)
-        {
-            TowerNetworkHudView hud = view.GetComponentInChildren<TowerNetworkHudView>(true);
-            return GetPrivateField<Button>(hud, "cancelPlacementButton");
-        }
-
+        /// <summary>
+        /// The return-to-menu command. It used to hang off the HUD's own MENU button; that button
+        /// is gone and the pause modal carries it now, so the test drives it from there.
+        /// </summary>
         private static Button GetReturnToMenuButton(GameplayUIView view)
         {
-            TowerNetworkHudView hud = view.GetComponentInChildren<TowerNetworkHudView>(true);
-            return GetPrivateField<Button>(hud, "returnToMenuButton");
+            PauseMenuHudView menu = view.GetComponentInChildren<PauseMenuHudView>(true);
+            return GetPrivateField<Button>(menu, "returnToLevelMenuButton");
         }
 
         private static void AssertTowerNetworkInitialized()

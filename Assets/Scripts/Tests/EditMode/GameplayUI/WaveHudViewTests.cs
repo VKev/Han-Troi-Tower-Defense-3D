@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -47,13 +48,15 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 "07",
                 "START WAVE",
                 "+40 CLEAR BONUS",
-                "• Speed Support  ×2 [SPEED AURA]",
+                previewIcons: Array.Empty<Sprite>(),
                 startWaveEnabled: true));
 
             Transform panel = owner.transform.Find("Safe Area/Tower Network HUD");
             Button button = panel.Find("Start Wave").GetComponent<Button>();
-            Text preview = panel.Find("Wave Preview").GetComponent<Text>();
-            Transform wavePanel = panel.Find("Wave Panel");
+
+            // The wave numbers ride on the NEXT WAVE plaque; the status line and progress bar
+            // are gone with the panel that used to carry them.
+            Transform plaque = panel.Find("Next Wave Toggle");
 
             Assert.That(button.interactable, Is.True);
             Assert.That(
@@ -63,20 +66,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 button.transform.Find("Bonus").GetComponent<Text>().text,
                 Is.EqualTo("+40 CLEAR BONUS"));
             Assert.That(
-                wavePanel.Find("Wave Counter").GetComponent<Text>().text,
+                plaque.Find("Wave Counter").GetComponent<Text>().text,
                 Is.EqualTo("02 / 08"));
             Assert.That(
-                wavePanel.Find("Wave Status").GetComponent<Text>().text,
-                Is.EqualTo("READY TO START"));
-            Assert.That(
-                wavePanel.Find("Enemies Left").GetComponent<Text>().text,
+                plaque.Find("Enemies Left").GetComponent<Text>().text,
                 Is.EqualTo("07"));
-            Assert.That(
-                wavePanel.Find("Wave Progress Background/Wave Progress Fill")
-                    .GetComponent<Image>()
-                    .fillAmount,
-                Is.EqualTo(0.25f).Within(0.0001f));
-            Assert.That(preview.text, Does.Contain("[SPEED AURA]"));
+            Assert.That(panel.Find("Wave Panel"), Is.Null);
 
             button.onClick.Invoke();
 

@@ -8,9 +8,12 @@ namespace TowerDefense3D.GameFlow.Editor
 {
     /// <summary>
     /// Re-authors the gameplay HUD prefab into the prototype screen layout:
-    /// status cluster top-left, wave panel top-center, wave preview bottom-left,
-    /// selection strip and tower build bar bottom-center, wave controls bottom-right.
-    /// Flat colours and builtin sprites only - no production art.
+    /// next-wave plaque top-left, corner buttons top-right, frog stats bottom-left,
+    /// tower build bar bottom-center, wave controls bottom-right.
+    ///
+    /// Flat colours and builtin sprites for the parts still prototyped here. The pieces that
+    /// have real art - the next-wave plaque, the build buttons, the frog cluster - are authored
+    /// in the prefab and this only places them, so a rebuild cannot repaint over the art.
     /// </summary>
     public static class GameplayHudPrototypeLayout
     {
@@ -18,15 +21,12 @@ namespace TowerDefense3D.GameFlow.Editor
         private const string TowerCatalogPath = "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
 
         private static readonly Color PanelColor = new Color(0.07f, 0.08f, 0.10f, 0.88f);
-        private static readonly Color SunkenColor = new Color(0.03f, 0.04f, 0.05f, 0.90f);
         private static readonly Color TextColor = new Color(0.93f, 0.95f, 0.97f, 1f);
         private static readonly Color MutedColor = new Color(0.62f, 0.66f, 0.72f, 1f);
         private static readonly Color AccentColor = new Color(1f, 0.72f, 0.26f, 1f);
-        private static readonly Color GoldColor = new Color(1f, 0.83f, 0.31f, 1f);
         private static readonly Color StartWaveColor = new Color(0.84f, 0.15f, 0.13f, 1f);
         private static readonly Color NeutralButtonColor = new Color(0.13f, 0.15f, 0.18f, 0.94f);
         private static readonly Color BonusColor = new Color(1f, 0.90f, 0.66f, 1f);
-        private static readonly Color HealthFillColor = new Color(0.33f, 0.83f, 0.42f, 1f);
         private static readonly Color DimColor = new Color(0.01f, 0.02f, 0.03f, 0.78f);
         private static readonly Color CardColor = new Color(0.09f, 0.10f, 0.13f, 0.98f);
         private static readonly Color NextLevelColor = new Color(0.13f, 0.52f, 0.30f, 1f);
@@ -36,6 +36,9 @@ namespace TowerDefense3D.GameFlow.Editor
         // labels and the coin pip, which are the same for every tower.
         private const string TowerButtonPrefabPath =
             "Assets/Resources/Prefabs/TowerBuildButton.prefab";
+
+        /// <summary>Anchor and pivot for anything hung off the top-left corner.</summary>
+        private static readonly Vector2 TopLeft = new Vector2(0f, 1f);
 
         private static readonly Dictionary<string, Color> TowerColorsByName =
             new Dictionary<string, Color>
@@ -92,132 +95,34 @@ namespace TowerDefense3D.GameFlow.Editor
             DeleteChild(hud, "Title");
             DeleteChild(safeArea, "Instructions");
 
-            BuildWavePanel(hud);
-            BuildPreviewPanel(hud);
-            BuildSelectionStrip(hud);
             BuildTowerBar(hud, catalog);
             BuildWaveControls(hud);
             BuildStatusCluster(safeArea);
             BuildCornerButtons(safeArea);
             BuildLevelOutcomeHud(root.transform, safeArea);
 
-            // Backdrops first so the text and controls above them stay visible.
+            // Backdrops first so the text and controls above them stay visible, and the tower
+            // actions dead last: it is a popover that lands wherever the selected tower is, so
+            // anything drawn after it would swallow the taps meant for Sell and Unlink.
             OrderChildren(
                 hud,
-                "Wave Panel",
-                "Preview Panel",
-                "Selected Panel",
                 "Build Bar",
-                "Wave Preview",
-                "Chain Status",
-                "Queue Status",
-                "Selected Status",
-                "Network Feedback",
                 "Tower Buttons",
-                "Tower Actions",
-                "Start Wave");
+                "Start Wave",
+                "Next Wave Toggle",
+                "Next Wave Grid",
+                "Tower Actions");
             OrderChildren(
                 safeArea,
                 "Tower Network HUD",
                 "Level Status HUD",
+                "Pause HUD",
                 "Pause Button",
-                "Return To Level Menu",
-                "Skip Waves Cheat",
-                "Cancel");
+                "Skip Waves Cheat");
 
             // The outcome overlay draws over the safe area, not inside it.
             OrderChildren(root.transform, "Safe Area", "Outcome HUD");
             WireViews(root, hud);
-        }
-
-        private static void BuildWavePanel(Transform hud)
-        {
-            RectTransform panel = EnsurePanel(hud, "Wave Panel", PanelColor);
-            SetRect(
-                panel,
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -24f),
-                new Vector2(640f, 84f));
-
-            Label(panel, "Wave Label", "WAVE", new Vector2(22f, -12f), new Vector2(110f, 18f),
-                14, MutedColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Label(panel, "Wave Counter", "01 / 08", new Vector2(22f, -30f), new Vector2(130f, 42f),
-                32, TextColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Label(panel, "Status Label", "WAVE PROGRESS", new Vector2(172f, -12f), new Vector2(260f, 18f),
-                14, MutedColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Label(panel, "Wave Status", "READY TO START", new Vector2(172f, -32f), new Vector2(260f, 26f),
-                20, AccentColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Label(panel, "Enemies Label", "ENEMIES LEFT", new Vector2(468f, -12f), new Vector2(152f, 18f),
-                14, MutedColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Label(panel, "Enemies Left", "00", new Vector2(468f, -30f), new Vector2(152f, 42f),
-                32, TextColor, TextAnchor.UpperLeft, FontStyle.Bold);
-
-            RectTransform progressBackground = EnsurePanel(panel, "Wave Progress Background", SunkenColor);
-            SetRect(
-                progressBackground,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(172f, -64f),
-                new Vector2(260f, 10f));
-
-            RectTransform progressFill = EnsurePanel(progressBackground, "Wave Progress Fill", AccentColor);
-            StretchToParent(progressFill);
-            ConfigureFillImage(progressFill.GetComponent<Image>(), AccentColor);
-        }
-
-        private static void BuildPreviewPanel(Transform hud)
-        {
-            RectTransform panel = EnsurePanel(hud, "Preview Panel", PanelColor);
-            SetRect(panel, Vector2.zero, Vector2.zero, Vector2.zero,
-                new Vector2(24f, 24f), new Vector2(340f, 200f));
-            Label(panel, "Preview Title", "NEXT WAVE PREVIEW", new Vector2(18f, -14f), new Vector2(304f, 20f),
-                15, AccentColor, TextAnchor.UpperLeft, FontStyle.Bold);
-
-            Text preview = ConfigureText(
-                hud.Find("Wave Preview").GetComponent<Text>(),
-                17,
-                TextColor,
-                TextAnchor.UpperLeft,
-                FontStyle.Normal);
-            preview.verticalOverflow = VerticalWrapMode.Overflow;
-            SetRect((RectTransform)preview.transform, Vector2.zero, Vector2.zero, Vector2.zero,
-                new Vector2(42f, 112f), new Vector2(306f, 76f));
-
-            PlaceFootnote(hud, "Chain Status", 80f);
-            PlaceFootnote(hud, "Queue Status", 50f);
-        }
-
-        private static void PlaceFootnote(Transform hud, string childName, float bottomOffset)
-        {
-            Transform child = hud.Find(childName);
-            ConfigureText(child.GetComponent<Text>(), 14, MutedColor, TextAnchor.UpperLeft, FontStyle.Normal);
-            SetRect((RectTransform)child, Vector2.zero, Vector2.zero, Vector2.zero,
-                new Vector2(42f, bottomOffset), new Vector2(306f, 26f));
-        }
-
-        private static void BuildSelectionStrip(Transform hud)
-        {
-            RectTransform panel = EnsurePanel(hud, "Selected Panel", PanelColor);
-            SetRect(
-                panel,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 172f),
-                new Vector2(900f, 40f));
-
-            Transform selected = hud.Find("Selected Status");
-            ConfigureText(selected.GetComponent<Text>(), 17, AccentColor, TextAnchor.MiddleLeft, FontStyle.Bold);
-            SetRect((RectTransform)selected, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero,
-                new Vector2(-430f, 178f), new Vector2(400f, 28f));
-
-            Transform feedback = hud.Find("Network Feedback");
-            ConfigureText(feedback.GetComponent<Text>(), 15, MutedColor, TextAnchor.MiddleLeft, FontStyle.Normal);
-            SetRect((RectTransform)feedback, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero,
-                new Vector2(-10f, 178f), new Vector2(430f, 28f));
         }
 
         private static void BuildTowerBar(Transform hud, TowerCatalog catalog)
@@ -360,71 +265,50 @@ namespace TowerDefense3D.GameFlow.Editor
                 new Vector2(280f, 26f));
         }
 
+        /// <summary>
+        /// Places the frog's stat cluster in the bottom-left third and leaves its contents alone.
+        /// </summary>
+        /// <remarks>
+        /// The cluster is authored art now - a ringed portrait, a bar built from two sprites and a
+        /// coin - so a rebuild has no business repainting it, the same bargain the level menu's
+        /// coin panel gets. What a rebuild still owns is where the cluster sits, because that is
+        /// what keeps the bottom band split into three: the frog bottom-left, the build bar
+        /// centred, the wave controls bottom-right.
+        ///
+        /// The size is the tight part. 136 is the height of the build bar, so the two clusters
+        /// occupy one band rather than two that nearly line up, and the portrait is sized off it
+        /// to stand exactly as tall as a build button. Width is what runs out first: on a 4:3
+        /// canvas, the narrowest the game supports, the canvas is 1663 wide and the centred
+        /// 868-wide button row starts drawing at x 405, so a 365-wide cluster leaves sixteen
+        /// pixels. The real margin is larger - the gold box is sized for five digits and the ink
+        /// stops near x 277 - but the rect is the number to watch, because the 418-wide version
+        /// this replaced overlapped the row outright.
+        /// </remarks>
         private static void BuildStatusCluster(Transform safeArea)
         {
             var statusHud = (RectTransform)safeArea.Find("Level Status HUD");
             SetRect(
                 statusHud,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(28f, -24f),
-                new Vector2(418f, 84f));
-
-            var healthPanel = (RectTransform)statusHud.Find("Health Panel");
-            SetRect(
-                healthPanel,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
                 Vector2.zero,
-                new Vector2(230f, 84f));
-            StylePanelImage(healthPanel.GetComponent<Image>(), PanelColor);
-
-            var goldPanel = (RectTransform)statusHud.Find("Gold Panel");
-            SetRect(
-                goldPanel,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(244f, 0f),
-                new Vector2(174f, 84f));
-            StylePanelImage(goldPanel.GetComponent<Image>(), PanelColor);
-
-            Label(healthPanel, "Health Label", "CÓC HP", new Vector2(16f, -12f), new Vector2(120f, 20f),
-                14, MutedColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Text healthValue = Label(healthPanel, "Health Value", "10/10", Vector2.zero, Vector2.zero,
-                18, TextColor, TextAnchor.UpperRight, FontStyle.Bold);
-            SetRect(
-                (RectTransform)healthValue.transform,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(214f, -12f),
-                new Vector2(94f, 22f));
-
-            Label(goldPanel, "Gold Icon", "●", new Vector2(14f, -22f), new Vector2(34f, 36f),
-                28, GoldColor, TextAnchor.MiddleCenter, FontStyle.Bold);
-            Label(goldPanel, "Gold Label", "GOLD", new Vector2(54f, -12f), new Vector2(100f, 18f),
-                13, MutedColor, TextAnchor.UpperLeft, FontStyle.Bold);
-            Label(goldPanel, "Gold Value", "400", new Vector2(52f, -30f), new Vector2(110f, 40f),
-                28, GoldColor, TextAnchor.UpperLeft, FontStyle.Bold);
-
-            var healthBackground = (RectTransform)healthPanel.Find("Health Bar Background");
-            StylePanelImage(healthBackground.GetComponent<Image>(), SunkenColor);
-            SetRect(
-                healthBackground,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(16f, -52f),
-                new Vector2(198f, 14f));
-
-            var healthFill = (RectTransform)healthBackground.Find("Health Fill");
-            StretchToParent(healthFill);
-            ConfigureFillImage(healthFill.GetComponent<Image>(), HealthFillColor);
+                Vector2.zero,
+                Vector2.zero,
+                new Vector2(24f, 24f),
+                new Vector2(365f, 136f));
         }
 
+        /// <summary>
+        /// Places the top-right corner controls and leaves their skins alone.
+        /// </summary>
+        /// <remarks>
+        /// Both are authored now rather than derived. The pause button wears the same orange tile
+        /// as the build buttons and carries drawn glyphs, and the skip cheat is deliberately
+        /// invisible - alpha zero on a live raycast target - so a rebuild that restyled either of
+        /// them would undo the design. What a rebuild still owns is where they sit.
+        ///
+        /// The cheat keeps a real rect and a real hit area; only its ink is gone. It sits where
+        /// the MENU button used to, which is free space now that the pause modal carries the
+        /// return-to-menu command.
+        /// </remarks>
         private static void BuildCornerButtons(Transform safeArea)
         {
             var pause = (RectTransform)safeArea.Find("Pause Button");
@@ -433,80 +317,21 @@ namespace TowerDefense3D.GameFlow.Editor
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
-                new Vector2(-28f, -24f),
-                new Vector2(64f, 64f));
-            StyleButton(pause, NeutralButtonColor);
-            Text pauseIcon = ConfigureText(
-                pause.Find("Pause Icon").GetComponent<Text>(),
-                26,
-                TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            StretchToParent((RectTransform)pauseIcon.transform);
+                new Vector2(-24f, -24f),
+                new Vector2(96f, 96f));
 
-            var menu = (RectTransform)safeArea.Find("Return To Level Menu");
-            SetRect(
-                menu,
-                new Vector2(1f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(-104f, -24f),
-                new Vector2(112f, 64f));
-            StyleButton(menu, NeutralButtonColor);
-            Text menuLabel = ConfigureText(
-                menu.Find("Label").GetComponent<Text>(),
-                18,
-                TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            menuLabel.text = "MENU";
-            StretchToParent((RectTransform)menuLabel.transform);
-
-            // Development cheat, parked immediately left of MENU so it reads as part of the same
-            // corner cluster while its colour keeps it from being mistaken for a real control.
             RectTransform skip = EnsureButton(safeArea, "Skip Waves Cheat");
             SetRect(
                 skip,
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
-                new Vector2(-224f, -24f),
+                new Vector2(-136f, -24f),
                 new Vector2(128f, 64f));
-            StyleButton(skip, CheatButtonColor);
-            Text skipLabel = Label(
-                skip,
-                "Label",
-                "SKIP WAVES",
-                Vector2.zero,
-                Vector2.zero,
-                15,
-                TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            skipLabel.text = "SKIP WAVES";
-            StretchToParent((RectTransform)skipLabel.transform);
             SetObjectReference(
                 EnsureComponent<LevelSkipCheatView>(skip),
                 "skipButton",
                 skip.GetComponent<Button>());
-
-            var cancel = (RectTransform)safeArea.Find("Cancel");
-            SetRect(
-                cancel,
-                new Vector2(1f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(-24f, 234f),
-                new Vector2(190f, 44f));
-            StyleButton(cancel, NeutralButtonColor);
-            Text cancelLabel = ConfigureText(
-                cancel.Find("Label").GetComponent<Text>(),
-                16,
-                TextColor,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            cancelLabel.text = "CANCEL";
-            StretchToParent((RectTransform)cancelLabel.transform);
         }
 
         /// <summary>
@@ -676,19 +501,17 @@ namespace TowerDefense3D.GameFlow.Editor
             SetObjectReference(waveHud, "startWaveButton", hud.Find("Start Wave").GetComponent<Button>());
             SetObjectReference(waveHud, "startWaveText", hud.Find("Start Wave/Label").GetComponent<Text>());
             SetObjectReference(waveHud, "startWaveBonusText", hud.Find("Start Wave/Bonus").GetComponent<Text>());
-            SetObjectReference(waveHud, "waveCounterText", hud.Find("Wave Panel/Wave Counter").GetComponent<Text>());
-            SetObjectReference(waveHud, "statusText", hud.Find("Wave Panel/Wave Status").GetComponent<Text>());
+            // The wave numbers live on the NEXT WAVE plaque now. The status line and the progress
+            // bar went with the panel that used to hold them, and the view treats both as
+            // optional, so there is nothing left here to point them at.
             SetObjectReference(
                 waveHud,
-                "waveProgressFill",
-                hud.Find("Wave Panel/Wave Progress Background/Wave Progress Fill").GetComponent<Image>());
-            SetObjectReference(waveHud, "enemiesLeftText", hud.Find("Wave Panel/Enemies Left").GetComponent<Text>());
-            SetObjectReference(waveHud, "previewText", hud.Find("Wave Preview").GetComponent<Text>());
-
+                "waveCounterText",
+                hud.Find("Next Wave Toggle/Wave Counter").GetComponent<Text>());
             SetObjectReference(
-                root.GetComponent<PlacementHudView>(),
-                "root",
-                hud.Find("Selected Panel").gameObject);
+                waveHud,
+                "enemiesLeftText",
+                hud.Find("Next Wave Toggle/Enemies Left").GetComponent<Text>());
         }
 
         /// <summary>
@@ -820,16 +643,6 @@ namespace TowerDefense3D.GameFlow.Editor
             image.type = Image.Type.Sliced;
             image.fillCenter = true;
             image.color = color;
-        }
-
-        private static void ConfigureFillImage(Image image, Color color)
-        {
-            image.sprite = roundedSprite;
-            image.type = Image.Type.Filled;
-            image.fillMethod = Image.FillMethod.Horizontal;
-            image.fillOrigin = 0;
-            image.color = color;
-            image.raycastTarget = false;
         }
 
         private static void StyleButton(Transform button, Color color)

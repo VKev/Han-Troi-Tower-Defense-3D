@@ -151,7 +151,6 @@ namespace TowerDefense3D.GameFlow.Editor
                     RequireExactlyOne<LevelStatusHudView>(scene, "LevelStatusHudView", errors);
                     RequireExactlyOne<PauseHudView>(scene, "PauseHudView", errors);
                     RequireExactlyOne<LevelOutcomeHudView>(scene, "LevelOutcomeHudView", errors);
-                    RequireExactlyOne<PlacementHudView>(scene, "PlacementHudView", errors);
                     RequireExactlyOne<TowerNetworkHudView>(scene, "TowerNetworkHudView", errors);
                     RequireExactlyOne<TowerInstanceFactory>(scene, "TowerInstanceFactory", errors);
                     RequireExactlyOne<GridPlacementPresenter>(scene, "GridPlacementPresenter", errors);

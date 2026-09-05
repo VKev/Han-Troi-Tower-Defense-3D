@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 58db6475de9aded4f809d88d72fac838
+guid: 7ffa98f7d112a264e925e7e89f50bc49
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -95,9 +95,9 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 512
     resizeAlgorithm: 0
-    textureFormat: 50
+    textureFormat: 48
     textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
@@ -136,45 +136,111 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StartCoin_0
+      name: Merged image (3)_0
       rect:
         serializedVersion: 2
-        x: 35
-        y: 252
-        width: 684
-        height: 663
+        x: 423
+        y: 440
+        width: 648
+        height: 158
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ff044be1cb55e454e93398c883d3e689
-      internalID: 1664346689
+      spriteID: e567f456132c3784d97746234d226f59
+      internalID: 106584394
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StartCoin_1
+      name: Merged image (3)_2
       rect:
         serializedVersion: 2
-        x: 789
-        y: 235
-        width: 634
-        height: 626
+        x: 29
+        y: 435
+        width: 317
+        height: 276
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f446e263cb076404ca79145a13f90269
-      internalID: -1989779678
+      spriteID: 22b8508941b6d9e47bfd02cdf3f7cd44
+      internalID: -1677908142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Merged image (3)_3
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 636
+        width: 599
+        height: 93
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a92891656356cf74fb0d1b930fa9e40d
+      internalID: 186035807
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Merged image (3)_4
+      rect:
+        serializedVersion: 2
+        x: 25
+        y: 39
+        width: 313
+        height: 318
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 018bdfdd2e2bbee4bbb95bf6f6652c91
+      internalID: -2007465582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Merged image (3)_5
+      rect:
+        serializedVersion: 2
+        x: 405
+        y: 0
+        width: 893
+        height: 397
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: afdc6876095ada94fbb7139d153d65e3
+      internalID: 1481024144
       vertices: []
       indices: 
       edges: []
@@ -183,7 +249,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5880c321d3db4e04ab89f9581e5bdf9f
+    spriteID: 2c7a160a8f612b74dbec6feb19d13983
     internalID: 0
     vertices: []
     indices: 
@@ -191,10 +257,16 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      StartCoin_0: 1664346689
-      StartCoin_1: -1989779678
+      Merged image (3)_0: 106584394
+      Merged image (3)_1: 690231727
+      Merged image (3)_2: -1677908142
+      Merged image (3)_3: 186035807
+      Merged image (3)_4: -2007465582
+      Merged image (3)_5: 1481024144
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
