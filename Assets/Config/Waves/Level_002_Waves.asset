@@ -17,62 +17,62 @@ MonoBehaviour:
   - clearGoldReward: 0
     spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 5
+      count: 3
+      startTimeSeconds: 0
+      spawnWindowSeconds: 1
+      spawnPointIndex: -1
+  - clearGoldReward: 220
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 4
       startTimeSeconds: 0
       spawnWindowSeconds: 4
+      spawnPointIndex: -1
+    - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
+      count: 2
+      startTimeSeconds: 0
+      spawnWindowSeconds: 0
       spawnPointIndex: -1
   - clearGoldReward: 0
     spawnBatches:
-    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 6
-      startTimeSeconds: 0
-      spawnWindowSeconds: 4
-      spawnPointIndex: -1
-  - clearGoldReward: 100
-    spawnBatches:
-    - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
-      count: 3
-      startTimeSeconds: 3
+    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+      count: 1
+      startTimeSeconds: 1
       spawnWindowSeconds: 2
+      spawnPointIndex: -1
+    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+      count: 2
+      startTimeSeconds: 0
+      spawnWindowSeconds: 0
+      spawnPointIndex: -1
+  - clearGoldReward: 220
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+      count: 5
+      startTimeSeconds: 0
+      spawnWindowSeconds: 5
+      spawnPointIndex: -1
+  - clearGoldReward: 0
+    spawnBatches:
+    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+      count: 2
+      startTimeSeconds: 3
+      spawnWindowSeconds: 0
       spawnPointIndex: -1
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 4
       startTimeSeconds: 0
-      spawnWindowSeconds: 3
-      spawnPointIndex: -1
-  - clearGoldReward: 0
-    spawnBatches:
-    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
-      count: 2
-      startTimeSeconds: 3
-      spawnWindowSeconds: 2
-      spawnPointIndex: -1
-    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 5
-      startTimeSeconds: 0
-      spawnWindowSeconds: 4
-      spawnPointIndex: -1
-  - clearGoldReward: 100
-    spawnBatches:
-    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
-      count: 2
-      startTimeSeconds: 3
-      spawnWindowSeconds: 2
-      spawnPointIndex: -1
-    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 6
-      startTimeSeconds: 0
       spawnWindowSeconds: 4
       spawnPointIndex: -1
   - clearGoldReward: 0
     spawnBatches:
     - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
-      count: 3
+      count: 1
       startTimeSeconds: 3
       spawnWindowSeconds: 2
       spawnPointIndex: -1
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 5
+      count: 3
       startTimeSeconds: 0
       spawnWindowSeconds: 4
       spawnPointIndex: -1
@@ -81,37 +81,22 @@ MonoBehaviour:
       startTimeSeconds: 6
       spawnWindowSeconds: 2
       spawnPointIndex: -1
-  - clearGoldReward: 200
+  - clearGoldReward: 0
     spawnBatches:
-    - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
-      count: 3
-      startTimeSeconds: 3
-      spawnWindowSeconds: 2
-      spawnPointIndex: -1
-    - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 2
-      startTimeSeconds: 0
-      spawnWindowSeconds: 2
-      spawnPointIndex: -1
     - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
-      count: 2
-      startTimeSeconds: 9
-      spawnWindowSeconds: 2
+      count: 4
+      startTimeSeconds: 1
+      spawnWindowSeconds: 6
       spawnPointIndex: -1
   - clearGoldReward: 0
     spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
-      count: 3
+      count: 5
       startTimeSeconds: 0
       spawnWindowSeconds: 2
       spawnPointIndex: -1
-    - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
-      count: 3
-      startTimeSeconds: 3
-      spawnWindowSeconds: 2
-      spawnPointIndex: -1
     - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
-      count: 2
-      startTimeSeconds: 9
-      spawnWindowSeconds: 2
+      count: 4
+      startTimeSeconds: 1
+      spawnWindowSeconds: 0
       spawnPointIndex: -1
