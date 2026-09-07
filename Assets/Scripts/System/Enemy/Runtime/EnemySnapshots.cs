@@ -16,7 +16,9 @@ namespace TowerDefense3D.Enemies
             int remainingThermalShieldHits = 0,
             float liftHeightMeters = 0f,
             int skillCastVersion = 0,
-            bool isSpeedBuffed = false)
+            bool isSpeedBuffed = false,
+            bool isStanding = false,
+            float facingYawDegrees = 0f)
         {
             EnemyId = enemyId;
             Definition = definition;
@@ -30,6 +32,8 @@ namespace TowerDefense3D.Enemies
             LiftHeightMeters = liftHeightMeters;
             SkillCastVersion = skillCastVersion;
             IsSpeedBuffed = isSpeedBuffed;
+            IsStanding = isStanding;
+            FacingYawDegrees = facingYawDegrees;
         }
 
         public long EnemyId { get; }
@@ -44,6 +48,14 @@ namespace TowerDefense3D.Enemies
         public float LiftHeightMeters { get; }
         public int SkillCastVersion { get; }
         public bool IsSpeedBuffed { get; }
+
+        /// <summary>
+        /// The boss that stands on the road. It never advances, so it must not be shown walking.
+        /// </summary>
+        public bool IsStanding { get; }
+
+        /// <summary>Which way a standing enemy looks, in degrees of yaw.</summary>
+        public float FacingYawDegrees { get; }
         public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
     }
 }

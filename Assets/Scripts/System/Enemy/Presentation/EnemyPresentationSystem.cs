@@ -27,6 +27,7 @@ namespace TowerDefense3D.Enemies
             enemySystem.EnemySpawned += HandleEnemySpawned;
             enemySystem.EnemyKilled += HandleEnemyRemoved;
             enemySystem.EnemyLeaked += HandleEnemyRemoved;
+            enemySystem.EnemyDespawned += HandleEnemyRemoved;
             combatTimelineSystem.ReactionTriggered += HandleReactionTriggered;
             isStarted = true;
         }
@@ -48,6 +49,7 @@ namespace TowerDefense3D.Enemies
             enemySystem.EnemySpawned -= HandleEnemySpawned;
             enemySystem.EnemyKilled -= HandleEnemyRemoved;
             enemySystem.EnemyLeaked -= HandleEnemyRemoved;
+            enemySystem.EnemyDespawned -= HandleEnemyRemoved;
             combatTimelineSystem.ReactionTriggered -= HandleReactionTriggered;
             viewPool.ReleaseAll();
         }

@@ -55,12 +55,23 @@ namespace TowerDefense3D.Enemies
                     order.Enemy,
                     order.SpawnPointIndex);
                 long spawnTick = Math.Max(1L, SecondsToTick(order.TimeSeconds));
+
+                // Walked along the road exactly as the combat planner and the live spawn walk it.
+                // Seeding from the road mouth for an enemy that starts part way along it would
+                // have towers leading their shots at a position it is never in.
+                Vector3 startPosition = route.Start;
+                int startPointIndex = 1;
+                if (order.StartDistanceMeters > 0f)
+                {
+                    route.Move(ref startPointIndex, ref startPosition, order.StartDistanceMeters);
+                }
+
                 seeds[index] = new EnemyTrajectorySeed(
                     order.EnemyId,
                     order.Enemy,
                     route,
-                    route.Start,
-                    1,
+                    startPosition,
+                    startPointIndex,
                     checked(spawnTick + SecondsToTick(
                         EnemySpawnPresentationTiming.SpawnMovementDelaySeconds)));
             }

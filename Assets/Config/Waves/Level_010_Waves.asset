@@ -169,3 +169,98 @@ MonoBehaviour:
       startTimeSeconds: 0
       spawnWindowSeconds: 0
       spawnPointIndex: 0
+  stationaryBoss:
+    boss: {fileID: 11400000, guid: 14e12e0e59990874db1bd54904c8147e, type: 2}
+    standDistanceMeters: 42
+    spawnPointIndex: 0
+    waves:
+    - waveNumber: 1
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 2
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 3
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 4
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 5
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 6
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 7
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 8
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+    - waveNumber: 9
+      casts:
+      - castTimeSeconds: 4
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2
+      - castTimeSeconds: 14
+        summons:
+        - definition: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
+          count: 2

@@ -15,6 +15,7 @@ namespace TowerDefense3D.Waves
         private readonly WaveSpawnPlanner spawnPlanner;
         private readonly LevelGoldSystem goldSystem;
         private readonly LevelBaseHealthSystem healthSystem;
+        private readonly IStandingBossAnchor standingBossAnchor;
         private readonly StateMachine<WavePhase> stateMachine =
             new StateMachine<WavePhase>(WavePhase.Preparation, CanTransition);
         private IReadOnlyList<WaveSpawnOrder> currentPlan = Array.Empty<WaveSpawnOrder>();
@@ -28,8 +29,10 @@ namespace TowerDefense3D.Waves
             TowerNetworkSystem towerNetworkSystem,
             WaveSpawnPlanner spawnPlanner,
             LevelGoldSystem goldSystem,
-            LevelBaseHealthSystem healthSystem)
+            LevelBaseHealthSystem healthSystem,
+            IStandingBossAnchor standingBossAnchor = null)
         {
+            this.standingBossAnchor = standingBossAnchor;
             this.schedule = schedule ?? throw new ArgumentNullException(nameof(schedule));
             this.enemySystem = enemySystem ?? throw new ArgumentNullException(nameof(enemySystem));
             this.towerNetworkSystem = towerNetworkSystem
@@ -150,9 +153,11 @@ namespace TowerDefense3D.Waves
                 return false;
             }
 
-            currentPlan = AssignEnemyIds(spawnPlanner.CreatePlan(schedule, nextWaveIndex));
+            currentPlan = AssignEnemyIds(
+                spawnPlanner.CreatePlan(schedule, nextWaveIndex, ResolveStandDistance()));
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
+            RefreshStandingBoss();
             try
             {
                 WavePlanCreated?.Invoke(currentPlan);
@@ -182,6 +187,7 @@ namespace TowerDefense3D.Waves
             }
 
             elapsedSeconds += stepSeconds;
+            enemySystem.StepStandingBossCasts(elapsedSeconds, stepSeconds);
             SpawnDueEnemies();
         }
 
@@ -261,13 +267,90 @@ namespace TowerDefense3D.Waves
             StateChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Puts the level's standing boss in place for this wave, or takes it away for the wave it
+        /// joins the fight on.
+        /// </summary>
+        /// <remarks>
+        /// Asked of the schedule rather than answered here, so this and the combat plan cannot
+        /// come to different conclusions about which wave the boss fights on.
+        /// </remarks>
+        /// <summary>
+        /// Where the boss waits: the scene marker if the level places one, otherwise the number on
+        /// the schedule.
+        /// </summary>
+        /// <remarks>
+        /// Measured each time a wave starts rather than stored, so moving the marker is the only
+        /// step - there is nothing to press afterwards and nothing that can be left out of date.
+        /// </remarks>
+        private float ResolveStandDistance()
+        {
+            StationaryBossPlan plan = schedule.StationaryBoss;
+            if (plan == null || !plan.IsAuthored)
+            {
+                return -1f;
+            }
+
+            if (standingBossAnchor == null || !standingBossAnchor.HasAnchor)
+            {
+                return plan.StandDistanceMeters;
+            }
+
+            return enemySystem.MeasureRoadDistance(
+                plan.SpawnPointIndex,
+                standingBossAnchor.WorldPosition);
+        }
+
+        private void RefreshStandingBoss()
+        {
+            StationaryBossPlan plan = schedule.StationaryBoss;
+            if (plan == null || !plan.IsAuthored)
+            {
+                return;
+            }
+
+            int waveNumber = nextWaveIndex + 1;
+            if (!plan.IsStandingOnWave(waveNumber, schedule.Waves.Count))
+            {
+                // The last wave: the plan spawns the boss as a real enemy at the same spot, so the
+                // fixture has to go or there would be two of them standing on each other.
+                enemySystem.RemoveStandingBoss();
+                return;
+            }
+
+            IReadOnlyList<StationaryBossCast> casts = plan.GetCasts(waveNumber);
+            var castTimes = new List<float>(casts.Count);
+            for (int index = 0; index < casts.Count; index++)
+            {
+                if (casts[index] != null)
+                {
+                    castTimes.Add(casts[index].CastTimeSeconds);
+                }
+            }
+
+            enemySystem.EnsureStandingBoss(
+                plan.Boss,
+                plan.SpawnPointIndex,
+                ResolveStandDistance(),
+                standingBossAnchor != null && standingBossAnchor.HasAnchor
+                    ? standingBossAnchor.FacingYawDegrees
+                    : 0f,
+                castTimes,
+                plan.Boss.SummonSkillDurationSeconds);
+        }
+
         private void SpawnDueEnemies()
         {
             while (nextSpawnIndex < currentPlan.Count
                 && currentPlan[nextSpawnIndex].TimeSeconds <= elapsedSeconds)
             {
                 WaveSpawnOrder order = currentPlan[nextSpawnIndex];
-                enemySystem.Spawn(order.EnemyId, order.Enemy, order.SpawnPointIndex);
+                enemySystem.Spawn(
+                    order.EnemyId,
+                    order.Enemy,
+                    order.SpawnPointIndex,
+                    order.StartDistanceMeters,
+                    isStanding: false);
                 nextSpawnIndex++;
             }
         }

@@ -163,6 +163,25 @@ namespace TowerDefense3D.Enemies
             SetRenderingVisible(true);
         }
 
+        /// <summary>
+        /// Turns a standing enemy to the way its marker was left pointing.
+        /// </summary>
+        /// <remarks>
+        /// Every other enemy takes its facing from the direction it is walking, which is why a
+        /// boss that never walks keeps whatever rotation its prefab happened to be authored with
+        /// until it is told otherwise. Yaw only, like movement facing, so the model stays upright.
+        /// </remarks>
+        private void ApplyStandingFacing(EnemySnapshot enemy)
+        {
+            if (!enemy.IsStanding)
+            {
+                return;
+            }
+
+            transform.rotation = Quaternion.Euler(0f, enemy.FacingYawDegrees, 0f);
+            hasFacingDirection = true;
+        }
+
         private Quaternion GetFacingRotation(Vector3 movementDirection)
         {
             // Movement and Wind push affect yaw only; authored prefab facing stays intact.
@@ -177,7 +196,11 @@ namespace TowerDefense3D.Enemies
             isAwaitingActivation = false;
             isDying = false;
             deathCompletion = null;
-            SetMoving(true);
+            // Not every enemy that appears is walking. The standing boss holds its ground for
+            // the whole level, and latching the walk animation on at activation had it marching
+            // on the spot until the wave it finally moves on.
+            SetMoving(!enemy.IsStanding);
+            ApplyStandingFacing(enemy);
             GetDamageFlashView().Bind(enemy);
             GetElementStatusView().Bind(enemy.ElementState);
             GetElementEffectView().Bind(enemy.ElementState);

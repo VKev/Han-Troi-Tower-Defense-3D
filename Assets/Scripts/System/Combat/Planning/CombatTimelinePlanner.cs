@@ -173,13 +173,23 @@ namespace TowerDefense3D.Enemies
                 RoadPath lane = roadPaths.GetLane(
                     routeIndex,
                     roadPaths.GetLaneIndex(order.EnemyId, order.Enemy));
+                // A spawn that starts part way along the road walks itself there rather than
+                // being dropped at a coordinate: the road is what decides where "twelve metres in"
+                // actually is, and which waypoint the enemy heads for next.
+                Vector3 startPosition = lane.Start;
+                int startPointIndex = 1;
+                if (order.StartDistanceMeters > 0f)
+                {
+                    lane.Move(ref startPointIndex, ref startPosition, order.StartDistanceMeters);
+                }
+
                 enemies.Add(new ShadowEnemy(
                     order.EnemyId,
                     order.Enemy,
                     lane,
                     routeIndex,
-                    lane.Start,
-                    1,
+                    startPosition,
+                    startPointIndex,
                     isSummoned: false,
                     reactionCatalog,
                     tickSeconds,
@@ -1218,6 +1228,7 @@ namespace TowerDefense3D.Enemies
             public bool IsAlive => Health > 0f;
             public bool IsHidden => Definition is StealthEnemyDefinition
                 && RevealRemainingSeconds <= 0f;
+
             public Vector3 PreviousPosition { get; set; }
             public Vector3 Position { get; set; }
             public int TargetPointIndex { get; set; }

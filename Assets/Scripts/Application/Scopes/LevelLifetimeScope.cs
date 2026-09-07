@@ -19,8 +19,15 @@ namespace TowerDefense3D.GameFlow
     [DisallowMultipleComponent]
     public sealed class LevelLifetimeScope : LifetimeScope
     {
+        [Tooltip("The reach ring drawn around a selected tower, and around the tower a link is being dragged from. Authored per level and handed to the container explicitly, because the placement preview owns a ring of its own and searching the hierarchy for the type would find whichever came first.")]
+        [SerializeField] private LinkRangeRingView selectionRangeRing;
+
         [SerializeField, Min(1)] private int levelNumber = 1;
         [SerializeField] private WaveScheduleDefinition waveSchedule;
+
+        [Tooltip("Where the standing boss waits, if this level has one. Drag it onto the spot; "
+            + "the boss appears there, snapped onto the road. Leave empty otherwise.")]
+        [SerializeField] private StandingBossAnchorView standingBossAnchor;
 
         private ActiveLevelSystemSlot activeLevelSystems;
         private LevelSystemGroup attachedSystems;
@@ -111,7 +118,18 @@ namespace TowerDefense3D.GameFlow
                     resolver.Resolve<LevelBaseHealthSystem>()),
                 Lifetime.Scoped);
             builder.Register<WaveSpawnPlanner>(Lifetime.Scoped);
-            builder.Register<WaveSystem>(Lifetime.Scoped)
+            builder.Register<WaveSystem>(
+                resolver => new WaveSystem(
+                    waveSchedule,
+                    resolver.Resolve<EnemySystem>(),
+                    resolver.Resolve<TowerNetworkSystem>(),
+                    resolver.Resolve<WaveSpawnPlanner>(),
+                    resolver.Resolve<LevelGoldSystem>(),
+                    resolver.Resolve<LevelBaseHealthSystem>(),
+                    // Optional on purpose: a level without a standing boss has no marker, and
+                    // asking the container for one that is not there would fail the whole scope.
+                    standingBossAnchor),
+                Lifetime.Scoped)
                 .AsSelf()
                 .As<IWaveSystem>();
             builder.Register<CombatTimelinePlanner>(
@@ -126,6 +144,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<HeroAttackPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
+            builder.RegisterInstance<ILinkRangeView>(selectionRangeRing);
             builder.Register<TowerNetworkHudPresenter>(Lifetime.Scoped);
             builder.Register<WaveHudPresenter>(Lifetime.Scoped);
             builder.Register<LevelSkipCheatPresenter>(Lifetime.Scoped);
@@ -216,17 +235,15 @@ namespace TowerDefense3D.GameFlow
 
         private void BindLevelOutcomeHud(IObjectResolver container, GameFlowSystem gameFlowSystem)
         {
-            LevelCatalogEntry entry = GetLevelEntry(container);
             bool hasNextLevel = container.Resolve<LevelCatalog>()
                 .TryGetNextLevel(levelNumber, out _);
             int currentLevelNumber = levelNumber;
             container.Resolve<LevelOutcomeHudPresenter>().BindLevel(
-                entry.DisplayName,
                 hasNextLevel,
                 () => gameFlowSystem.RequestReplayLevel(currentLevelNumber),
                 () => gameFlowSystem.RequestPlayNextLevel(currentLevelNumber),
                 gameFlowSystem.RequestReturnToLevelMenu,
-                () => gameFlowSystem.ReportLevelCleared(currentLevelNumber));
+                stars => gameFlowSystem.ReportLevelCleared(currentLevelNumber, stars));
         }
 
         /// <summary>

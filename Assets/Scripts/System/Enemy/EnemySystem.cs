@@ -43,7 +43,41 @@ namespace TowerDefense3D.Enemies
         public event Action<EnemySnapshot> EnemyKilled;
         public event Action<EnemySnapshot> EnemyLeaked;
 
-        public int LivingCount => enemiesById.Count;
+        /// <summary>
+        /// Removed without dying and without reaching the end - the standing boss stepping aside
+        /// for the wave it fights on. It pays no reward and costs no health, which is exactly why
+        /// it cannot be announced as a kill or as a leak.
+        /// </summary>
+        public event Action<EnemySnapshot> EnemyDespawned;
+
+        /// <summary>
+        /// Enemies that hold the wave open. The standing boss is deliberately not one of them: it
+        /// is present for the whole level, so counting it would mean wave one never ends.
+        /// </summary>
+        private EnemyInstance standingBoss;
+        private IReadOnlyList<float> standingCastTimes = Array.Empty<float>();
+        private float standingCastDurationSeconds;
+        private int standingNextCastIndex;
+
+        public int LivingCount
+        {
+            get
+            {
+                int count = 0;
+                for (int index = 0; index < activeEnemies.Count; index++)
+                {
+                    if (!activeEnemies[index].IsStanding)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        /// <summary>Every enemy on the board, standing boss included.</summary>
+        public int SpawnedCount => enemiesById.Count;
 
         public EnemyInstance Spawn(EnemyDefinition definition)
         {
@@ -62,8 +96,190 @@ namespace TowerDefense3D.Enemies
             EnemyDefinition definition,
             int spawnPointIndex)
         {
+            return Spawn(enemyId, definition, spawnPointIndex, 0f, isStanding: false);
+        }
+
+        /// <summary>
+        /// Spawns an enemy that begins part way along its road, and may be the boss that stands
+        /// there.
+        /// </summary>
+        /// <remarks>
+        /// The start point is walked along the road rather than set as a coordinate, exactly as
+        /// the planner walks it. Both sides have to arrive at the same place and the same next
+        /// waypoint, or the first planned frame would jerk the enemy somewhere else.
+        /// </remarks>
+        internal EnemyInstance Spawn(
+            long enemyId,
+            EnemyDefinition definition,
+            int spawnPointIndex,
+            float startDistanceMeters,
+            bool isStanding)
+        {
             RoadPath route = roadPaths.GetForEnemy(enemyId, definition, spawnPointIndex);
-            return SpawnAt(enemyId, definition, route.Start, 1, route);
+            Vector3 position = route.Start;
+            int targetPointIndex = 1;
+            if (startDistanceMeters > 0f)
+            {
+                route.Move(ref targetPointIndex, ref position, startDistanceMeters);
+            }
+
+            EnemyInstance enemy = SpawnAt(enemyId, definition, position, targetPointIndex, route);
+            enemy.IsStanding = isStanding;
+            return enemy;
+        }
+
+        /// <summary>
+        /// Puts the level's standing boss on the road, or leaves the one already there, and gives
+        /// it this wave's cast times.
+        /// </summary>
+        /// <remarks>
+        /// It is spawned outside the combat plan on purpose. The plan finishes when its enemy list
+        /// empties, and a boss that cannot be hurt and never moves would keep that list occupied
+        /// until the tick horizon ran out and the wave was refused. Since it takes no part in
+        /// combat until the wave it fights on, it does not belong in the deterministic path at
+        /// all - only the enemies it summons do, and those are planned as ordinary spawns.
+        ///
+        /// The same instance is kept from wave to wave rather than respawned. Waves are separated
+        /// by a preparation phase of whatever length the player likes, and a boss that vanished
+        /// between waves and reappeared would read as a bug.
+        /// </remarks>
+        internal void EnsureStandingBoss(
+            EnemyDefinition definition,
+            int spawnPointIndex,
+            float standDistanceMeters,
+            float facingYawDegrees,
+            IReadOnlyList<float> castTimesSeconds,
+            float castDurationSeconds)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            if (standingBoss == null || !standingBoss.IsAlive)
+            {
+                standingBoss = Spawn(
+                    ReserveEnemyId(),
+                    definition,
+                    spawnPointIndex,
+                    standDistanceMeters,
+                    isStanding: true);
+            }
+
+            // Re-read every wave, so turning the marker takes effect on the next wave rather than
+            // only on a fresh level.
+            standingBoss.FacingYawDegrees = facingYawDegrees;
+
+            standingCastTimes = castTimesSeconds ?? Array.Empty<float>();
+            standingCastDurationSeconds = castDurationSeconds;
+            standingNextCastIndex = 0;
+        }
+
+        /// <summary>
+        /// Takes the standing boss off the board, for the wave it joins the fight on.
+        /// </summary>
+        internal void RemoveStandingBoss()
+        {
+            if (standingBoss == null)
+            {
+                return;
+            }
+
+            enemiesById.Remove(standingBoss.Id);
+            activeEnemies.Remove(standingBoss);
+            PublishEnemyDespawned(CreateSnapshot(standingBoss));
+            standingBoss = null;
+            standingCastTimes = Array.Empty<float>();
+            standingNextCastIndex = 0;
+        }
+
+        /// <summary>
+        /// Runs the standing boss's cast clock, against the wave's own elapsed time.
+        /// </summary>
+        /// <remarks>
+        /// Driven by the wave rather than by this system's <see cref="Step"/>, because that method
+        /// is never called during play - every other enemy is moved by the frames the combat plan
+        /// recorded, so the live step survives only for tests. A cast clock put there would never
+        /// tick and the boss would stand silent all level.
+        ///
+        /// The wave's elapsed time is also the clock the cast times are authored against, so
+        /// reading it directly removes a second counter that could drift from it.
+        ///
+        /// Live rather than planned is allowed here precisely because nothing depends on it: the
+        /// boss deals no damage and takes none, so the cast is animation and nothing else. What it
+        /// appears to produce was placed in the wave plan at the matching times.
+        /// </remarks>
+        internal void StepStandingBossCasts(float waveElapsedSeconds, float stepSeconds)
+        {
+            if (standingBoss == null || !standingBoss.IsAlive)
+            {
+                return;
+            }
+
+            if (standingBoss.SkillCastRemainingSeconds > 0f)
+            {
+                standingBoss.SkillCastRemainingSeconds = Mathf.Max(
+                    0f,
+                    standingBoss.SkillCastRemainingSeconds - stepSeconds);
+                return;
+            }
+
+            while (standingNextCastIndex < standingCastTimes.Count
+                && standingCastTimes[standingNextCastIndex] <= waveElapsedSeconds)
+            {
+                standingNextCastIndex++;
+                standingBoss.SkillCastRemainingSeconds = standingCastDurationSeconds;
+                standingBoss.SkillCastVersion++;
+            }
+        }
+
+        /// <summary>
+        /// How far along a road the point nearest <paramref name="worldPosition"/> lies.
+        /// </summary>
+        /// <remarks>
+        /// Lives here because this is where the roads are. It projects rather than requiring the
+        /// point to be on the road, so a marker dropped roughly in place still resolves to
+        /// somewhere the boss can stand.
+        /// </remarks>
+        internal float MeasureRoadDistance(int spawnPointIndex, Vector3 worldPosition)
+        {
+            // Enemy ids start at one, and route selection rejects anything lower. There is no real
+            // enemy to ask about here - ids are handed out after the plan is built - so the first
+            // id is used to pick a route deterministically. Where a spawn point owns a single
+            // route, which is the ordinary case, every id gives the same answer anyway.
+            int routeIndex = roadPaths.GetRouteIndex(1L, spawnPointIndex);
+
+            // The centre lane, because a boss always walks it.
+            RoadPath road = roadPaths.GetLane(routeIndex, RoadPathSet.CenterLaneIndex);
+            float travelled = 0f;
+            float best = 0f;
+            float bestSquared = float.MaxValue;
+
+            for (int index = 1; index < road.PointCount; index++)
+            {
+                Vector3 from = road.GetPoint(index - 1);
+                Vector3 to = road.GetPoint(index);
+                Vector3 segment = to - from;
+                float lengthSquared = segment.sqrMagnitude;
+                if (lengthSquared <= 0.000001f)
+                {
+                    continue;
+                }
+
+                float length = Mathf.Sqrt(lengthSquared);
+                float along = Mathf.Clamp01(Vector3.Dot(worldPosition - from, segment) / lengthSquared);
+                Vector3 candidate = from + (segment * along);
+                float squared = (candidate - worldPosition).sqrMagnitude;
+                if (squared < bestSquared)
+                {
+                    bestSquared = squared;
+                    best = travelled + (length * along);
+                }
+
+                travelled += length;
+            }
+
+            return best;
         }
 
         internal long ReserveEnemyId()
@@ -167,6 +383,13 @@ namespace TowerDefense3D.Enemies
             {
                 EnemyInstance enemy = activeEnemies[index];
                 enemy.PreviousPosition = enemy.Position;
+
+                // The standing boss never advances.
+                if (enemy.IsStanding)
+                {
+                    continue;
+                }
+
                 float movementSeconds = stepSeconds;
                 if (enemy.SpawnDelayRemainingSeconds > 0f)
                 {
@@ -319,6 +542,16 @@ namespace TowerDefense3D.Enemies
         private void QueueBossSummons(EnemyInstance boss, float stepSeconds)
         {
             if (!(boss.Definition is SummonerBossEnemyDefinition definition))
+            {
+                return;
+            }
+
+            // The standing boss summons on the wave's timetable, and those summons are in the
+            // combat plan already. Letting the health-driven phases run for it as well would
+            // summon everything twice - and the second set would be spawned live, outside the
+            // plan, which is precisely the kind of enemy the precomputed timeline cannot account
+            // for. It also drives its own cast clock, which this would fight over.
+            if (boss.IsStanding)
             {
                 return;
             }
@@ -488,7 +721,14 @@ namespace TowerDefense3D.Enemies
                 enemy.RemainingThermalShieldHits,
                 enemy.LiftHeightMeters,
                 enemy.SkillCastVersion,
-                enemy.IsSpeedBuffed);
+                enemy.IsSpeedBuffed,
+                enemy.IsStanding,
+                enemy.FacingYawDegrees);
+        }
+
+        private void PublishEnemyDespawned(EnemySnapshot snapshot)
+        {
+            EnemyDespawned?.Invoke(snapshot);
         }
 
         private void PublishEnemyKilled(EnemySnapshot snapshot)

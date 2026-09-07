@@ -34,6 +34,15 @@ namespace TowerDefense3D.Enemies
         public Vector3 PreviousPosition { get; internal set; }
         public bool IsAlive => Health > 0f;
         public bool IsSummoned { get; internal set; }
+
+        /// <summary>
+        /// The boss standing on the road for this wave. It does not move, cannot be hurt, and does
+        /// not hold the wave open.
+        /// </summary>
+        public bool IsStanding { get; internal set; }
+
+        /// <summary>Which way a standing enemy looks. Meaningless for one that walks.</summary>
+        public float FacingYawDegrees { get; internal set; }
         public bool IsHidden => Definition is StealthEnemyDefinition
             && RevealRemainingSeconds <= 0f;
         public float RevealRemainingSeconds { get; internal set; }

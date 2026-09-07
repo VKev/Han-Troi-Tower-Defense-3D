@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Summoner Boss
   rank: 2
   viewPrefab: {fileID: 6883415940259301562, guid: 1d980e33de5cb7643b1094a93e32d6f8, type: 3}
-  icon: {fileID: -222825757, guid: 12a0acacaf946254aa7c2ff18679e1b7, type: 3}
+  icon: {fileID: 197390862, guid: be9de011f11916341bf3573aea25f250, type: 3}
   baseMaxHealth: 600
   baseMoveSpeed: 0.8
   baseHitRadius: 1.172

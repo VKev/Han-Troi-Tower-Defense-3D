@@ -44,6 +44,31 @@ namespace TowerDefense3D.Enemies
             int castVersion,
             List<ScheduledSummon> into)
         {
+            BuildFromEntries(
+                definition,
+                phase?.Entries,
+                bossId,
+                castVersion,
+                into);
+        }
+
+        /// <summary>
+        /// The same running order, built from a bare list of entries.
+        /// </summary>
+        /// <remarks>
+        /// A boss fighting on the road takes its entries from the summon phase its health has
+        /// reached; a boss standing on the road takes them from the wave's authored cast. The
+        /// arrangement of the summons - the order, the sides, the spacing, the timing across the
+        /// cast - is the same question in both cases, so it is answered once here rather than
+        /// copied and left to drift.
+        /// </remarks>
+        public static void BuildFromEntries(
+            SummonerBossEnemyDefinition definition,
+            IReadOnlyList<SummonerBossEnemyDefinition.SummonedEnemyEntry> entries,
+            long bossId,
+            int castVersion,
+            List<ScheduledSummon> into)
+        {
             if (definition == null)
             {
                 throw new ArgumentNullException(nameof(definition));
@@ -55,15 +80,20 @@ namespace TowerDefense3D.Enemies
             }
 
             into.Clear();
-            if (phase == null)
+            if (entries == null)
             {
                 return;
             }
 
             var order = new List<EnemyDefinition>();
-            for (int entryIndex = 0; entryIndex < phase.Entries.Count; entryIndex++)
+            for (int entryIndex = 0; entryIndex < entries.Count; entryIndex++)
             {
-                SummonerBossEnemyDefinition.SummonedEnemyEntry entry = phase.Entries[entryIndex];
+                SummonerBossEnemyDefinition.SummonedEnemyEntry entry = entries[entryIndex];
+                if (entry == null)
+                {
+                    continue;
+                }
+
                 for (int count = 0; count < entry.Count; count++)
                 {
                     if (entry.Definition != null)

@@ -11,8 +11,13 @@ namespace TowerDefense3D.Waves
         [SerializeField] private int randomSeed;
         [SerializeField] private List<WaveDefinition> waves = new List<WaveDefinition>();
 
+        [Tooltip("A boss that stands on the road from the first wave, casting on a timer, and only "
+            + "joins the fight on the last wave. Leave its boss empty for a level without one.")]
+        [SerializeField] private StationaryBossPlan stationaryBoss = new StationaryBossPlan();
+
         public int RandomSeed => randomSeed;
         public IReadOnlyList<WaveDefinition> Waves => waves;
+        public StationaryBossPlan StationaryBoss => stationaryBoss;
 
         public IReadOnlyList<string> CollectValidationErrors()
         {
@@ -28,6 +33,7 @@ namespace TowerDefense3D.Waves
                 waves[waveIndex].CollectValidationErrors(errors, waveIndex);
             }
 
+            stationaryBoss?.CollectValidationErrors(errors, waves.Count);
             return errors;
         }
     }

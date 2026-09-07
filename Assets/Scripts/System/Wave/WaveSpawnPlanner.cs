@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Enemies;
 
 namespace TowerDefense3D.Waves
 {
@@ -8,6 +9,18 @@ namespace TowerDefense3D.Waves
         public IReadOnlyList<WaveSpawnOrder> CreatePlan(
             WaveScheduleDefinition schedule,
             int waveIndex)
+        {
+            return CreatePlan(schedule, waveIndex, standDistanceMeters: -1f);
+        }
+
+        /// <summary>
+        /// <paramref name="standDistanceMeters"/> is where the standing boss waits, measured from
+        /// the scene marker when the level has one. A negative value falls back to the schedule.
+        /// </summary>
+        public IReadOnlyList<WaveSpawnOrder> CreatePlan(
+            WaveScheduleDefinition schedule,
+            int waveIndex,
+            float standDistanceMeters)
         {
             if (schedule == null)
             {
@@ -41,8 +54,94 @@ namespace TowerDefense3D.Waves
                 }
             }
 
+            AppendStandingBoss(schedule, waveIndex, standDistanceMeters, orders, ref sequence);
             orders.Sort(CompareOrders);
             return orders;
+        }
+
+        /// <summary>
+        /// Adds the boss that stands on the road this wave, and the enemies its casts produce.
+        /// </summary>
+        /// <remarks>
+        /// The summons are written out here as ordinary spawn orders rather than left for the
+        /// combat planner to conjure at run time. Everything the planner needs then arrives the
+        /// way every other enemy arrives, so there is one spawning path instead of two that have
+        /// to agree.
+        ///
+        /// Their placement comes from <see cref="BossSummonSchedule"/>, the same code the fighting
+        /// boss uses, so a summon steps out beside the boss with the same spacing whether the boss
+        /// is standing or moving.
+        ///
+        /// The standing boss itself is deliberately absent. It cannot be hurt and never moves, so
+        /// it would sit in the planner's enemy list for ever and the plan - which finishes when
+        /// that list empties - would run out its tick horizon and be rejected. It has no combat
+        /// role until the last wave, so it has no business in the deterministic plan; it is a live
+        /// fixture instead. Only what it produces has to be planned.
+        /// </remarks>
+        private static void AppendStandingBoss(
+            WaveScheduleDefinition schedule,
+            int waveIndex,
+            float standDistanceMeters,
+            List<WaveSpawnOrder> orders,
+            ref int sequence)
+        {
+            StationaryBossPlan plan = schedule.StationaryBoss;
+            if (plan == null || !plan.IsAuthored)
+            {
+                return;
+            }
+
+            float standDistance = standDistanceMeters >= 0f
+                ? standDistanceMeters
+                : plan.StandDistanceMeters;
+
+            int waveNumber = waveIndex + 1;
+            if (!plan.IsStandingOnWave(waveNumber, schedule.Waves.Count))
+            {
+                // The last wave. The boss sets off from the spot it has been standing on all
+                // level, as an ordinary enemy: it moves, it can be hurt, and the wave is not over
+                // until it falls. Emitted here rather than left to a spawn batch because a batch
+                // cannot say "start part way along the road", and starting it back at the road
+                // mouth would teleport it away from where the player has watched it stand.
+                orders.Add(new WaveSpawnOrder(
+                    0f,
+                    plan.Boss,
+                    sequence++,
+                    plan.SpawnPointIndex,
+                    standDistance));
+                return;
+            }
+
+            IReadOnlyList<StationaryBossCast> casts = plan.GetCasts(waveNumber);
+            SummonerBossEnemyDefinition boss = plan.Boss;
+            var scheduled = new List<ScheduledSummon>();
+            for (int castIndex = 0; castIndex < casts.Count; castIndex++)
+            {
+                StationaryBossCast cast = casts[castIndex];
+                if (cast == null)
+                {
+                    continue;
+                }
+
+                BossSummonSchedule.BuildFromEntries(
+                    boss,
+                    cast.Summons,
+                    bossId: waveNumber,
+                    castVersion: castIndex,
+                    scheduled);
+
+                for (int index = 0; index < scheduled.Count; index++)
+                {
+                    ScheduledSummon summon = scheduled[index];
+                    // Same road as the boss, or a summon steps out onto a different one.
+                    orders.Add(new WaveSpawnOrder(
+                        cast.CastTimeSeconds + summon.DueSeconds,
+                        summon.Definition,
+                        sequence++,
+                        plan.SpawnPointIndex,
+                        standDistance + summon.ForwardOffsetMeters));
+                }
+            }
         }
 
         private static int CombineSeed(int seed, int waveIndex)
