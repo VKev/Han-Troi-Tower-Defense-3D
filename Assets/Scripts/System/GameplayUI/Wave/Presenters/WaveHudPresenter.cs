@@ -47,7 +47,13 @@ namespace TowerDefense3D.GameFlow
         private void HandleStartWaveRequested()
         {
             // The error is dropped on purpose: the HUD no longer carries a line to print it on.
-            waveSystem.TryStartWave(out _);
+            if (!waveSystem.TryStartWave(out string error))
+            {
+                // Discarding this used to make a refused wave indistinguishable from a dead
+                // button: no message, no log, nothing in the console to search for. The reason is
+                // always worth having even before there is somewhere on screen to print it.
+                Debug.LogWarning("Wave refused: " + error);
+            }
             Refresh();
         }
 
