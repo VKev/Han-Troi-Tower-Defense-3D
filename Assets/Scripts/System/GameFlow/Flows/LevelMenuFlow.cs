@@ -45,6 +45,7 @@ namespace TowerDefense3D.GameFlow
                     entry.DisplayName,
                     isUnlocked,
                     isCleared,
+                    saveSystem.Progress.GetStars(entry.LevelNumber),
                     false));
             }
 
@@ -78,19 +79,52 @@ namespace TowerDefense3D.GameFlow
         }
 
         /// <summary>
-        /// Persists one level as beaten. Replaying a level already cleared costs no save write.
+        /// Persists one level as beaten at <paramref name="stars"/>. Replaying a level already
+        /// cleared costs no save write unless the replay beat its recorded score.
         /// </summary>
-        public void MarkLevelCleared(int levelNumber)
+        /// <remarks>
+        /// The early-out used to be "already cleared", which was right while a clear was the
+        /// only thing recorded. It is wrong now: a player replaying a beaten level to earn its
+        /// third star would have had that run thrown away. Whether there is anything new to
+        /// write is a question only the progress can answer, so it is left to answer it.
+        /// </remarks>
+        public void MarkLevelCleared(int levelNumber, int stars)
         {
-            if (saveSystem.Progress.IsCleared(levelNumber))
+            saveSystem.TryMarkClearedAndSave(levelNumber, stars, out SaveWriteResult writeResult);
+            if (!writeResult.IsSuccess)
+            {
+                gameFlowSystem.ShowSaveWarning(writeResult.Error);
+                return;
+            }
+
+            UnlockNextLevel(levelNumber);
+        }
+
+        /// <summary>
+        /// Opens the level that follows the one just beaten.
+        /// </summary>
+        /// <remarks>
+        /// Beating a level is what earns the next one, and until this ran nothing did that. The
+        /// clear was recorded and the journey still showed the next level locked; it only ever
+        /// opened because <see cref="PlayLevel"/> unlocks whatever it is asked to load. So going
+        /// straight on from the victory panel worked while going back to the menu did not, which
+        /// looked like the win had been thrown away.
+        ///
+        /// A level already open is left alone, so replaying an old level to improve its stars does
+        /// not reopen anything or cost a write.
+        /// </remarks>
+        private void UnlockNextLevel(int levelNumber)
+        {
+            if (!levelCatalog.TryGetNextLevel(levelNumber, out LevelCatalogEntry next)
+                || saveSystem.Progress.IsUnlocked(next.LevelNumber))
             {
                 return;
             }
 
-            saveSystem.TryMarkClearedAndSave(levelNumber, out SaveWriteResult writeResult);
-            if (!writeResult.IsSuccess)
+            saveSystem.TryUnlockAndSave(next.LevelNumber, out SaveWriteResult unlockResult);
+            if (!unlockResult.IsSuccess)
             {
-                gameFlowSystem.ShowSaveWarning(writeResult.Error);
+                gameFlowSystem.ShowSaveWarning(unlockResult.Error);
             }
         }
 
