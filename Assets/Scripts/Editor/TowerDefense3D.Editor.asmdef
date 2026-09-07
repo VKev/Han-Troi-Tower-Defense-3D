@@ -1,23 +1,25 @@
 {
-    "name": "TowerDefense3D.Editor",
-    "rootNamespace": "TowerDefense3D.Editor",
-    "references": [
-        "TowerDefense3D.System.Runtime",
-        "TowerDefense3D.Components.Runtime",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Unity.ugui",
-        "Unity.TextMeshPro"
-    ],
+    "rootNamespace": "TowerDefense3D.Editor", 
+    "excludePlatforms": [], 
     "includePlatforms": [
         "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    ], 
+    "name": "TowerDefense3D.Editor", 
+    "allowUnsafeCode": false, 
+    "versionDefines": [], 
+    "noEngineReferences": false, 
+    "references": [
+        "TowerDefense3D.System.Runtime", 
+        "TowerDefense3D.Components.Runtime", 
+        "UnityEngine.TestRunner", 
+        "UnityEditor.TestRunner", 
+        "Unity.ugui", 
+        "Unity.TextMeshPro", 
+        "Unity.RenderPipelines.Universal.Runtime", 
+        "Unity.RenderPipelines.Core.Runtime"
+    ], 
+    "precompiledReferences": [], 
+    "defineConstraints": [], 
+    "overrideReferences": false, 
+    "autoReferenced": true
 }
