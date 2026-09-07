@@ -53,9 +53,23 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("Green body inside the gold ring: picked and beaten.")]
         [SerializeField] private GameObject clearedSelectedNode;
 
+        [Header("Score")]
+        [Tooltip("The row of stars under the node. Hidden outright on a level not yet beaten.")]
+        [SerializeField] private GameObject starRow;
+
+        [Tooltip("The three star slots, left to right. Each is filled or hollow, never hidden.")]
+        [SerializeField] private Image[] starSlots = Array.Empty<Image>();
+
+        [Tooltip("Drawn in a slot the run earned.")]
+        [SerializeField] private Sprite earnedStar;
+
+        [Tooltip("Drawn in a slot the run did not earn, so the score reads out of three.")]
+        [SerializeField] private Sprite unearnedStar;
+
         private Action<int> onSelected;
         private int levelNumber;
         private LevelNodeProgress progress;
+        private int stars;
         private bool isSelected;
 
         private void Awake()
@@ -76,6 +90,7 @@ namespace TowerDefense3D.GameFlow
             levelNumber = state.LevelNumber;
             onSelected = selected;
             this.progress = progress;
+            stars = state.Stars;
 
             // The number is the only thing the node says; the level's name is left to the
             // selection panel, which has the room to set it properly.
@@ -91,6 +106,7 @@ namespace TowerDefense3D.GameFlow
             onSelected = null;
             levelNumber = 0;
             progress = LevelNodeProgress.Locked;
+            stars = LevelStarRating.NoStars;
             isSelected = false;
         }
 
@@ -109,10 +125,43 @@ namespace TowerDefense3D.GameFlow
             // A locked node has no selected state of its own: it cannot be picked, so showing a
             // ring around it would promise something the button refuses to do.
             Show(lockedNode, locked);
+
+            // The number goes with it. The padlock sits dead centre where the digits do, and both
+            // are drawn in the same cream, so leaving the number on turns a locked node into a
+            // smear rather than into a node that says which level it is.
+            Show(label.gameObject, !locked);
             Show(unlockedNode, unlocked && !isSelected);
             Show(unlockedSelectedNode, unlocked && isSelected);
             Show(clearedNode, cleared && !isSelected);
             Show(clearedSelectedNode, cleared && isSelected);
+            ApplyStars(cleared);
+        }
+
+        /// <summary>
+        /// Fills the row out of three, and shows the row only on a level actually beaten.
+        /// </summary>
+        /// <remarks>
+        /// An unbeaten level hides the row rather than showing three hollow stars. Three hollows
+        /// under every locked node turns the map into a wall of empty score and buries the one
+        /// thing the row is for, which is seeing at a glance where a star is still to be had.
+        /// </remarks>
+        private void ApplyStars(bool cleared)
+        {
+            Show(starRow, cleared && starSlots.Length > 0);
+            if (!cleared)
+            {
+                return;
+            }
+
+            for (int index = 0; index < starSlots.Length; index++)
+            {
+                if (starSlots[index] == null)
+                {
+                    continue;
+                }
+
+                starSlots[index].sprite = index < stars ? earnedStar : unearnedStar;
+            }
         }
 
         private static void Show(GameObject node, bool visible)

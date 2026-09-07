@@ -9,20 +9,26 @@ namespace TowerDefense3D.GameFlow
     [DisallowMultipleComponent]
     public sealed class TowerPlacementDragButtonView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        private static readonly Color LockedTint = new Color(0.34f, 0.35f, 0.38f, 0.94f);
-        private static readonly Color LockedTextColor = new Color(0.58f, 0.60f, 0.64f, 1f);
-
         [SerializeField] private Button button;
         [SerializeField] private TowerCombatDefinition definition;
         [SerializeField] private Text nameText;
         [SerializeField] private Text costText;
+
+        [Tooltip("The tower's element icon. The padlock replaces it outright while locked.")]
+        [SerializeField] private Image iconImage;
+
+        [Tooltip("The coin pip beside the cost. A locked tower quotes no price, so it is hidden.")]
+        [SerializeField] private Image coinImage;
+
+        [Tooltip("The dark band the cost row sits in. It goes with the row it exists for.")]
+        [SerializeField] private Image costShade;
+
+        [Tooltip("The padlock. It becomes the tile's icon while the tower is locked.")]
+        [SerializeField] private GameObject lockBadge;
+
         private int activePointerId;
         private bool isDragging;
         private bool isLocked;
-        private Color unlockedBackgroundColor;
-        private Color unlockedNameColor;
-        private Color unlockedCostColor;
-        private bool hasCachedUnlockedColors;
 
         public event Action<TowerCombatDefinition, TowerPlacementPointerEvent> DragBegan;
         public event Action<TowerPlacementPointerEvent> DragMoved;
@@ -45,21 +51,27 @@ namespace TowerDefense3D.GameFlow
                 nameText.text = definition.Core.DisplayName.ToUpperInvariant();
             }
 
+            // The word "LOCKED" used to live here; the padlock says it now, and the whole
+            // cost row is hidden while locked, so the text only ever carries the price.
             if (costText != null)
             {
-                costText.text = isLocked
-                    ? "LOCKED"
-                    : definition.Core.Economy.BuildCost.ToString("N0");
+                costText.text = definition.Core.Economy.BuildCost.ToString("N0");
             }
         }
 
         /// <summary>
-        /// A locked tower keeps its slot in the build bar but goes flat grey and stops
-        /// responding, so the player can see what is still to come without being able to drag it.
+        /// A locked tower keeps its slot in the build bar so the player can see what is still to
+        /// come, but it stops responding and strips back to a single padlock: no element icon, no
+        /// price, no coin, and none of the dark band that price sat in.
         /// </summary>
+        /// <remarks>
+        /// The tile's own darkening is not done here. The Button transitions by ColorTint and
+        /// overwrites its target graphic's colour whenever interactable changes, so anything set
+        /// from this script would be clobbered a frame later. The locked look therefore lives in
+        /// the Button's disabledColor, which multiplies the tile and so keeps its hue.
+        /// </remarks>
         public void SetLocked(bool locked)
         {
-            CacheUnlockedColors();
             isLocked = locked;
             if (locked)
             {
@@ -67,7 +79,7 @@ namespace TowerDefense3D.GameFlow
                 button.interactable = false;
             }
 
-            ApplyLockedColors();
+            ApplyLockedVisibility();
             ApplyDefinitionLabels();
         }
 
@@ -82,38 +94,39 @@ namespace TowerDefense3D.GameFlow
             button.interactable = allowed;
         }
 
-        private void CacheUnlockedColors()
+        /// <summary>Everything the locked state shows or hides.</summary>
+        private void ApplyLockedVisibility()
         {
-            if (hasCachedUnlockedColors)
+            if (iconImage != null)
             {
-                return;
+                iconImage.enabled = !isLocked;
             }
 
-            Image background = Background;
-            unlockedBackgroundColor = background != null ? background.color : Color.white;
-            unlockedNameColor = nameText != null ? nameText.color : Color.white;
-            unlockedCostColor = costText != null ? costText.color : Color.white;
-            hasCachedUnlockedColors = true;
-        }
-
-        private Image Background => button.targetGraphic as Image ?? GetComponent<Image>();
-
-        private void ApplyLockedColors()
-        {
-            Image background = Background;
-            if (background != null)
-            {
-                background.color = isLocked ? LockedTint : unlockedBackgroundColor;
-            }
-
+            // The price, its coin and the band behind them are one unit: a locked tower shows
+            // none of it rather than greying it in place.
             if (nameText != null)
             {
-                nameText.color = isLocked ? LockedTextColor : unlockedNameColor;
+                nameText.enabled = !isLocked;
             }
 
             if (costText != null)
             {
-                costText.color = isLocked ? LockedTextColor : unlockedCostColor;
+                costText.enabled = !isLocked;
+            }
+
+            if (coinImage != null)
+            {
+                coinImage.enabled = !isLocked;
+            }
+
+            if (costShade != null)
+            {
+                costShade.enabled = !isLocked;
+            }
+
+            if (lockBadge != null)
+            {
+                lockBadge.SetActive(isLocked);
             }
         }
 

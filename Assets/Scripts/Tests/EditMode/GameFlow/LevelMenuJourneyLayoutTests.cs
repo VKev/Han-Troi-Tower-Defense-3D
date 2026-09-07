@@ -49,6 +49,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                     entry.DisplayName,
                     isUnlocked: entry.LevelNumber <= UnlockedThrough,
                     isCleared: entry.LevelNumber < UnlockedThrough,
+                    stars: LevelStarRating.MaximumStars,
                     isBusy: false));
             }
         }

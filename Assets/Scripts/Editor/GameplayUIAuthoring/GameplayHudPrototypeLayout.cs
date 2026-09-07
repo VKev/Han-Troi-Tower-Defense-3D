@@ -28,8 +28,6 @@ namespace TowerDefense3D.GameFlow.Editor
         private static readonly Color NeutralButtonColor = new Color(0.13f, 0.15f, 0.18f, 0.94f);
         private static readonly Color BonusColor = new Color(1f, 0.90f, 0.66f, 1f);
         private static readonly Color DimColor = new Color(0.01f, 0.02f, 0.03f, 0.78f);
-        private static readonly Color CardColor = new Color(0.09f, 0.10f, 0.13f, 0.98f);
-        private static readonly Color NextLevelColor = new Color(0.13f, 0.52f, 0.30f, 1f);
         private static readonly Color CheatButtonColor = new Color(0.34f, 0.18f, 0.46f, 0.94f);
 
         // One build button, authored rather than derived: the prefab owns the hit area, the two
@@ -335,14 +333,23 @@ namespace TowerDefense3D.GameFlow.Editor
         }
 
         /// <summary>
-        /// The victory and defeat panel. It hangs off the canvas rather than off the safe area so
-        /// its dim runs edge to edge - under the notch included - instead of leaving a border of
-        /// live gameplay around a screen that is meant to be over. The card it dims behind is
-        /// centred and far narrower than the display, so nothing readable lands under a cutout.
+        /// Places the victory and defeat panel and leaves its contents alone.
         /// </summary>
+        /// <remarks>
+        /// Authored art now - a framed card, a title plaque on leaves, a star row over a burst,
+        /// two inset rows and three drawn buttons - so a rebuild has no business repainting it,
+        /// the same bargain the frog cluster and the corner buttons get. What a rebuild still
+        /// owns is that the panel hangs off the canvas rather than off the safe area, so its dim
+        /// runs edge to edge - under the notch included - instead of leaving a border of live
+        /// gameplay around a screen that is meant to be over.
+        ///
+        /// The dim itself is still set here because it is not art: it is a plain quad, and it has
+        /// to stay one. The sliced rounded sprite the prototype panels use rounds the display
+        /// corners at full screen and leaves a hairline of gameplay down every edge.
+        /// </remarks>
         private static void BuildLevelOutcomeHud(Transform canvas, Transform safeArea)
         {
-            // Superseded by the shared victory/defeat panel below.
+            // Superseded by the shared victory/defeat panel.
             DeleteChild(safeArea, "Victory HUD");
 
             Transform hud = canvas.Find("Outcome HUD");
@@ -359,74 +366,28 @@ namespace TowerDefense3D.GameFlow.Editor
 
             if (hud == null)
             {
-                var created = new GameObject("Outcome HUD", typeof(RectTransform), typeof(LevelOutcomeHudView));
-                created.transform.SetParent(canvas, false);
-                hud = created.transform;
+                Debug.LogWarning(
+                    "Gameplay UI prefab has no 'Outcome HUD'. It is authored art and a rebuild "
+                    + "no longer creates it, so nothing was placed.");
+                return;
             }
 
             StretchToParent((RectTransform)hud);
 
-            RectTransform overlay = EnsurePanel(hud, "Outcome Root", DimColor);
+            var overlay = (RectTransform)hud.Find("Outcome Root");
+            if (overlay == null)
+            {
+                return;
+            }
+
             StretchToParent(overlay);
             Image dim = overlay.GetComponent<Image>();
-
-            // A plain quad, not the sliced rounded sprite the panels use: at full screen that
-            // sprite rounds the display corners and leaves a hairline of gameplay along every edge.
             dim.sprite = null;
             dim.type = Image.Type.Simple;
+            dim.color = DimColor;
 
             // Blocks board and HUD input while the outcome panel is up.
             dim.raycastTarget = true;
-
-            RectTransform card = EnsurePanel(overlay, "Outcome Card", CardColor);
-            SetRect(
-                card,
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(760f, 320f));
-
-            Text title = Label(card, "Outcome Title", "VICTORY", Vector2.zero, Vector2.zero,
-                44, AccentColor, TextAnchor.MiddleCenter, FontStyle.Bold);
-            SetRect(
-                (RectTransform)title.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -36f),
-                new Vector2(700f, 62f));
-
-            Text summary = Label(card, "Outcome Summary", "Level cleared", Vector2.zero, Vector2.zero,
-                20, MutedColor, TextAnchor.MiddleCenter, FontStyle.Normal);
-            SetRect(
-                (RectTransform)summary.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -112f),
-                new Vector2(700f, 36f));
-
-            RectTransform buttons = EnsureRow(card, "Outcome Buttons");
-            SetRect(
-                buttons,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 44f),
-                new Vector2(700f, 92f));
-
-            Button playAgain = EnsureOutcomeButton(buttons, "Play Again", "PLAY AGAIN", NeutralButtonColor, 0);
-            Button nextLevel = EnsureOutcomeButton(buttons, "Next Level", "NEXT LEVEL", NextLevelColor, 1);
-            Button levelSelect = EnsureOutcomeButton(buttons, "Level Select", "LEVEL SELECT", NeutralButtonColor, 2);
-
-            var view = hud.GetComponent<LevelOutcomeHudView>();
-            SetObjectReference(view, "root", overlay.gameObject);
-            SetObjectReference(view, "titleText", title);
-            SetObjectReference(view, "summaryText", summary);
-            SetObjectReference(view, "playAgainButton", playAgain);
-            SetObjectReference(view, "nextLevelButton", nextLevel);
-            SetObjectReference(view, "returnToLevelMenuButton", levelSelect);
             overlay.gameObject.SetActive(false);
         }
 
@@ -458,41 +419,6 @@ namespace TowerDefense3D.GameFlow.Editor
             row.childForceExpandWidth = true;
             row.childForceExpandHeight = true;
             return (RectTransform)owner.transform;
-        }
-
-        private static Button EnsureOutcomeButton(
-            Transform parent,
-            string name,
-            string label,
-            Color color,
-            int siblingIndex)
-        {
-            Transform existing = parent.Find(name);
-            GameObject owner;
-            if (existing != null)
-            {
-                owner = existing.gameObject;
-            }
-            else
-            {
-                owner = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                owner.transform.SetParent(parent, false);
-            }
-
-            owner.transform.SetSiblingIndex(siblingIndex);
-            StyleButton(owner.transform, color);
-            Button button = owner.GetComponent<Button>();
-            if (button == null)
-            {
-                button = owner.AddComponent<Button>();
-            }
-
-            button.targetGraphic = owner.GetComponent<Image>();
-            Text text = Label(owner.transform, "Label", label, Vector2.zero, Vector2.zero,
-                22, TextColor, TextAnchor.MiddleCenter, FontStyle.Bold);
-            text.text = label;
-            StretchToParent((RectTransform)text.transform);
-            return button;
         }
 
         private static void WireViews(GameObject root, Transform hud)

@@ -30,16 +30,20 @@ namespace TowerDefense3D.GameFlow
         // TMP_Text rather than TextMeshProUGUI so a swap to the non-Canvas variant needs no edit
         // here. The rest of the screen is still uGUI Text, on purpose - see subtitleLabel below.
         //
-        // The panel's third line, "Selected Details", is deliberately absent, and so is the star
-        // panel's label: both read the same whatever the run has done, so they are authored once
-        // in the prefab and no field here points at them. Holding a reference the view never
-        // writes only invites someone to start writing it.
+        // The panel's third line, "Selected Details", is deliberately absent: it reads the same
+        // whatever the run has done, so it is authored once in the prefab and no field here
+        // points at it. Holding a reference the view never writes only invites someone to start
+        // writing it. The star panel's label used to be in the same boat and no longer is - it
+        // now counts the stars actually earned, so it is wired below.
         [SerializeField] private TMP_Text selectionChapter;
         [SerializeField] private TMP_Text selectionTitle;
         [SerializeField] private Button enterMapButton;
         [SerializeField] private Text subtitleLabel;
         [SerializeField] private Text progressLabel;
         [SerializeField] private Image progressFill;
+
+        [Tooltip("The top bar's star count: every star earned across the whole journey.")]
+        [SerializeField] private Text starTotalLabel;
 
         private readonly List<LevelMenuItemState> levels = new();
         private Action<int> onLevelSelected;
@@ -149,6 +153,17 @@ namespace TowerDefense3D.GameFlow
                 progressFill.fillAmount = levels.Count > 0
                     ? unlockedCount / (float)levels.Count
                     : 0f;
+            }
+
+            if (starTotalLabel != null)
+            {
+                int starCount = 0;
+                for (int index = 0; index < levels.Count; index++)
+                {
+                    starCount += levels[index].Stars;
+                }
+
+                starTotalLabel.text = starCount.ToString();
             }
         }
 

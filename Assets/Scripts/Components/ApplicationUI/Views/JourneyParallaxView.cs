@@ -29,8 +29,12 @@ namespace TowerDefense3D.GameFlow
     [RequireComponent(typeof(RectTransform))]
     public sealed class JourneyParallaxView : MonoBehaviour
     {
-        /// <summary>Children whose name starts with this are washes, and washes do not move.</summary>
-        private const string StillLayerPrefix = "Fog";
+        /// <summary>
+        /// Children whose name starts with one of these hold still. Fog is a wash painted over the
+        /// trail, and Sky is the backdrop sized to envelope the screen - it is cropped to whatever
+        /// the display leaves over, so there is no slack to slide it into without baring an edge.
+        /// </summary>
+        private static readonly string[] StillLayerPrefixes = { "Fog", "Sky" };
 
         [SerializeField] private ScrollRect scroll;
 
@@ -79,6 +83,19 @@ namespace TowerDefense3D.GameFlow
             Apply(travel);
         }
 
+        private static bool IsStillLayer(string childName)
+        {
+            for (int index = 0; index < StillLayerPrefixes.Length; index++)
+            {
+                if (childName.StartsWith(StillLayerPrefixes[index], StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Takes the layers in drawing order and works out how fast each one goes. Positions are
         /// remembered here rather than on the first slide, because the offset is measured from where
@@ -108,7 +125,7 @@ namespace TowerDefense3D.GameFlow
                     continue;
                 }
 
-                if (child.name.StartsWith(StillLayerPrefix, StringComparison.OrdinalIgnoreCase))
+                if (IsStillLayer(child.name))
                 {
                     continue;
                 }

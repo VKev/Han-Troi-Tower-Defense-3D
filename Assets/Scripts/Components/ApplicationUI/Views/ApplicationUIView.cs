@@ -14,6 +14,7 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private LoadingView loadingView;
         [SerializeField] private BlockingErrorView blockingErrorView;
         [SerializeField] private SaveWarningView saveWarningView;
+        [SerializeField] private ScreenFadeView screenFadeView;
         [SerializeField] private GameObject inputBlocker;
 
         public void Reset()
@@ -62,6 +63,28 @@ namespace TowerDefense3D.GameFlow
         public void HideLoading()
         {
             loadingView.Hide();
+        }
+
+        public void CoverScreen(Action onCovered)
+        {
+            if (screenFadeView == null)
+            {
+                onCovered?.Invoke();
+                return;
+            }
+
+            screenFadeView.Cover(onCovered);
+        }
+
+        public void UncoverScreen(Action onUncovered)
+        {
+            if (screenFadeView == null)
+            {
+                onUncovered?.Invoke();
+                return;
+            }
+
+            screenFadeView.Uncover(onUncovered);
         }
 
         public void ShowBlockingError(string message, Action retry, Action startNew)

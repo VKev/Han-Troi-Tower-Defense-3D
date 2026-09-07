@@ -9,12 +9,14 @@ namespace TowerDefense3D.GameFlow
             string displayName,
             bool isUnlocked,
             bool isCleared,
+            int stars,
             bool isBusy)
         {
             LevelNumber = levelNumber;
             DisplayName = displayName ?? string.Empty;
             IsUnlocked = isUnlocked;
             IsCleared = isCleared;
+            Stars = stars;
             IsBusy = isBusy;
         }
 
@@ -28,6 +30,13 @@ namespace TowerDefense3D.GameFlow
         /// as different colours, so the menu has to carry them separately.
         /// </summary>
         public bool IsCleared { get; }
+
+        /// <summary>
+        /// The best score the player has managed on this level, nought to three. A level not
+        /// yet beaten scores nothing, so this reads zero wherever
+        /// <see cref="IsCleared"/> is false.
+        /// </summary>
+        public int Stars { get; }
 
         public bool IsBusy { get; }
     }

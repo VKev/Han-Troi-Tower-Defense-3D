@@ -74,7 +74,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             return new[]
             {
-                new LevelMenuItemState(1, "Test Level", isUnlocked: true, isCleared: false, isBusy: false)
+                new LevelMenuItemState(
+                    1,
+                    "Test Level",
+                    isUnlocked: true,
+                    isCleared: false,
+                    stars: LevelStarRating.NoStars,
+                    isBusy: false)
             };
         }
 
