@@ -406,6 +406,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             {
             }
 
+            // Nothing fades in a test, so both report back at once. Calling straight through is
+            // what keeps a flow that waits on the cover from stalling here.
+            public void CoverScreen(Action onCovered)
+            {
+                onCovered?.Invoke();
+            }
+
+            public void UncoverScreen(Action onUncovered)
+            {
+                onUncovered?.Invoke();
+            }
+
             public void ShowBlockingError(string message, Action retry, Action startNew)
             {
                 BlockingErrorMessage = message;

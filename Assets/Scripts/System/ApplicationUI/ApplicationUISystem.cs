@@ -49,6 +49,16 @@ namespace TowerDefense3D.GameFlow
             view.HideLoading();
         }
 
+        public void CoverScreen(Action onCovered)
+        {
+            view.CoverScreen(onCovered);
+        }
+
+        public void UncoverScreen(Action onUncovered)
+        {
+            view.UncoverScreen(onUncovered);
+        }
+
         public void ShowBlockingError(string message, Action retry, Action startNew)
         {
             view.ShowBlockingError(message, retry, startNew);

@@ -1,73 +1,45 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace TowerDefense3D.GameFlow
 {
     /// <summary>
-    /// The opening: black, then the splash, then the title, then the journey. Every handover is
-    /// made behind a full-screen black curtain, so nothing is ever seen appearing or disappearing.
+    /// The opening: black, then the title, then the journey. Both handovers are made behind a
+    /// full-screen black curtain, so nothing is ever seen appearing or disappearing.
     /// </summary>
     /// <remarks>
-    /// One component owns the whole opening rather than each panel dismissing itself. The panels
-    /// have to be swapped while the screen is covered, which means somebody has to know both the
-    /// running order and how far through the fade we are; splitting that across the panels would
-    /// only mean two of them writing the same curtain.
+    /// The brand splash used to be the first of three panels here. It is now the player's own
+    /// splash screen, set in Player Settings, because the engine draws that one *before* the
+    /// first scene is loaded - which is the only place a splash can cover the application boot
+    /// rather than merely follow it. A splash built out of UI can never show during the load it
+    /// exists to hide.
     ///
     /// Boot runs the moment the application starts, behind the curtain, so the journey menu is
     /// already sitting underneath by the time the last fade uncovers it. If progress could not be
     /// read, what gets uncovered is the blocking error instead - which is why the curtain never
     /// hides anything permanently, it only ever fades back to nothing.
     ///
-    /// The curtain does not take raycasts. Blocking input while it is up would be the obvious
-    /// thing, but the tap is only listened for during the one phase that wants it, so there is
-    /// nothing to block - and a full-screen raycast target on its own nested canvas is exactly
-    /// what stopped the title from being tappable before.
+    /// The curtain is not this component's own any more: it belongs to <see cref="ScreenFadeView"/>,
+    /// which the level transitions fade as well. One owner for the alpha means the opening and a
+    /// level load cannot end up writing the same colour on the same frame.
     ///
-    /// Timed on unscaled time: the opening runs before anything sets a time scale, and would
-    /// otherwise stall for good behind a pause that arrived early.
+    /// The curtain does not take raycasts, and does not need to: the tap is read straight off the
+    /// input devices rather than through the event system, so there is nothing for a full-screen
+    /// graphic to swallow.
     /// </remarks>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Image))]
     public sealed class OpeningSequenceView : MonoBehaviour
     {
-        [Tooltip("Shown first, uncovered for the hold below, then swapped for the title.")]
-        [SerializeField] private GameObject splash;
-
-        [Tooltip("The title panel, uncovered after the splash and left up until it is tapped.")]
+        [Tooltip("The title panel, uncovered on boot and left up until the screen is tapped.")]
         [SerializeField] private GameObject gameStart;
 
-        [Tooltip("Tapped to leave the title. Listened to only once the title is fully uncovered, so an early tap cannot skip the splash.")]
-        [SerializeField] private Button gameStartButton;
-
-        [Tooltip("How long one fade takes. Every fade in the opening uses this.")]
-        [SerializeField, Min(0f)] private float fadeSeconds = 0.5f;
-
-        [Tooltip("How long the splash is held once it is fully uncovered, not counting the fades either side of it.")]
-        [SerializeField, Min(0f)] private float splashHoldSeconds = 2f;
-
-        /// <summary>
-        /// The most one frame may advance a fade. Anything longer is a hitch rather than a frame,
-        /// and letting it through would skip the fade instead of slowing it.
-        /// </summary>
-        private const float MaxFadeStepSeconds = 1f / 30f;
-
-        private Image curtain;
-        private bool wasTapped;
+        [Tooltip("The black curtain every handover happens behind. Shared with the level transitions.")]
+        [SerializeField] private ScreenFadeView screenFade;
 
         private void Awake()
         {
-            curtain = GetComponent<Image>();
-
-            // Opaque before the first frame is drawn, so the opening starts black rather than
-            // flashing whatever the scene was authored showing.
-            SetCurtainAlpha(1f);
-
-            if (splash != null)
-            {
-                splash.SetActive(true);
-            }
-
             if (gameStart != null)
             {
                 gameStart.SetActive(false);
@@ -79,124 +51,159 @@ namespace TowerDefense3D.GameFlow
             StartCoroutine(Run());
         }
 
-        private void OnDisable()
-        {
-            if (gameStartButton != null)
-            {
-                gameStartButton.onClick.RemoveListener(HandleTapped);
-            }
-        }
-
         private IEnumerator Run()
         {
-            yield return Fade(1f, 0f);
-            yield return Hold(splashHoldSeconds);
-            yield return Fade(0f, 1f);
+            yield return ShowTitle();
 
-            Swap(splash, gameStart);
-            yield return Fade(1f, 0f);
-
+            // The curtain is already opaque - ScreenFadeView makes it so before the first frame -
+            // so the opening starts by lifting it off the title.
+            yield return Uncover();
             yield return AwaitTap();
-            yield return Fade(0f, 1f);
+
+            // The title is only taken down once the curtain is fully up, and the journey only
+            // uncovered once it is gone: the whole point of a cover is that the handover happens
+            // inside it.
+            yield return Cover();
 
             if (gameStart != null)
             {
                 gameStart.SetActive(false);
             }
 
-            yield return Fade(1f, 0f);
+            yield return Uncover();
         }
 
-        private static void Swap(GameObject hide, GameObject show)
+        private IEnumerator Cover()
         {
-            if (hide != null)
+            if (screenFade == null)
             {
-                hide.SetActive(false);
-            }
-
-            if (show != null)
-            {
-                show.SetActive(true);
-            }
-        }
-
-        private IEnumerator AwaitTap()
-        {
-            if (gameStartButton == null)
-            {
-                Debug.LogError(
-                    "OpeningSequenceView has no game start button, so the title cannot be left.",
-                    this);
                 yield break;
             }
 
-            wasTapped = false;
-            gameStartButton.onClick.AddListener(HandleTapped);
-            while (!wasTapped)
+            bool covered = false;
+            screenFade.Cover(() => covered = true);
+            while (!covered)
             {
                 yield return null;
             }
-
-            gameStartButton.onClick.RemoveListener(HandleTapped);
         }
 
-        private void HandleTapped()
+        private IEnumerator Uncover()
         {
-            wasTapped = true;
-        }
-
-        private IEnumerator Fade(float from, float to)
-        {
-            if (fadeSeconds <= 0f)
+            if (screenFade == null)
             {
-                SetCurtainAlpha(to);
                 yield break;
             }
 
-            float elapsedSeconds = 0f;
-            while (elapsedSeconds < fadeSeconds)
+            bool uncovered = false;
+            screenFade.Uncover(() => uncovered = true);
+            while (!uncovered)
             {
-                // Clamped, because the frame that carries the application boot - scene load,
-                // container build, save read - reports several seconds of delta at once. Charging
-                // that against the fade finishes it inside one frame, and the curtain is then
-                // never seen lifting, it just pops. A fade that has to be watched cannot be
-                // advanced faster than it can be drawn.
-                elapsedSeconds += Mathf.Min(Time.unscaledDeltaTime, MaxFadeStepSeconds);
-                SetCurtainAlpha(Mathf.Lerp(from, to, elapsedSeconds / fadeSeconds));
                 yield return null;
             }
-
-            // Landed exactly, rather than wherever the last frame's step happened to reach.
-            SetCurtainAlpha(to);
         }
 
         /// <summary>
-        /// Waits out a duration on accumulated unscaled time.
+        /// Turns the title on and makes sure it has actually been given a size before the curtain
+        /// comes off it.
         /// </summary>
         /// <remarks>
-        /// Not <c>WaitForSecondsRealtime</c>, which reads the absolute clock once on construction
-        /// and compares against it forever after. Built on the first frame, before that clock has
-        /// been rebased for the new run, it latches a target the clock then never reaches and the
-        /// opening waits for hours. Counting deltas has no absolute reference to get wrong.
+        /// The panel is sized by an <see cref="AspectRatioFitter"/> rather than by its anchors: it
+        /// is authored zero by zero, and the fitter grows it to envelope the parent when the
+        /// layout is rebuilt. That rebuild happens once, when the object is enabled - and if it
+        /// runs before the root canvas has its own size, the fitter envelopes nothing and leaves
+        /// the panel at zero by zero. Nothing marks it dirty afterwards, so it stays that way for
+        /// good: a full-screen picture that draws no pixels, which is indistinguishable from the
+        /// curtain never lifting.
         ///
-        /// Unclamped, unlike the fades: a hold is a duration to be spent, not a movement to be
-        /// watched, so a hitch should shorten the remaining wait rather than extend it.
+        /// Waiting a frame lets the canvas establish its size, and the explicit rebuild then sizes
+        /// the panel against a parent that is really there. The size is checked rather than
+        /// assumed, because this failing silently is the whole problem - a warning in the log is
+        /// worth more than a black screen with no explanation.
         /// </remarks>
-        private static IEnumerator Hold(float seconds)
+        private IEnumerator ShowTitle()
         {
-            float elapsedSeconds = 0f;
-            while (elapsedSeconds < seconds)
+            if (gameStart == null)
             {
-                elapsedSeconds += Time.unscaledDeltaTime;
+                yield break;
+            }
+
+            gameStart.SetActive(true);
+            yield return null;
+
+            var rect = gameStart.transform as RectTransform;
+            if (rect == null)
+            {
+                yield break;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+            if (rect.rect.width <= 1f || rect.rect.height <= 1f)
+            {
+                Debug.LogWarning(
+                    "Title panel has no size after layout (" + rect.rect.size
+                    + "), so it will not draw. Check its AspectRatioFitter and its parent canvas.");
+            }
+        }
+
+        /// <summary>
+        /// Waits for a press anywhere on the screen.
+        /// </summary>
+        /// <remarks>
+        /// Read off the devices rather than through a full-screen Button. The title is a picture,
+        /// not a control, and reading the devices is what makes "anywhere" actually mean
+        /// anywhere: the panel is fitted to its artwork's aspect, so on a screen of a different
+        /// shape its rect and the display are not the same rectangle, and a Button would leave
+        /// dead strips down the sides that look tappable and are not.
+        /// </remarks>
+        private static IEnumerator AwaitTap()
+        {
+            // A press already down when the title appears is the tail of an earlier one - the tap
+            // that dismissed a system dialog, say. Waiting for it to end first means the title
+            // cannot be skipped by a finger that was already on the glass.
+            while (IsPressed())
+            {
+                yield return null;
+            }
+
+            while (!WasPressedThisFrame())
+            {
                 yield return null;
             }
         }
 
-        private void SetCurtainAlpha(float alpha)
+        private static bool IsPressed()
         {
-            Color color = curtain.color;
-            color.a = alpha;
-            curtain.color = color;
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null && touchscreen.primaryTouch.press.isPressed)
+            {
+                return true;
+            }
+
+            Mouse mouse = Mouse.current;
+            return mouse != null && mouse.leftButton.isPressed;
+        }
+
+        /// <summary>
+        /// A touch, a click, or any key. The keyboard is in there for the Editor and for a
+        /// desktop build, where there may be no touchscreen to tap at all.
+        /// </summary>
+        private static bool WasPressedThisFrame()
+        {
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null && touchscreen.primaryTouch.press.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            Mouse mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            Keyboard keyboard = Keyboard.current;
+            return keyboard != null && keyboard.anyKey.wasPressedThisFrame;
         }
     }
 }

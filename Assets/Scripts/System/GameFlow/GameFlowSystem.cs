@@ -117,12 +117,13 @@ namespace TowerDefense3D.GameFlow
         }
 
         /// <summary>
-        /// Records the level the player has just beaten. Progression gated behind clearing a
-        /// level - a hero tower, for instance - reads that record, so it has to survive the run.
+        /// Records the level the player has just beaten, and how well. Progression gated behind
+        /// clearing a level - a hero tower, for instance - reads that record, so it has to
+        /// survive the run, and the journey map draws the score under the level's node.
         /// </summary>
-        public void ReportLevelCleared(int levelNumber)
+        public void ReportLevelCleared(int levelNumber, int stars)
         {
-            levelMenuFlow.MarkLevelCleared(levelNumber);
+            levelMenuFlow.MarkLevelCleared(levelNumber, stars);
         }
 
         public void RequestReturnToLevelMenu()
