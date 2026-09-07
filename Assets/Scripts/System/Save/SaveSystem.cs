@@ -27,7 +27,8 @@ namespace TowerDefense3D.GameFlow
             {
                 Progress = new UnlockProgress(
                     loadResult.Data.UnlockedLevelNumbers,
-                    loadResult.Data.ClearedLevelNumbers);
+                    loadResult.Data.ClearedLevelNumbers,
+                    loadResult.Data.LevelStars);
                 LastWriteResult = new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
                 return loadResult;
             }
@@ -54,12 +55,15 @@ namespace TowerDefense3D.GameFlow
         }
 
         /// <summary>
-        /// Records one level as beaten and persists it. Called once per victory, so a repeat
-        /// clear of the same level costs no write.
+        /// Records one level as beaten at <paramref name="stars"/> and persists it. A repeat
+        /// clear costs a write only when it beat the score already on record.
         /// </summary>
-        public UnlockAttemptResult TryMarkClearedAndSave(int levelNumber, out SaveWriteResult writeResult)
+        public UnlockAttemptResult TryMarkClearedAndSave(
+            int levelNumber,
+            int stars,
+            out SaveWriteResult writeResult)
         {
-            UnlockAttemptResult clearResult = Progress.TryMarkCleared(levelNumber);
+            UnlockAttemptResult clearResult = Progress.TryMarkCleared(levelNumber, stars);
             writeResult = clearResult == UnlockAttemptResult.Unlocked
                 ? SaveCurrent()
                 : new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
@@ -90,6 +94,7 @@ namespace TowerDefense3D.GameFlow
             SaveSnapshot snapshot = SaveSnapshot.Create(
                 Progress.CreateSortedSnapshot(),
                 Progress.CreateSortedClearedSnapshot(),
+                Progress.CreateSortedStarSnapshot(),
                 DateTime.UtcNow.ToString("O"),
                 applicationVersion);
             LastWriteResult = repository.Save(snapshot);

@@ -44,7 +44,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var healthSystem = new LevelBaseHealthSystem(10);
             var view = new LevelOutcomeHudViewStub();
             var presenter = new LevelOutcomeHudPresenter(waveSystem, goldSystem, healthSystem, view);
-            presenter.BindLevel("Level 1", true, () => { }, () => { }, () => { });
+            presenter.BindLevel(true, () => { }, () => { }, () => { });
 
             healthSystem.TakeDamage(3);
             waveSystem.Phase = WavePhase.Victory;
@@ -52,10 +52,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(view.LastState.IsVisible, Is.True);
             Assert.That(view.LastState.Outcome, Is.EqualTo(LevelOutcome.Victory));
-            Assert.That(view.LastState.TitleText, Is.EqualTo("VICTORY"));
-            Assert.That(view.LastState.SummaryText, Does.Contain("Level 1 cleared"));
-            Assert.That(view.LastState.SummaryText, Does.Contain("7/10"));
-            Assert.That(view.LastState.SummaryText, Does.Contain("250"));
+            Assert.That(view.LastState.TitleText, Is.EqualTo("CHIẾN THẮNG"));
+            Assert.That(view.LastState.CurrentHealth, Is.EqualTo(7));
+            Assert.That(view.LastState.MaximumHealth, Is.EqualTo(10));
+            Assert.That(view.LastState.Gold, Is.EqualTo(250));
+            Assert.That(
+                view.LastState.Stars,
+                Is.EqualTo(2),
+                "Seven of ten left is over half, which is two stars.");
             Assert.That(view.LastState.NextLevelVisible, Is.True);
         }
 
@@ -74,7 +78,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             int nextLevelCount = 0;
             int returnCount = 0;
             presenter.BindLevel(
-                "Level 2",
                 true,
                 () => replayCount++,
                 () => nextLevelCount++,
@@ -85,9 +88,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(view.LastState.IsVisible, Is.True);
             Assert.That(view.LastState.Outcome, Is.EqualTo(LevelOutcome.Defeat));
-            Assert.That(view.LastState.TitleText, Is.EqualTo("DEFEAT"));
-            Assert.That(view.LastState.SummaryText, Does.Contain("Level 2 lost"));
-            Assert.That(view.LastState.SummaryText, Does.Contain("0/10"));
+            Assert.That(view.LastState.TitleText, Is.EqualTo("THẤT BẠI"));
+            Assert.That(view.LastState.CurrentHealth, Is.Zero);
+            Assert.That(view.LastState.MaximumHealth, Is.EqualTo(10));
+            Assert.That(view.LastState.HealthRatio, Is.Zero);
+            Assert.That(view.LastState.Stars, Is.Zero, "A defeat scores nothing.");
             Assert.That(
                 view.LastState.NextLevelVisible,
                 Is.False,
@@ -118,7 +123,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 new LevelGoldSystem(0),
                 new LevelBaseHealthSystem(10),
                 view);
-            presenter.BindLevel("Level 9", false, () => { }, () => nextLevelCount++, () => { });
+            presenter.BindLevel(false, () => { }, () => nextLevelCount++, () => { });
 
             presenter.Connect();
             view.RaiseNextLevel();
@@ -141,12 +146,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 escape);
             int levelClearedCount = 0;
             presenter.BindLevel(
-                "Level 1",
                 false,
                 () => { },
                 () => { },
                 () => { },
-                () => levelClearedCount++);
+                _ => levelClearedCount++);
 
             presenter.Connect();
 
@@ -211,8 +215,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 view.Render(new LevelOutcomeHudState(
                     true,
                     LevelOutcome.Defeat,
-                    "DEFEAT",
-                    "lost",
+                    "THẤT BẠI",
+                    LevelStarRating.NoStars,
+                    0,
+                    10,
+                    120,
                     false));
 
                 Assert.That(root.gameObject.activeSelf, Is.True);
@@ -263,7 +270,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 new LevelGoldSystem(100),
                 new LevelBaseHealthSystem(10),
                 view);
-            presenter.BindLevel("Level 1", hasNextLevel, () => { }, () => { }, () => { });
+            presenter.BindLevel(hasNextLevel, () => { }, () => { }, () => { });
             return presenter;
         }
 

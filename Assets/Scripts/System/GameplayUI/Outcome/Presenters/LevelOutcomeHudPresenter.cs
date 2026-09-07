@@ -11,18 +11,20 @@ namespace TowerDefense3D.GameFlow
     /// </summary>
     public sealed class LevelOutcomeHudPresenter
     {
+        private const string VictoryTitle = "CHIẾN THẮNG";
+        private const string DefeatTitle = "THẤT BẠI";
+
         private readonly IWaveSystem waveSystem;
         private readonly LevelGoldSystem goldSystem;
         private readonly LevelBaseHealthSystem healthSystem;
         private readonly ILevelOutcomeHudView view;
         private readonly ILevelVictoryEscapeView victoryEscapeView;
 
-        private string levelDisplayName = string.Empty;
         private bool hasNextLevel;
         private Action requestReplayLevel;
         private Action requestNextLevel;
         private Action requestReturnToLevelMenu;
-        private Action reportLevelCleared;
+        private Action<int> reportLevelCleared;
         private bool hasReportedLevelCleared;
         private bool hasStartedVictoryEscape;
         private bool hasCompletedVictoryEscape;
@@ -52,14 +54,12 @@ namespace TowerDefense3D.GameFlow
         }
 
         public void BindLevel(
-            string levelDisplayName,
             bool hasNextLevel,
             Action requestReplayLevel,
             Action requestNextLevel,
             Action requestReturnToLevelMenu)
         {
             BindLevel(
-                levelDisplayName,
                 hasNextLevel,
                 requestReplayLevel,
                 requestNextLevel,
@@ -69,17 +69,19 @@ namespace TowerDefense3D.GameFlow
 
         /// <summary>
         /// <paramref name="reportLevelCleared"/> fires once, the first time this attempt reaches
-        /// victory, so progression gated behind "beat this level" can be recorded.
+        /// victory, so progression gated behind "beat this level" can be recorded. It is handed
+        /// the attempt's star score, which is read here rather than by the flow it reports to:
+        /// the Cóc's health belongs to the level scope and is gone by the time the menu is back.
+        /// The call sits after the victory escape has played, and escaping costs the Cóc no
+        /// health, so the score is the same one the panel shows.
         /// </summary>
         public void BindLevel(
-            string levelDisplayName,
             bool hasNextLevel,
             Action requestReplayLevel,
             Action requestNextLevel,
             Action requestReturnToLevelMenu,
-            Action reportLevelCleared)
+            Action<int> reportLevelCleared)
         {
-            this.levelDisplayName = levelDisplayName ?? string.Empty;
             this.hasNextLevel = hasNextLevel;
             this.reportLevelCleared = reportLevelCleared;
             hasReportedLevelCleared = false;
@@ -125,12 +127,7 @@ namespace TowerDefense3D.GameFlow
             WavePhase phase = waveSystem.CreateState().Phase;
             if (phase != WavePhase.Victory && phase != WavePhase.Defeat)
             {
-                view.Render(new LevelOutcomeHudState(
-                    false,
-                    LevelOutcome.Victory,
-                    string.Empty,
-                    string.Empty,
-                    false));
+                view.Render(Hidden());
                 return;
             }
 
@@ -145,12 +142,7 @@ namespace TowerDefense3D.GameFlow
 
                 if (!hasCompletedVictoryEscape)
                 {
-                    view.Render(new LevelOutcomeHudState(
-                        false,
-                        LevelOutcome.Victory,
-                        string.Empty,
-                        string.Empty,
-                        false));
+                    view.Render(Hidden());
                     return;
                 }
             }
@@ -158,34 +150,34 @@ namespace TowerDefense3D.GameFlow
             if (isVictory && !hasReportedLevelCleared)
             {
                 hasReportedLevelCleared = true;
-                reportLevelCleared?.Invoke();
+                reportLevelCleared?.Invoke(LevelStarRating.FromRemainingHealth(
+                    healthSystem.CurrentHealth,
+                    healthSystem.MaximumHealth));
             }
 
             view.Render(new LevelOutcomeHudState(
                 true,
                 isVictory ? LevelOutcome.Victory : LevelOutcome.Defeat,
-                isVictory ? "VICTORY" : "DEFEAT",
-                CreateSummaryText(isVictory),
+                isVictory ? VictoryTitle : DefeatTitle,
+
+                // A defeat scores nothing whatever the Cóc had left, and the rating already
+                // says so for a run with none; asking it keeps the two in step even if a defeat
+                // ever becomes possible with health to spare.
+                isVictory
+                    ? LevelStarRating.FromRemainingHealth(
+                        healthSystem.CurrentHealth,
+                        healthSystem.MaximumHealth)
+                    : LevelStarRating.NoStars,
+                healthSystem.CurrentHealth,
+                healthSystem.MaximumHealth,
+                goldSystem.Balance,
                 isVictory && hasNextLevel));
         }
 
-        private string CreateSummaryText(bool isVictory)
+        private static LevelOutcomeHudState Hidden()
         {
-            string headline = CreateHeadline(isVictory);
-            return $"{headline}   •   CÓC HP {healthSystem.CurrentHealth}/{healthSystem.MaximumHealth}"
-                + $"   •   GOLD {goldSystem.Balance:N0}";
-        }
-
-        private string CreateHeadline(bool isVictory)
-        {
-            if (string.IsNullOrWhiteSpace(levelDisplayName))
-            {
-                return isVictory ? "All waves cleared" : "The Cóc has fallen";
-            }
-
-            return isVictory
-                ? levelDisplayName + " cleared"
-                : levelDisplayName + " lost";
+            return new LevelOutcomeHudState(
+                false, LevelOutcome.Victory, string.Empty, 0, 0, 0, 0, false);
         }
 
         private void HandlePlayAgainRequested()

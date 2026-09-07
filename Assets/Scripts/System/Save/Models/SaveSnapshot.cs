@@ -19,12 +19,17 @@ namespace TowerDefense3D.GameFlow
         // as null and simply reports no level as cleared yet. That keeps schema version 1.
         [SerializeField] private int[] clearedLevelNumbers = Array.Empty<int>();
 
+        // Same story as the cleared set: a save written before scoring existed deserializes this
+        // as null and reports no score for any level, which is exactly what an old save means.
+        [SerializeField] private LevelStarRecord[] levelStars = Array.Empty<LevelStarRecord>();
+
         public int SchemaVersion => schemaVersion;
         public string SlotId => slotId;
         public string SavedAtUtc => savedAtUtc;
         public string AppVersion => appVersion;
         public int[] UnlockedLevelNumbers => unlockedLevelNumbers;
         public int[] ClearedLevelNumbers => clearedLevelNumbers ?? Array.Empty<int>();
+        public LevelStarRecord[] LevelStars => levelStars ?? Array.Empty<LevelStarRecord>();
 
         public static SaveSnapshot Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
         {
@@ -37,6 +42,21 @@ namespace TowerDefense3D.GameFlow
             string savedAtUtc,
             string appVersion)
         {
+            return Create(
+                unlockedLevelNumbers,
+                clearedLevelNumbers,
+                Array.Empty<LevelStarRecord>(),
+                savedAtUtc,
+                appVersion);
+        }
+
+        public static SaveSnapshot Create(
+            int[] unlockedLevelNumbers,
+            int[] clearedLevelNumbers,
+            LevelStarRecord[] levelStars,
+            string savedAtUtc,
+            string appVersion)
+        {
             return new SaveSnapshot
             {
                 schemaVersion = CurrentSchemaVersion,
@@ -44,7 +64,8 @@ namespace TowerDefense3D.GameFlow
                 savedAtUtc = savedAtUtc ?? string.Empty,
                 appVersion = appVersion ?? string.Empty,
                 unlockedLevelNumbers = unlockedLevelNumbers ?? Array.Empty<int>(),
-                clearedLevelNumbers = clearedLevelNumbers ?? Array.Empty<int>()
+                clearedLevelNumbers = clearedLevelNumbers ?? Array.Empty<int>(),
+                levelStars = levelStars ?? Array.Empty<LevelStarRecord>()
             };
         }
 
@@ -93,6 +114,23 @@ namespace TowerDefense3D.GameFlow
                 if (cleared[index] <= 0)
                 {
                     error = $"Cleared level number at index {index} must be positive.";
+                    return false;
+                }
+            }
+
+            LevelStarRecord[] stars = LevelStars;
+            for (int index = 0; index < stars.Length; index++)
+            {
+                if (stars[index].LevelNumber <= 0)
+                {
+                    error = $"Star record at index {index} names a non-positive level.";
+                    return false;
+                }
+
+                if (stars[index].Stars < LevelStarRating.NoStars
+                    || stars[index].Stars > LevelStarRating.MaximumStars)
+                {
+                    error = $"Star record at index {index} is outside 0..{LevelStarRating.MaximumStars}.";
                     return false;
                 }
             }
