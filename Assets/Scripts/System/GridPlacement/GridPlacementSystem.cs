@@ -29,6 +29,7 @@ namespace TowerDefense3D.GridPlacement
         private readonly GridPlacementModel model;
 
         private TowerDefinition selectedTower;
+        private float selectedLinkRangeMeters;
         private PointerState pointerState;
         private PointerKind pointerKind;
         private int trackedPointerId;
@@ -106,6 +107,17 @@ namespace TowerDefense3D.GridPlacement
 
         public void SelectTower(TowerDefinition definition)
         {
+            SelectTower(definition, 0f);
+        }
+
+        /// <summary>
+        /// Picks the tower to place and how far it will be able to link once it is there, which
+        /// the candidate preview draws as a ring. The range is passed in rather than read off the
+        /// definition because it is a rule of the network, not a property of the tower - one
+        /// number shared by every tower on the board.
+        /// </summary>
+        public void SelectTower(TowerDefinition definition, float linkRangeMeters)
+        {
             if (definition == null)
             {
                 CancelPlacement();
@@ -113,6 +125,7 @@ namespace TowerDefense3D.GridPlacement
             }
 
             selectedTower = definition;
+            selectedLinkRangeMeters = Mathf.Max(0f, linkRangeMeters);
             inputSystem.SetMode(GameplayInputMode.GridPlacement);
             if (hasCandidate)
             {
@@ -124,6 +137,7 @@ namespace TowerDefense3D.GridPlacement
         {
             CancelActivePointer();
             selectedTower = null;
+            selectedLinkRangeMeters = 0f;
             ClearCandidate();
             inputSystem.ClearMode(GameplayInputMode.GridPlacement);
         }
@@ -161,8 +175,13 @@ namespace TowerDefense3D.GridPlacement
 
         public bool BeginPlacementDrag(TowerDefinition definition, int pointerId)
         {
+            return BeginPlacementDrag(definition, 0f, pointerId);
+        }
+
+        public bool BeginPlacementDrag(TowerDefinition definition, float linkRangeMeters, int pointerId)
+        {
             CancelPlacement();
-            SelectTower(definition);
+            SelectTower(definition, linkRangeMeters);
             pointerState = PointerState.Tracking;
             pointerKind = PointerKind.UiDrag;
             trackedPointerId = pointerId;
@@ -241,7 +260,11 @@ namespace TowerDefense3D.GridPlacement
 
         private bool TryUpdateCandidate(Vector2 screenPosition)
         {
-            if (!view.TryGetWorldPoint(screenPosition, out Vector3 worldPoint)
+            // Only a drag lifts the sample: that is the one path where a finger is sitting on the
+            // board. Ending the drag comes through here too, still as a UiDrag, so the tower lands
+            // on the cell the player was shown rather than on the one under their fingertip.
+            bool offsetForFinger = pointerKind == PointerKind.UiDrag;
+            if (!view.TryGetWorldPoint(screenPosition, offsetForFinger, out Vector3 worldPoint)
                 || !model.TryWorldToCell(worldPoint, out GridCell cell))
             {
                 return false;
@@ -262,6 +285,7 @@ namespace TowerDefense3D.GridPlacement
                 model.GetFootprintBottomCenter(cell, selectedTower.Footprint),
                 model.CellSize,
                 model.HeightUnit,
+                selectedLinkRangeMeters,
                 candidateIsValid);
         }
 

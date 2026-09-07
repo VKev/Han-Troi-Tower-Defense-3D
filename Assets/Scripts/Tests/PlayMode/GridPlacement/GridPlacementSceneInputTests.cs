@@ -133,7 +133,7 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 "The authored level needs one visible, non-UI placement point "
                 + "for the selected tower.");
             Assert.That(
-                placementView.TryGetWorldPoint(screenPoint, out _),
+                placementView.TryGetWorldPoint(screenPoint, offsetForFinger: false, out _),
                 Is.True,
                 "The placement view must project the selected screen point onto the authored board.");
 

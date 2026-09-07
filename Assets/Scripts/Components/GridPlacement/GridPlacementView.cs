@@ -5,7 +5,8 @@ using UnityEngine.Rendering;
 namespace TowerDefense3D.GridPlacement
 {
     /// <summary>
-    /// Candidate-only presentation: the footprint the tower will stand on, and nothing above it.
+    /// Candidate presentation: the footprint the tower will stand on, the ring showing how far
+    /// it will be able to link from there, and nothing above either.
     /// </summary>
     /// <remarks>
     /// The ghost volume that used to rise to the tower's height is built and kept, but never
@@ -23,6 +24,9 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField] private MeshFilter ghostMeshFilter;
         [SerializeField] private MeshRenderer ghostRenderer;
 
+        [Tooltip("The reach ring drawn around the candidate cell. Its own component, shared in shape and colour with the one tower selection puts around a tower already standing.")]
+        [SerializeField] private LinkRangeRingView linkRangeRing;
+
         [Header("World projection")]
         [SerializeField] private Camera worldCamera;
         [SerializeField] private LayerMask placementSurfaceMask = ~0;
@@ -34,6 +38,13 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, Range(0f, 0.25f)] private float cellInset = 0.06f;
         [SerializeField, Min(0f)] private float surfaceOffset = 0.025f;
         [SerializeField, Range(0f, 1f)] private float ghostAlphaMultiplier = 0.35f;
+
+        [Header("Finger offset")]
+        [Tooltip("How far above the pointer the board is sampled during a drag, as a fraction of screen height. A fingertip sits over roughly a tenth of a phone screen, so the cell being chosen is otherwise the one part of the board the player cannot see.")]
+        [SerializeField, Range(0f, 0.3f)] private float fingerOffsetUp = 0.10f;
+
+        [Tooltip("How far left of the pointer the board is sampled during a drag, as a fraction of screen height.")]
+        [SerializeField, Range(0f, 0.3f)] private float fingerOffsetLeft = 0.04f;
 
         private Mesh footprintMesh;
         private Mesh ghostMesh;
@@ -58,12 +69,17 @@ namespace TowerDefense3D.GridPlacement
 
         public Camera WorldCamera => worldCamera;
 
-        public bool TryGetWorldPoint(Vector2 screenPosition, out Vector3 worldPoint)
+        public bool TryGetWorldPoint(Vector2 screenPosition, bool offsetForFinger, out Vector3 worldPoint)
         {
             if (worldCamera == null)
             {
                 worldPoint = default;
                 return false;
+            }
+
+            if (offsetForFinger)
+            {
+                screenPosition = ApplyFingerOffset(screenPosition);
             }
 
             Ray ray = worldCamera.ScreenPointToRay(screenPosition);
@@ -82,11 +98,35 @@ namespace TowerDefense3D.GridPlacement
             return true;
         }
 
+        /// <summary>
+        /// Moves the sampled point up and to the left of the pointer, out from under the finger.
+        /// </summary>
+        /// <remarks>
+        /// Measured against screen height rather than in raw pixels, because a fingertip covers a
+        /// roughly fixed fraction of a phone screen whatever its resolution - a pixel offset tuned
+        /// on one device would be half a finger on the next and two fingers on the one after.
+        ///
+        /// Up and left rather than straight up: a right hand comes at the screen from the lower
+        /// right, so the knuckle trails below and to the right of the fingertip and clears more of
+        /// the board on that diagonal.
+        /// </remarks>
+        private Vector2 ApplyFingerOffset(Vector2 screenPosition)
+        {
+            // The camera's own pixel height, not Screen.height. They are the same number in a
+            // normal build, and only the camera's is right when they are not - rendering to a
+            // texture, or a camera that does not own the whole display.
+            float unit = worldCamera.pixelHeight;
+            return new Vector2(
+                screenPosition.x - (fingerOffsetLeft * unit),
+                screenPosition.y + (fingerOffsetUp * unit));
+        }
+
         public void Show(
             TowerFootprint footprint,
             Vector3 footprintBottomCenter,
             float cellSize,
             float heightUnit,
+            float linkRangeMeters,
             bool isValid)
         {
             if (footprint.Width <= 0 || footprint.Depth <= 0 || footprint.Height <= 0)
@@ -102,6 +142,15 @@ namespace TowerDefense3D.GridPlacement
             }
 
             transform.position = footprintBottomCenter;
+
+            // Moved after this object, never before it. The ring is a child and is placed in world
+            // space, so setting it first and then moving the parent carries it away by however far
+            // the parent travelled - which puts it off the board entirely on the second candidate.
+            if (linkRangeRing != null)
+            {
+                linkRangeRing.Show(footprintBottomCenter, linkRangeMeters);
+            }
+
             ApplyColor(isValid ? validColor : invalidColor);
             SetVisible(true);
         }
@@ -224,6 +273,10 @@ namespace TowerDefense3D.GridPlacement
             ghostProperties.SetColor(BaseColorId, color);
             ghostProperties.SetColor(ColorId, color);
             ghostRenderer.SetPropertyBlock(ghostProperties);
+
+            // The ring is never tinted by validity, and is not tinted here at all: how far the
+            // tower reaches is the same answer whether or not this cell will take it, so the ring
+            // owns its own colours.
         }
 
         private void EnsureRenderers()
@@ -260,6 +313,7 @@ namespace TowerDefense3D.GridPlacement
 
             ConfigureRenderer(footprintRenderer);
             ConfigureRenderer(ghostRenderer);
+
         }
 
         private void CreateRendererChild(string childName, out MeshFilter meshFilter, out MeshRenderer meshRenderer)
@@ -291,6 +345,11 @@ namespace TowerDefense3D.GridPlacement
             {
                 // Never shown: only the footprint marks the candidate.
                 ghostRenderer.enabled = false;
+            }
+
+            if (!visible && linkRangeRing != null)
+            {
+                linkRangeRing.Hide();
             }
         }
 
