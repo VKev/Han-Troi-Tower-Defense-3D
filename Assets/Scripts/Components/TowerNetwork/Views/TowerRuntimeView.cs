@@ -6,6 +6,12 @@ namespace TowerDefense3D.Towers
     [DisallowMultipleComponent]
     public sealed class TowerRuntimeView : MonoBehaviour, ITowerRuntimeView
     {
+        /// <summary>
+        /// Stands in for a measured radius on a tower with nothing to measure - no renderers, or
+        /// none enabled. Half a cell, so a ring drawn on it is still a ring rather than a point.
+        /// </summary>
+        private const float DefaultGroundRadiusMeters = 0.5f;
+
         [Tooltip("Degrees per second the tower turns to face its link. Zero snaps instantly.")]
         [SerializeField, Min(0f)] private float turnSpeedDegreesPerSecond = 540f;
 
@@ -15,6 +21,8 @@ namespace TowerDefense3D.Towers
         private TowerNodeId nodeId;
         private Vector3 localPresentationAnchor;
         private Vector3 localProjectileOrigin;
+        private Vector3 localGroundCentre;
+        private float groundRadiusMeters = DefaultGroundRadiusMeters;
 
         public event Action<ITowerRuntimeView> Destroyed;
 
@@ -26,6 +34,8 @@ namespace TowerDefense3D.Towers
         public Vector3 PresentationAnchor => transform.TransformPoint(localPresentationAnchor);
         public Vector3 ProjectileOrigin => transform.TransformPoint(localProjectileOrigin);
         public Vector3 FootprintOrigin => transform.position;
+        public Vector3 GroundCentre => transform.TransformPoint(localGroundCentre);
+        public float GroundRadiusMeters => groundRadiusMeters;
 
         public void SetFootprintOrigin(Vector3 worldPosition)
         {
@@ -148,8 +158,24 @@ namespace TowerDefense3D.Towers
             Vector3 worldProjectileOrigin = hasBounds
                 ? combinedBounds.center
                 : transform.position + Vector3.up;
+
+            // The silhouette's middle, dropped to the foot of the tower rather than to the bottom
+            // of its bounds: a model authored sunk into the ground would otherwise pull the ring
+            // down under the board with it.
+            Vector3 worldGroundCentre = hasBounds
+                ? new Vector3(combinedBounds.center.x, transform.position.y, combinedBounds.center.z)
+                : transform.position;
+
+            // The wider of the two axes, so the ring clears the tower on both. Taking the smaller
+            // one would tuck the ring inside the model along the other axis, which is precisely
+            // how a ring ends up invisible under the thing it is meant to be pointing at.
+            groundRadiusMeters = hasBounds
+                ? Mathf.Max(combinedBounds.extents.x, combinedBounds.extents.z)
+                : DefaultGroundRadiusMeters;
+
             localPresentationAnchor = transform.InverseTransformPoint(worldPresentationAnchor);
             localProjectileOrigin = transform.InverseTransformPoint(worldProjectileOrigin);
+            localGroundCentre = transform.InverseTransformPoint(worldGroundCentre);
         }
 
         private void OnDestroy()

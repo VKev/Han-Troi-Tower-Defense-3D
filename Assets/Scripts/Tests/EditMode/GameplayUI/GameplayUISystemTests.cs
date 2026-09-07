@@ -497,9 +497,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
         private sealed class GridPlacementViewStub : IGridPlacementView
         {
-            public bool TryGetWorldPoint(Vector2 screenPosition, out Vector3 worldPoint)
+            public bool TryGetWorldPoint(
+                Vector2 screenPosition,
+                bool offsetForFinger,
+                out Vector3 worldPoint)
             {
                 _ = screenPosition;
+                _ = offsetForFinger;
                 worldPoint = default;
                 return false;
             }
@@ -509,12 +513,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 Vector3 footprintBottomCenter,
                 float cellSize,
                 float heightUnit,
+                float linkRangeMeters,
                 bool isValid)
             {
                 _ = footprint;
                 _ = footprintBottomCenter;
                 _ = cellSize;
                 _ = heightUnit;
+                _ = linkRangeMeters;
                 _ = isValid;
             }
 

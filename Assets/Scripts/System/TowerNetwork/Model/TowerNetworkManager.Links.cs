@@ -34,18 +34,65 @@ namespace TowerDefense3D.Towers
 
         public bool TryRewire(TowerNodeId sourceId, TowerNodeId targetId, out string error)
         {
+            if (!TryOpenLinkGate(sourceId, targetId, out NodeState source, out NodeState target, out error))
+            {
+                return false;
+            }
+
+            if (outgoingLinks.TryGetValue(sourceId, out LinkState oldLink) && oldLink.Target.Equals(targetId))
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            return TryBuildAndCommitRewire(source, target, out error);
+        }
+
+        /// <summary>
+        /// Whether a link from <paramref name="sourceId"/> to <paramref name="targetId"/> would be
+        /// accepted, asked without building anything.
+        /// </summary>
+        /// <remarks>
+        /// The drag preview asks this every frame so the line under the finger already carries the
+        /// answer the release will give. It reads the same gate <see cref="TryRewire"/> reads, so
+        /// the preview cannot draw a link that the release then refuses: a second, parallel copy of
+        /// the distance rule is exactly how a green line that will not attach comes about.
+        ///
+        /// What it does not run is the rewire itself, which reshuffles input ports and re-derives
+        /// the chains. That work allocates, and this is asked once a frame while a finger is
+        /// moving. A link this accepts can still fail there under port pressure - but never on
+        /// distance, which is the answer the player is being shown.
+        /// </remarks>
+        public bool CanLink(TowerNodeId sourceId, TowerNodeId targetId)
+        {
+            return TryOpenLinkGate(sourceId, targetId, out _, out _, out _);
+        }
+
+        /// <summary>
+        /// Every reason a link can be turned away before the topology is touched, in one place so
+        /// asking and doing cannot answer differently.
+        /// </summary>
+        private bool TryOpenLinkGate(
+            TowerNodeId sourceId,
+            TowerNodeId targetId,
+            out NodeState source,
+            out NodeState target,
+            out string error)
+        {
+            source = null;
+            target = null;
             if (!CanEditTopology(out error))
             {
                 return false;
             }
 
-            if (!nodes.TryGetValue(sourceId, out NodeState source))
+            if (!nodes.TryGetValue(sourceId, out source))
             {
                 error = "Source tower is not registered.";
                 return false;
             }
 
-            if (!nodes.TryGetValue(targetId, out NodeState target))
+            if (!nodes.TryGetValue(targetId, out target))
             {
                 error = "Target tower is not registered.";
                 return false;
@@ -75,13 +122,8 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
-            if (outgoingLinks.TryGetValue(sourceId, out LinkState oldLink) && oldLink.Target.Equals(targetId))
-            {
-                error = string.Empty;
-                return true;
-            }
-
-            return TryBuildAndCommitRewire(source, target, out error);
+            error = string.Empty;
+            return true;
         }
 
         public bool TryUnlinkAll(TowerNodeId nodeId, out string error)

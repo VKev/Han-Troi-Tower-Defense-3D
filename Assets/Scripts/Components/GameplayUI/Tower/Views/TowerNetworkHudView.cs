@@ -44,12 +44,22 @@ namespace TowerDefense3D.GameFlow
 
         public bool IsInitialized => isInitialized;
 
+        /// <summary>
+        /// The colour each graphic on an action button was authored with, so a tint can be applied
+        /// over it rather than replacing it.
+        /// </summary>
+        private readonly Dictionary<Graphic, Color> authoredButtonColors = new();
+
         public void Initialize()
         {
             if (isInitialized)
             {
                 return;
             }
+
+            RememberButtonColors(unlinkButton);
+            RememberButtonColors(sellButton);
+            RememberButtonColors(upgradeButton);
 
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
@@ -113,6 +123,13 @@ namespace TowerDefense3D.GameFlow
             {
                 upgradeButton.interactable = state.UpgradeEnabled;
             }
+
+            // Unity's ColorTint reaches only the one graphic a Button targets - its plate - so the
+            // arrow, the coin and the price stayed at full brightness on a greyed button and read
+            // as a control that was still live.
+            TintButtonContents(unlinkButton, state.UnlinkEnabled);
+            TintButtonContents(sellButton, state.SellEnabled);
+            TintButtonContents(upgradeButton, state.UpgradeEnabled);
 
             if (upgradeCostText != null)
             {
@@ -249,6 +266,66 @@ namespace TowerDefense3D.GameFlow
         private void HandleSellRequested()
         {
             SellRequested?.Invoke();
+        }
+
+        private void RememberButtonColors(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            Graphic[] graphics = button.GetComponentsInChildren<Graphic>(true);
+            for (int index = 0; index < graphics.Length; index++)
+            {
+                if (graphics[index] == button.targetGraphic)
+                {
+                    continue;
+                }
+
+                authoredButtonColors[graphics[index]] = graphics[index].color;
+            }
+        }
+
+        /// <summary>
+        /// Dims everything drawn on a button in step with the button itself.
+        /// </summary>
+        /// <remarks>
+        /// The tint is the Button's own normal and disabled colours, multiplied over what each
+        /// graphic was authored with rather than replacing it - which is exactly what Unity does
+        /// to the plate. Multiplying is what keeps the cost band's own dark, half-transparent
+        /// wash from being flattened to a flat grey the moment the button goes dead.
+        ///
+        /// The plate is skipped: the Button is already driving that one, and tinting it here as
+        /// well would apply the disabled colour twice.
+        /// </remarks>
+        private void TintButtonContents(Button button, bool isEnabled)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            ColorBlock colors = button.colors;
+            Color tint = isEnabled ? colors.normalColor : colors.disabledColor;
+
+            Graphic[] graphics = button.GetComponentsInChildren<Graphic>(true);
+            for (int index = 0; index < graphics.Length; index++)
+            {
+                Graphic graphic = graphics[index];
+                if (graphic == button.targetGraphic)
+                {
+                    continue;
+                }
+
+                if (!authoredButtonColors.TryGetValue(graphic, out Color authored))
+                {
+                    authored = graphic.color;
+                    authoredButtonColors[graphic] = authored;
+                }
+
+                graphic.color = authored * tint;
+            }
         }
 
         private void HandleUpgradeRequested()

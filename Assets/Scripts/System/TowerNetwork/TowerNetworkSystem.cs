@@ -176,6 +176,24 @@ namespace TowerDefense3D.Towers
             return manager.TryRewire(sourceId, targetId, out error);
         }
 
+        /// <summary>
+        /// Whether linking <paramref name="source"/> to <paramref name="target"/> would be
+        /// accepted right now, asked without linking anything.
+        /// </summary>
+        /// <remarks>
+        /// This is what the drag preview colours itself by. It runs the same gate
+        /// <see cref="TryRewire"/> runs, so the line the player is dragging tells the truth
+        /// before they let go rather than after.
+        /// </remarks>
+        public bool CanLink(ITowerRuntimeView source, ITowerRuntimeView target)
+        {
+            return source != null
+                && target != null
+                && viewRegistry.TryGetNodeId(source, out TowerNodeId sourceId)
+                && viewRegistry.TryGetNodeId(target, out TowerNodeId targetId)
+                && manager.CanLink(sourceId, targetId);
+        }
+
         public bool BeginTowerPlacementDrag(TowerCombatDefinition definition, int pointerId)
         {
             if (!CanEditTopology)
@@ -203,7 +221,12 @@ namespace TowerDefense3D.Towers
 
             ClearSelection();
             placementCombatDefinition = definition;
-            placementSystem.BeginPlacementDrag(placementDefinition, pointerId);
+            // The ring the drag preview draws is the network's own rule, so it comes from the
+            // manager rather than from the tower: every tower links the same distance.
+            placementSystem.BeginPlacementDrag(
+                placementDefinition,
+                manager.MaximumLinkRangeMeters,
+                pointerId);
             ReportFeedback($"Drag {definition.Core.DisplayName} onto the board.");
             return true;
         }
@@ -282,6 +305,48 @@ namespace TowerDefense3D.Towers
             selectedTower = nextSelection;
             PublishStateChanged();
         }
+
+        /// <summary>
+        /// How far the selected tower reaches, in metres, or zero when nothing is selected.
+        /// </summary>
+        /// <remarks>
+        /// Two different answers, because there are two kinds of reach on this board. A hero
+        /// strikes on its own and carries its own attack radius; every other tower reaches by
+        /// linking, and that distance is a rule of the network rather than a property of the
+        /// tower - one number shared by all of them.
+        ///
+        /// Read fresh on every call rather than cached, so a radius edited in the catalog or
+        /// changed by an upgrade shows up the next time the ring is drawn.
+        /// </remarks>
+        public float DescribeSelectedRangeMeters()
+        {
+            return DescribeRangeMeters(selectedTower);
+        }
+
+        /// <summary>How far <paramref name="tower"/> reaches, or zero for no tower.</summary>
+        public float DescribeRangeMeters(ITowerRuntimeView tower)
+        {
+            if (tower == null)
+            {
+                return 0f;
+            }
+
+            return tower.CombatDefinition is HeroTowerDefinition hero
+                ? hero.AttackRangeMeters
+                : manager.MaximumLinkRangeMeters;
+        }
+
+        /// <summary>
+        /// How far any tower may link, which is a rule of the network rather than a property of a
+        /// tower.
+        /// </summary>
+        /// <remarks>
+        /// Drawn around the tower a link is being dragged from, where
+        /// <see cref="DescribeRangeMeters"/> would be the wrong circle: a hero's own attack radius
+        /// says nothing about how far it can link, so a ring measured that way would disagree with
+        /// the red the line turns at the edge of it.
+        /// </remarks>
+        public float MaximumLinkRangeMeters => manager.MaximumLinkRangeMeters;
 
         public void ClearSelection()
         {

@@ -8,6 +8,12 @@ namespace TowerDefense3D.Towers
     [DisallowMultipleComponent]
     public sealed class TowerLinkView : MonoBehaviour, ITowerLinkView
     {
+        /// <summary>
+        /// The selection bracket, loaded rather than authored per scene so its look - stroke,
+        /// gaps, colour - is tuned once in the prefab instead of ten times over.
+        /// </summary>
+        private const string SelectionRingResourcePath = "Prefabs/TowerSelectionRing";
+
         [SerializeField, Min(0.02f)] private float linkWidth = 0.1f;
         [SerializeField, Min(0.02f)] private float previewWidth = 0.08f;
 
@@ -19,7 +25,7 @@ namespace TowerDefense3D.Towers
         private Transform presentationRoot;
         private Material lineMaterial;
         private TowerLinkLineView previewLine;
-        private TowerLinkLineView selectionRing;
+        private TowerSelectionRingView selectionRing;
 
         public void Initialize()
         {
@@ -40,8 +46,31 @@ namespace TowerDefense3D.Towers
             {
                 name = "Tower Link Runtime Material"
             };
-            previewLine = CreateLine("Link Preview", previewWidth, false, 2);
-            selectionRing = CreateLine("Tower Selection", linkWidth, true, 32);
+            previewLine = CreateLine("Link Preview", previewWidth, 2);
+            selectionRing = CreateSelectionRing();
+        }
+
+        /// <summary>
+        /// Instantiates the selection bracket under the presentation root.
+        /// </summary>
+        /// <remarks>
+        /// A missing prefab leaves the field null and costs the game a bracket, not a level: every
+        /// use of it is guarded. It is worth a warning rather than a throw, because the selection
+        /// still works - only its outline is gone.
+        /// </remarks>
+        private TowerSelectionRingView CreateSelectionRing()
+        {
+            var prefab = Resources.Load<GameObject>(SelectionRingResourcePath);
+            if (prefab == null)
+            {
+                Debug.LogWarning(
+                    "Tower selection ring prefab missing at Resources/" + SelectionRingResourcePath);
+                return null;
+            }
+
+            GameObject instance = Instantiate(prefab, presentationRoot);
+            instance.name = "Tower Selection";
+            return instance.GetComponent<TowerSelectionRingView>();
         }
 
         public void RenderLinks(IReadOnlyList<TowerLinkViewItem> links)
@@ -53,7 +82,7 @@ namespace TowerDefense3D.Towers
                 visibleSources.Add(link.SourceId);
                 if (!linkLines.TryGetValue(link.SourceId, out TowerLinkLineView line))
                 {
-                    line = CreateLine($"Link {link.SourceId}", linkWidth, false, 2);
+                    line = CreateLine($"Link {link.SourceId}", linkWidth, 2);
                     linkLines.Add(link.SourceId, line);
                 }
 
@@ -83,13 +112,15 @@ namespace TowerDefense3D.Towers
 
         public void ShowSelection(Vector3 center, float radius)
         {
-            center.y += 0.08f;
-            selectionRing.ShowRing(center, radius, new Color(0.25f, 1f, 0.35f, 1f));
+            // No lift here. The ring is drawn on the board at the tower's foot and carries its own
+            // clearance off the ground; raising it again from out here would only start it
+            // clipping through whatever the tower stands on.
+            selectionRing?.Show(center, radius);
         }
 
         public void HideSelection()
         {
-            selectionRing.Hide();
+            selectionRing?.Hide();
         }
 
         public void ShowPreview(Vector3 source, Vector3 target, bool hasValidTarget)
@@ -131,12 +162,12 @@ namespace TowerDefense3D.Towers
             }
         }
 
-        private TowerLinkLineView CreateLine(string objectName, float width, bool loop, int positionCount)
+        private TowerLinkLineView CreateLine(string objectName, float width, int positionCount)
         {
             GameObject lineObject = new GameObject(objectName);
             lineObject.transform.SetParent(presentationRoot, false);
             TowerLinkLineView line = lineObject.AddComponent<TowerLinkLineView>();
-            line.Initialize(lineMaterial, width, loop, positionCount);
+            line.Initialize(lineMaterial, width, positionCount);
             return line;
         }
 

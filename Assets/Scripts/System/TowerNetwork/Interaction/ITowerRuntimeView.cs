@@ -26,6 +26,28 @@ namespace TowerDefense3D.Towers
         Vector3 FootprintOrigin { get; }
 
         /// <summary>
+        /// Where the tower stands on the board: the centre of its silhouette, dropped to the
+        /// height its footprint meets the ground at.
+        /// </summary>
+        /// <remarks>
+        /// Not the same point as <see cref="FootprintOrigin"/>. A tower's pivot is wherever its
+        /// prefab was authored with one, and several of them sit on the model's edge rather than
+        /// under its middle - so anything drawn concentric with the tower has to be drawn here or
+        /// it comes out visibly off to one side.
+        ///
+        /// It is also the point the network measures link range from, since a tower registers at
+        /// its <see cref="ProjectileOrigin"/>. A reach ring drawn anywhere else would be a circle
+        /// that disagrees with the rule it is drawn to explain.
+        /// </remarks>
+        Vector3 GroundCentre { get; }
+
+        /// <summary>
+        /// How far the tower's silhouette reaches from <see cref="GroundCentre"/> across the
+        /// board, in metres. What a ring has to clear to be seen rather than swallowed.
+        /// </summary>
+        float GroundRadiusMeters { get; }
+
+        /// <summary>
         /// Turns the tower to look at a world position, flattened to the ground plane.
         /// </summary>
         void FaceTowards(Vector3 worldPosition);
