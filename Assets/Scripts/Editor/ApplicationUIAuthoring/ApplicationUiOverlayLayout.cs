@@ -27,8 +27,7 @@ namespace TowerDefense3D.GameFlow.Editor
             "Safe Area",
             "Loading",
             "Blocking Error",
-            "Input Blocker",
-            "Tutorial Overlay"
+            "Input Blocker"
         };
 
         /// <summary>The overlays that fill the screen, and so belong outside the safe area.</summary>
@@ -36,8 +35,7 @@ namespace TowerDefense3D.GameFlow.Editor
         {
             "Loading",
             "Blocking Error",
-            "Input Blocker",
-            "Tutorial Overlay"
+            "Input Blocker"
         };
 
         [MenuItem("Tools/Tower Defense/Rebuild Application UI Full-Bleed Overlays")]
