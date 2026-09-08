@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -40,11 +41,18 @@ namespace TowerDefense3D.GameFlow
         private bool isInitialized;
         private bool isPreviewExpanded;
         private bool isTutorialPreviewOnly;
+        private CanvasGroup startWaveCanvasGroup;
+        private Tween startWaveRevealTween;
 
         public event Action StartWaveRequested;
         public Transform NextWaveToggleTransform => previewToggleButton != null
             ? previewToggleButton.transform
             : null;
+        public Transform NextEnemyTransform => previewSlots != null
+            && previewSlots.Length > 0
+            && previewSlots[0] != null
+                ? previewSlots[0].transform
+                : previewGrid != null ? previewGrid.transform : null;
 
         public void Initialize()
         {
@@ -156,7 +164,7 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            startWaveButton.gameObject.SetActive(true);
+            ResetStartWaveReveal(true);
             if (waveCounterText != null) waveCounterText.gameObject.SetActive(true);
             if (enemiesLeftText != null) enemiesLeftText.gameObject.SetActive(true);
             if (statusText != null) statusText.gameObject.SetActive(true);
@@ -174,18 +182,20 @@ namespace TowerDefense3D.GameFlow
 
         private void SetTutorialWaveVisibility(bool showStartWave, bool showCounters)
         {
-            startWaveButton.gameObject.SetActive(showStartWave);
+            if (showStartWave) RevealStartWave(); else ResetStartWaveReveal(false);
             if (waveCounterText != null) waveCounterText.gameObject.SetActive(showCounters);
             if (enemiesLeftText != null) enemiesLeftText.gameObject.SetActive(showCounters);
             if (statusText != null) statusText.gameObject.SetActive(false);
             if (waveProgressFill != null) waveProgressFill.gameObject.SetActive(false);
             if (startWaveBonusText != null) startWaveBonusText.gameObject.SetActive(false);
             if (previewToggleButton != null) previewToggleButton.gameObject.SetActive(true);
-            if (previewGrid != null) previewGrid.SetActive(true);
+            SetPreviewExpanded(true);
         }
 
         public void Shutdown()
         {
+            startWaveRevealTween?.Kill();
+            startWaveRevealTween = null;
             if (!isInitialized)
             {
                 return;
@@ -198,6 +208,51 @@ namespace TowerDefense3D.GameFlow
             }
 
             isInitialized = false;
+        }
+
+        private void RevealStartWave()
+        {
+            ResetStartWaveReveal(true);
+            RectTransform rect = startWaveButton.transform as RectTransform;
+            if (rect == null)
+            {
+                return;
+            }
+
+            if (startWaveCanvasGroup == null)
+            {
+                startWaveCanvasGroup = startWaveButton.GetComponent<CanvasGroup>();
+                if (startWaveCanvasGroup == null)
+                {
+                    startWaveCanvasGroup = startWaveButton.gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+            startWaveCanvasGroup.alpha = 0f;
+            rect.localScale = Vector3.one * 0.82f;
+            startWaveRevealTween = DOTween.Sequence()
+                .Append(rect.DOScale(1f, 0.38f).SetEase(Ease.OutBack))
+                .Join(DOTween.To(
+                        () => startWaveCanvasGroup.alpha,
+                        value => startWaveCanvasGroup.alpha = value,
+                        1f,
+                        0.22f)
+                    .SetEase(Ease.OutSine))
+                .SetTarget(this);
+        }
+
+        private void ResetStartWaveReveal(bool visible)
+        {
+            startWaveRevealTween?.Kill();
+            startWaveRevealTween = null;
+            startWaveButton.gameObject.SetActive(visible);
+            startWaveButton.transform.localScale = Vector3.one;
+            if (startWaveCanvasGroup != null) startWaveCanvasGroup.alpha = 1f;
+        }
+
+        private void OnDisable()
+        {
+            startWaveRevealTween?.Kill();
+            startWaveRevealTween = null;
         }
 
         private void HandleStartWaveRequested()

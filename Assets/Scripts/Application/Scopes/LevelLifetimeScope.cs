@@ -251,6 +251,15 @@ namespace TowerDefense3D.GameFlow
                 byId["next_wave"] = nextWaveTarget;
             }
 
+            if (waveHud?.NextEnemyTransform != null)
+            {
+                TutorialTargetView nextEnemyTarget = waveHud.NextEnemyTransform
+                    .GetComponent<TutorialTargetView>()
+                    ?? waveHud.NextEnemyTransform.gameObject.AddComponent<TutorialTargetView>();
+                nextEnemyTarget.SetTargetId("next_enemy");
+                byId["next_enemy"] = nextEnemyTarget;
+            }
+
             FrogVictoryEscapeView sceneFrog = FindSceneComponent<FrogVictoryEscapeView>();
             if (sceneFrog != null)
             {

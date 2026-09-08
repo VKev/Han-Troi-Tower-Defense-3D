@@ -29,8 +29,7 @@ namespace TowerDefense3D.GameFlow
                     waveHud?.gameObject.SetActive(true);
                     waveHud?.SetTutorialPreviewOnly(true);
                     SetVisible(levelStatus, false);
-                    SetVisible(towerHud, false);
-                    towerHud?.SetTutorialControlsVisible(false);
+                    SetTowerHudVisible(false);
                     SetVisible(pauseHud, true);
                     SetVisible(skipCheat, false);
                     break;
@@ -38,8 +37,7 @@ namespace TowerDefense3D.GameFlow
                     waveHud?.gameObject.SetActive(true);
                     waveHud?.SetTutorialPreviewOnly(true);
                     SetVisible(levelStatus, false);
-                    SetVisible(towerHud, false);
-                    towerHud?.SetTutorialControlsVisible(false);
+                    SetTowerHudVisible(false);
                     SetVisible(pauseHud, true);
                     SetVisible(skipCheat, false);
                     break;
@@ -47,8 +45,7 @@ namespace TowerDefense3D.GameFlow
                     waveHud?.gameObject.SetActive(true);
                     waveHud?.SetTutorialStartWaveOnly();
                     SetVisible(levelStatus, false);
-                    SetVisible(towerHud, false);
-                    towerHud?.SetTutorialControlsVisible(false);
+                    SetTowerHudVisible(false);
                     SetVisible(pauseHud, true);
                     SetVisible(skipCheat, false);
                     break;
@@ -56,8 +53,7 @@ namespace TowerDefense3D.GameFlow
                     waveHud?.gameObject.SetActive(true);
                     waveHud?.SetTutorialPreviewOnly(false);
                     SetVisible(levelStatus, true);
-                    SetVisible(towerHud, true);
-                    towerHud?.SetTutorialControlsVisible(true);
+                    SetTowerHudVisible(true);
                     SetVisible(pauseHud, true);
                     SetVisible(skipCheat, true);
                     break;
@@ -67,6 +63,27 @@ namespace TowerDefense3D.GameFlow
         private static void SetVisible(Component component, bool visible)
         {
             if (component != null) component.gameObject.SetActive(visible);
+        }
+
+        private void SetTowerHudVisible(bool visible)
+        {
+            if (towerHud == null)
+            {
+                return;
+            }
+
+            bool sharesRootWithWave = waveHud != null
+                && towerHud.gameObject == waveHud.gameObject;
+            if (sharesRootWithWave)
+            {
+                towerHud.gameObject.SetActive(true);
+            }
+            else
+            {
+                towerHud.gameObject.SetActive(visible);
+            }
+
+            towerHud.SetTutorialControlsVisible(visible);
         }
 
     }
