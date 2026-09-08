@@ -83,6 +83,12 @@ namespace TowerDefense3D.Towers
 
         public void Despawn()
         {
+            if (!Application.isPlaying)
+            {
+                DestroyImmediate(gameObject);
+                return;
+            }
+
             Destroy(gameObject);
         }
 

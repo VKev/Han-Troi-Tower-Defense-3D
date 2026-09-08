@@ -157,12 +157,15 @@ namespace TowerDefense3D.Vfx.EditorTools
 
         private static void CopyUniversalData(Camera reference, Camera destination)
         {
-            UniversalAdditionalCameraData source = reference.GetUniversalAdditionalCameraData();
-            UniversalAdditionalCameraData target = destination.GetUniversalAdditionalCameraData();
-            if (source == null || target == null)
+            UniversalAdditionalCameraData source =
+                reference.GetComponent<UniversalAdditionalCameraData>();
+            if (source == null)
             {
                 return;
             }
+
+            UniversalAdditionalCameraData target =
+                destination.gameObject.AddComponent<UniversalAdditionalCameraData>();
 
             target.renderType = CameraRenderType.Base;
             target.renderPostProcessing = source.renderPostProcessing;

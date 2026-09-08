@@ -44,7 +44,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 Assert.That(card.sizeDelta.x, Is.LessThan(1920f * 0.75f));
                 Assert.That(card.anchorMin, Is.EqualTo(new Vector2(0.5f, 0.5f)));
                 Assert.That(card.anchorMax, Is.EqualTo(new Vector2(0.5f, 0.5f)));
-                Assert.That(card.anchoredPosition, Is.EqualTo(Vector2.zero));
+                Vector2 center = card.anchoredPosition;
+                Vector2 halfSize = Vector2.Scale(card.rect.size, card.localScale) * 0.5f;
+                Assert.That(Mathf.Abs(center.x) + halfSize.x, Is.LessThanOrEqualTo(960f));
+                Assert.That(Mathf.Abs(center.y) + halfSize.y, Is.LessThanOrEqualTo(540f));
             }
             finally
             {

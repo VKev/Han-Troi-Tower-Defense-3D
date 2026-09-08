@@ -16,6 +16,7 @@ namespace TowerDefense3D.GameFlow.Editor
     {
         public const string PrefabPath = "Assets/Resources/Prefabs/ApplicationUI.prefab";
         private const string CounterName = "Fps Counter";
+        private const string BoldFontPath = "Assets/Font/Baloo2/Baloo2-Bold.ttf";
 
         private static readonly Color OutlineColor = new Color(0f, 0f, 0f, 0.85f);
 
@@ -79,7 +80,7 @@ namespace TowerDefense3D.GameFlow.Editor
             rect.SetAsLastSibling();
 
             Text label = EnsureComponent<Text>(owner);
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = AssetDatabase.LoadAssetAtPath<Font>(BoldFontPath);
             label.fontSize = 20;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleLeft;

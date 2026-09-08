@@ -31,7 +31,7 @@ namespace TowerDefense3D.GameFlow
         public void Tick()
         {
             float deltaTime = Time.deltaTime;
-            applicationSystems.Tick();
+            applicationSystems.Tick(deltaTime);
             activeLevelSystems.Tick(deltaTime);
         }
 

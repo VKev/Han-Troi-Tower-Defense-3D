@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.GameFlow;
 using TowerDefense3D.GridPlacement;
+using DG.Tweening;
 using UnityEngine;
 
 namespace TowerDefense3D.Frog
@@ -43,6 +45,8 @@ namespace TowerDefense3D.Frog
     {
         private static readonly int JumpState = Animator.StringToHash("Jump");
         private static readonly int IdleState = Animator.StringToHash("Idle");
+        private static readonly int BeHitState = Animator.StringToHash("BeHit");
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         [SerializeField, Min(0.01f)]
         [Tooltip("Airborne time of one hop: how long the frog takes to travel its arc and come "
@@ -89,6 +93,12 @@ namespace TowerDefense3D.Frog
         private bool hasReportedEscape;
         private float jumpClipLengthSeconds;
         private float jumpClipFrameRate;
+        private LevelBaseHealthSystem healthSystem;
+        private int observedHealth;
+        private MaterialPropertyBlock flashPropertyBlock;
+        private bool[] flashableRenderers;
+        private Tween flashTween;
+        private float flashAmount;
 
         public event Action EscapeCompleted;
 
@@ -96,6 +106,21 @@ namespace TowerDefense3D.Frog
         {
             animator = GetComponent<Animator>();
             renderers = GetComponentsInChildren<Renderer>(true);
+            flashPropertyBlock = new MaterialPropertyBlock();
+            flashableRenderers = new bool[renderers.Length];
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Material[] materials = renderers[index].sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null
+                        && materials[materialIndex].HasProperty(BaseColorId))
+                    {
+                        flashableRenderers[index] = true;
+                        break;
+                    }
+                }
+            }
             ReadJumpClip();
         }
 
@@ -108,6 +133,23 @@ namespace TowerDefense3D.Frog
             }
 
             animator.speed = 1f;
+            flashTween?.Kill();
+            flashTween = null;
+            flashAmount = 0f;
+            ClearFlash();
+        }
+
+        private void OnDestroy()
+        {
+            UnbindHealth();
+        }
+
+        public void BindHealth(LevelBaseHealthSystem system)
+        {
+            UnbindHealth();
+            healthSystem = system ?? throw new ArgumentNullException(nameof(system));
+            observedHealth = healthSystem.CurrentHealth;
+            healthSystem.HealthChanged += HandleHealthChanged;
         }
 
         public void PlayEscape()
@@ -134,6 +176,93 @@ namespace TowerDefense3D.Frog
                     transform.position,
                     guide,
                     maximumJumpDistanceMeters)));
+        }
+
+        private void HandleHealthChanged(int currentHealth, int maximumHealth)
+        {
+            bool tookDamage = currentHealth < observedHealth;
+            observedHealth = currentHealth;
+            if (!tookDamage || escapeSequence != null)
+            {
+                return;
+            }
+
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
+            }
+
+            animator.Play(BeHitState, 0, 0f);
+            PlayDamageFlash();
+        }
+
+        private void PlayDamageFlash()
+        {
+            flashTween?.Kill();
+            flashAmount = 1f;
+            ApplyFlash(flashAmount);
+            flashTween = DOTween.To(
+                    () => flashAmount,
+                    value =>
+                    {
+                        flashAmount = value;
+                        ApplyFlash(value);
+                    },
+                    0f,
+                    0.24f)
+                .SetEase(Ease.OutQuad)
+                .SetTarget(this)
+                .OnComplete(ClearFlash);
+        }
+
+        private void ApplyFlash(float amount)
+        {
+            if (amount <= 0.001f)
+            {
+                ClearFlash();
+                return;
+            }
+
+            Color tint = Color.Lerp(
+                Color.white,
+                new Color(2.4f, 0.04f, 0.02f, 1f),
+                Mathf.Clamp01(amount));
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                if (!flashableRenderers[index])
+                {
+                    continue;
+                }
+
+                flashPropertyBlock.Clear();
+                flashPropertyBlock.SetColor(BaseColorId, tint);
+                renderers[index].SetPropertyBlock(flashPropertyBlock);
+            }
+        }
+
+        private void ClearFlash()
+        {
+            if (renderers == null || flashableRenderers == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                if (flashableRenderers[index])
+                {
+                    renderers[index].SetPropertyBlock(null);
+                }
+            }
+        }
+
+        private void UnbindHealth()
+        {
+            if (healthSystem != null)
+            {
+                healthSystem.HealthChanged -= HandleHealthChanged;
+                healthSystem = null;
+            }
         }
 
         private IEnumerator JumpThrough(List<Vector3> landings)

@@ -8,7 +8,7 @@ namespace TowerDefense3D.Towers
         {
             if (!HasLevelSession)
             {
-                error = "No active tower-network level session.";
+                error = "Chưa có phiên bản đồ đang hoạt động.";
                 return false;
             }
 
@@ -20,7 +20,7 @@ namespace TowerDefense3D.Towers
 
             if (!HasValidChain)
             {
-                error = "At least one valid Generator-to-Soul-Nexus chain is required.";
+                error = "Cần ít nhất một chuỗi Generator đến Soul Nexus hợp lệ.";
                 return false;
             }
 

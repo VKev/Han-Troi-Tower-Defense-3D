@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using TowerDefense3D.Economy;
+using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
@@ -83,6 +84,30 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(system.ApplyDamage(enemy.Id, 1f), Is.True);
             Assert.That(system.LivingCount, Is.Zero);
             Assert.That(goldSystem.Balance, Is.EqualTo(definition.GoldOnDeath));
+        }
+
+        [Test]
+        public void ApplyPlannedFrame_IgnoresStaleFrameForMissingEnemy()
+        {
+            var system = CreateLongRoadSystem();
+            var staleFrame = new PlannedEnemyFrame(
+                8L,
+                Vector3.zero,
+                Vector3.right,
+                1f,
+                0f,
+                1,
+                EnemyElementPhase.Ready,
+                ElementType.Fire,
+                0f,
+                0,
+                0f,
+                0,
+                false,
+                PlannedEnemyRemoval.None);
+
+            Assert.DoesNotThrow(() => system.ApplyPlannedFrame(staleFrame));
+            Assert.That(system.SpawnedCount, Is.Zero);
         }
 
         [Test]

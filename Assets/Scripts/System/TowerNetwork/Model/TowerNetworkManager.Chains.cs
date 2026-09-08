@@ -37,6 +37,12 @@ namespace TowerDefense3D.Towers
 
         private bool TryCollectValidRoute(TowerNodeId startId, List<TowerNodeId> route)
         {
+            return TryCollectValidRoute(startId, route, outgoingLinks);
+        }
+
+        private bool TryCollectValidRoute(TowerNodeId startId, List<TowerNodeId> route,
+            IReadOnlyDictionary<TowerNodeId, LinkState> links)
+        {
             route.Clear();
 
             NodeState start = nodes[startId];
@@ -67,7 +73,7 @@ namespace TowerDefense3D.Towers
                     return false;
                 }
 
-                if (!outgoingLinks.TryGetValue(currentId, out LinkState link))
+                if (!links.TryGetValue(currentId, out LinkState link))
                 {
                     return false;
                 }

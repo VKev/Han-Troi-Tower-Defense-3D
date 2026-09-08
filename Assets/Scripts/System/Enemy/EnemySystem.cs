@@ -44,16 +44,19 @@ namespace TowerDefense3D.Enemies
         public event Action<EnemySnapshot> EnemyLeaked;
 
         /// <summary>
-        /// Removed without dying and without reaching the end - the standing boss stepping aside
-        /// for the wave it fights on. It pays no reward and costs no health, which is exactly why
-        /// it cannot be announced as a kill or as a leak.
+        /// Removed without dying and without reaching the end. It pays no reward and costs no
+        /// health, which is exactly why it cannot be announced as a kill or as a leak.
         /// </summary>
         public event Action<EnemySnapshot> EnemyDespawned;
+
+        /// <summary>An enemy carried on under a new id: old id first, new id second.</summary>
+        public event Action<long, long> EnemyRekeyed;
 
         /// <summary>
         /// Enemies that hold the wave open. The standing boss is deliberately not one of them: it
         /// is present for the whole level, so counting it would mean wave one never ends.
         /// </summary>
+        private readonly List<EnemySnapshot> removalSnapshot = new List<EnemySnapshot>();
         private EnemyInstance standingBoss;
         private IReadOnlyList<float> standingCastTimes = Array.Empty<float>();
         private float standingCastDurationSeconds;
@@ -66,7 +69,7 @@ namespace TowerDefense3D.Enemies
                 int count = 0;
                 for (int index = 0; index < activeEnemies.Count; index++)
                 {
-                    if (!activeEnemies[index].IsStanding)
+                    if (activeEnemies[index].IsAlive && !activeEnemies[index].IsStanding)
                     {
                         count++;
                     }
@@ -78,6 +81,12 @@ namespace TowerDefense3D.Enemies
 
         /// <summary>Every enemy on the board, standing boss included.</summary>
         public int SpawnedCount => enemiesById.Count;
+
+        /// <summary>Whether an enemy with this id is already on the board.</summary>
+        public bool IsSpawned(long enemyId)
+        {
+            return enemiesById.ContainsKey(enemyId);
+        }
 
         public EnemyInstance Spawn(EnemyDefinition definition)
         {
@@ -96,7 +105,13 @@ namespace TowerDefense3D.Enemies
             EnemyDefinition definition,
             int spawnPointIndex)
         {
-            return Spawn(enemyId, definition, spawnPointIndex, 0f, isStanding: false);
+            return Spawn(
+                enemyId,
+                definition,
+                spawnPointIndex,
+                0f,
+                isStanding: false,
+                suppressEntranceEffect: false);
         }
 
         /// <summary>
@@ -113,7 +128,8 @@ namespace TowerDefense3D.Enemies
             EnemyDefinition definition,
             int spawnPointIndex,
             float startDistanceMeters,
-            bool isStanding)
+            bool isStanding,
+            bool suppressEntranceEffect)
         {
             RoadPath route = roadPaths.GetForEnemy(enemyId, definition, spawnPointIndex);
             Vector3 position = route.Start;
@@ -123,8 +139,16 @@ namespace TowerDefense3D.Enemies
                 route.Move(ref targetPointIndex, ref position, startDistanceMeters);
             }
 
-            EnemyInstance enemy = SpawnAt(enemyId, definition, position, targetPointIndex, route);
-            enemy.IsStanding = isStanding;
+            // Set before SpawnAt announces the spawn, or the view would be built from a snapshot
+            // that still says a fresh arrival and would play the entrance effect anyway.
+            EnemyInstance enemy = SpawnAt(
+                enemyId,
+                definition,
+                position,
+                targetPointIndex,
+                route,
+                isStanding: isStanding,
+                suppressEntranceEffect: suppressEntranceEffect);
             return enemy;
         }
 
@@ -163,7 +187,8 @@ namespace TowerDefense3D.Enemies
                     definition,
                     spawnPointIndex,
                     standDistanceMeters,
-                    isStanding: true);
+                    isStanding: true,
+                    suppressEntranceEffect: false);
             }
 
             // Re-read every wave, so turning the marker takes effect on the next wave rather than
@@ -173,6 +198,47 @@ namespace TowerDefense3D.Enemies
             standingCastTimes = castTimesSeconds ?? Array.Empty<float>();
             standingCastDurationSeconds = castDurationSeconds;
             standingNextCastIndex = 0;
+        }
+
+        /// <summary>Whether a standing boss is on the board to be taken over.</summary>
+        internal bool HasStandingBoss => standingBoss != null && standingBoss.IsAlive;
+
+        /// <summary>
+        /// Hands the standing boss to the combat plan under the id the plan issued for it.
+        /// </summary>
+        /// <remarks>
+        /// The instance carries on: the boss the player has been looking at all level is the boss
+        /// that walks away, with no swap to notice. Only its id changes, and it has to - the plan
+        /// numbers what it owns, and its summon ids continue from the highest id it issued. A boss
+        /// keeping an older, lower id would leave the plan's numbering and the live counter out of
+        /// step, and every enemy the boss summoned would be planned under an id nothing on the
+        /// board answers to.
+        ///
+        /// The view is moved across too, or it would go on answering to the id it was spawned
+        /// under and stop receiving the frames that now drive its enemy.
+        /// </remarks>
+        internal bool AdoptStandingBossAs(long plannedEnemyId)
+        {
+            if (!HasStandingBoss)
+            {
+                return false;
+            }
+
+            EnemyInstance adopted = standingBoss;
+            long previousId = adopted.Id;
+
+            enemiesById.Remove(previousId);
+            adopted.Id = plannedEnemyId;
+            enemiesById[plannedEnemyId] = adopted;
+            adopted.IsStanding = false;
+            adopted.SkillCastRemainingSeconds = 0f;
+
+            standingBoss = null;
+            standingCastTimes = Array.Empty<float>();
+            standingNextCastIndex = 0;
+
+            EnemyRekeyed?.Invoke(previousId, plannedEnemyId);
+            return true;
         }
 
         /// <summary>
@@ -314,7 +380,14 @@ namespace TowerDefense3D.Enemies
 
         internal void ApplyPlannedFrame(PlannedEnemyFrame frame)
         {
-            EnemyInstance enemy = enemiesById[frame.EnemyId];
+            // A wave reset or level teardown can remove an enemy after its deterministic timeline
+            // was built but before the last queued frame is replayed. The frame is stale in that
+            // case; treating it as a no-op keeps cleanup idempotent instead of crashing the player
+            // loop with a dictionary lookup for an entity that has already gone away.
+            if (!enemiesById.TryGetValue(frame.EnemyId, out EnemyInstance enemy))
+            {
+                return;
+            }
             enemy.PreviousPosition = frame.PreviousPosition;
             enemy.Position = frame.Position;
             enemy.Health = frame.Health;
@@ -474,13 +547,57 @@ namespace TowerDefense3D.Enemies
             }
         }
 
+        /// <summary>
+        /// Clears the wave off the board, leaving the level's own fixtures standing.
+        /// </summary>
+        /// <remarks>
+        /// Every enemy that leaves is announced. Clearing the lists silently left their views on
+        /// screen, still registered under ids the counter was about to hand out again - which is
+        /// how a fresh enemy collided with a view nobody had let go, and how one that did get
+        /// reused inherited the pose and animation of whoever held it last.
+        ///
+        /// The standing boss stays. It belongs to the level rather than to any wave - which is
+        /// why wave completion does not count it either - so wiping a wave must leave it exactly
+        /// where the player has been watching it since the first one.
+        ///
+        /// The id counter is not rewound. It used to restart at one, which was harmless while
+        /// nothing outlived a wave; with a boss standing on id one, the next wave's first enemy
+        /// was handed the same id. Ids are longs, so letting the counter only ever climb costs
+        /// nothing.
+        /// </remarks>
         public void Reset()
         {
-            activeEnemies.Clear();
-            enemiesById.Clear();
+            // Copied first: the removal is published while iterating, and a listener is free to
+            // call back into this system.
+            removalSnapshot.Clear();
+            for (int index = 0; index < activeEnemies.Count; index++)
+            {
+                EnemyInstance enemy = activeEnemies[index];
+                if (!enemy.IsStanding)
+                {
+                    removalSnapshot.Add(CreateSnapshot(enemy));
+                }
+            }
+
+            for (int index = 0; index < removalSnapshot.Count; index++)
+            {
+                long enemyId = removalSnapshot[index].EnemyId;
+                if (enemiesById.TryGetValue(enemyId, out EnemyInstance enemy))
+                {
+                    enemiesById.Remove(enemyId);
+                    activeEnemies.Remove(enemy);
+                }
+            }
+
             speedBonusesByEnemyId.Clear();
             pendingSummons.Clear();
-            nextEnemyId = 1L;
+
+            for (int index = 0; index < removalSnapshot.Count; index++)
+            {
+                PublishEnemyDespawned(removalSnapshot[index]);
+            }
+
+            removalSnapshot.Clear();
         }
 
         private EnemyInstance SpawnAt(
@@ -489,11 +606,15 @@ namespace TowerDefense3D.Enemies
             Vector3 position,
             int targetPointIndex,
             RoadPath route,
-            bool isSummoned = false)
+            bool isSummoned = false,
+            bool isStanding = false,
+            bool suppressEntranceEffect = false)
         {
             var enemy = new EnemyInstance(enemyId, definition, position)
             {
                 IsSummoned = isSummoned,
+                IsStanding = isStanding,
+                SuppressEntranceEffect = suppressEntranceEffect,
                 TargetPointIndex = targetPointIndex,
                 Route = route
             };
@@ -574,7 +695,12 @@ namespace TowerDefense3D.Enemies
             if (phaseIndex != boss.SummonPhaseIndex)
             {
                 boss.SummonPhaseIndex = phaseIndex;
-                boss.SummonElapsedSeconds = 0f;
+
+                // Kept identical to the planner's rule. This copy is only reached by tests today,
+                // but a summoning rule that differs between the two is the one thing that would
+                // make the plan and the wave disagree.
+                boss.SummonElapsedSeconds =
+                    definition.SummonPhases[phaseIndex].SummonIntervalSeconds;
             }
 
             SummonerBossEnemyDefinition.SummonPhase phase = definition.SummonPhases[phaseIndex];
@@ -723,7 +849,8 @@ namespace TowerDefense3D.Enemies
                 enemy.SkillCastVersion,
                 enemy.IsSpeedBuffed,
                 enemy.IsStanding,
-                enemy.FacingYawDegrees);
+                enemy.FacingYawDegrees,
+                enemy.SuppressEntranceEffect);
         }
 
         private void PublishEnemyDespawned(EnemySnapshot snapshot)

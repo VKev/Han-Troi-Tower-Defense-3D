@@ -15,6 +15,20 @@ namespace TowerDefense3D.Waves
         [Tooltip("-1 uses weighted automatic route selection; 0+ selects an authored Road Spawn index.")]
         [SerializeField, Min(-1)] private int spawnPointIndex = -1;
 
+        public EnemySpawnBatchDefinition()
+        {
+        }
+
+        /// <summary>
+        /// Built in code for the wave preview, where an enemy the schedule does not author as a
+        /// batch - the standing boss on the wave it fights - still has to be shown to the player.
+        /// </summary>
+        internal EnemySpawnBatchDefinition(EnemyDefinition enemy, int count)
+        {
+            this.enemy = enemy;
+            this.count = count;
+        }
+
         public EnemyDefinition Enemy => enemy;
         public int Count => count;
         public float StartTimeSeconds => startTimeSeconds;

@@ -13,7 +13,16 @@ namespace TowerDefense3D.Waves
         public int ClearGoldReward => clearGoldReward;
         public IReadOnlyList<EnemySpawnBatchDefinition> SpawnBatches => spawnBatches;
 
-        internal void CollectValidationErrors(ICollection<string> errors, int waveIndex)
+        /// <summary>
+        /// <paramref name="hasEnemyFromElsewhere"/> is set for a wave whose enemy does not come
+        /// from its own batches - the last wave of a level with a standing boss, where the boss
+        /// itself is the wave. Such a wave may leave its batches empty; every other wave with no
+        /// batches would end the moment it began.
+        /// </summary>
+        internal void CollectValidationErrors(
+            ICollection<string> errors,
+            int waveIndex,
+            bool hasEnemyFromElsewhere = false)
         {
             string waveContext = $"Wave {waveIndex + 1}";
             if (clearGoldReward < 0)
@@ -23,7 +32,11 @@ namespace TowerDefense3D.Waves
 
             if (spawnBatches.Count == 0)
             {
-                errors.Add($"{waveContext}: At least one Spawn Batch is required.");
+                if (!hasEnemyFromElsewhere)
+                {
+                    errors.Add($"{waveContext}: At least one Spawn Batch is required.");
+                }
+
                 return;
             }
 

@@ -96,19 +96,36 @@ namespace TowerDefense3D.Waves
                 : plan.StandDistanceMeters;
 
             int waveNumber = waveIndex + 1;
-            if (!plan.IsStandingOnWave(waveNumber, schedule.Waves.Count))
+
+            // The waves before the boss walks on are ordinary waves. Checked in its own right
+            // because "not standing" is true here as well, and letting the two share a branch is
+            // how a fighting boss would be added to every early wave.
+            if (!plan.IsPresentOnWave(waveNumber, schedule.Waves.Count))
             {
-                // The last wave. The boss sets off from the spot it has been standing on all
-                // level, as an ordinary enemy: it moves, it can be hurt, and the wave is not over
-                // until it falls. Emitted here rather than left to a spawn batch because a batch
-                // cannot say "start part way along the road", and starting it back at the road
-                // mouth would teleport it away from where the player has watched it stand.
+                return;
+            }
+
+            if (plan.IsFightingOnWave(waveNumber, schedule.Waves.Count))
+            {
+                // The last wave. The boss sets off from the spot it has been standing on, as an
+                // ordinary enemy: it moves, it can be hurt, and the wave is not over until it
+                // falls. Emitted here rather than left to a spawn batch because a batch cannot say
+                // "start part way along the road", and starting it back at the road mouth would
+                // teleport it away from where the player has watched it stand.
+                //
+                // The same boss, not a replacement: this order takes over the instance that has
+                // been standing here, so it walks off from where the player watched it wait.
+                // Nothing spawns, so there is no entrance to suppress - though the flag is still
+                // set for the case where no fixture exists to take over, such as replaying
+                // straight into the last wave.
                 orders.Add(new WaveSpawnOrder(
                     0f,
                     plan.Boss,
                     sequence++,
                     plan.SpawnPointIndex,
-                    standDistance));
+                    standDistance,
+                    suppressEntranceEffect: true,
+                    adoptsExistingEnemy: true));
                 return;
             }
 

@@ -438,6 +438,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 StateChanged?.Invoke();
             }
 
+            public void ForceSkipWave()
+            {
+                Phase = WavePhase.Preparation;
+                StateChanged?.Invoke();
+            }
+
             public void PublishStateChanged()
             {
                 StateChanged?.Invoke();

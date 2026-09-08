@@ -26,7 +26,16 @@ namespace TowerDefense3D.Enemies
                 : 0f;
         }
 
-        public long Id { get; }
+        /// <summary>
+        /// Settable only so the standing boss can be re-keyed when the combat plan takes it over.
+        /// </summary>
+        /// <remarks>
+        /// The plan hands out its own ids, and its summon ids continue from the highest one it
+        /// issued. Letting the boss keep an older, lower id would put the plan's ids and the live
+        /// counter out of step, and the summons it schedules would be looked up under ids nothing
+        /// on the board answers to.
+        /// </remarks>
+        public long Id { get; internal set; }
         public EnemyDefinition Definition { get; }
         public float Health { get; internal set; }
         public float HealthFraction => Health / Definition.BaseMaxHealth;
@@ -43,6 +52,9 @@ namespace TowerDefense3D.Enemies
 
         /// <summary>Which way a standing enemy looks. Meaningless for one that walks.</summary>
         public float FacingYawDegrees { get; internal set; }
+
+        /// <summary>Arrived without an entrance effect, because it was already there.</summary>
+        public bool SuppressEntranceEffect { get; internal set; }
         public bool IsHidden => Definition is StealthEnemyDefinition
             && RevealRemainingSeconds <= 0f;
         public float RevealRemainingSeconds { get; internal set; }

@@ -31,9 +31,11 @@ namespace TowerDefense3D.GameFlow.Editor
         // Dynamic-atlas TMP assets, so Vietnamese diacritics are pulled from the TTF on demand.
         // The serif carries the level name; the sans carries every supporting line.
         private const string SelectionDisplayFontPath =
-            "Assets/Font/TMP/CormorantGaramond-SemiBold SDF.asset";
+            "Assets/Font/Baloo2/TMP/Baloo2-SemiBold SDF.asset";
         private const string SelectionBodyFontPath =
-            "Assets/Font/TMP/Montserrat-SemiBold SDF.asset";
+            "Assets/Font/Baloo2/TMP/Baloo2-SemiBold SDF.asset";
+        private const string RegularFontPath = "Assets/Font/Baloo2/Baloo2-Regular.ttf";
+        private const string BoldFontPath = "Assets/Font/Baloo2/Baloo2-Bold.ttf";
         private const string LevelCatalogPath = "Assets/Config/GameFlow/LevelCatalog.asset";
         private const string BackdropTexturePath = "Assets/Art/UI/UI_Lv_BG.png";
 
@@ -84,6 +86,7 @@ namespace TowerDefense3D.GameFlow.Editor
         private const float DotClearance = 88f;
 
         private static Font uiFont;
+        private static Font uiBoldFont;
         private static Sprite roundedSprite;
         private static Sprite circleSprite;
         private static Sprite backdropSprite;
@@ -107,7 +110,8 @@ namespace TowerDefense3D.GameFlow.Editor
 
             try
             {
-                uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                uiFont = AssetDatabase.LoadAssetAtPath<Font>(RegularFontPath);
+                uiBoldFont = AssetDatabase.LoadAssetAtPath<Font>(BoldFontPath);
                 roundedSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
                 circleSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
                 backdropSprite = AssetDatabase.LoadAssetAtPath<Sprite>(BackdropTexturePath);
@@ -886,7 +890,9 @@ namespace TowerDefense3D.GameFlow.Editor
                 text.text = content;
             }
 
-            text.font = uiFont;
+            text.font = style == FontStyle.Bold || style == FontStyle.BoldAndItalic
+                ? uiBoldFont
+                : uiFont;
             text.fontSize = fontSize;
             text.fontStyle = style;
             text.color = color;

@@ -60,11 +60,24 @@ namespace TowerDefense3D.Waves
         public int WaveNumber => waveNumber;
         public IReadOnlyList<StationaryBossCast> Casts => casts;
 
-        internal void CollectValidationErrors(ICollection<string> errors, string context, int waveCount)
+        internal void CollectValidationErrors(
+            ICollection<string> errors,
+            string context,
+            int waveCount,
+            int firstStandingWaveNumber)
         {
             if (waveNumber < 1 || waveNumber > waveCount)
             {
                 errors.Add($"{context}: Wave Number {waveNumber} is outside the schedule's {waveCount} waves.");
+            }
+
+            // A cast authored before the boss walks on would simply never happen, and nothing
+            // would say so.
+            if (waveNumber < firstStandingWaveNumber)
+            {
+                errors.Add(
+                    $"{context}: the boss does not arrive until wave {firstStandingWaveNumber}, so "
+                    + "it cannot cast here.");
             }
 
             // The boss fights on the last wave rather than standing on it, so a standing plan
@@ -118,6 +131,10 @@ namespace TowerDefense3D.Waves
         [Tooltip("Leave empty for a level with no standing boss.")]
         [SerializeField] private SummonerBossEnemyDefinition boss;
 
+        [Tooltip("The wave the boss walks on and takes up its position, counting from one. The "
+            + "waves before it play out with no boss on the board at all.")]
+        [SerializeField, Min(1)] private int firstStandingWaveNumber = 1;
+
         [Tooltip("How far along the road the boss stands, in metres from the start. Its summons "
             + "step out beside it, so this is also where they enter the road.")]
         [SerializeField, Min(0f)] private float standDistanceMeters = 12f;
@@ -131,6 +148,7 @@ namespace TowerDefense3D.Waves
         private List<StationaryBossWavePlan> waves = new List<StationaryBossWavePlan>();
 
         public SummonerBossEnemyDefinition Boss => boss;
+        public int FirstStandingWaveNumber => firstStandingWaveNumber;
         public float StandDistanceMeters => standDistanceMeters;
         public int SpawnPointIndex => spawnPointIndex;
         public IReadOnlyList<StationaryBossWavePlan> Waves => waves;
@@ -161,12 +179,32 @@ namespace TowerDefense3D.Waves
         /// this wave.
         /// </summary>
         /// <remarks>
-        /// One question, asked in one place, because three separate systems need the same answer
-        /// and three copies of "is this the last wave" is how they would come to disagree.
+        /// One question, asked in one place, because several systems need the same answer and
+        /// several copies of it is how they would come to disagree.
         /// </remarks>
         public bool IsStandingOnWave(int waveNumber, int waveCount)
         {
-            return IsAuthored && waveNumber >= 1 && waveNumber < waveCount;
+            return IsAuthored
+                && waveNumber >= firstStandingWaveNumber
+                && waveNumber < waveCount;
+        }
+
+        /// <summary>Whether this is the wave the boss joins the fight on - the last one.</summary>
+        /// <remarks>
+        /// Asked in its own right rather than inferred as "not standing", because the waves before
+        /// the boss arrives are not standing either. Reading those as fighting waves is exactly how
+        /// the boss would end up walking into wave one.
+        /// </remarks>
+        public bool IsFightingOnWave(int waveNumber, int waveCount)
+        {
+            return IsAuthored && waveNumber == waveCount;
+        }
+
+        /// <summary>Whether the boss is on the board at all during this wave.</summary>
+        public bool IsPresentOnWave(int waveNumber, int waveCount)
+        {
+            return IsStandingOnWave(waveNumber, waveCount)
+                || IsFightingOnWave(waveNumber, waveCount);
         }
 
         internal void CollectValidationErrors(ICollection<string> errors, int waveCount)
@@ -184,6 +222,14 @@ namespace TowerDefense3D.Waves
             if (boss.Rank != EnemyRank.Boss)
             {
                 errors.Add($"Stationary Boss: {boss.name} must use the Boss rank.");
+            }
+
+            if (firstStandingWaveNumber < 1 || firstStandingWaveNumber >= waveCount)
+            {
+                errors.Add(
+                    $"Stationary Boss: First Standing Wave Number {firstStandingWaveNumber} must "
+                    + $"be between 1 and {waveCount - 1} - the boss has to stand for at least one "
+                    + "wave before the one it fights on.");
             }
 
             var seen = new List<int>();
@@ -209,7 +255,8 @@ namespace TowerDefense3D.Waves
                 plan.CollectValidationErrors(
                     errors,
                     $"Stationary Boss, wave {plan.WaveNumber}",
-                    waveCount);
+                    waveCount,
+                    firstStandingWaveNumber);
             }
         }
     }

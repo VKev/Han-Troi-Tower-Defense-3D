@@ -1,4 +1,5 @@
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         internal const string RoadEndAreaName = "Road End Area";
         internal const string GeneratedGridPlaceableRootName =
             "Generated Grid Placeables";
+        internal const string GeneratedAuthoredTowerRootName = "Generated Authored Towers";
         internal const int BoardVisualizationSortingOrder = -100;
         private const string LegacyGeneratedRootName = "__Generated Board Geometry";
         private const string LegacyGeneratedRoadVisualRootName =
@@ -26,6 +28,9 @@ namespace TowerDefense3D.GridPlacement.Editor
             "generatedGridPlaceableRoot";
         private const string GeneratedGridPlaceableSignaturePropertyName =
             "generatedGridPlaceableSignature";
+        private const string GeneratedAuthoredTowerRootPropertyName = "generatedAuthoredTowerRoot";
+        private const string GeneratedAuthoredTowerSignaturePropertyName =
+            "generatedAuthoredTowerSignature";
         private const string GroundMaterialPath =
             "Assets/Resources/Materials/BoardSurface.mat";
         private const string BlockerMaterialPath =
@@ -97,6 +102,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         {
             bool changed = SynchronizeDebugGeometry(presenter, board, plan);
             changed |= SynchronizeGridPlaceables(presenter, plan);
+            changed |= SynchronizeAuthoredTowers(presenter, plan);
             if (changed)
             {
                 EditorSceneManager.MarkSceneDirty(presenter.gameObject.scene);
@@ -257,6 +263,86 @@ namespace TowerDefense3D.GridPlacement.Editor
             return true;
         }
 
+        private static bool SynchronizeAuthoredTowers(BoardView presenter, BoardGeometryPlan plan)
+        {
+            Transform root = FindOwnedAuthoredTowerRoot(presenter);
+            if (plan.AuthoredTowerVisuals.Count == 0)
+            {
+                bool changed = AssignAuthoredTowerState(presenter, null, string.Empty);
+                if (root != null)
+                {
+                    Undo.DestroyObjectImmediate(root.gameObject);
+                    changed = true;
+                }
+
+                return changed;
+            }
+
+            if (root != null && HasMatchingAuthoredTowers(presenter, root, plan))
+            {
+                bool changed = false;
+                for (int index = 0; index < root.childCount; index++)
+                {
+                    changed |= ApplyDynamicHierarchy(root.GetChild(index));
+                }
+
+                changed |= AssignAuthoredTowerState(presenter, root, plan.AuthoredTowerSignature);
+                return changed;
+            }
+
+            if (root == null)
+            {
+                var rootObject = new GameObject(GeneratedAuthoredTowerRootName);
+                Undo.RegisterCreatedObjectUndo(rootObject, "Create Generated Authored Towers Root");
+                root = rootObject.transform;
+                root.SetParent(presenter.transform, false);
+            }
+
+            for (int childIndex = root.childCount - 1; childIndex >= 0; childIndex--)
+            {
+                Undo.DestroyObjectImmediate(root.GetChild(childIndex).gameObject);
+            }
+
+            for (int index = 0; index < plan.AuthoredTowerVisuals.Count; index++)
+            {
+                CreateAuthoredTowerVisual(root, plan.AuthoredTowerVisuals[index]);
+            }
+
+            AssignAuthoredTowerState(presenter, root, plan.AuthoredTowerSignature);
+            return true;
+        }
+
+        private static bool HasMatchingAuthoredTowers(
+            BoardView presenter, Transform root, BoardGeometryPlan plan)
+        {
+            if (ReadGeneratedAuthoredTowerSignature(presenter) != plan.AuthoredTowerSignature
+                || root.childCount != plan.AuthoredTowerVisuals.Count)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < plan.AuthoredTowerVisuals.Count; index++)
+            {
+                Transform child = root.GetChild(index);
+                BoardAuthoredTowerVisual visual = plan.AuthoredTowerVisuals[index];
+                AuthoredTowerView authored = child.GetComponent<AuthoredTowerView>();
+                if (child.name != GetAuthoredTowerVisualName(visual)
+                    || PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) != visual.Prefab
+                    || authored == null
+                    || authored.Definition != visual.Definition
+                    || !authored.HasBoardAnchor
+                    || !authored.BoardAnchor.Equals(visual.Coordinate)
+                    || !Approximately(child.localPosition, visual.LocalPosition)
+                    || !Approximately(child.localRotation, visual.LocalRotation)
+                    || !Approximately(child.localScale, visual.LocalScale))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static bool HasMatchingGridPlaceables(
             BoardView presenter,
             Transform root,
@@ -402,6 +488,39 @@ namespace TowerDefense3D.GridPlacement.Editor
                 "Order Grid Placeable Visualization");
         }
 
+        private static void CreateAuthoredTowerVisual(
+            Transform root, BoardAuthoredTowerVisual visual)
+        {
+            var instance = PrefabUtility.InstantiatePrefab(
+                visual.Prefab, root.gameObject.scene) as GameObject;
+            if (instance == null)
+            {
+                return;
+            }
+
+            Undo.RegisterCreatedObjectUndo(instance, "Create Authored Tower");
+            Transform instanceTransform = instance.transform;
+            instanceTransform.SetParent(root, false);
+            instance.name = GetAuthoredTowerVisualName(visual);
+            instanceTransform.localPosition = visual.LocalPosition;
+            instanceTransform.localRotation = visual.LocalRotation;
+            instanceTransform.localScale = visual.LocalScale;
+
+            AuthoredTowerView authored = instance.GetComponent<AuthoredTowerView>();
+            if (authored == null)
+            {
+                authored = Undo.AddComponent<AuthoredTowerView>(instance);
+            }
+
+            Undo.RecordObject(authored, "Set Authored Tower Board Anchor");
+            authored.SetBoardAnchor(visual.Coordinate);
+
+            var serialized = new SerializedObject(authored);
+            serialized.FindProperty("definition").objectReferenceValue = visual.Definition;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            ApplyDynamicHierarchy(instanceTransform);
+        }
+
         private static bool ApplyStaticHierarchy(Transform root)
         {
             bool changed = false;
@@ -425,6 +544,26 @@ namespace TowerDefense3D.GridPlacement.Editor
             return changed;
         }
 
+        private static bool ApplyDynamicHierarchy(Transform root)
+        {
+            bool changed = false;
+            Transform[] hierarchy = root.GetComponentsInChildren<Transform>(true);
+            for (int index = 0; index < hierarchy.Length; index++)
+            {
+                GameObject gameObject = hierarchy[index].gameObject;
+                if (!gameObject.isStatic)
+                {
+                    continue;
+                }
+
+                Undo.RecordObject(gameObject, "Make Authored Tower Dynamic");
+                gameObject.isStatic = false;
+                changed = true;
+            }
+
+            return changed;
+        }
+
         private static string GetGridPlaceableVisualName(
             BoardGridPlaceableVisual visual)
         {
@@ -435,6 +574,10 @@ namespace TowerDefense3D.GridPlacement.Editor
                 visual.Coordinate.Y,
                 visual.Coordinate.Z);
         }
+
+        private static string GetAuthoredTowerVisualName(BoardAuthoredTowerVisual visual) =>
+            $"{visual.Definition.Core.DisplayName} Cell "
+            + $"({visual.Coordinate.X}, {visual.Coordinate.Y}, {visual.Coordinate.Z})";
 
         private static bool Approximately(
             Vector3 left,
@@ -548,6 +691,27 @@ namespace TowerDefense3D.GridPlacement.Editor
                     presenterTransform.GetChild(index);
                 if (child.name == GeneratedGridPlaceableRootName
                     || child.name == LegacyGeneratedRoadVisualRootName)
+                {
+                    return child;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindOwnedAuthoredTowerRoot(BoardView presenter)
+        {
+            Transform presenterTransform = presenter.transform;
+            Transform assignedRoot = presenter.GeneratedAuthoredTowerRoot;
+            if (assignedRoot != null && assignedRoot.parent == presenterTransform)
+            {
+                return assignedRoot;
+            }
+
+            for (int index = 0; index < presenterTransform.childCount; index++)
+            {
+                Transform child = presenterTransform.GetChild(index);
+                if (child.name == GeneratedAuthoredTowerRootName)
                 {
                     return child;
                 }
@@ -844,6 +1008,15 @@ namespace TowerDefense3D.GridPlacement.Editor
                 : string.Empty;
         }
 
+        private static string ReadGeneratedAuthoredTowerSignature(BoardView presenter)
+        {
+            var serializedPresenter = new SerializedObject(presenter);
+            serializedPresenter.Update();
+            SerializedProperty property = serializedPresenter.FindProperty(
+                GeneratedAuthoredTowerSignaturePropertyName);
+            return property != null ? property.stringValue : string.Empty;
+        }
+
         private static bool AssignGeneratedState(
             BoardView presenter,
             Transform root,
@@ -908,6 +1081,40 @@ namespace TowerDefense3D.GridPlacement.Editor
             Undo.RecordObject(
                 presenter,
                 "Update Generated Grid Placeable State");
+            if (rootChanged)
+            {
+                rootProperty.objectReferenceValue = root;
+            }
+
+            if (signatureChanged)
+            {
+                signatureProperty.stringValue = signature;
+            }
+
+            serializedPresenter.ApplyModifiedPropertiesWithoutUndo();
+            return true;
+        }
+
+        private static bool AssignAuthoredTowerState(
+            BoardView presenter, Transform root, string signature)
+        {
+            var serializedPresenter = new SerializedObject(presenter);
+            serializedPresenter.Update();
+            SerializedProperty rootProperty = serializedPresenter.FindProperty(
+                GeneratedAuthoredTowerRootPropertyName);
+            SerializedProperty signatureProperty = serializedPresenter.FindProperty(
+                GeneratedAuthoredTowerSignaturePropertyName);
+            int expectedRootInstanceId = root != null ? root.GetInstanceID() : 0;
+            bool rootChanged = rootProperty != null
+                && rootProperty.objectReferenceInstanceIDValue != expectedRootInstanceId;
+            bool signatureChanged = signatureProperty != null
+                && signatureProperty.stringValue != signature;
+            if (!rootChanged && !signatureChanged)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(presenter, "Update Generated Authored Tower State");
             if (rootChanged)
             {
                 rootProperty.objectReferenceValue = root;

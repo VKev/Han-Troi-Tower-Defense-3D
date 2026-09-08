@@ -28,9 +28,16 @@ namespace TowerDefense3D.Waves
                 return errors;
             }
 
+            // The wave the standing boss fights on is provided for by the boss, so it is allowed
+            // to have no spawn batches of its own. Every other wave still needs some, including
+            // the ones the boss merely stands through - it does not hold those open.
+            bool bossFightsLastWave = stationaryBoss != null && stationaryBoss.IsAuthored;
             for (int waveIndex = 0; waveIndex < waves.Count; waveIndex++)
             {
-                waves[waveIndex].CollectValidationErrors(errors, waveIndex);
+                waves[waveIndex].CollectValidationErrors(
+                    errors,
+                    waveIndex,
+                    hasEnemyFromElsewhere: bossFightsLastWave && waveIndex == waves.Count - 1);
             }
 
             stationaryBoss?.CollectValidationErrors(errors, waves.Count);

@@ -27,6 +27,7 @@ namespace TowerDefense3D.GameFlow
         {
             view.Initialize();
             view.SkipToVictoryRequested += HandleSkipToVictoryRequested;
+            view.SkipWaveRequested += HandleSkipWaveRequested;
             view.Show();
             Refresh();
         }
@@ -34,6 +35,7 @@ namespace TowerDefense3D.GameFlow
         public void Disconnect()
         {
             view.SkipToVictoryRequested -= HandleSkipToVictoryRequested;
+            view.SkipWaveRequested -= HandleSkipWaveRequested;
             view.Shutdown();
         }
 
@@ -49,6 +51,17 @@ namespace TowerDefense3D.GameFlow
                 WavePhase phase = waveSystem.CreateState().Phase;
                 return phase == WavePhase.Victory || phase == WavePhase.Defeat;
             }
+        }
+
+        private void HandleSkipWaveRequested()
+        {
+            if (IsLevelOver)
+            {
+                return;
+            }
+
+            waveSystem.ForceSkipWave();
+            Refresh();
         }
 
         private void HandleSkipToVictoryRequested()

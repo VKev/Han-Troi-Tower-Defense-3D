@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Frog;
@@ -6,6 +7,7 @@ using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Simulation;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Tutorials;
 using TowerDefense3D.Waves;
 using UnityEngine;
 using VContainer;
@@ -85,6 +87,7 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterComponentInHierarchy<WaveHudView>()
                 .As<IWaveHudView>();
             builder.RegisterComponentInHierarchy<FrogVictoryEscapeView>()
+                .AsSelf()
                 .As<ILevelVictoryEscapeView>();
             builder.RegisterComponentInHierarchy<EnemyViewPool>()
                 .AsSelf()
@@ -163,6 +166,15 @@ namespace TowerDefense3D.GameFlow
 
         internal void ReleaseLevelSystems()
         {
+            try
+            {
+                Container?.Resolve<TutorialSystem>()?.UnbindLevel();
+            }
+            catch
+            {
+                // The parent application scope may already be tearing down.
+            }
+
             if (attachedSystems != null)
             {
                 activeLevelSystems.DetachForScopeTeardown(attachedSystems);
@@ -194,9 +206,100 @@ namespace TowerDefense3D.GameFlow
 
             LevelSystemGroup systems = container.Resolve<LevelSystemGroup>();
             systems.Start();
+            container.Resolve<FrogVictoryEscapeView>()
+                .BindHealth(container.Resolve<LevelBaseHealthSystem>());
             AdoptAuthoredTowers(container.Resolve<TowerNetworkSystem>());
+            BindTutorialContext(
+                container.Resolve<TutorialSystem>(),
+                container.Resolve<TowerNetworkSystem>(),
+                container.Resolve<IWaveSystem>(),
+                container.Resolve<GameplayInputSystem>());
             activeLevelSystems.Attach(systems);
             attachedSystems = systems;
+        }
+
+        private void BindTutorialContext(
+            TutorialSystem tutorialSystem,
+            TowerNetworkSystem towerNetwork,
+            IWaveSystem waveSystem,
+            GameplayInputSystem inputSystem)
+        {
+            GameplayUIView gameplayView = FindSceneComponent<GameplayUIView>();
+            TutorialGameplayUiStageView tutorialUiStage = gameplayView.GetComponent<TutorialGameplayUiStageView>()
+                ?? gameplayView.gameObject.AddComponent<TutorialGameplayUiStageView>();
+            tutorialUiStage.Initialize();
+            TutorialTargetView[] targets = FindObjectsByType<TutorialTargetView>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            var byId = new Dictionary<string, TutorialTargetView>(StringComparer.Ordinal);
+            for (int index = 0; index < targets.Length; index++)
+            {
+                TutorialTargetView target = targets[index];
+                if (!string.IsNullOrEmpty(target.TargetId))
+                {
+                    byId[target.TargetId] = target;
+                }
+            }
+
+            WaveHudView waveHud = gameplayView.GetComponentInChildren<WaveHudView>(true);
+            if (waveHud?.NextWaveToggleTransform != null)
+            {
+                TutorialTargetView nextWaveTarget = waveHud.NextWaveToggleTransform
+                    .GetComponent<TutorialTargetView>()
+                    ?? waveHud.NextWaveToggleTransform.gameObject.AddComponent<TutorialTargetView>();
+                nextWaveTarget.SetTargetId("next_wave");
+                byId["next_wave"] = nextWaveTarget;
+            }
+
+            FrogVictoryEscapeView sceneFrog = FindSceneComponent<FrogVictoryEscapeView>();
+            if (sceneFrog != null)
+            {
+                TutorialTargetView frogTarget = sceneFrog.GetComponent<TutorialTargetView>()
+                    ?? sceneFrog.gameObject.AddComponent<TutorialTargetView>();
+                frogTarget.SetTargetId("frog");
+                byId["frog"] = frogTarget;
+            }
+
+            AuthoredTowerView[] authoredTowers = FindObjectsByType<AuthoredTowerView>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int index = 0; index < authoredTowers.Length; index++)
+            {
+                AuthoredTowerView tower = authoredTowers[index];
+                if (tower.gameObject.scene != gameObject.scene || tower.Definition == null)
+                {
+                    continue;
+                }
+
+                string id = tower.Definition.Family == TowerFamily.Generator
+                    ? "generator"
+                    : tower.Definition.Family == TowerFamily.SoulNexus
+                        ? "soul_nexus"
+                        : string.Empty;
+                if (string.IsNullOrEmpty(id))
+                {
+                    continue;
+                }
+
+                TutorialTargetView target = tower.GetComponent<TutorialTargetView>()
+                    ?? tower.gameObject.AddComponent<TutorialTargetView>();
+                target.SetTargetId(id);
+                byId[id] = target;
+            }
+
+            tutorialSystem.BindLevel(new TutorialContext(
+                levelNumber,
+                id => byId.ContainsKey(id),
+                id => byId.TryGetValue(id, out TutorialTargetView target) ? target.transform : null,
+                id => id == "tutorial_acknowledged"
+                    ? inputSystem.Current.HasPointerInput && inputSystem.Current.WasPressed
+                    : id == "wave_running"
+                    ? waveSystem.IsRunning
+                    : id == "generator_selected"
+                        ? towerNetwork.SelectedTower?.CombatDefinition?.Family == TowerFamily.Generator
+                        : id == "generator_linked" && towerNetwork.HasValidChain,
+                tutorialUiStage.SetMode,
+                () => inputSystem.Current.HasPointerInput && inputSystem.Current.WasPressed));
         }
 
         /// <summary>
@@ -222,9 +325,13 @@ namespace TowerDefense3D.GameFlow
                         continue;
                     }
 
+                    GridCell? authoredAnchor = authoredTower.HasBoardAnchor
+                        ? authoredTower.BoardAnchor
+                        : (GridCell?)null;
                     if (!towerNetworkSystem.TryRegisterAuthoredTower(
                             authoredTower.RuntimeView,
                             authoredTower.Definition,
+                            authoredAnchor,
                             out string error))
                     {
                         Debug.LogWarning($"'{authoredTower.name}' was not adopted: {error}", authoredTower);

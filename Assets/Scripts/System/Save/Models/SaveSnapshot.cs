@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using TowerDefense3D.Tutorials;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -22,6 +23,7 @@ namespace TowerDefense3D.GameFlow
         // Same story as the cleared set: a save written before scoring existed deserializes this
         // as null and reports no score for any level, which is exactly what an old save means.
         [SerializeField] private LevelStarRecord[] levelStars = Array.Empty<LevelStarRecord>();
+        [SerializeField] private TutorialSaveRecord[] tutorials = Array.Empty<TutorialSaveRecord>();
 
         public int SchemaVersion => schemaVersion;
         public string SlotId => slotId;
@@ -30,6 +32,7 @@ namespace TowerDefense3D.GameFlow
         public int[] UnlockedLevelNumbers => unlockedLevelNumbers;
         public int[] ClearedLevelNumbers => clearedLevelNumbers ?? Array.Empty<int>();
         public LevelStarRecord[] LevelStars => levelStars ?? Array.Empty<LevelStarRecord>();
+        public TutorialSaveRecord[] Tutorials => tutorials ?? Array.Empty<TutorialSaveRecord>();
 
         public static SaveSnapshot Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
         {
@@ -46,6 +49,7 @@ namespace TowerDefense3D.GameFlow
                 unlockedLevelNumbers,
                 clearedLevelNumbers,
                 Array.Empty<LevelStarRecord>(),
+                Array.Empty<TutorialSaveRecord>(),
                 savedAtUtc,
                 appVersion);
         }
@@ -57,6 +61,23 @@ namespace TowerDefense3D.GameFlow
             string savedAtUtc,
             string appVersion)
         {
+            return Create(
+                unlockedLevelNumbers,
+                clearedLevelNumbers,
+                levelStars,
+                Array.Empty<TutorialSaveRecord>(),
+                savedAtUtc,
+                appVersion);
+        }
+
+        public static SaveSnapshot Create(
+            int[] unlockedLevelNumbers,
+            int[] clearedLevelNumbers,
+            LevelStarRecord[] levelStars,
+            TutorialSaveRecord[] tutorials,
+            string savedAtUtc,
+            string appVersion)
+        {
             return new SaveSnapshot
             {
                 schemaVersion = CurrentSchemaVersion,
@@ -65,7 +86,8 @@ namespace TowerDefense3D.GameFlow
                 appVersion = appVersion ?? string.Empty,
                 unlockedLevelNumbers = unlockedLevelNumbers ?? Array.Empty<int>(),
                 clearedLevelNumbers = clearedLevelNumbers ?? Array.Empty<int>(),
-                levelStars = levelStars ?? Array.Empty<LevelStarRecord>()
+                levelStars = levelStars ?? Array.Empty<LevelStarRecord>(),
+                tutorials = tutorials ?? Array.Empty<TutorialSaveRecord>()
             };
         }
 

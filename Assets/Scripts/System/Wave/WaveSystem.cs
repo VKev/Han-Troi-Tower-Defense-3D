@@ -125,7 +125,21 @@ namespace TowerDefense3D.Waves
                 return Array.Empty<EnemySpawnBatchDefinition>();
             }
 
-            return schedule.Waves[nextWaveIndex].SpawnBatches;
+            IReadOnlyList<EnemySpawnBatchDefinition> batches =
+                schedule.Waves[nextWaveIndex].SpawnBatches;
+            StationaryBossPlan boss = schedule.StationaryBoss;
+            if (boss == null || !boss.IsFightingOnWave(nextWaveIndex + 1, schedule.Waves.Count))
+            {
+                return batches;
+            }
+
+            // The wave the boss fights on. It is not authored as a spawn batch - the boss is
+            // already standing on the road - so the preview would otherwise announce an empty
+            // wave right before the hardest one.
+            var preview = new List<EnemySpawnBatchDefinition>(batches.Count + 1);
+            preview.AddRange(batches);
+            preview.Add(new EnemySpawnBatchDefinition(boss.Boss, 1));
+            return preview;
         }
 
         public bool TryStartWave(out string error)
@@ -153,11 +167,12 @@ namespace TowerDefense3D.Waves
                 return false;
             }
 
+            RefreshStandingBoss();
             currentPlan = AssignEnemyIds(
                 spawnPlanner.CreatePlan(schedule, nextWaveIndex, ResolveStandDistance()));
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
-            RefreshStandingBoss();
+            HandStandingBossToPlan();
             try
             {
                 WavePlanCreated?.Invoke(currentPlan);
@@ -255,6 +270,53 @@ namespace TowerDefense3D.Waves
             StateChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Development cheat: counts the current wave as beaten and moves on to the next, or to
+        /// victory when it was the last one.
+        /// </summary>
+        /// <remarks>
+        /// The wave's clear reward is paid, so what follows is the state a genuine clear would
+        /// have left - the next wave's preparation, with the gold that wave earned. Skipping
+        /// without it would make every later wave poorer than in a real run, which is the opposite
+        /// of useful for testing.
+        ///
+        /// Phases are walked rather than jumped, the same way <see cref="ForceVictory"/> walks
+        /// them: the state machine only accepts certain moves, and going through the real ones
+        /// leaves the simulation shut down exactly as a real clear does.
+        /// </remarks>
+        public void ForceSkipWave()
+        {
+            if (Phase == WavePhase.Victory)
+            {
+                return;
+            }
+
+            towerNetworkSystem.StopSimulation();
+            enemySystem.Reset();
+            currentPlan = Array.Empty<WaveSpawnOrder>();
+            nextSpawnIndex = 0;
+            elapsedSeconds = 0f;
+
+            if (Phase == WavePhase.Defeat)
+            {
+                stateMachine.TransitionTo(WavePhase.Preparation);
+            }
+
+            goldSystem.Add(schedule.Waves[nextWaveIndex].ClearGoldReward);
+            nextWaveIndex++;
+
+            if (Phase == WavePhase.Preparation)
+            {
+                stateMachine.TransitionTo(WavePhase.Running);
+            }
+
+            stateMachine.TransitionTo(
+                nextWaveIndex >= schedule.Waves.Count
+                    ? WavePhase.Victory
+                    : WavePhase.Preparation);
+            StateChanged?.Invoke();
+        }
+
         public void Reset()
         {
             towerNetworkSystem.StopSimulation();
@@ -312,9 +374,9 @@ namespace TowerDefense3D.Waves
             int waveNumber = nextWaveIndex + 1;
             if (!plan.IsStandingOnWave(waveNumber, schedule.Waves.Count))
             {
-                // The last wave: the plan spawns the boss as a real enemy at the same spot, so the
-                // fixture has to go or there would be two of them standing on each other.
-                enemySystem.RemoveStandingBoss();
+                // Either the boss has not walked on yet - nothing to place - or this is the last
+                // wave, where it is left standing for now and the plan takes the very same
+                // instance over once it has issued the id it will drive it by.
                 return;
             }
 
@@ -345,18 +407,36 @@ namespace TowerDefense3D.Waves
                 && currentPlan[nextSpawnIndex].TimeSeconds <= elapsedSeconds)
             {
                 WaveSpawnOrder order = currentPlan[nextSpawnIndex];
+                nextSpawnIndex++;
+
+                // A takeover order has nothing to spawn: the enemy is already on the board under
+                // this id, and the planned frames are about to start moving it.
+                if (order.AdoptsExistingEnemy && enemySystem.IsSpawned(order.EnemyId))
+                {
+                    continue;
+                }
+
                 enemySystem.Spawn(
                     order.EnemyId,
                     order.Enemy,
                     order.SpawnPointIndex,
                     order.StartDistanceMeters,
-                    isStanding: false);
-                nextSpawnIndex++;
+                    isStanding: false,
+                    suppressEntranceEffect: order.SuppressEntranceEffect);
             }
         }
 
-        private IReadOnlyList<WaveSpawnOrder> AssignEnemyIds(
-            IReadOnlyList<WaveSpawnOrder> plan)
+        /// <summary>
+        /// Gives every order its enemy id, takeover orders included.
+        /// </summary>
+        /// <remarks>
+        /// Every order reserves, with no exceptions. The planner continues its own summon ids from
+        /// the highest id in the plan, and the live side continues from its counter; those two
+        /// only stay in step while the plan's highest id is the last one reserved. An order that
+        /// skipped reserving broke exactly that, and the summons it planned were then looked up
+        /// under ids nothing on the board answered to.
+        /// </remarks>
+        private IReadOnlyList<WaveSpawnOrder> AssignEnemyIds(IReadOnlyList<WaveSpawnOrder> plan)
         {
             var assignedPlan = new WaveSpawnOrder[plan.Count];
             for (int index = 0; index < plan.Count; index++)
@@ -365,6 +445,28 @@ namespace TowerDefense3D.Waves
             }
 
             return assignedPlan;
+        }
+
+        /// <summary>
+        /// Moves the standing boss onto the id the plan issued for it, so the instance the player
+        /// has been watching is the one the plan drives.
+        /// </summary>
+        private void HandStandingBossToPlan()
+        {
+            if (!enemySystem.HasStandingBoss)
+            {
+                return;
+            }
+
+            for (int index = 0; index < currentPlan.Count; index++)
+            {
+                WaveSpawnOrder order = currentPlan[index];
+                if (order.AdoptsExistingEnemy)
+                {
+                    enemySystem.AdoptStandingBossAs(order.EnemyId);
+                    return;
+                }
+            }
         }
 
         private static bool CanTransition(WavePhase currentPhase, WavePhase nextPhase)

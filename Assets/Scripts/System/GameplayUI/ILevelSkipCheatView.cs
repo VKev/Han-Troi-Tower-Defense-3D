@@ -11,6 +11,9 @@ namespace TowerDefense3D.GameFlow
     {
         event Action SkipToVictoryRequested;
 
+        /// <summary>One wave counted as beaten, rather than the whole level.</summary>
+        event Action SkipWaveRequested;
+
         void Initialize();
         void Render(bool canSkip);
         void Show();

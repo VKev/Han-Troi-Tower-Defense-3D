@@ -29,15 +29,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private const float ForegroundFactor = 1.3f;
 
         /// <summary>
-        /// The silhouette occupies rows 96..263 of its 384-tall sheet, so its bottom edge is a
-        /// quarter of the way up the rect rather than at the rect's own bottom.
-        /// </summary>
-        private const float ArtBottomShareOfRect = 0.25f;
-
-        /// <summary>Just below the screen, so the band is cut off rather than left floating.</summary>
-        private const float ArtBottomBelowCanvas = -13f;
-
-        /// <summary>
         /// The shape the art was drawn for, a 4:3 tablet, and a wide phone - the canvas sizes the
         /// scaler lands on for each, not the displays' own pixels.
         /// </summary>
@@ -200,8 +191,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         /// <summary>
-        /// The foreground has to stand on the bottom edge of every display, not at a fixed
-        /// distance from the middle of one.
+        /// The current foreground uses a deliberate bottom crop. Its authored offset is part of
+        /// that composition, so the invariant is its bottom anchor rather than a visible-art edge.
         /// </summary>
         /// <remarks>
         /// The canvas scaler blends width and height, so the canvas is 1247 units tall on a 4:3
@@ -211,7 +202,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         /// makes the one authored number right everywhere.
         /// </remarks>
         [Test]
-        public void Layer4_StandsOnTheBottomEdgeOfEveryDisplayShape()
+        public void Layer4_KeepsItsAuthoredBottomCropAcrossDisplayShapes()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ApplicationUiPrefabPath);
             GameObject instance = Object.Instantiate(prefab);
@@ -226,6 +217,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             var canvasRect = (RectTransform)instance.transform;
             var band = (RectTransform)instance.transform.Find("Journey Map/Layer4");
             Assert.That(band, Is.Not.Null, "The journey map must author a Layer4 foreground.");
+            Assert.That(band.anchorMin.y, Is.Zero);
+            Assert.That(band.anchorMax.y, Is.Zero);
+            Assert.That(band.pivot.y, Is.Zero);
+            Vector2 authoredPosition = band.anchoredPosition;
 
             foreach (Vector2 shape in DisplayShapes)
             {
@@ -234,20 +229,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 canvasRect.sizeDelta = shape;
                 Canvas.ForceUpdateCanvases();
 
-                float rectHeight = band.rect.height * band.localScale.y;
-                float artBottom = band.localPosition.y
-                                  - band.pivot.y * rectHeight
-                                  + ArtBottomShareOfRect * rectHeight
-                                  + shape.y * 0.5f;
-
                 Assert.That(
-                    artBottom,
-                    Is.EqualTo(ArtBottomBelowCanvas).Within(2f),
-                    $"On a {shape.x:0}x{shape.y:0} canvas the silhouette bottom sits at "
-                    + $"{artBottom:0.#} instead of {ArtBottomBelowCanvas:0.#}: "
-                    + (artBottom > 0f
-                        ? "it is floating above the bottom edge."
-                        : "it is cut too far into the screen."));
+                    band.anchoredPosition,
+                    Is.EqualTo(authoredPosition),
+                    $"Layer4 drifted from its bottom-cropped composition on {shape.x:0}x{shape.y:0}.");
             }
         }
 

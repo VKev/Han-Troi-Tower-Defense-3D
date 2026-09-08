@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private enum OverlayPaintMode
         {
             Prefab,
+            Tower,
             CameraFocus,
             Road,
             RoadSpawn,
@@ -41,13 +43,15 @@ namespace TowerDefense3D.GridPlacement.Editor
         private static readonly Color CameraFocusAccentColor = new Color(0.15f, 0.85f, 0.95f, 1f);
         private static readonly Color GridPlaceableAccentColor =
             new Color(1f, 0.55f, 0.12f, 1f);
+        private static readonly Color AuthoredTowerAccentColor =
+            new Color(0.75f, 0.35f, 1f, 0.7f);
         internal static readonly BoardPaintPreset[] BasicCellPresetOptions =
             { BoardPaintPreset.Empty, BoardPaintPreset.Buildable, BoardPaintPreset.NoBuild };
         private static readonly string[] BasicCellPresetLabels =
             System.Array.ConvertAll(BasicCellPresetOptions, BoardPaintPresetUtility.GetLabel);
         internal static readonly string[] OverlayCellOptions =
             {
-                "Prefab", "Camera Focus", "Road", "Road Spawn", "Road End", "Route Arrow", "Route"
+                "Prefab", "Tower", "Camera Focus", "Road", "Road Spawn", "Road End", "Route Arrow", "Route"
             };
 
         private BoardDefinition boardAsset;
@@ -75,6 +79,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private bool strokeIsRoadBrush;
         private bool strokeIsRoadDirectionBrush;
         private bool strokeIsGridPlaceableBrush;
+        private bool strokeIsAuthoredTowerBrush;
         private bool overlayCellBrushActive;
         private bool cameraFocusAllowed;
         private OverlayPaintMode selectedOverlayMode = OverlayPaintMode.Prefab;
@@ -84,6 +89,8 @@ namespace TowerDefense3D.GridPlacement.Editor
         private readonly Dictionary<GridCell, string> routeOrderLabels =
             new Dictionary<GridCell, string>();
         private GridPlaceableAuthoring selectedGridPlaceable;
+        private TowerCombatDefinition selectedAuthoredTower;
+        private string authoredTowerPaintError = string.Empty;
         private GridCell lastPaintedCell;
         private int gridControlId;
 
@@ -105,6 +112,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         {
             Undo.undoRedoPerformed += HandleUndoRedo;
             selectedGridPlaceable ??= FindFirstGridPlaceable();
+            selectedAuthoredTower ??= FindFirstAuthoredTowerDefinition();
             if (boardAsset != null)
             {
                 SetBoard(boardAsset);
@@ -324,6 +332,9 @@ namespace TowerDefense3D.GridPlacement.Editor
 
             switch (selectedOverlayMode)
             {
+                case OverlayPaintMode.Tower:
+                    DrawAuthoredTowerPanel();
+                    break;
                 case OverlayPaintMode.CameraFocus:
                     DrawCameraFocusPanel();
                     break;
@@ -343,11 +354,14 @@ namespace TowerDefense3D.GridPlacement.Editor
                     break;
             }
 
-            brushSize = EditorGUILayout.IntPopup(
-                "Brush Size",
-                brushSize,
-                BrushSizeLabels,
-                BrushSizes);
+            if (selectedOverlayMode != OverlayPaintMode.Tower)
+            {
+                brushSize = EditorGUILayout.IntPopup(
+                    "Brush Size",
+                    brushSize,
+                    BrushSizeLabels,
+                    BrushSizes);
+            }
         }
 
         private void DrawCameraFocusPanel()
@@ -544,6 +558,47 @@ namespace TowerDefense3D.GridPlacement.Editor
                 EditorStyles.wordWrappedMiniLabel);
         }
 
+        private void DrawAuthoredTowerPanel()
+        {
+            EditorGUI.BeginChangeCheck();
+            TowerCombatDefinition selected = (TowerCombatDefinition)EditorGUILayout.ObjectField(
+                "Tower Definition",
+                selectedAuthoredTower,
+                typeof(TowerCombatDefinition),
+                false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                selectedAuthoredTower = BoardAuthoringDocument.IsValidAuthoredTowerDefinition(selected)
+                    ? selected
+                    : null;
+                authoredTowerPaintError = string.Empty;
+            }
+
+            if (selectedAuthoredTower == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "Choose a TowerCombatDefinition with a placement prefab whose root has TowerRuntimeView.",
+                    MessageType.Info);
+            }
+            else
+            {
+                TowerFootprint footprint = selectedAuthoredTower.Core.PlacementDefinition.Footprint;
+                EditorGUILayout.LabelField(
+                    "Role / Footprint",
+                    $"{selectedAuthoredTower.NetworkRole} / {footprint.Width} x {footprint.Depth} x {footprint.Height}");
+            }
+
+            if (!string.IsNullOrEmpty(authoredTowerPaintError))
+            {
+                EditorGUILayout.HelpBox(authoredTowerPaintError, MessageType.Warning);
+            }
+
+            EditorGUILayout.LabelField(
+                "Left-click places one authored tower. Right-click removes the tower under the cell. "
+                + "Its full footprint must be buildable and cannot overlap another tower or grid prefab.",
+                EditorStyles.wordWrappedMiniLabel);
+        }
+
         private void DrawGridPanel()
         {
             using (new EditorGUILayout.VerticalScope())
@@ -721,6 +776,10 @@ namespace TowerDefense3D.GridPlacement.Editor
                     RoadExitDirection roadExitDirection =
                         document.GetRoadExitDirection(coordinate);
                     GameObject gridPlaceable = document.GetGridPlaceable(coordinate);
+                    bool hasAuthoredTower = document.TryGetAuthoredTowerAtCell(
+                        coordinate,
+                        out GridCell authoredTowerAnchor,
+                        out TowerCombatDefinition authoredTower);
                     Rect cellRect = GetCellRect(gridRect, dimensions, x, z, cellSize);
                     Color fillColor = roadRole != RoadPaintMode.None
                         ? RoadPaintModeUtility.GetColor(roadRole)
@@ -763,6 +822,17 @@ namespace TowerDefense3D.GridPlacement.Editor
                         EditorGUI.DrawRect(accentRect, GridPlaceableAccentColor);
                     }
 
+                    if (hasAuthoredTower)
+                    {
+                        EditorGUI.DrawRect(
+                            new Rect(cellRect.x + 2f, cellRect.y + 2f, cellRect.width - 4f, cellRect.height - 4f),
+                            AuthoredTowerAccentColor);
+                        if (coordinate.Equals(authoredTowerAnchor))
+                        {
+                            GUI.Label(cellRect, "T", EditorStyles.whiteBoldLabel);
+                        }
+                    }
+
                     if (showRouteOrder
                         && routeOrderLabels.TryGetValue(coordinate, out string orderLabel))
                     {
@@ -778,9 +848,16 @@ namespace TowerDefense3D.GridPlacement.Editor
 
                     if (cellRect.Contains(Event.current.mousePosition))
                     {
-                        string tooltip = gridPlaceable != null
-                            ? $"{coordinate}: {flags}\nPrefab: {gridPlaceable.name}"
-                            : $"{coordinate}: {flags}";
+                        string tooltip = $"{coordinate}: {flags}";
+                        if (gridPlaceable != null)
+                        {
+                            tooltip += $"\nPrefab: {gridPlaceable.name}";
+                        }
+
+                        if (hasAuthoredTower)
+                        {
+                            tooltip += $"\nTower: {authoredTower.name} (anchor {authoredTowerAnchor})";
+                        }
                         GUI.Label(
                             cellRect,
                             new GUIContent(string.Empty, tooltip));
@@ -806,13 +883,16 @@ namespace TowerDefense3D.GridPlacement.Editor
                 && selectedOverlayMode == OverlayPaintMode.Route;
             bool useGridPlaceableBrush = overlayCellBrushActive
                 && selectedOverlayMode == OverlayPaintMode.Prefab;
+            bool useAuthoredTowerBrush = overlayCellBrushActive
+                && selectedOverlayMode == OverlayPaintMode.Tower;
             RoadPaintMode selectedRoadMode = GetRoadPaintMode(selectedOverlayMode);
             bool brushAvailable = !overlayCellBrushActive
                 || useCameraFocusBrush
                 || useRoadBrush
                 || useRoadDirectionBrush
                 || useRouteBrush
-                || useGridPlaceableBrush;
+                || useGridPlaceableBrush
+                || useAuthoredTowerBrush;
 
             if (current.type == EventType.MouseDown
                 && (current.button == 0 || current.button == 1)
@@ -826,6 +906,7 @@ namespace TowerDefense3D.GridPlacement.Editor
                 strokeIsRoadDirectionBrush = useRoadDirectionBrush;
                 strokeIsRouteBrush = useRouteBrush;
                 strokeIsGridPlaceableBrush = useGridPlaceableBrush;
+                strokeIsAuthoredTowerBrush = useAuthoredTowerBrush;
                 GUIUtility.hotControl = gridControlId;
                 if (useCameraFocusBrush)
                 {
@@ -857,6 +938,15 @@ namespace TowerDefense3D.GridPlacement.Editor
                             current.button == 1
                                 ? null
                                 : selectedGridPlaceable.gameObject);
+                    }
+                }
+                else if (useAuthoredTowerBrush)
+                {
+                    if (current.button == 1 || selectedAuthoredTower != null)
+                    {
+                        PaintAuthoredTowerCell(
+                            coordinate,
+                            current.button == 1 ? null : selectedAuthoredTower);
                     }
                 }
                 else
@@ -913,6 +1003,10 @@ namespace TowerDefense3D.GridPlacement.Editor
                                     ? null
                                     : selectedGridPlaceable.gameObject);
                         }
+                    }
+                    else if (strokeIsAuthoredTowerBrush)
+                    {
+                        // Towers use one deliberate click per anchor; dragging must not stamp a chain.
                     }
                     else
                     {
@@ -1101,6 +1195,35 @@ namespace TowerDefense3D.GridPlacement.Editor
             Repaint();
         }
 
+        private void PaintAuthoredTowerCell(GridCell coordinate, TowerCombatDefinition definition)
+        {
+            if (definition == null)
+            {
+                if (document.TryGetAuthoredTowerAtCell(
+                        coordinate, out GridCell anchor, out _))
+                {
+                    strokeChanged |= document.TrySetAuthoredTower(anchor, null, out _);
+                }
+
+                authoredTowerPaintError = string.Empty;
+                Repaint();
+                return;
+            }
+
+            TowerCombatDefinition before = document.GetAuthoredTower(coordinate);
+            if (document.TrySetAuthoredTower(coordinate, definition, out string error))
+            {
+                strokeChanged |= before != definition;
+                authoredTowerPaintError = string.Empty;
+            }
+            else
+            {
+                authoredTowerPaintError = error;
+            }
+
+            Repaint();
+        }
+
         internal static bool PaintGridPlaceableBrush(
             BoardAuthoringDocument targetDocument,
             GridCell center,
@@ -1122,6 +1245,12 @@ namespace TowerDefense3D.GridPlacement.Editor
                     var coordinate = new GridCell(x, z, center.Y);
                     GameObject before =
                         targetDocument.GetGridPlaceable(coordinate);
+                    if (prefab != null
+                        && targetDocument.TryGetAuthoredTowerAtCell(coordinate, out _, out _))
+                    {
+                        continue;
+                    }
+
                     targetDocument.SetGridPlaceable(coordinate, prefab);
                     changed |= before !=
                         targetDocument.GetGridPlaceable(coordinate);
@@ -1150,6 +1279,8 @@ namespace TowerDefense3D.GridPlacement.Editor
                             ? "Paint Road Directions"
                         : strokeIsGridPlaceableBrush
                             ? "Paint Grid Prefabs"
+                            : strokeIsAuthoredTowerBrush
+                                ? "Paint Authored Towers"
                             : "Paint Board Cells";
                 document.Commit(undoName);
             }
@@ -1158,6 +1289,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             strokeChanged = false;
             strokeIsRoadDirectionBrush = false;
             strokeIsRouteBrush = false;
+            strokeIsGridPlaceableBrush = false;
+            strokeIsAuthoredTowerBrush = false;
             if (GUIUtility.hotControl == gridControlId)
             {
                 GUIUtility.hotControl = 0;
@@ -1174,7 +1307,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             if (removedCells > 0
                 && !EditorUtility.DisplayDialog(
                     "Resize Board",
-                    $"This resize will remove {removedCells} authored cells outside the new bounds.",
+                    $"This resize will remove {removedCells} authored board entries outside the new bounds.",
                     "Resize and Remove",
                     "Cancel"))
             {
@@ -1193,6 +1326,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             EditorGUILayout.LabelField(
                 $"Active cells: {document.ActiveCellCount}    "
                 + $"Prefab cells: {document.ActiveGridPlaceableCount}    "
+                + $"Authored towers: {document.ActiveAuthoredTowerCount}    "
                 + $"Dimensions: {document.Dimensions}",
                 EditorStyles.boldLabel);
 
@@ -1208,6 +1342,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             document = board != null ? new BoardAuthoringDocument(board) : null;
             selectedLevel = 0;
             overlayCellBrushActive = false;
+            authoredTowerPaintError = string.Empty;
             scrollPosition = Vector2.zero;
             SyncPendingValues();
             Repaint();
@@ -1233,6 +1368,22 @@ namespace TowerDefense3D.GridPlacement.Editor
                 if (IsValidGridPlaceableSelection(candidate))
                 {
                     return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private static TowerCombatDefinition FindFirstAuthoredTowerDefinition()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:TowerCombatDefinition");
+            for (int index = 0; index < guids.Length; index++)
+            {
+                TowerCombatDefinition definition = AssetDatabase.LoadAssetAtPath<TowerCombatDefinition>(
+                    AssetDatabase.GUIDToAssetPath(guids[index]));
+                if (BoardAuthoringDocument.IsValidAuthoredTowerDefinition(definition))
+                {
+                    return definition;
                 }
             }
 

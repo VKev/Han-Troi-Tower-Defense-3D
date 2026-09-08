@@ -19,6 +19,8 @@ namespace TowerDefense3D.GameFlow.Editor
     {
         public const string PrefabPath = "Assets/Resources/Prefabs/GameplayUI.prefab";
         private const string TowerCatalogPath = "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
+        private const string RegularFontPath = "Assets/Font/Baloo2/Baloo2-Regular.ttf";
+        private const string BoldFontPath = "Assets/Font/Baloo2/Baloo2-Bold.ttf";
 
         private static readonly Color PanelColor = new Color(0.07f, 0.08f, 0.10f, 0.88f);
         private static readonly Color TextColor = new Color(0.93f, 0.95f, 0.97f, 1f);
@@ -50,6 +52,7 @@ namespace TowerDefense3D.GameFlow.Editor
             };
 
         private static Font uiFont;
+        private static Font uiBoldFont;
         private static Sprite roundedSprite;
 
         [MenuItem("Tools/Tower Defense/Rebuild Gameplay HUD Prototype Layout")]
@@ -71,7 +74,8 @@ namespace TowerDefense3D.GameFlow.Editor
 
             try
             {
-                uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                uiFont = AssetDatabase.LoadAssetAtPath<Font>(RegularFontPath);
+                uiBoldFont = AssetDatabase.LoadAssetAtPath<Font>(BoldFontPath);
                 roundedSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
                 Rebuild(root, catalog);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
@@ -532,13 +536,15 @@ namespace TowerDefense3D.GameFlow.Editor
             TextAnchor anchor,
             FontStyle style)
         {
-            text.font = uiFont;
+            text.font = style == FontStyle.Bold || style == FontStyle.BoldAndItalic
+                ? uiBoldFont
+                : uiFont;
             text.fontSize = fontSize;
             text.fontStyle = style;
             text.color = color;
             text.alignment = anchor;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
             text.resizeTextForBestFit = false;
             return text;
         }

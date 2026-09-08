@@ -72,6 +72,15 @@ namespace TowerDefense3D.Enemies
             GetSkillEffectView()?.ConfigureEmitter(reactionEffectEmitter);
         }
 
+        /// <summary>
+        /// Takes a new enemy id without being rebound, for a view whose enemy carries on under a
+        /// different id.
+        /// </summary>
+        public void Rekey(long enemyId)
+        {
+            EnemyId = enemyId;
+        }
+
         public void Bind(EnemySnapshot enemy, bool activateImmediately = true)
         {
             SetRenderingVisible(false);
@@ -115,6 +124,11 @@ namespace TowerDefense3D.Enemies
                 StartScaleTransition();
             }
 
+            // Kept in step with the enemy's own state rather than latched when it appeared. The
+            // boss that stands all level and then walks off on the last wave changes from one to
+            // the other without ever being respawned, so a flag set once at activation would
+            // leave it sliding along in its idle pose.
+            SetMoving(!enemy.IsStanding);
             GetDamageFlashView().Render(enemy, Time.deltaTime);
             GetStealthView()?.Render(enemy, Time.deltaTime);
             bool skillCastStarted = enemy.SkillCastVersion != renderedSkillCastVersion;

@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Tutorials;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -9,11 +10,16 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly ISaveRepository repository;
         private readonly string applicationVersion;
+        private readonly TutorialProgress tutorialProgress;
 
-        public SaveSystem(ISaveRepository repository, string applicationVersion)
+        public SaveSystem(
+            ISaveRepository repository,
+            string applicationVersion,
+            TutorialProgress tutorialProgress = null)
         {
             this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
             this.applicationVersion = applicationVersion;
+            this.tutorialProgress = tutorialProgress;
         }
 
         public UnlockProgress Progress { get; private set; }
@@ -29,6 +35,7 @@ namespace TowerDefense3D.GameFlow
                     loadResult.Data.UnlockedLevelNumbers,
                     loadResult.Data.ClearedLevelNumbers,
                     loadResult.Data.LevelStars);
+                tutorialProgress?.Restore(loadResult.Data.Tutorials);
                 LastWriteResult = new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
                 return loadResult;
             }
@@ -36,6 +43,7 @@ namespace TowerDefense3D.GameFlow
             if (loadResult.Status == SaveLoadStatus.Missing)
             {
                 Progress = new UnlockProgress();
+                tutorialProgress?.Restore(null);
                 LastWriteResult = SaveCurrent();
                 return loadResult;
             }
@@ -85,6 +93,7 @@ namespace TowerDefense3D.GameFlow
             }
 
             Progress = new UnlockProgress();
+            tutorialProgress?.Restore(null);
             LastWriteResult = SaveCurrent();
             return LastWriteResult;
         }
@@ -95,6 +104,7 @@ namespace TowerDefense3D.GameFlow
                 Progress.CreateSortedSnapshot(),
                 Progress.CreateSortedClearedSnapshot(),
                 Progress.CreateSortedStarSnapshot(),
+                tutorialProgress?.CreateSnapshot() ?? Array.Empty<TutorialSaveRecord>(),
                 DateTime.UtcNow.ToString("O"),
                 applicationVersion);
             LastWriteResult = repository.Save(snapshot);

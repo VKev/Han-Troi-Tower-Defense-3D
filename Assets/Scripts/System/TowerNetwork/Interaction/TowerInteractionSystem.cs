@@ -112,7 +112,13 @@ namespace TowerDefense3D.Towers
         {
             currentPosition = screenPosition;
             float dragThresholdSquared = LinkDragThresholdPixels * LinkDragThresholdPixels;
-            if (!IsDraggingLink && (screenPosition - pressPosition).sqrMagnitude >= dragThresholdSquared)
+
+            // The gesture only becomes a link drag if a link could actually come of it. A wave
+            // already running, or a hero under the finger, used to let the player drag a line
+            // right across the board and only find out on release that nothing would attach.
+            if (!IsDraggingLink
+                && towerNetworkSystem.CanStartLinkFrom(pressedTower)
+                && (screenPosition - pressPosition).sqrMagnitude >= dragThresholdSquared)
             {
                 IsDraggingLink = true;
             }

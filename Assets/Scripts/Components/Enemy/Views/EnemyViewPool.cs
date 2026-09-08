@@ -53,7 +53,14 @@ namespace TowerDefense3D.Enemies
             EnemyView view = pool.Get();
             activeViews.Add(enemy.EnemyId, new ActiveEnemyView(pool, view));
             view.Bind(enemy, activateImmediately: false);
-            PlayPrespawnEffect(view);
+
+            // A boss taking over from the one that was standing there is not arriving; it is
+            // continuing. Announcing it with the arrival puff would give away a swap the player
+            // is not meant to notice.
+            if (!enemy.SuppressEntranceEffect)
+            {
+                PlayPrespawnEffect(view);
+            }
         }
 
         public void Despawn(long enemyId)
@@ -62,6 +69,30 @@ namespace TowerDefense3D.Enemies
             activeViews.Remove(enemyId);
             pendingDeaths[enemyId] = activeView;
             activeView.View.BeginDeath(() => CompleteDeath(enemyId, activeView));
+        }
+
+        public void ReleaseImmediate(long enemyId)
+        {
+            if (!activeViews.TryGetValue(enemyId, out ActiveEnemyView activeView))
+            {
+                return;
+            }
+
+            activeViews.Remove(enemyId);
+            activeView.Pool.Release(activeView.View);
+        }
+
+        public void Rekey(long oldEnemyId, long newEnemyId)
+        {
+            if (oldEnemyId == newEnemyId
+                || !activeViews.TryGetValue(oldEnemyId, out ActiveEnemyView activeView))
+            {
+                return;
+            }
+
+            activeViews.Remove(oldEnemyId);
+            activeViews[newEnemyId] = activeView;
+            activeView.View.Rekey(newEnemyId);
         }
 
         public void ShowReaction(long enemyId, ElementReactionEvent reaction)

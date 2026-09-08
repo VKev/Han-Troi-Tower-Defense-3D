@@ -43,6 +43,22 @@ namespace TowerDefense3D.GridPlacement
                 (cell.Z + 0.5f) * cellSize);
         }
 
+        public Vector3 FootprintBottomCenter(GridCell anchor, TowerFootprint footprint)
+        {
+            Vector3 center = CellToWorldCenter(anchor);
+            if ((footprint.Width & 1) == 0)
+            {
+                center.x += cellSize * 0.5f;
+            }
+
+            if ((footprint.Depth & 1) == 0)
+            {
+                center.z += cellSize * 0.5f;
+            }
+
+            return center;
+        }
+
         private bool IsWithinBounds(GridCell cell)
         {
             return cell.X >= 0 && cell.X < dimensions.Width

@@ -45,18 +45,7 @@ namespace TowerDefense3D.GridPlacement
 
         internal Vector3 GetFootprintBottomCenter(GridCell anchor, TowerFootprint footprint)
         {
-            Vector3 center = board.Mapper.CellToWorldCenter(anchor);
-            if ((footprint.Width & 1) == 0)
-            {
-                center.x += boardDefinition.CellSize * 0.5f;
-            }
-
-            if ((footprint.Depth & 1) == 0)
-            {
-                center.z += boardDefinition.CellSize * 0.5f;
-            }
-
-            return center;
+            return board.Mapper.FootprintBottomCenter(anchor, footprint);
         }
 
         internal int NextOwnerId()

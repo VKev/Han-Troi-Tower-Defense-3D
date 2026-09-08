@@ -20,6 +20,8 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField] private BoardCellDefinition[] cells = Array.Empty<BoardCellDefinition>();
         [SerializeField] private GridPlaceablePlacement[] gridPlaceables =
             Array.Empty<GridPlaceablePlacement>();
+        [SerializeField] private AuthoredTowerPlacement[] authoredTowers =
+            Array.Empty<AuthoredTowerPlacement>();
         [Tooltip("Ordered walk per enemy route. Authored routes win over per-cell exit arrows.")]
         [SerializeField] private BoardRouteDefinition[] routes =
             Array.Empty<BoardRouteDefinition>();
@@ -34,6 +36,7 @@ namespace TowerDefense3D.GridPlacement
         public Vector3 CameraRotationOffsetEuler => cameraRotationOffsetEuler;
         public IReadOnlyList<BoardCellDefinition> Cells => cells;
         public IReadOnlyList<GridPlaceablePlacement> GridPlaceables => gridPlaceables;
+        public IReadOnlyList<AuthoredTowerPlacement> AuthoredTowers => authoredTowers;
         public IReadOnlyList<BoardRouteDefinition> Routes => routes;
     }
 }

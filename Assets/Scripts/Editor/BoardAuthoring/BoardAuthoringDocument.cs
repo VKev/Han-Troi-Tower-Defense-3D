@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace TowerDefense3D.GridPlacement.Editor
         private const string CameraRotationOffsetEulerProperty = "cameraRotationOffsetEuler";
         private const string CellsProperty = "cells";
         private const string GridPlaceablesProperty = "gridPlaceables";
+        private const string AuthoredTowersProperty = "authoredTowers";
         private const string RoutesProperty = "routes";
 
         private readonly Dictionary<GridCell, BoardCellFlags> cells =
@@ -25,6 +27,8 @@ namespace TowerDefense3D.GridPlacement.Editor
             new Dictionary<GridCell, RoadExitDirection>();
         private readonly Dictionary<GridCell, GameObject> gridPlaceables =
             new Dictionary<GridCell, GameObject>();
+        private readonly Dictionary<GridCell, TowerCombatDefinition> authoredTowers =
+            new Dictionary<GridCell, TowerCombatDefinition>();
         private readonly List<List<GridCell>> routes = new List<List<GridCell>>();
         private readonly List<int> routeWeights = new List<int>();
 
@@ -46,20 +50,26 @@ namespace TowerDefense3D.GridPlacement.Editor
         public int SerializedNoneEntryCount { get; private set; }
         public int DuplicateGridPlaceableCoordinateCount { get; private set; }
         public int InvalidGridPlaceableCount { get; private set; }
+        public int DuplicateAuthoredTowerCoordinateCount { get; private set; }
+        public int InvalidAuthoredTowerCount { get; private set; }
         public int ActiveCellCount => cells.Count;
         public int ActiveGridPlaceableCount => gridPlaceables.Count;
+        public int ActiveAuthoredTowerCount => authoredTowers.Count;
 
         public void Reload()
         {
             cells.Clear();
             roadExitDirections.Clear();
             gridPlaceables.Clear();
+            authoredTowers.Clear();
             routes.Clear();
             routeWeights.Clear();
             DuplicateCoordinateCount = 0;
             SerializedNoneEntryCount = 0;
             DuplicateGridPlaceableCoordinateCount = 0;
             InvalidGridPlaceableCount = 0;
+            DuplicateAuthoredTowerCoordinateCount = 0;
+            InvalidAuthoredTowerCount = 0;
 
             var serialized = new SerializedObject(Asset);
             serialized.UpdateIfRequiredOrScript();
@@ -137,6 +147,30 @@ namespace TowerDefense3D.GridPlacement.Editor
                 }
 
                 gridPlaceables[coordinate] = prefab;
+            }
+
+            SerializedProperty serializedAuthoredTowers =
+                serialized.FindProperty(AuthoredTowersProperty);
+            for (int i = 0;
+                 serializedAuthoredTowers != null && i < serializedAuthoredTowers.arraySize;
+                 i++)
+            {
+                SerializedProperty element = serializedAuthoredTowers.GetArrayElementAtIndex(i);
+                GridCell coordinate = ReadCoordinate(element.FindPropertyRelative("coordinate"));
+                var definition = element.FindPropertyRelative("definition")
+                    .objectReferenceValue as TowerCombatDefinition;
+                if (!IsValidAuthoredTowerDefinition(definition))
+                {
+                    InvalidAuthoredTowerCount++;
+                    continue;
+                }
+
+                if (authoredTowers.ContainsKey(coordinate))
+                {
+                    DuplicateAuthoredTowerCoordinateCount++;
+                }
+
+                authoredTowers[coordinate] = definition;
             }
 
             SerializedProperty serializedRoutes = serialized.FindProperty(RoutesProperty);
@@ -272,6 +306,39 @@ namespace TowerDefense3D.GridPlacement.Editor
                 ? prefab
                 : null;
 
+        public TowerCombatDefinition GetAuthoredTower(GridCell coordinate) =>
+            authoredTowers.TryGetValue(coordinate, out TowerCombatDefinition definition)
+                ? definition
+                : null;
+
+        public bool TryGetAuthoredTowerAtCell(GridCell coordinate, out GridCell anchor,
+            out TowerCombatDefinition definition)
+        {
+            foreach (KeyValuePair<GridCell, TowerCombatDefinition> pair in authoredTowers)
+            {
+                if (!IsValidAuthoredTowerDefinition(pair.Value))
+                {
+                    continue;
+                }
+
+                TowerFootprint footprint = pair.Value.Core.PlacementDefinition.Footprint;
+                int minX = pair.Key.X - ((footprint.Width - 1) / 2);
+                int minZ = pair.Key.Z - ((footprint.Depth - 1) / 2);
+                if (coordinate.X >= minX && coordinate.X < minX + footprint.Width
+                    && coordinate.Z >= minZ && coordinate.Z < minZ + footprint.Depth
+                    && coordinate.Y >= pair.Key.Y && coordinate.Y < pair.Key.Y + footprint.Height)
+                {
+                    anchor = pair.Key;
+                    definition = pair.Value;
+                    return true;
+                }
+            }
+
+            anchor = default;
+            definition = null;
+            return false;
+        }
+
         public RoadExitDirection GetRoadExitDirection(GridCell coordinate) =>
             roadExitDirections.TryGetValue(coordinate, out RoadExitDirection direction)
                 ? direction
@@ -292,7 +359,32 @@ namespace TowerDefense3D.GridPlacement.Editor
                     nameof(prefab));
             }
 
+            if (TryGetAuthoredTowerAtCell(coordinate, out _, out _))
+            {
+                throw new ArgumentException(
+                    $"Grid placeable overlaps an authored tower at {coordinate}.",
+                    nameof(prefab));
+            }
+
             gridPlaceables[coordinate] = prefab;
+        }
+
+        public bool TrySetAuthoredTower(GridCell coordinate, TowerCombatDefinition definition, out string error)
+        {
+            if (definition == null)
+            {
+                authoredTowers.Remove(coordinate);
+                error = string.Empty;
+                return true;
+            }
+
+            if (!TryValidateAuthoredTowerPlacement(coordinate, definition, Dimensions, out error))
+            {
+                return false;
+            }
+
+            authoredTowers[coordinate] = definition;
+            return true;
         }
 
         public void Paint(GridCell coordinate, BoardPaintPreset preset)
@@ -429,6 +521,14 @@ namespace TowerDefense3D.GridPlacement.Editor
                 }
             }
 
+            foreach (KeyValuePair<GridCell, TowerCombatDefinition> pair in authoredTowers)
+            {
+                if (!IsTowerWithinBounds(pair.Key, pair.Value, dimensions))
+                {
+                    count++;
+                }
+            }
+
             return count;
         }
 
@@ -465,6 +565,20 @@ namespace TowerDefense3D.GridPlacement.Editor
             for (int i = 0; i < toRemove.Count; i++)
             {
                 gridPlaceables.Remove(toRemove[i]);
+            }
+
+            toRemove.Clear();
+            foreach (KeyValuePair<GridCell, TowerCombatDefinition> pair in authoredTowers)
+            {
+                if (!IsTowerWithinBounds(pair.Key, pair.Value, dimensions))
+                {
+                    toRemove.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < toRemove.Count; i++)
+            {
+                authoredTowers.Remove(toRemove[i]);
             }
 
             Dimensions = dimensions;
@@ -513,6 +627,20 @@ namespace TowerDefense3D.GridPlacement.Editor
                 issues.Add(
                     $"{InvalidGridPlaceableCount} prefab entries are missing a valid root "
                     + "GridPlaceableAuthoring component and will be removed on save.");
+            }
+
+            if (DuplicateAuthoredTowerCoordinateCount > 0)
+            {
+                issues.Add(
+                    $"{DuplicateAuthoredTowerCoordinateCount} duplicate authored tower coordinates "
+                    + "will be replaced by their last entry.");
+            }
+
+            if (InvalidAuthoredTowerCount > 0)
+            {
+                issues.Add(
+                    $"{InvalidAuthoredTowerCount} authored tower entries have no valid definition, "
+                    + "placement prefab, or TowerRuntimeView and will be removed on save.");
             }
 
             int outsideCount = 0;
@@ -581,6 +709,14 @@ namespace TowerDefense3D.GridPlacement.Editor
             {
                 issues.Add(
                     $"{outsideGridPlaceableCount} prefab cells are outside the current dimensions.");
+            }
+
+            foreach (KeyValuePair<GridCell, TowerCombatDefinition> pair in authoredTowers)
+            {
+                if (!TryValidateAuthoredTowerPlacement(pair.Key, pair.Value, Dimensions, out string error))
+                {
+                    issues.Add($"Authored tower at {pair.Key}: {error}");
+                }
             }
 
             foreach (KeyValuePair<GridCell, RoadExitDirection> pair in roadExitDirections)
@@ -663,6 +799,21 @@ namespace TowerDefense3D.GridPlacement.Editor
                     orderedGridPlaceables[i].Key);
                 element.FindPropertyRelative("prefab").objectReferenceValue =
                     orderedGridPlaceables[i].Value;
+            }
+
+            List<KeyValuePair<GridCell, TowerCombatDefinition>> orderedAuthoredTowers =
+                GetOrderedAuthoredTowers();
+            SerializedProperty serializedAuthoredTowers =
+                serialized.FindProperty(AuthoredTowersProperty);
+            serializedAuthoredTowers.arraySize = orderedAuthoredTowers.Count;
+            for (int i = 0; i < orderedAuthoredTowers.Count; i++)
+            {
+                SerializedProperty element = serializedAuthoredTowers.GetArrayElementAtIndex(i);
+                WriteCoordinate(
+                    element.FindPropertyRelative("coordinate"),
+                    orderedAuthoredTowers[i].Key);
+                element.FindPropertyRelative("definition").objectReferenceValue =
+                    orderedAuthoredTowers[i].Value;
             }
 
             SerializedProperty serializedRoutes = serialized.FindProperty(RoutesProperty);
@@ -761,10 +912,142 @@ namespace TowerDefense3D.GridPlacement.Editor
             return ordered;
         }
 
+        private List<KeyValuePair<GridCell, TowerCombatDefinition>> GetOrderedAuthoredTowers()
+        {
+            var ordered = new List<KeyValuePair<GridCell, TowerCombatDefinition>>(authoredTowers.Count);
+            foreach (KeyValuePair<GridCell, TowerCombatDefinition> pair in authoredTowers)
+            {
+                if (IsValidAuthoredTowerDefinition(pair.Value))
+                {
+                    ordered.Add(pair);
+                }
+            }
+
+            ordered.Sort((left, right) => CompareCells(left.Key, right.Key));
+            return ordered;
+        }
+
+        private bool TryValidateAuthoredTowerPlacement(GridCell coordinate,
+            TowerCombatDefinition definition, GridDimensions dimensions, out string error)
+        {
+            if (!IsValidAuthoredTowerDefinition(definition))
+            {
+                error = "Definition requires a placement prefab with TowerRuntimeView at its root.";
+                return false;
+            }
+
+            TowerFootprint footprint = definition.Core.PlacementDefinition.Footprint;
+            var volumeCells = new GridCell[FootprintEnumerator.RequiredVolumeCellCount(footprint)];
+            if (!FootprintEnumerator.TryWriteVolumeCells(coordinate, footprint, volumeCells, out int volumeCount))
+            {
+                error = "Definition has an invalid footprint.";
+                return false;
+            }
+
+            var candidateCells = new HashSet<GridCell>();
+            for (int index = 0; index < volumeCount; index++)
+            {
+                GridCell cell = volumeCells[index];
+                if (!IsWithinBounds(cell, dimensions))
+                {
+                    error = "Footprint extends outside the board.";
+                    return false;
+                }
+
+                if ((GetFlags(cell) & BoardCellFlags.StaticBlocker) != 0)
+                {
+                    error = $"Footprint intersects a blocker at {cell}.";
+                    return false;
+                }
+
+                if (gridPlaceables.ContainsKey(cell))
+                {
+                    error = $"Footprint overlaps a grid prefab at {cell}.";
+                    return false;
+                }
+
+                candidateCells.Add(cell);
+            }
+
+            var baseCells = new GridCell[FootprintEnumerator.RequiredBaseCellCount(footprint)];
+            FootprintEnumerator.TryWriteBaseCells(coordinate, footprint, baseCells, out int baseCount);
+            for (int index = 0; index < baseCount; index++)
+            {
+                GridCell cell = baseCells[index];
+                BoardCellFlags flags = GetFlags(cell);
+                if ((flags & BoardCellFlags.SupportsPlacement) == 0
+                    || (flags & BoardCellFlags.Buildable) == 0
+                    || (flags & RoadPaintModeUtility.RoadRoleMask) != 0)
+                {
+                    error = $"Footprint requires a supported buildable non-road cell at {cell}.";
+                    return false;
+                }
+
+            }
+
+            foreach (KeyValuePair<GridCell, TowerCombatDefinition> pair in authoredTowers)
+            {
+                if (pair.Key.Equals(coordinate) || !IsValidAuthoredTowerDefinition(pair.Value))
+                {
+                    continue;
+                }
+
+                TowerFootprint otherFootprint = pair.Value.Core.PlacementDefinition.Footprint;
+                var otherCells = new GridCell[FootprintEnumerator.RequiredVolumeCellCount(otherFootprint)];
+                FootprintEnumerator.TryWriteVolumeCells(
+                    pair.Key, otherFootprint, otherCells, out int otherCount);
+                for (int index = 0; index < otherCount; index++)
+                {
+                    if (candidateCells.Contains(otherCells[index]))
+                    {
+                        error = $"Footprint overlaps the authored tower anchored at {pair.Key}.";
+                        return false;
+                    }
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool IsTowerWithinBounds(GridCell coordinate,
+            TowerCombatDefinition definition, GridDimensions dimensions)
+        {
+            if (!IsValidAuthoredTowerDefinition(definition))
+            {
+                return false;
+            }
+
+            TowerFootprint footprint = definition.Core.PlacementDefinition.Footprint;
+            var cells = new GridCell[FootprintEnumerator.RequiredVolumeCellCount(footprint)];
+            if (!FootprintEnumerator.TryWriteVolumeCells(coordinate, footprint, cells, out int count))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < count; index++)
+            {
+                if (!IsWithinBounds(cells[index], dimensions))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static bool IsValidGridPlaceablePrefab(GameObject prefab) =>
             prefab != null
             && PrefabUtility.IsPartOfPrefabAsset(prefab)
             && prefab.GetComponent<GridPlaceableAuthoring>() != null;
+
+        internal static bool IsValidAuthoredTowerDefinition(TowerCombatDefinition definition) =>
+            definition != null
+            && definition.Core != null
+            && definition.Core.PlacementDefinition != null
+            && definition.Core.PlacementDefinition.Prefab != null
+            && PrefabUtility.IsPartOfPrefabAsset(definition.Core.PlacementDefinition.Prefab)
+            && definition.Core.PlacementDefinition.Prefab.GetComponent<TowerRuntimeView>() != null;
 
         private static bool IsWithinBounds(GridCell coordinate, GridDimensions dimensions) =>
             coordinate.X >= 0 && coordinate.X < dimensions.Width

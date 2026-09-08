@@ -18,7 +18,8 @@ namespace TowerDefense3D.Enemies
             int skillCastVersion = 0,
             bool isSpeedBuffed = false,
             bool isStanding = false,
-            float facingYawDegrees = 0f)
+            float facingYawDegrees = 0f,
+            bool suppressEntranceEffect = false)
         {
             EnemyId = enemyId;
             Definition = definition;
@@ -34,6 +35,7 @@ namespace TowerDefense3D.Enemies
             IsSpeedBuffed = isSpeedBuffed;
             IsStanding = isStanding;
             FacingYawDegrees = facingYawDegrees;
+            SuppressEntranceEffect = suppressEntranceEffect;
         }
 
         public long EnemyId { get; }
@@ -56,6 +58,9 @@ namespace TowerDefense3D.Enemies
 
         /// <summary>Which way a standing enemy looks, in degrees of yaw.</summary>
         public float FacingYawDegrees { get; }
+
+        /// <summary>Shows up with no entrance effect, because it is continuing not arriving.</summary>
+        public bool SuppressEntranceEffect { get; }
         public bool IsThermalShieldBroken => RemainingThermalShieldHits <= 0;
     }
 }

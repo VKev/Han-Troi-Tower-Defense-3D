@@ -58,8 +58,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 const long afterImpactTick = 30L;
                 IReadOnlyList<PlannedEnemyFrame> frames = timeline.GetFrames(afterImpactTick);
                 Assert.That(frames, Has.Count.EqualTo(2));
-                Assert.That(frames[0].Health, Is.EqualTo(2f));
-                Assert.That(frames[1].Health, Is.EqualTo(2f));
+                Assert.That(frames[0].Health, Is.EqualTo(15f));
+                Assert.That(frames[1].Health, Is.EqualTo(15f));
             }
             finally
             {

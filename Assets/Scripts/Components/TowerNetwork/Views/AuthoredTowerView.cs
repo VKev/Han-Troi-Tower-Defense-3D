@@ -1,4 +1,5 @@
 using UnityEngine;
+using TowerDefense3D.GridPlacement;
 
 namespace TowerDefense3D.Towers
 {
@@ -13,10 +14,20 @@ namespace TowerDefense3D.Towers
     public sealed class AuthoredTowerView : MonoBehaviour
     {
         [SerializeField] private TowerCombatDefinition definition;
+        [SerializeField] private bool hasBoardAnchor;
+        [SerializeField] private GridCell boardAnchor;
 
         public TowerCombatDefinition Definition => definition;
 
         public TowerRuntimeView RuntimeView => GetComponent<TowerRuntimeView>();
+        public bool HasBoardAnchor => hasBoardAnchor;
+        public GridCell BoardAnchor => boardAnchor;
+
+        public void SetBoardAnchor(GridCell anchor)
+        {
+            boardAnchor = anchor;
+            hasBoardAnchor = true;
+        }
 
         /// <summary>
         /// Draws the hero's reach in the Scene view so its range can be tuned against the road

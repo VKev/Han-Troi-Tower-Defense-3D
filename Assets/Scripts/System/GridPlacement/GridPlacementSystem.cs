@@ -156,8 +156,23 @@ namespace TowerDefense3D.GridPlacement
         {
             snappedPosition = worldPosition;
             ownerId = 0;
-            if (!model.TryWorldToCell(worldPosition, out GridCell cell)
-                || !model.Evaluate(cell, footprint).Succeeded
+            if (!model.TryWorldToCell(worldPosition, out GridCell cell))
+            {
+                return false;
+            }
+
+            return TryOccupyAuthoredTower(cell, footprint, out snappedPosition, out ownerId);
+        }
+
+        public bool TryOccupyAuthoredTower(
+            GridCell cell,
+            TowerFootprint footprint,
+            out Vector3 snappedPosition,
+            out int ownerId)
+        {
+            snappedPosition = model.GetFootprintBottomCenter(cell, footprint);
+            ownerId = 0;
+            if (!model.Evaluate(cell, footprint).Succeeded
                 || !model.TryReserve(cell, footprint, out PlacementReservation reservation))
             {
                 return false;

@@ -74,11 +74,11 @@ namespace TowerDefense3D.GameFlow
         {
             ITowerRuntimeView selectedTower = towerNetworkSystem.SelectedTower;
             string selectedText = selectedTower == null
-                ? "Selected: None"
-                : $"Selected: {selectedTower.CombatDefinition.Core.DisplayName} "
-                    + $"({selectedTower.CombatDefinition.NetworkRole})";
+                ? "Đã chọn: Chưa có"
+                : $"Đã chọn: {selectedTower.CombatDefinition.Core.DisplayName} "
+                    + $"({LocalizeRole(selectedTower.CombatDefinition.NetworkRole)})";
             string feedbackText = string.IsNullOrWhiteSpace(towerNetworkSystem.LastFeedback)
-                ? "Place towers, then drag one tower to another."
+                ? "Đặt trụ, sau đó kéo từ trụ này tới trụ khác."
                 : towerNetworkSystem.LastFeedback;
             bool simulationRunning = towerNetworkSystem.IsRunning;
             bool towerActionsVisible = TryGetTowerActionsPosition(
@@ -95,13 +95,26 @@ namespace TowerDefense3D.GameFlow
                 feedbackText,
                 !simulationRunning,
                 selectedTower != null && towerNetworkSystem.CanEditTopology,
-                selectedTower != null && towerNetworkSystem.CanEditTopology,
+                towerNetworkSystem.CanSellSelected,
                 towerActionsVisible,
                 towerActionsScreenPosition,
                 canEdit && hasUpgrade && !atMaxLevel && affordable,
                 CreateUpgradeCostText(hasUpgrade, atMaxLevel, upgradeCost),
-                towerNetworkSystem.DescribeSelectedSellRefund().ToString(),
+                towerNetworkSystem.CanSellSelected
+                    ? towerNetworkSystem.DescribeSelectedSellRefund().ToString()
+                    : string.Empty,
                 hasUpgrade && !atMaxLevel));
+        }
+
+        private static string LocalizeRole(TowerNetworkRole role)
+        {
+            switch (role)
+            {
+                case TowerNetworkRole.Source: return "Nguồn";
+                case TowerNetworkRole.Sink: return "Đích";
+                case TowerNetworkRole.Processor: return "Xử lý";
+                default: return role.ToString();
+            }
         }
 
         /// <summary>
@@ -205,7 +218,7 @@ namespace TowerDefense3D.GameFlow
                 return string.Empty;
             }
 
-            return atMaxLevel ? "MAX" : cost.ToString();
+            return atMaxLevel ? "TỐI ĐA" : cost.ToString();
         }
 
         private void HandleUpgradeRequested()

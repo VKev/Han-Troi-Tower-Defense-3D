@@ -321,6 +321,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 Phase = WavePhase.Victory;
                 StateChanged?.Invoke();
             }
+
+            public void ForceSkipWave()
+            {
+                Phase = WavePhase.Preparation;
+                StateChanged?.Invoke();
+            }
         }
 
         private sealed class LevelOutcomeHudViewStub : ILevelOutcomeHudView

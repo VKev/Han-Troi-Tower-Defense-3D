@@ -66,8 +66,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Transform panel = safeArea.Find("Tower Network HUD");
             Assert.That(panel, Is.Not.Null);
             Assert.That(panel.parent, Is.EqualTo(safeArea));
-            Assert.That(panel.GetComponentsInChildren<Button>(true).Length, Is.EqualTo(catalog.Definitions.Count + 4));
-            Assert.That(panel.Find("Tower Buttons").childCount, Is.EqualTo(catalog.Definitions.Count));
+            Assert.That(panel.GetComponentsInChildren<Button>(true).Length, Is.EqualTo(catalog.Definitions.Count + 5));
+            Assert.That(panel.Find("Tower Buttons"), Is.Not.Null);
             Assert.That(
                 panel.GetComponentsInChildren<TowerPlacementDragButtonView>(true).Length,
                 Is.EqualTo(catalog.Definitions.Count));
@@ -76,6 +76,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(panel.Find("Tower Actions/Sell").GetComponent<Button>(), Is.Not.Null);
             Assert.That(panel.Find("Tower Actions/Upgrade").GetComponent<Button>(), Is.Not.Null);
             Assert.That(panel.Find("Start Wave").GetComponent<Button>(), Is.Not.Null);
+            Assert.That(panel.Find("Next Wave Toggle").GetComponent<Button>(), Is.Not.Null);
 
             view.Initialize();
 
@@ -94,7 +95,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             view.Initialize();
 
             Transform panel = view.transform;
-            Button firstTowerButton = panel.Find("Tower Buttons").GetChild(0).GetComponent<Button>();
+            Button firstTowerButton =
+                panel.GetComponentsInChildren<TowerPlacementDragButtonView>(true)[0].GetComponent<Button>();
             Button unlinkButton = panel.Find("Tower Actions/Unlink").GetComponent<Button>();
             Button sellButton = panel.Find("Tower Actions/Sell").GetComponent<Button>();
             Button upgradeButton = panel.Find("Tower Actions/Upgrade").GetComponent<Button>();
@@ -156,7 +158,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             view.Initialize();
 
             Transform panel = view.transform;
-            Button firstButton = panel.Find("Tower Buttons").GetChild(0).GetComponent<Button>();
+            Button firstButton =
+                panel.GetComponentsInChildren<TowerPlacementDragButtonView>(true)[0].GetComponent<Button>();
             var startPosition = new Vector2(40f, 60f);
             var boardPosition = new Vector2(500f, 320f);
 

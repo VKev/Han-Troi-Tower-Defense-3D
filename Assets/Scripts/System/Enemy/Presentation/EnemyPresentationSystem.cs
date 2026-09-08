@@ -27,7 +27,8 @@ namespace TowerDefense3D.Enemies
             enemySystem.EnemySpawned += HandleEnemySpawned;
             enemySystem.EnemyKilled += HandleEnemyRemoved;
             enemySystem.EnemyLeaked += HandleEnemyRemoved;
-            enemySystem.EnemyDespawned += HandleEnemyRemoved;
+            enemySystem.EnemyDespawned += HandleEnemyReleased;
+            enemySystem.EnemyRekeyed += HandleEnemyRekeyed;
             combatTimelineSystem.ReactionTriggered += HandleReactionTriggered;
             isStarted = true;
         }
@@ -49,7 +50,8 @@ namespace TowerDefense3D.Enemies
             enemySystem.EnemySpawned -= HandleEnemySpawned;
             enemySystem.EnemyKilled -= HandleEnemyRemoved;
             enemySystem.EnemyLeaked -= HandleEnemyRemoved;
-            enemySystem.EnemyDespawned -= HandleEnemyRemoved;
+            enemySystem.EnemyDespawned -= HandleEnemyReleased;
+            enemySystem.EnemyRekeyed -= HandleEnemyRekeyed;
             combatTimelineSystem.ReactionTriggered -= HandleReactionTriggered;
             viewPool.ReleaseAll();
         }
@@ -62,6 +64,19 @@ namespace TowerDefense3D.Enemies
         private void HandleEnemyRemoved(EnemySnapshot enemy)
         {
             viewPool.Despawn(enemy.EnemyId);
+        }
+
+        /// <summary>
+        /// Removed without dying, so it leaves without a death to watch.
+        /// </summary>
+        private void HandleEnemyReleased(EnemySnapshot enemy)
+        {
+            viewPool.ReleaseImmediate(enemy.EnemyId);
+        }
+
+        private void HandleEnemyRekeyed(long oldEnemyId, long newEnemyId)
+        {
+            viewPool.Rekey(oldEnemyId, newEnemyId);
         }
 
         private void HandleReactionTriggered(ElementReactionEvent reaction)

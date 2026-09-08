@@ -86,39 +86,37 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void JourneyBackdrop_IsPaintedWithTheAuthoredArt()
+        public void JourneyBackdrop_UsesTransparentContainerAndAuthoredSky()
         {
-            var backdrop = GetPrivateField<GameObject>(menu, "backdrop").GetComponent<Image>();
-            Assert.That(backdrop, Is.Not.Null, "The journey map needs a backdrop graphic.");
-            // Which sky it is stays the artist's call, so only that there is one is checked here.
+            GameObject backdropRoot = GetPrivateField<GameObject>(menu, "backdrop");
+            var backdrop = backdropRoot.GetComponent<Image>();
+            Assert.That(backdrop, Is.Not.Null, "The journey map needs a backdrop container.");
+            Assert.That(backdrop.sprite, Is.Null, "The container should not duplicate Sky art.");
+            Assert.That(backdrop.color.a, Is.Zero);
+            Assert.That(backdrop.raycastTarget, Is.False);
+
+            var sky = backdropRoot.transform.Find("Sky").GetComponent<Image>();
+            Assert.That(sky, Is.Not.Null, "The journey map needs its authored Sky image.");
             Assert.That(
-                backdrop.sprite,
+                sky.sprite,
                 Is.Not.Null,
-                "The backdrop lost its art and fell back to a flat colour.");
-            // The exact tint is the artist's call; what matters is that it does not hide the art.
-            Assert.That(backdrop.color.a, Is.EqualTo(1f).Within(0.001f), "The sky must be opaque.");
+                "The Sky image lost its authored art.");
+            Assert.That(sky.color.a, Is.EqualTo(1f).Within(0.001f), "The sky must be opaque.");
             Assert.That(
-                Mathf.Min(backdrop.color.r, backdrop.color.g, backdrop.color.b),
+                Mathf.Min(sky.color.r, sky.color.g, sky.color.b),
                 Is.GreaterThan(0.5f),
                 "The sky is tinted dark enough to smother its own art.");
-
-            // Stretched rather than aspect-fitted: fitting would letterbox the very edges this
-            // backdrop was moved out of the safe area to reach.
-            Assert.That(backdrop.preserveAspect, Is.False);
+            Assert.That(sky.preserveAspect, Is.False);
         }
 
         [Test]
-        public void Show_FillsTheStandingCluster()
+        public void Show_FillsTheCurrentStarStandingWithoutLegacyProgressFields()
         {
             menu.Show(states, _ => { });
 
             Assert.That(
-                ReadText(menu, "progressLabel"),
-                Is.EqualTo(UnlockedThrough + "/" + states.Count));
-            Assert.That(
-                GetPrivateField<Image>(menu, "progressFill").fillAmount,
-                Is.EqualTo(UnlockedThrough / (float)states.Count).Within(0.001f));
-            Assert.That(ReadText(menu, "subtitleLabel"), Does.StartWith(states.Count.ToString()));
+                ReadText(menu, "starTotalLabel"),
+                Is.EqualTo((states.Count * LevelStarRating.MaximumStars).ToString()));
         }
 
         /// <summary>
@@ -197,9 +195,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void Show_NamesTheLevelItSelectsInTheSelectionPanel()
+        public void Show_SelectsTheCurrentLevelForTheAuthoredEnterButton()
         {
-            menu.Show(states, _ => { });
+            int enteredLevel = 0;
+            menu.Show(states, levelNumber => enteredLevel = levelNumber);
 
             // The menu opens on the level the player is up to. Only the chapter line numbers
             // it - the title carries the level's authored name, read back off the catalog so
@@ -209,12 +208,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             // LevelMenuItemState is a struct, so a miss returns default rather than null.
             Assert.That(selected.LevelNumber, Is.EqualTo(UnlockedThrough));
             Assert.That(selected.DisplayName, Is.Not.Empty);
-            Assert.That(GetPrivateField<GameObject>(menu, "selectionPanel").activeSelf, Is.True);
-            Assert.That(ReadText(menu, "selectionChapter"), Does.Contain(number));
-            Assert.That(ReadText(menu, "selectionTitle"), Is.EqualTo(selected.DisplayName));
-            // "Selected Details" is authored content the view never writes, so there is no
-            // field to read here; EveryAuthoredLabelSaysSomething still guards it from going
-            // blank.
+            InvokePrivate(menu, "HandleEnterMapClicked");
+            Assert.That(enteredLevel, Is.EqualTo(UnlockedThrough));
         }
 
         [Test]
@@ -338,6 +333,15 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(field, Is.Not.Null, $"Missing field '{fieldName}' on {target.GetType().Name}.");
             return (T)field.GetValue(target);
+        }
+
+        private static void InvokePrivate(object target, string methodName)
+        {
+            MethodInfo method = target.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"Missing method '{methodName}' on {target.GetType().Name}.");
+            method.Invoke(target, null);
         }
     }
 }

@@ -1894,7 +1894,7 @@ MonoBehaviour:
       x: 30
       z: 37
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 31
@@ -2056,7 +2056,7 @@ MonoBehaviour:
       x: 30
       z: 38
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 31
@@ -2812,4 +2812,15 @@ MonoBehaviour:
       z: 48
       y: 0
     prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  authoredTowers:
+  - coordinate:
+      x: 31
+      z: 35
+      y: 0
+    definition: {fileID: 11400000, guid: 461cbd58630b0f1419259bf6b2bbe434, type: 2}
+  - coordinate:
+      x: 35
+      z: 31
+      y: 0
+    definition: {fileID: 11400000, guid: 37378dec03550a34c958d9a7bc3edbe9, type: 2}
   routes: []

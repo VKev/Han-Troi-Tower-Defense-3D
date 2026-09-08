@@ -15,6 +15,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private const string TowerCatalogPath = "Assets/Config/Towers/Catalogs/TowerCatalog.asset";
 
         private GameObject owner;
+        private BoardDefinition board;
         private TowerCatalog towerCatalog;
         private TowerNetworkManager manager;
         private TowerNetworkSystem system;
@@ -23,7 +24,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         [SetUp]
         public void SetUp()
         {
-            BoardDefinition board = AssetDatabase.LoadAssetAtPath<BoardDefinition>(BoardPath);
+            board = AssetDatabase.LoadAssetAtPath<BoardDefinition>(BoardPath);
             towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
             Assert.That(board, Is.Not.Null, $"Board is missing at '{BoardPath}'.");
             Assert.That(towerCatalog, Is.Not.Null, $"Tower Catalog is missing at '{TowerCatalogPath}'.");
@@ -97,8 +98,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(heroes, Has.Count.EqualTo(1));
             Assert.That(heroes[0].RangeMeters, Is.EqualTo(4f));
-            Assert.That(heroes[0].Damage, Is.EqualTo(14f));
-            Assert.That(heroes[0].AoeRadiusMeters, Is.EqualTo(2f));
+            Assert.That(heroes[0].Damage, Is.EqualTo(5f));
+            Assert.That(heroes[0].AoeRadiusMeters, Is.EqualTo(3f));
             Assert.That(heroes[0].CycleTicks, Is.EqualTo(40));
             Assert.That(heroes[0].PrepareDurationSeconds, Is.EqualTo(0.6f));
         }
@@ -119,6 +120,31 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(heroView.IsRegistered, Is.True);
             Assert.That(system.RegisteredTowerCount, Is.EqualTo(1));
             Assert.That(manager.CreateHeroAttackTowerSnapshot(), Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void AuthoredTower_CannotBeSoldButKeepsOtherTowerActions()
+        {
+            system.Start();
+            Assert.That(towerCatalog.TryGet(TowerFamily.Fire, out TowerCombatDefinition fire), Is.True);
+            Assert.That(fire.Core.Economy.Sellable, Is.True, "fixture must remain sellable at definition level");
+
+            var towerObject = new GameObject("Authored Fire Tower");
+            towerObject.transform.SetParent(owner.transform, false);
+            towerObject.transform.position = FindValidPlacementPosition(fire.Core.PlacementDefinition.Footprint);
+            TowerRuntimeView view = towerObject.AddComponent<TowerRuntimeView>();
+
+            Assert.That(system.TryRegisterAuthoredTower(view, fire, out string registerError),
+                Is.True, registerError);
+            system.Select(view);
+
+            Assert.That(system.SelectedTower, Is.SameAs(view));
+            Assert.That(system.CanSellSelected, Is.False);
+            Assert.That(system.DescribeSelectedSellRefund(), Is.Zero);
+            Assert.That(system.TryDescribeSelectedUpgrade(out _, out _, out _), Is.True);
+            Assert.That(system.TrySellSelected(out string sellError), Is.False);
+            StringAssert.Contains("part of the level", sellError);
+            Assert.That(view.IsRegistered, Is.True);
         }
 
         [Test]
@@ -249,6 +275,29 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 "HandleTowerPlaced",
                 new GridPlacementCommit(definition.Core.PlacementDefinition, towerObject, default, ownerId));
             return view;
+        }
+
+        private Vector3 FindValidPlacementPosition(TowerFootprint footprint)
+        {
+            var grid = new GridBoard(board, Vector3.zero);
+            var validator = new PlacementValidator(grid, new GridOccupancy(board.Dimensions));
+            for (int y = 0; y < board.Dimensions.Height; y++)
+            {
+                for (int z = 0; z < board.Dimensions.Depth; z++)
+                {
+                    for (int x = 0; x < board.Dimensions.Width; x++)
+                    {
+                        var cell = new GridCell(x, z, y);
+                        if (validator.Evaluate(cell, footprint).Succeeded)
+                        {
+                            return grid.Mapper.FootprintBottomCenter(cell, footprint);
+                        }
+                    }
+                }
+            }
+
+            Assert.Fail("The board fixture has no valid authored tower position.");
+            return default;
         }
 
         private static void InvokePrivate(object target, string methodName, params object[] arguments)

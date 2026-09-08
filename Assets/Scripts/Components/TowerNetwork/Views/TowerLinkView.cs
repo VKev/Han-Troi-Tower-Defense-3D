@@ -13,6 +13,10 @@ namespace TowerDefense3D.Towers
         /// gaps, colour - is tuned once in the prefab instead of ten times over.
         /// </summary>
         private const string SelectionRingResourcePath = "Prefabs/TowerSelectionRing";
+        private const string LinkEffectResourcePath = "Prefabs/VFX/VFX_TowerLink";
+
+        private static readonly Color ValidLinkColor = new Color(0.1f, 1f, 0.1f, 0.9f);
+        private static readonly Color InvalidLinkColor = new Color(1f, 0.25f, 0.015f, 0.9f);
 
         [SerializeField, Min(0.02f)] private float linkWidth = 0.1f;
         [SerializeField, Min(0.02f)] private float previewWidth = 0.08f;
@@ -24,8 +28,11 @@ namespace TowerDefense3D.Towers
 
         private Transform presentationRoot;
         private Material lineMaterial;
+        private GameObject linkEffectPrefab;
         private TowerLinkLineView previewLine;
         private TowerSelectionRingView selectionRing;
+        private Vector3 previewSource;
+        private bool isPreviewVisible;
 
         public void Initialize()
         {
@@ -46,6 +53,12 @@ namespace TowerDefense3D.Towers
             {
                 name = "Tower Link Runtime Material"
             };
+            linkEffectPrefab = Resources.Load<GameObject>(LinkEffectResourcePath);
+            if (linkEffectPrefab == null)
+            {
+                Debug.LogWarning("Tower link VFX prefab missing at Resources/" + LinkEffectResourcePath);
+            }
+
             previewLine = CreateLine("Link Preview", previewWidth, 2);
             selectionRing = CreateSelectionRing();
         }
@@ -82,16 +95,26 @@ namespace TowerDefense3D.Towers
                 visibleSources.Add(link.SourceId);
                 if (!linkLines.TryGetValue(link.SourceId, out TowerLinkLineView line))
                 {
-                    line = CreateLine($"Link {link.SourceId}", linkWidth, 2);
+                    if (isPreviewVisible
+                        && (previewSource - link.SourcePosition).sqrMagnitude <= 0.0001f)
+                    {
+                        line = previewLine;
+                        line.gameObject.name = $"Link {link.SourceId}";
+                        previewLine = CreateLine("Link Preview", previewWidth, 2);
+                        isPreviewVisible = false;
+                    }
+                    else
+                    {
+                        line = CreateLine($"Link {link.SourceId}", linkWidth, 2);
+                    }
+
                     linkLines.Add(link.SourceId, line);
                 }
 
                 line.ShowLine(
                     link.SourcePosition,
                     link.TargetPosition,
-                    link.IsValidChain
-                        ? new Color(0.25f, 1f, 0.35f, 0.95f)
-                        : new Color(1f, 0.55f, 0.1f, 0.9f));
+                    link.IsValidChain ? ValidLinkColor : InvalidLinkColor);
             }
 
             removedSources.Clear();
@@ -125,16 +148,17 @@ namespace TowerDefense3D.Towers
 
         public void ShowPreview(Vector3 source, Vector3 target, bool hasValidTarget)
         {
+            previewSource = source;
+            isPreviewVisible = true;
             previewLine.ShowLine(
                 source,
                 target,
-                hasValidTarget
-                    ? new Color(0.25f, 1f, 0.35f, 0.95f)
-                    : new Color(1f, 0.2f, 0.2f, 0.95f));
+                hasValidTarget ? ValidLinkColor : InvalidLinkColor);
         }
 
         public void HidePreview()
         {
+            isPreviewVisible = false;
             previewLine.Hide();
         }
 
@@ -151,6 +175,7 @@ namespace TowerDefense3D.Towers
             linkLines.Clear();
             visibleSources.Clear();
             removedSources.Clear();
+            isPreviewVisible = false;
             if (previewLine != null)
             {
                 previewLine.Hide();
@@ -167,7 +192,7 @@ namespace TowerDefense3D.Towers
             GameObject lineObject = new GameObject(objectName);
             lineObject.transform.SetParent(presentationRoot, false);
             TowerLinkLineView line = lineObject.AddComponent<TowerLinkLineView>();
-            line.Initialize(lineMaterial, width, positionCount);
+            line.Initialize(lineMaterial, linkEffectPrefab, width, positionCount);
             return line;
         }
 

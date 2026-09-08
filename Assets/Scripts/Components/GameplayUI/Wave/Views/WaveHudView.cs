@@ -39,8 +39,12 @@ namespace TowerDefense3D.GameFlow
 
         private bool isInitialized;
         private bool isPreviewExpanded;
+        private bool isTutorialPreviewOnly;
 
         public event Action StartWaveRequested;
+        public Transform NextWaveToggleTransform => previewToggleButton != null
+            ? previewToggleButton.transform
+            : null;
 
         public void Initialize()
         {
@@ -141,6 +145,43 @@ namespace TowerDefense3D.GameFlow
         public void Show()
         {
             gameObject.SetActive(true);
+        }
+
+        public void SetTutorialPreviewOnly(bool enabled)
+        {
+            isTutorialPreviewOnly = enabled;
+            if (enabled)
+            {
+                SetTutorialWaveVisibility(false, true);
+                return;
+            }
+
+            startWaveButton.gameObject.SetActive(true);
+            if (waveCounterText != null) waveCounterText.gameObject.SetActive(true);
+            if (enemiesLeftText != null) enemiesLeftText.gameObject.SetActive(true);
+            if (statusText != null) statusText.gameObject.SetActive(true);
+            if (waveProgressFill != null) waveProgressFill.gameObject.SetActive(true);
+            if (startWaveBonusText != null) startWaveBonusText.gameObject.SetActive(true);
+            if (previewToggleButton != null) previewToggleButton.gameObject.SetActive(true);
+            if (previewGrid != null) previewGrid.SetActive(true);
+        }
+
+        public void SetTutorialStartWaveOnly()
+        {
+            isTutorialPreviewOnly = true;
+            SetTutorialWaveVisibility(true, true);
+        }
+
+        private void SetTutorialWaveVisibility(bool showStartWave, bool showCounters)
+        {
+            startWaveButton.gameObject.SetActive(showStartWave);
+            if (waveCounterText != null) waveCounterText.gameObject.SetActive(showCounters);
+            if (enemiesLeftText != null) enemiesLeftText.gameObject.SetActive(showCounters);
+            if (statusText != null) statusText.gameObject.SetActive(false);
+            if (waveProgressFill != null) waveProgressFill.gameObject.SetActive(false);
+            if (startWaveBonusText != null) startWaveBonusText.gameObject.SetActive(false);
+            if (previewToggleButton != null) previewToggleButton.gameObject.SetActive(true);
+            if (previewGrid != null) previewGrid.SetActive(true);
         }
 
         public void Shutdown()

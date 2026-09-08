@@ -60,7 +60,6 @@ namespace TowerDefense3D.Tests.EditMode.Vfx
 
             Camera warmup = prefab.GetComponentInChildren<Camera>(true);
             Assert.That(warmup, Is.Not.Null, "Warmup camera prefab has no Camera.");
-            UniversalAdditionalCameraData warmupData = warmup.GetUniversalAdditionalCameraData();
 
             IReadOnlyList<string> scenePaths = WarmupCameraSync.CollectLevelScenePaths();
             Assert.That(scenePaths.Count, Is.GreaterThan(0), "No level scenes found.");
@@ -76,6 +75,13 @@ namespace TowerDefense3D.Tests.EditMode.Vfx
                     mismatches.Add(scenePath + ": no camera");
                     continue;
                 }
+
+                // Opening a scene invalidates Component wrappers loaded from a prefab asset.
+                // Reload the prefab so Unity does not report its still-serialized URP data as null.
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(WarmupCameraSync.PrefabPath);
+                warmup = prefab.GetComponentInChildren<Camera>(true);
+                UniversalAdditionalCameraData warmupData =
+                    warmup.GetUniversalAdditionalCameraData();
 
                 Compare(mismatches, scenePath, "allowHDR", warmup.allowHDR, level.allowHDR);
                 Compare(mismatches, scenePath, "allowMSAA", warmup.allowMSAA, level.allowMSAA);

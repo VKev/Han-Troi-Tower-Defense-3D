@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
 
@@ -39,6 +40,7 @@ namespace TowerDefense3D.GridPlacement.Editor
             var rectangles = new List<BoardGeometryRectangle>();
             var gridPlaceableVisuals =
                 new List<BoardGridPlaceableVisual>();
+            var authoredTowerVisuals = new List<BoardAuthoredTowerVisual>();
 
             if (dimensions.Width > 0 && dimensions.Height > 0 && dimensions.Depth > 0)
             {
@@ -50,6 +52,12 @@ namespace TowerDefense3D.GridPlacement.Editor
                     board.CellSize,
                     board.HeightUnit,
                     gridPlaceableVisuals);
+                BuildAuthoredTowerVisuals(
+                    board.AuthoredTowers,
+                    dimensions,
+                    board.CellSize,
+                    board.HeightUnit,
+                    authoredTowerVisuals);
             }
 
             LowestBoardLevelBounds? focusRegion = null;
@@ -76,6 +84,11 @@ namespace TowerDefense3D.GridPlacement.Editor
                 board.CellSize,
                 board.HeightUnit,
                 gridPlaceableVisuals);
+            string authoredTowerSignature = BuildAuthoredTowerSignature(
+                dimensions,
+                board.CellSize,
+                board.HeightUnit,
+                authoredTowerVisuals);
 
             return new BoardGeometryPlan(
                 board.CellSize,
@@ -83,9 +96,11 @@ namespace TowerDefense3D.GridPlacement.Editor
                 board.VisualizeInScene,
                 rectangles,
                 gridPlaceableVisuals,
+                authoredTowerVisuals,
                 focusRegion,
                 signature,
-                gridPlaceableSignature);
+                gridPlaceableSignature,
+                authoredTowerSignature);
         }
 
         private static BoardCellFlags[] BuildFlags(
@@ -262,6 +277,62 @@ namespace TowerDefense3D.GridPlacement.Editor
                         Vector3.one * cellSize,
                         placeable.ScaleMultiplier),
                     placeable.RendererSortingOrder));
+            }
+        }
+
+        private static void BuildAuthoredTowerVisuals(
+            IReadOnlyList<AuthoredTowerPlacement> placements,
+            GridDimensions dimensions,
+            float cellSize,
+            float heightUnit,
+            List<BoardAuthoredTowerVisual> visuals)
+        {
+            if (placements == null)
+            {
+                return;
+            }
+
+            var ordered = new List<AuthoredTowerPlacement>(placements.Count);
+            for (int index = 0; index < placements.Count; index++)
+            {
+                AuthoredTowerPlacement placement = placements[index];
+                TowerCombatDefinition definition = placement.Definition;
+                if (!IsWithinBounds(placement.Coordinate, dimensions)
+                    || !BoardAuthoringDocument.IsValidAuthoredTowerDefinition(definition))
+                {
+                    continue;
+                }
+
+                ordered.Add(placement);
+            }
+
+            ordered.Sort((left, right) =>
+            {
+                int comparison = left.Coordinate.Y.CompareTo(right.Coordinate.Y);
+                if (comparison != 0)
+                {
+                    return comparison;
+                }
+
+                comparison = left.Coordinate.Z.CompareTo(right.Coordinate.Z);
+                return comparison != 0
+                    ? comparison
+                    : left.Coordinate.X.CompareTo(right.Coordinate.X);
+            });
+
+            var mapper = new GridCoordinateMapper(dimensions, cellSize, heightUnit, Vector3.zero);
+            for (int index = 0; index < ordered.Count; index++)
+            {
+                AuthoredTowerPlacement placement = ordered[index];
+                TowerDefinition tower = placement.Definition.Core.PlacementDefinition;
+                GameObject prefab = tower.Prefab;
+                visuals.Add(new BoardAuthoredTowerVisual(
+                    placement.Coordinate,
+                    placement.Definition,
+                    prefab,
+                    mapper.FootprintBottomCenter(placement.Coordinate, tower.Footprint),
+                    prefab.transform.localRotation,
+                    prefab.transform.localScale));
             }
         }
 
@@ -594,6 +665,52 @@ namespace TowerDefense3D.GridPlacement.Editor
                     .Append((int)visual.Topology).Append(',')
                     .Append((int)visual.Axis).Append(',')
                     .Append(visual.SortingOrder).Append(',');
+                AppendVector3(canonical, visual.LocalPosition);
+                canonical.Append(',');
+                AppendQuaternion(canonical, visual.LocalRotation);
+                canonical.Append(',');
+                AppendVector3(canonical, visual.LocalScale);
+            }
+
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(canonical.ToString()));
+                var signature = new StringBuilder(hash.Length * 2);
+                for (int index = 0; index < hash.Length; index++)
+                {
+                    signature.Append(hash[index].ToString("x2", CultureInfo.InvariantCulture));
+                }
+
+                return signature.ToString();
+            }
+        }
+
+        private static string BuildAuthoredTowerSignature(
+            GridDimensions dimensions,
+            float cellSize,
+            float heightUnit,
+            IReadOnlyList<BoardAuthoredTowerVisual> visuals)
+        {
+            var canonical = new StringBuilder("authored-tower-v1|");
+            canonical.Append(dimensions.Width).Append('|')
+                .Append(dimensions.Height).Append('|')
+                .Append(dimensions.Depth).Append('|')
+                .Append(cellSize.ToString("R", CultureInfo.InvariantCulture)).Append('|')
+                .Append(heightUnit.ToString("R", CultureInfo.InvariantCulture));
+
+            for (int index = 0; index < visuals.Count; index++)
+            {
+                BoardAuthoredTowerVisual visual = visuals[index];
+                string definitionPath = AssetDatabase.GetAssetPath(visual.Definition);
+                string prefabPath = AssetDatabase.GetAssetPath(visual.Prefab);
+                canonical.Append(';')
+                    .Append(visual.Coordinate.X).Append(',')
+                    .Append(visual.Coordinate.Y).Append(',')
+                    .Append(visual.Coordinate.Z).Append(',')
+                    .Append(AssetDatabase.AssetPathToGUID(definitionPath)).Append(',')
+                    .Append(AssetDatabase.GetAssetDependencyHash(definitionPath)).Append(',')
+                    .Append(AssetDatabase.AssetPathToGUID(prefabPath)).Append(',')
+                    .Append(AssetDatabase.GetAssetDependencyHash(prefabPath)).Append(',');
                 AppendVector3(canonical, visual.LocalPosition);
                 canonical.Append(',');
                 AppendQuaternion(canonical, visual.LocalRotation);

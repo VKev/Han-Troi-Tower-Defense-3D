@@ -1,5 +1,6 @@
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Mobile;
+using TowerDefense3D.Tutorials;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -12,17 +13,42 @@ namespace TowerDefense3D.GameFlow
         private readonly SafeAreaSystem safeAreaSystem;
         private readonly ApplicationUISystem applicationUISystem;
         private readonly GameFlowSystem gameFlowSystem;
+        private readonly TutorialSystem tutorialSystem;
+        private readonly ITutorialOverlay tutorialOverlay;
+        private readonly ITutorialInputGate tutorialInputGate;
+
+        public ApplicationSystemGroup(
+            FramePacingSystem framePacingSystem,
+            SafeAreaSystem safeAreaSystem,
+            ApplicationUISystem applicationUISystem,
+            GameFlowSystem gameFlowSystem,
+            TutorialSystem tutorialSystem,
+            ITutorialOverlay tutorialOverlay,
+            ITutorialInputGate tutorialInputGate)
+        {
+            this.framePacingSystem = framePacingSystem;
+            this.safeAreaSystem = safeAreaSystem;
+            this.applicationUISystem = applicationUISystem;
+            this.gameFlowSystem = gameFlowSystem;
+            this.tutorialSystem = tutorialSystem;
+            this.tutorialOverlay = tutorialOverlay;
+            this.tutorialInputGate = tutorialInputGate;
+        }
 
         public ApplicationSystemGroup(
             FramePacingSystem framePacingSystem,
             SafeAreaSystem safeAreaSystem,
             ApplicationUISystem applicationUISystem,
             GameFlowSystem gameFlowSystem)
+            : this(
+                framePacingSystem,
+                safeAreaSystem,
+                applicationUISystem,
+                gameFlowSystem,
+                null,
+                null,
+                null)
         {
-            this.framePacingSystem = framePacingSystem;
-            this.safeAreaSystem = safeAreaSystem;
-            this.applicationUISystem = applicationUISystem;
-            this.gameFlowSystem = gameFlowSystem;
         }
 
         public void Start()
@@ -30,6 +56,7 @@ namespace TowerDefense3D.GameFlow
             framePacingSystem.Start();
             safeAreaSystem.Start();
             applicationUISystem.Start();
+            tutorialSystem?.Bind(tutorialOverlay, tutorialInputGate);
             try
             {
                 gameFlowSystem.Start();
@@ -41,9 +68,10 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
-        public void Tick()
+        public void Tick(float deltaTime)
         {
             safeAreaSystem.Tick();
+            tutorialSystem.Tick(deltaTime);
         }
 
         public void Shutdown()

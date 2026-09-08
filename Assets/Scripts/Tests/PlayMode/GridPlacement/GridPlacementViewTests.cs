@@ -25,21 +25,14 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 
             MeshFilter footprint = root.transform.Find("Footprint").GetComponent<MeshFilter>();
             MeshFilter ghost = root.transform.Find("GhostVolume").GetComponent<MeshFilter>();
-            MeshFilter linkRange = root.transform.Find("LinkRange").GetComponent<MeshFilter>();
             MeshRenderer footprintRenderer = footprint.GetComponent<MeshRenderer>();
             MeshRenderer ghostRenderer = ghost.GetComponent<MeshRenderer>();
-            MeshRenderer linkRangeRenderer = linkRange.GetComponent<MeshRenderer>();
             Mesh footprintMesh = footprint.sharedMesh;
             Mesh ghostMesh = ghost.sharedMesh;
-            Mesh linkRangeMesh = linkRange.sharedMesh;
 
-            Assert.That(root.GetComponentsInChildren<MeshRenderer>(true), Has.Length.EqualTo(3));
+            Assert.That(root.GetComponentsInChildren<MeshRenderer>(true), Has.Length.EqualTo(2));
             Assert.That(footprintMesh.vertexCount, Is.EqualTo(24));
             Assert.That(ghostMesh.vertexCount, Is.EqualTo(8));
-            Assert.That(
-                linkRangeMesh.vertexCount,
-                Is.EqualTo(192),
-                "The ring is an annulus: two vertices per segment, ninety-six segments.");
 
             Assert.That(footprintRenderer.enabled, Is.True);
             Assert.That(
@@ -47,8 +40,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 Is.False,
                 "The ghost volume is built and kept but never drawn - a translucent box over the "
                 + "board reads as a tower already placed rather than as a target.");
-            Assert.That(linkRangeRenderer.enabled, Is.True);
-
             view.Show(
                 new TowerFootprint(2, 3, 2),
                 new Vector3(6f, 1f, 7f),
@@ -58,17 +49,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 false);
             Assert.That(footprint.sharedMesh, Is.SameAs(footprintMesh));
             Assert.That(ghost.sharedMesh, Is.SameAs(ghostMesh));
-            Assert.That(linkRange.sharedMesh, Is.SameAs(linkRangeMesh));
-
-            // A caller with no network rules to consult passes no range, and gets no ring.
-            view.Show(
-                new TowerFootprint(2, 3, 2),
-                new Vector3(6f, 1f, 7f),
-                1f,
-                1f,
-                0f,
-                true);
-            Assert.That(linkRangeRenderer.enabled, Is.False);
 
             view.Show(
                 new TowerFootprint(2, 3, 2),
@@ -79,7 +59,6 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                 true);
             view.Hide();
             Assert.That(footprintRenderer.enabled, Is.False);
-            Assert.That(linkRangeRenderer.enabled, Is.False);
 
             Object.Destroy(root);
             yield return null;

@@ -62,7 +62,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
-        public void Prefab_AuthorsTheSkipCheatButtonInvisibleButStillHittable()
+        public void Prefab_AuthorsTheSkipCheatButtonVisibleAndHittableWithoutALabel()
         {
             GameObject owner = PrefabUtility.LoadPrefabContents(GameplayUiPrefabPath);
             try
@@ -86,9 +86,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                     Is.Null,
                     "The HUD's menu button is gone; the pause modal carries that command.");
 
-                // Invisible but live: a developer who knows it is there can still tap it.
+                // The current debug control shows its authored background but keeps its label out
+                // of the player-facing HUD.
                 var background = skip.GetComponent<Image>();
-                Assert.That(background.color.a, Is.Zero, "The cheat must not be drawn.");
+                Assert.That(background.color.a, Is.GreaterThan(0.5f));
                 Assert.That(background.enabled, Is.True, "A disabled Graphic cannot be hit.");
                 Assert.That(background.raycastTarget, Is.True);
                 Assert.That(
@@ -113,6 +114,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private sealed class SkipCheatViewStub : ILevelSkipCheatView
         {
             public event Action SkipToVictoryRequested;
+
+            public event Action SkipWaveRequested;
 
             public int InitializeCount { get; private set; }
             public int ShowCount { get; private set; }
@@ -173,6 +176,15 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             {
                 ForceVictoryCount++;
                 Phase = WavePhase.Victory;
+                StateChanged?.Invoke();
+            }
+
+            public int ForceSkipWaveCount { get; private set; }
+
+            public void ForceSkipWave()
+            {
+                ForceSkipWaveCount++;
+                Phase = WavePhase.Preparation;
                 StateChanged?.Invoke();
             }
         }

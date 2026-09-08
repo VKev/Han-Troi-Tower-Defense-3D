@@ -7,7 +7,7 @@ namespace TowerDefense3D.Waves
     public readonly struct WaveSpawnOrder
     {
         public WaveSpawnOrder(float timeSeconds, EnemyDefinition enemy, int sequence)
-            : this(timeSeconds, enemy, sequence, -1, 0L, 0f)
+            : this(timeSeconds, enemy, sequence, -1, 0L, 0f, false, false)
         {
         }
 
@@ -16,7 +16,7 @@ namespace TowerDefense3D.Waves
             EnemyDefinition enemy,
             int sequence,
             int spawnPointIndex)
-            : this(timeSeconds, enemy, sequence, spawnPointIndex, 0L, 0f)
+            : this(timeSeconds, enemy, sequence, spawnPointIndex, 0L, 0f, false, false)
         {
         }
 
@@ -29,8 +29,18 @@ namespace TowerDefense3D.Waves
             EnemyDefinition enemy,
             int sequence,
             int spawnPointIndex,
-            float startDistanceMeters)
-            : this(timeSeconds, enemy, sequence, spawnPointIndex, 0L, startDistanceMeters)
+            float startDistanceMeters,
+            bool suppressEntranceEffect = false,
+            bool adoptsExistingEnemy = false)
+            : this(
+                timeSeconds,
+                enemy,
+                sequence,
+                spawnPointIndex,
+                0L,
+                startDistanceMeters,
+                suppressEntranceEffect,
+                adoptsExistingEnemy)
         {
         }
 
@@ -40,7 +50,9 @@ namespace TowerDefense3D.Waves
             int sequence,
             int spawnPointIndex,
             long enemyId,
-            float startDistanceMeters)
+            float startDistanceMeters,
+            bool suppressEntranceEffect,
+            bool adoptsExistingEnemy)
         {
             if (timeSeconds < 0f)
             {
@@ -53,6 +65,8 @@ namespace TowerDefense3D.Waves
             SpawnPointIndex = spawnPointIndex;
             EnemyId = enemyId;
             StartDistanceMeters = Mathf.Max(0f, startDistanceMeters);
+            SuppressEntranceEffect = suppressEntranceEffect;
+            AdoptsExistingEnemy = adoptsExistingEnemy;
         }
 
         public float TimeSeconds { get; }
@@ -61,6 +75,21 @@ namespace TowerDefense3D.Waves
 
         /// <summary>How far along its route the enemy begins. Zero for an ordinary spawn.</summary>
         public float StartDistanceMeters { get; }
+
+        /// <summary>
+        /// Arrives with no entrance effect, for an enemy that is continuing rather than appearing.
+        /// </summary>
+        public bool SuppressEntranceEffect { get; }
+
+        /// <summary>
+        /// Takes over an enemy that is already standing on the board instead of spawning one.
+        /// </summary>
+        /// <remarks>
+        /// The plan drives enemies by id, so handing this order the id the standing boss already
+        /// carries makes the planned frames move that very instance. Nothing is created and
+        /// nothing is destroyed - the boss that has been standing there simply starts walking.
+        /// </remarks>
+        public bool AdoptsExistingEnemy { get; }
         internal int Sequence { get; }
         internal long EnemyId { get; }
 
@@ -72,7 +101,9 @@ namespace TowerDefense3D.Waves
                 Sequence,
                 SpawnPointIndex,
                 enemyId,
-                StartDistanceMeters);
+                StartDistanceMeters,
+                SuppressEntranceEffect,
+                AdoptsExistingEnemy);
         }
     }
 }

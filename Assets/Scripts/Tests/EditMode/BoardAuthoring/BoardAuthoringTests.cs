@@ -69,6 +69,7 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 Is.EqualTo(new[]
                 {
                     "Prefab",
+                    "Tower",
                     "Camera Focus",
                     "Road",
                     "Road Spawn",

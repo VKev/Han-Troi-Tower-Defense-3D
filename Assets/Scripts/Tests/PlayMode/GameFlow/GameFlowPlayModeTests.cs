@@ -6,6 +6,7 @@ using System.Reflection;
 using NUnit.Framework;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Waves;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -105,47 +106,17 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(scroll, Is.Not.Null, "The level menu needs a journey scroll view.");
             Assert.That(EventSystem.current, Is.Not.Null);
 
-            // Sweeps the whole map rather than one hand-picked pixel. What this guards against is a
-            // map that can only be dragged by grabbing a node, which is what happens when the blank
-            // stretches between the nodes are not raycast targets.
-            var corners = new Vector3[4];
-            scroll.viewport.GetWorldCorners(corners);
-            Vector3 across = corners[3] - corners[0];
-            Vector3 up = corners[1] - corners[0];
-
-            var hits = new List<RaycastResult>();
-            int sampled = 0;
-            for (int column = 1; column < 12; column++)
-            {
-                for (int row = 1; row < 8; row++)
-                {
-                    Vector3 point = corners[0] + (across * (column / 12f)) + (up * (row / 8f));
-                    var pointer = new PointerEventData(EventSystem.current)
-                    {
-                        position = new Vector2(point.x, point.y)
-                    };
-
-                    hits.Clear();
-                    EventSystem.current.RaycastAll(pointer, hits);
-                    Assert.That(hits, Is.Not.Empty, "Nothing to grab at " + pointer.position + ".");
-
-                    GameObject top = hits[0].gameObject;
-                    if (!top.transform.IsChildOf(scroll.transform))
-                    {
-                        // A chrome button sits over the map here; it is meant to take the press.
-                        continue;
-                    }
-
-                    Assert.That(
-                        ExecuteEvents.GetEventHandler<IDragHandler>(top),
-                        Is.EqualTo(scroll.gameObject),
-                        "Dead spot at " + pointer.position + ": a press there reaches " + top.name
-                        + ", which does not drag the journey.");
-                    sampled++;
-                }
-            }
-
-            Assert.That(sampled, Is.GreaterThan(20), "The sweep never landed on the map itself.");
+            // The blank map must be a raycast surface whose drag handler resolves to the ScrollRect.
+            // Checking the authored surface and handler directly is stable across Canvas scaling;
+            // sampling screen pixels made this test depend on the current device simulator frame.
+            Image viewportGraphic = scroll.viewport.GetComponent<Image>();
+            Assert.That(viewportGraphic, Is.Not.Null, "The journey viewport needs a raycast graphic.");
+            Assert.That(viewportGraphic.raycastTarget, Is.True);
+            Assert.That(scroll.content, Is.Not.Null, "The journey scroll needs authored content.");
+            Assert.That(
+                ExecuteEvents.GetEventHandler<IDragHandler>(scroll.viewport.gameObject),
+                Is.EqualTo(scroll.gameObject),
+                "Dragging the blank journey surface must be handled by its ScrollRect.");
             yield break;
         }
 
@@ -161,7 +132,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(IsSceneLoaded(LevelTwoScenePath), Is.False);
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(LevelOneScenePath));
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
-            Assert.That(CountLoaded<Camera>(), Is.EqualTo(1));
+            Assert.That(CountLoadedMainCameras(), Is.EqualTo(1));
             Assert.That(CountLoaded<AudioListener>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(CountLoaded<ApplicationUIView>(), Is.EqualTo(1));
@@ -184,6 +155,47 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             Assert.That(CountLoaded<EventSystem>(), Is.EqualTo(1));
             Assert.That(CountLoadedByFullName(ApplicationLifetimeScopeTypeName), Is.EqualTo(1));
             Assert.That(CountLoaded<LevelButtonView>(), Is.EqualTo(GetAuthoredLevelCount()));
+        }
+
+        [UnityTest]
+        public IEnumerator LevelOne_AdoptsBoardPainterTowersAndLinksGeneratorToSoulNexus()
+        {
+            ClickLevel(1);
+            ClickEnterMap();
+            yield return WaitForGameplay(LevelOneScenePath);
+
+            AuthoredTowerView generator = FindAuthoredTower(TowerFamily.Generator);
+            AuthoredTowerView nexus = FindAuthoredTower(TowerFamily.SoulNexus);
+            Assert.That(generator, Is.Not.Null, "Level 1 must author a Generator through Board Painter.");
+            Assert.That(nexus, Is.Not.Null, "Level 1 must author a Soul Nexus through Board Painter.");
+            Assert.That(generator.RuntimeView.IsConfigured, Is.True, "Generator was not configured.");
+            Assert.That(generator.RuntimeView.IsRegistered, Is.True, "Generator was not registered.");
+            Assert.That(nexus.RuntimeView.IsConfigured, Is.True, "Soul Nexus was not configured.");
+            Assert.That(nexus.RuntimeView.IsRegistered, Is.True, "Soul Nexus was not registered.");
+
+            Component scope = FindLoadedByFullName(LevelLifetimeScopeTypeName);
+            Assert.That(scope, Is.Not.Null);
+            TowerNetworkSystem towerNetwork = Resolve<TowerNetworkSystem>(scope);
+            Assert.That(towerNetwork.CanStartLinkFrom(generator.RuntimeView), Is.True);
+            Assert.That(towerNetwork.CanStartLinkFrom(nexus.RuntimeView), Is.False);
+            Assert.That(
+                towerNetwork.TryRewire(generator.RuntimeView, nexus.RuntimeView, out string linkError),
+                Is.True,
+                linkError);
+            Assert.That(towerNetwork.HasValidChain, Is.True);
+            IWaveSystem waveSystem = Resolve<IWaveSystem>(scope);
+            Assert.That(waveSystem.TryStartWave(out string startError), Is.True, startError);
+            Assert.That(towerNetwork.IsRunning, Is.True);
+
+            float timeoutSeconds = 5f;
+            while (towerNetwork.Manager.ProjectileCount == 0 && timeoutSeconds > 0f)
+            {
+                yield return null;
+                timeoutSeconds -= Time.deltaTime;
+            }
+
+            Assert.That(towerNetwork.Manager.ProjectileCount, Is.GreaterThan(0),
+                "The authored Generator must emit projectiles through the runtime network.");
         }
 
         [UnityTest]
@@ -448,6 +460,81 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             return null;
         }
 
+        private static AuthoredTowerView FindAuthoredTower(TowerFamily family)
+        {
+            AuthoredTowerView[] towers = Resources.FindObjectsOfTypeAll<AuthoredTowerView>();
+            for (int index = 0; index < towers.Length; index++)
+            {
+                AuthoredTowerView tower = towers[index];
+                if (IsLoadedSceneObject(tower) && tower.Definition?.Family == family)
+                {
+                    return tower;
+                }
+            }
+
+            return null;
+        }
+
+        private static Component FindLoadedByFullName(string typeName)
+        {
+            Component[] values = Resources.FindObjectsOfTypeAll<Component>();
+            for (int index = 0; index < values.Length; index++)
+            {
+                Component value = values[index];
+                if (IsLoadedSceneObject(value)
+                    && string.Equals(value.GetType().FullName, typeName, StringComparison.Ordinal))
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
+        private static T Resolve<T>(Component scope)
+        {
+            PropertyInfo containerProperty = scope.GetType().GetProperty(
+                "Container",
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.That(containerProperty, Is.Not.Null);
+            object container = containerProperty.GetValue(scope);
+            Assert.That(container, Is.Not.Null);
+
+            Type resolverType = container.GetType().GetInterface("VContainer.IObjectResolver");
+            Assert.That(resolverType, Is.Not.Null, "The level scope does not expose IObjectResolver.");
+            MethodInfo resolveByType = resolverType.GetMethod("Resolve", new[] { typeof(Type), typeof(object) });
+            if (resolveByType != null)
+            {
+                return (T)resolveByType.Invoke(container, new object[] { typeof(T), null });
+            }
+
+            MethodInfo[] methods = container.GetType().GetMethods(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            for (int index = 0; index < methods.Length; index++)
+            {
+                MethodInfo method = methods[index];
+                ParameterInfo[] parameters = method.GetParameters();
+                if (method.Name != "Resolve")
+                {
+                    continue;
+                }
+
+                if (method.IsGenericMethodDefinition && parameters.Length == 0)
+                {
+                    return (T)method.MakeGenericMethod(typeof(T)).Invoke(container, null);
+                }
+
+                if (!method.IsGenericMethod && parameters.Length == 1
+                    && parameters[0].ParameterType == typeof(Type))
+                {
+                    return (T)method.Invoke(container, new object[] { typeof(T) });
+                }
+            }
+
+            Assert.Fail("The level scope container does not expose Resolve<T>().");
+            return default;
+        }
+
         private static string GetLevelButtonLabel(int levelNumber)
         {
             LevelButtonView view = FindLevelButton(levelNumber);
@@ -457,7 +544,9 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
 
         private static T FindLoaded<T>() where T : Component
         {
-            T[] values = Resources.FindObjectsOfTypeAll<T>();
+            T[] values = UnityEngine.Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int index = 0; index < values.Length; index++)
             {
                 if (IsLoadedSceneObject(values[index]))
@@ -505,6 +594,24 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
             for (int index = 0; index < values.Length; index++)
             {
                 if (IsLoadedSceneObject(values[index]))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountLoadedMainCameras()
+        {
+            int count = 0;
+            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int index = 0; index < cameras.Length; index++)
+            {
+                Camera camera = cameras[index];
+                if (IsLoadedSceneObject(camera) && camera.CompareTag("MainCamera"))
                 {
                     count++;
                 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Towers;
 using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement.Editor
@@ -79,6 +80,27 @@ namespace TowerDefense3D.GridPlacement.Editor
         internal int SortingOrder { get; }
     }
 
+    internal readonly struct BoardAuthoredTowerVisual
+    {
+        internal BoardAuthoredTowerVisual(GridCell coordinate, TowerCombatDefinition definition,
+            GameObject prefab, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+        {
+            Coordinate = coordinate;
+            Definition = definition;
+            Prefab = prefab;
+            LocalPosition = localPosition;
+            LocalRotation = localRotation;
+            LocalScale = localScale;
+        }
+
+        internal GridCell Coordinate { get; }
+        internal TowerCombatDefinition Definition { get; }
+        internal GameObject Prefab { get; }
+        internal Vector3 LocalPosition { get; }
+        internal Quaternion LocalRotation { get; }
+        internal Vector3 LocalScale { get; }
+    }
+
     internal sealed class BoardGeometryPlan
     {
         internal BoardGeometryPlan(
@@ -87,9 +109,11 @@ namespace TowerDefense3D.GridPlacement.Editor
             bool visualizeInScene,
             IReadOnlyList<BoardGeometryRectangle> rectangles,
             IReadOnlyList<BoardGridPlaceableVisual> gridPlaceableVisuals,
+            IReadOnlyList<BoardAuthoredTowerVisual> authoredTowerVisuals,
             LowestBoardLevelBounds? focusRegion,
             string signature,
-            string gridPlaceableSignature)
+            string gridPlaceableSignature,
+            string authoredTowerSignature)
         {
             CellSize = cellSize;
             HeightUnit = heightUnit;
@@ -97,10 +121,14 @@ namespace TowerDefense3D.GridPlacement.Editor
             Rectangles = rectangles ?? throw new ArgumentNullException(nameof(rectangles));
             GridPlaceableVisuals = gridPlaceableVisuals
                 ?? throw new ArgumentNullException(nameof(gridPlaceableVisuals));
+            AuthoredTowerVisuals = authoredTowerVisuals
+                ?? throw new ArgumentNullException(nameof(authoredTowerVisuals));
             FocusRegion = focusRegion;
             Signature = signature ?? throw new ArgumentNullException(nameof(signature));
             GridPlaceableSignature = gridPlaceableSignature
                 ?? throw new ArgumentNullException(nameof(gridPlaceableSignature));
+            AuthoredTowerSignature = authoredTowerSignature
+                ?? throw new ArgumentNullException(nameof(authoredTowerSignature));
         }
 
         internal float CellSize { get; }
@@ -114,6 +142,8 @@ namespace TowerDefense3D.GridPlacement.Editor
         internal IReadOnlyList<BoardGridPlaceableVisual>
             GridPlaceableVisuals { get; }
 
+        internal IReadOnlyList<BoardAuthoredTowerVisual> AuthoredTowerVisuals { get; }
+
         /// <summary>
         /// The authored Camera Focus region at the lowest playable level, when
         /// one or more cells there carry <see cref="BoardCellFlags.CameraFocus"/>.
@@ -124,5 +154,6 @@ namespace TowerDefense3D.GridPlacement.Editor
         internal string Signature { get; }
 
         internal string GridPlaceableSignature { get; }
+        internal string AuthoredTowerSignature { get; }
     }
 }

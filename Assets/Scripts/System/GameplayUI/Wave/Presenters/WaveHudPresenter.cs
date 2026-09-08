@@ -67,15 +67,15 @@ namespace TowerDefense3D.GameFlow
             switch (state.Phase)
             {
                 case WavePhase.Running:
-                    return "WAVE IN PROGRESS";
+                    return "ĐANG DIỄN RA";
                 case WavePhase.Victory:
-                    return "ALL WAVES CLEARED";
+                    return "ĐÃ QUA TẤT CẢ ĐỢT";
                 case WavePhase.Defeat:
-                    return "CÓC HAS FALLEN";
+                    return "CÓC ĐÃ GỤC";
                 default:
                     return state.CanStartWave
-                        ? "READY TO START"
-                        : "LINK A VALID CHAIN";
+                        ? "SẴN SÀNG BẮT ĐẦU"
+                        : "HÃY NỐI CHUỖI HỢP LỆ";
             }
         }
 
@@ -99,20 +99,20 @@ namespace TowerDefense3D.GameFlow
             switch (state.Phase)
             {
                 case WavePhase.Running:
-                    return "WAVE RUNNING";
+                    return "ĐANG CHẠY";
                 case WavePhase.Victory:
-                    return "VICTORY";
+                    return "CHIẾN THẮNG";
                 case WavePhase.Defeat:
-                    return "DEFEAT";
+                    return "THẤT BẠI";
                 default:
-                    return "START WAVE";
+                    return "BẮT ĐẦU ĐỢT";
             }
         }
 
         private static string CreateStartWaveBonusText(WaveState state)
         {
             return state.Phase == WavePhase.Preparation && state.NextWaveClearGold > 0
-                ? $"+{state.NextWaveClearGold} CLEAR BONUS"
+                ? $"+{state.NextWaveClearGold} THƯỞNG VƯỢT ĐỢT"
                 : string.Empty;
         }
 

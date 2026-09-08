@@ -246,12 +246,13 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
                     Is.True);
                 Assert.That(controller.HasCandidate, Is.False);
 
-                controller.UpdatePlacementDrag(-1, screenPoint, pointerOverUi: false);
+                Vector2 pointerScreenPoint = OffsetPointerForFinger(placementView, screenPoint);
+                controller.UpdatePlacementDrag(-1, pointerScreenPoint, pointerOverUi: false);
 
                 Assert.That(controller.HasCandidate, Is.True);
                 Assert.That(controller.CandidateIsValid, Is.True);
                 Assert.That(
-                    controller.EndPlacementDrag(-1, screenPoint, pointerOverUi: false),
+                    controller.EndPlacementDrag(-1, pointerScreenPoint, pointerOverUi: false),
                     Is.True);
 
                 Assert.That(placedRoot.transform.childCount, Is.EqualTo(1));
@@ -293,7 +294,9 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
         private static TowerDefinition CreateTestPlacementDefinition()
         {
             var definition = ScriptableObject.CreateInstance<TowerDefinition>();
-            SetPrivateField(definition, "prefab", new GameObject("Test Tower Prefab"));
+            GameObject prefab = new GameObject("Test Tower Prefab");
+            prefab.AddComponent<TowerRuntimeView>();
+            SetPrivateField(definition, "prefab", prefab);
             SetPrivateField(definition, "footprint", new TowerFootprint(1, 1, 1));
             return definition;
         }
@@ -381,6 +384,26 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             };
             eventSystem.RaycastAll(eventData, results);
             return results.Count > 0;
+        }
+
+        private static Vector2 OffsetPointerForFinger(
+            GridPlacementView placementView,
+            Vector2 boardScreenPoint)
+        {
+            float screenUnit = placementView.WorldCamera.pixelHeight;
+            FieldInfo offsetLeftField = placementView.GetType().GetField(
+                "fingerOffsetLeft",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo offsetUpField = placementView.GetType().GetField(
+                "fingerOffsetUp",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(offsetLeftField, Is.Not.Null);
+            Assert.That(offsetUpField, Is.Not.Null);
+            float offsetLeft = (float)offsetLeftField.GetValue(placementView);
+            float offsetUp = (float)offsetUpField.GetValue(placementView);
+            return boardScreenPoint + new Vector2(
+                offsetLeft * screenUnit,
+                -offsetUp * screenUnit);
         }
 
         private static void SetPrivateField(object target, string fieldName, object value)

@@ -31,7 +31,10 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private Button returnToMenuButton;
 
         private bool isInitialized;
+        private bool tutorialControlsVisible = true;
         private Canvas rootCanvas;
+        private GameObject buildBar;
+        private GameObject towerButtons;
 
         public event Action<TowerCombatDefinition, TowerPlacementPointerEvent> TowerDragBegan;
         public event Action<TowerPlacementPointerEvent> TowerDragMoved;
@@ -166,7 +169,7 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            if (!state.TowerActionsVisible)
+            if (!tutorialControlsVisible || !state.TowerActionsVisible)
             {
                 if (towerActionsPanel.gameObject.activeSelf)
                 {
@@ -203,6 +206,25 @@ namespace TowerDefense3D.GameFlow
         public void Show()
         {
             gameObject.SetActive(true);
+        }
+
+        public void SetTutorialControlsVisible(bool visible)
+        {
+            tutorialControlsVisible = visible;
+            buildBar ??= transform.Find("Build Bar")?.gameObject;
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            if (buildBar != null) buildBar.SetActive(visible);
+            if (towerButtons != null) towerButtons.SetActive(visible);
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView dragButton = towerDragButtons[index];
+                if (dragButton != null) dragButton.gameObject.SetActive(visible);
+            }
+
+            if (!visible && towerActionsPanel != null)
+            {
+                towerActionsPanel.gameObject.SetActive(false);
+            }
         }
 
         public void Hide()

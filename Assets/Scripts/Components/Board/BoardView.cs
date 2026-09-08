@@ -10,11 +10,14 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, HideInInspector] private string generatedSignature;
         [SerializeField, HideInInspector] private Transform generatedGridPlaceableRoot;
         [SerializeField, HideInInspector] private string generatedGridPlaceableSignature;
+        [SerializeField, HideInInspector] private Transform generatedAuthoredTowerRoot;
+        [SerializeField, HideInInspector] private string generatedAuthoredTowerSignature;
 
         public BoardDefinition Board => board;
         public Vector3 WorldOrigin => transform.position;
         public Transform GeneratedRoot => generatedRoot;
         public Transform GeneratedGridPlaceableRoot => generatedGridPlaceableRoot;
+        public Transform GeneratedAuthoredTowerRoot => generatedAuthoredTowerRoot;
 
         public void ApplyVisibility(bool visible)
         {
