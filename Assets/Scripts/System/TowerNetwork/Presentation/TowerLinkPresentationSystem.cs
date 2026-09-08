@@ -31,6 +31,12 @@ namespace TowerDefense3D.Towers
         private readonly ITowerLinkView view;
         private readonly ILinkRangeView rangeRing;
         private readonly List<TowerLinkViewItem> visibleLinks = new List<TowerLinkViewItem>();
+        private readonly Dictionary<TowerNodeId, TowerNodeId> previewValidLinks =
+            new Dictionary<TowerNodeId, TowerNodeId>();
+        private TowerNodeId previewSourceId;
+        private TowerNodeId previewTargetId;
+        private bool previewTopologyDirty = true;
+        private bool hasPreviewTopology;
 
         /// <summary>
         /// <paramref name="rangeRing"/> is the reach circle drawn flat on the board. This system
@@ -66,11 +72,13 @@ namespace TowerDefense3D.Towers
 
         public void Start()
         {
+            manager.StateChanged += InvalidatePreviewTopology;
             view.Initialize();
         }
 
         public void LateTick()
         {
+            RefreshPreviewTopology();
             IReadOnlyList<TowerLinkSnapshot> links = manager.CreateLinkSnapshot();
             RefreshFacing(links);
             RefreshLinks(links);
@@ -110,7 +118,9 @@ namespace TowerDefense3D.Towers
             ITowerRuntimeView linkSource = interactionSystem.LinkSource;
             if (interactionSystem.IsDraggingLink && linkSource != null)
             {
-                rangeRing.Show(linkSource.GroundCentre, towerNetworkSystem.MaximumLinkRangeMeters);
+                rangeRing.Show(
+                    linkSource.GroundCentre,
+                    towerNetworkSystem.DescribeRangeMeters(linkSource));
                 return;
             }
 
@@ -145,6 +155,8 @@ namespace TowerDefense3D.Towers
 
         public void Dispose()
         {
+            manager.StateChanged -= InvalidatePreviewTopology;
+            previewValidLinks.Clear();
             visibleLinks.Clear();
             view.Clear();
             rangeRing?.Hide();
@@ -172,7 +184,10 @@ namespace TowerDefense3D.Towers
                     link.Source,
                     source.PresentationAnchor,
                     target.PresentationAnchor,
-                    manager.IsNodeInValidChain(link.Source)));
+                    hasPreviewTopology
+                        ? previewValidLinks.TryGetValue(link.Source, out TowerNodeId predictedTarget)
+                            && predictedTarget.Equals(link.Target)
+                        : manager.IsNodeInValidChain(link.Source)));
             }
 
             view.RenderLinks(visibleLinks);
@@ -203,14 +218,36 @@ namespace TowerDefense3D.Towers
                 return;
             }
 
-            // Valid means the release would actually attach, not merely that a tower is under the
-            // finger. Asked of the network rather than measured here, so the line cannot promise
-            // something the release refuses - which is what a target beyond the link range used to
-            // do: green all the way, then nothing.
+            // Preview and committed links use the same complete-chain rule.
             view.ShowPreview(
                 linkSource.PresentationAnchor,
                 interactionSystem.PreviewWorldPosition,
-                towerNetworkSystem.CanLink(linkSource, interactionSystem.PreviewTarget));
+                hasPreviewTopology && previewValidLinks.TryGetValue(previewSourceId, out TowerNodeId target)
+                    && target.Equals(previewTargetId));
+        }
+
+        private void InvalidatePreviewTopology()
+        {
+            previewTopologyDirty = true;
+        }
+
+        private void RefreshPreviewTopology()
+        {
+            TowerNodeId sourceId = interactionSystem.IsDraggingLink && interactionSystem.LinkSource != null
+                ? interactionSystem.LinkSource.NodeId : default;
+            TowerNodeId targetId = interactionSystem.IsDraggingLink && interactionSystem.PreviewTarget != null
+                ? interactionSystem.PreviewTarget.NodeId : default;
+            if (!previewTopologyDirty && sourceId.Equals(previewSourceId) && targetId.Equals(previewTargetId))
+            {
+                return;
+            }
+
+            previewSourceId = sourceId;
+            previewTargetId = targetId;
+            previewTopologyDirty = false;
+            previewValidLinks.Clear();
+            hasPreviewTopology = sourceId.IsValid && targetId.IsValid
+                && manager.TryCollectPreviewValidLinks(sourceId, targetId, previewValidLinks);
         }
     }
 }

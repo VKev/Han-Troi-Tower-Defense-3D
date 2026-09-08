@@ -20,12 +20,32 @@ namespace TowerDefense3D.Towers
             float burnDamagePerTick = 0f,
             float burnTickIntervalSeconds = 0f,
             float burnDurationSeconds = 0f,
-            float pushDistanceMeters = 0f)
+            float pushDistanceMeters = 0f,
+            float projectileSpeedMetersPerSecond = 10f,
+            float slowStrengthFraction = 0f,
+            float slowDurationSeconds = 0f)
         {
             if (!FiniteNumber.IsFinite(damage) || damage < 0f)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(damage), "Projectile damage must be finite and non-negative.");
+            }
+
+            if (!FiniteNumber.IsFinite(projectileSpeedMetersPerSecond)
+                || projectileSpeedMetersPerSecond <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(projectileSpeedMetersPerSecond));
+            }
+
+            if (!FiniteNumber.IsFinite(slowStrengthFraction)
+                || slowStrengthFraction < 0f || slowStrengthFraction > 1f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(slowStrengthFraction));
+            }
+
+            if (!FiniteNumber.IsFinite(slowDurationSeconds) || slowDurationSeconds < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(slowDurationSeconds));
             }
 
             Kind = kind;
@@ -34,6 +54,9 @@ namespace TowerDefense3D.Towers
             BurnTickIntervalSeconds = burnTickIntervalSeconds;
             BurnDurationSeconds = burnDurationSeconds;
             PushDistanceMeters = pushDistanceMeters;
+            ProjectileSpeedMetersPerSecond = projectileSpeedMetersPerSecond;
+            SlowStrengthFraction = slowStrengthFraction;
+            SlowDurationSeconds = slowDurationSeconds;
         }
 
         public ProjectilePayloadKind Kind { get; }
@@ -42,6 +65,9 @@ namespace TowerDefense3D.Towers
         public float BurnTickIntervalSeconds { get; }
         public float BurnDurationSeconds { get; }
         public float PushDistanceMeters { get; }
+        public float ProjectileSpeedMetersPerSecond { get; }
+        public float SlowStrengthFraction { get; }
+        public float SlowDurationSeconds { get; }
     }
 
     public readonly struct ProjectileQueueEntry

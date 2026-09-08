@@ -13,9 +13,7 @@ namespace TowerDefense3D.Towers
             "Water",
             new TowerNetworkProfile(1, 1, 3, true),
             new TowerThroughputProfile(0.85f, 1, 1),
-            new TowerEconomyProfile(70, 0, 0, true));
-        [SerializeField] private ElementUpgradeCostProfile upgradeCosts =
-            new ElementUpgradeCostProfile();
+            new TowerEconomyProfile(70, 0, true));
 
         // Authored at zero on purpose: Water's identity is revealing Stealth, not damage.
         // The knobs exist so the Game Balance Center can tune it without a code change, and
@@ -24,13 +22,14 @@ namespace TowerDefense3D.Towers
         // seconds is not authorable; it is inert while Damage Per Tick is zero.
         [SerializeField] private DamageProfile directDamage = new DamageProfile(0f);
         [SerializeField] private BurnProfile burn = new BurnProfile(0f, 0.5f, 0f, true);
+        [SerializeField] private SlowProfile slow = new SlowProfile(0f, 0f);
 
         public override TowerFamily Family => TowerFamily.Water;
         public override ElementType Element => ElementType.Water;
         public override TowerCoreProfile Core => core;
-        public override ElementUpgradeCostProfile UpgradeCosts => upgradeCosts;
         public DamageProfile DirectDamage => directDamage;
         public BurnProfile Burn => burn;
+        public SlowProfile Slow => slow;
 
         internal override void CollectSpecificValidationErrors(List<string> errors)
         {

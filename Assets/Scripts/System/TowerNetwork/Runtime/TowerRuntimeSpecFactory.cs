@@ -1,5 +1,6 @@
 using System;
 using TowerDefense3D.Core;
+using UnityEngine;
 
 namespace TowerDefense3D.Towers
 {
@@ -16,7 +17,9 @@ namespace TowerDefense3D.Towers
         public static TowerRuntimeSpec Create(
             TowerCombatDefinition definition,
             float tickSeconds,
-            int upgradeLevel = 0)
+            int upgradeLevel = 0,
+            float defaultProjectileSpeedMetersPerSecond = 10f,
+            float defaultRangeMeters = 12f)
         {
             ValidateInput(definition, tickSeconds);
 
@@ -24,21 +27,40 @@ namespace TowerDefense3D.Towers
             TowerNetworkProfile network = core.Network;
             TowerThroughputProfile throughput = core.Throughput;
             SoulNexusDefinition soulNexus = definition as SoulNexusDefinition;
+            TowerUpgradeTierProfile tier = definition.UpgradeCosts?.GetTier(upgradeLevel);
             int consumeBatchSize = soulNexus == null ? 0 : throughput.BatchSize;
             SoulConsumeOrder? consumeOrder = soulNexus?.ConsumeOrder;
-            int cycleTicks = ConvertPositiveSecondsToTicks(throughput.CycleIntervalSeconds, tickSeconds);
+            float attackIntervalSeconds = tier != null && tier.AttackIntervalSeconds > 0f
+                ? tier.AttackIntervalSeconds
+                : throughput.CycleIntervalSeconds;
+            float projectileSpeedMetersPerSecond = tier != null
+                && tier.ProjectileSpeedMetersPerSecond > 0f
+                    ? tier.ProjectileSpeedMetersPerSecond
+                    : defaultProjectileSpeedMetersPerSecond;
+            float rangeMeters = tier != null && tier.RangeMeters > 0f
+                ? tier.RangeMeters
+                : definition is HeroTowerDefinition hero
+                    ? hero.AttackRangeMeters
+                    : defaultRangeMeters;
+            int cycleTicks = ConvertPositiveSecondsToTicks(attackIntervalSeconds, tickSeconds);
             int outputProjectileCount = GetOutputProjectileCount(definition, throughput);
             int reservationCount = outputProjectileCount;
             int sequenceSpacingTicks = GetSequenceSpacingTicks(
                 throughput, outputProjectileCount, tickSeconds);
-            ProjectilePayload outputPayload = ScalePayload(
+            ProjectilePayload outputPayload = ApplyTier(
                 CreateOutputPayload(definition),
-                core.Upgrade.DamageMultiplier(upgradeLevel));
+                tier,
+                projectileSpeedMetersPerSecond);
 
             return new TowerRuntimeSpec(
                 definition.Family, definition.NetworkRole, core.StableId, network.InputPortCount,
                 network.OutputPortCount, network.QueueCapacityPerInput, cycleTicks, outputProjectileCount,
-                reservationCount, sequenceSpacingTicks, outputPayload, consumeBatchSize, consumeOrder);
+                reservationCount,
+                sequenceSpacingTicks,
+                outputPayload,
+                consumeBatchSize,
+                consumeOrder,
+                rangeMeters);
         }
 
         private static void ValidateInput(TowerCombatDefinition definition, float tickSeconds)
@@ -120,27 +142,35 @@ namespace TowerDefense3D.Towers
             return seconds == 0f ? 0 : ConvertPositiveSecondsToTicks(seconds, tickSeconds);
         }
 
-        /// <summary>
-        /// Multiplies every damage number a payload carries, leaving its timings alone.
-        /// </summary>
-        /// <remarks>
-        /// Burn ticks harder too, but burns no longer or faster: an upgrade should raise output,
-        /// not quietly rewrite the status durations the reaction rules are balanced against.
-        /// </remarks>
-        private static ProjectilePayload ScalePayload(ProjectilePayload payload, float multiplier)
+        private static ProjectilePayload ApplyTier(
+            ProjectilePayload payload,
+            TowerUpgradeTierProfile tier,
+            float projectileSpeedMetersPerSecond)
         {
-            if (multiplier <= 0f || Math.Abs(multiplier - 1f) < 0.0001f)
+            if (tier == null)
             {
-                return payload;
+                return new ProjectilePayload(
+                    payload.Kind,
+                    payload.Damage,
+                    payload.BurnDamagePerTick,
+                    payload.BurnTickIntervalSeconds,
+                payload.BurnDurationSeconds,
+                payload.PushDistanceMeters,
+                projectileSpeedMetersPerSecond,
+                payload.SlowStrengthFraction,
+                payload.SlowDurationSeconds);
             }
 
             return new ProjectilePayload(
                 payload.Kind,
-                payload.Damage * multiplier,
-                payload.BurnDamagePerTick * multiplier,
-                payload.BurnTickIntervalSeconds,
-                payload.BurnDurationSeconds,
-                payload.PushDistanceMeters);
+                payload.Damage * Mathf.Max(1f, tier.DamageMultiplier),
+                tier.BurnDamagePerTick,
+                tier.BurnTickIntervalSeconds,
+                tier.BurnDurationSeconds,
+                tier.PushDistanceMeters,
+                projectileSpeedMetersPerSecond,
+                tier.SlowStrengthFraction,
+                tier.SlowDurationSeconds);
         }
 
         private static ProjectilePayload CreateOutputPayload(TowerCombatDefinition definition)
@@ -204,7 +234,11 @@ namespace TowerDefense3D.Towers
                 water.DirectDamage.Amount,
                 water.Burn.DamagePerTick,
                 water.Burn.TickIntervalSeconds,
-                water.Burn.DurationSeconds);
+                water.Burn.DurationSeconds,
+                0f,
+                10f,
+                water.Slow?.StrengthFraction ?? 0f,
+                water.Slow?.DurationSeconds ?? 0f);
         }
 
         private static ProjectilePayload CreateWindPayload(WindTowerDefinition wind)

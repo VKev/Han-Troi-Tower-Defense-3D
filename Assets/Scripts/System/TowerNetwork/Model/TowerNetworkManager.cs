@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.Core;
+using UnityEngine;
 
 namespace TowerDefense3D.Towers
 {
@@ -52,6 +53,21 @@ namespace TowerDefense3D.Towers
         public int ValidNodeCount => nodesInValidChains.Count;
         public float TickSeconds => tickSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
+        public float MinimumProjectileSpeedMetersPerSecond
+        {
+            get
+            {
+                float minimum = projectileSpeedMetersPerSecond;
+                for (int index = 0; index < orderedNodeIds.Count; index++)
+                {
+                    minimum = Mathf.Min(
+                        minimum,
+                        nodes[orderedNodeIds[index]].Spec.OutputPayload.ProjectileSpeedMetersPerSecond);
+                }
+
+                return minimum;
+            }
+        }
         public float MaximumLinkRangeMeters => maximumLinkRangeMeters;
         public float MaximumPushSpeedFraction => maximumPushSpeedFraction;
         public bool HasLevelSession => Phase != TowerNetworkPhase.Inactive;

@@ -69,6 +69,24 @@ namespace TowerDefense3D.Towers
         }
 
         /// <summary>
+        /// Whether a link may be started from <paramref name="sourceId"/> at all.
+        /// </summary>
+        /// <remarks>
+        /// Asked before the gesture begins, not when it ends. A drag that can never attach still
+        /// draws a line across the board and still reads as an offer; refusing it on release only
+        /// tells the player afterwards. This covers the reasons that are already settled before a
+        /// target is known - the wave has started, or the tower is a hero - and leaves the ones
+        /// that depend on the target to <see cref="CanLink"/>.
+        /// </remarks>
+        public bool CanStartLink(TowerNodeId sourceId)
+        {
+            return CanEditTopology(out _)
+                && nodes.TryGetValue(sourceId, out NodeState source)
+                && source.Spec.Family != TowerFamily.Hero
+                && source.Spec.OutputPortCount > 0;
+        }
+
+        /// <summary>
         /// Every reason a link can be turned away before the topology is touched, in one place so
         /// asking and doing cannot answer differently.
         /// </summary>
@@ -88,37 +106,46 @@ namespace TowerDefense3D.Towers
 
             if (!nodes.TryGetValue(sourceId, out source))
             {
-                error = "Source tower is not registered.";
+                error = "Trụ nguồn chưa được đăng ký.";
                 return false;
             }
 
             if (!nodes.TryGetValue(targetId, out target))
             {
-                error = "Target tower is not registered.";
+                error = "Trụ đích chưa được đăng ký.";
                 return false;
             }
 
             if (sourceId.Equals(targetId))
             {
-                error = "A tower cannot link to itself.";
+                error = "Không thể nối trụ với chính nó.";
+                return false;
+            }
+
+            // A hero fights on its own: it strikes what comes into its own reach and neither
+            // feeds nor is fed by the network. Its port counts say otherwise only because every
+            // tower is validated against one shape, so the rule lives here where it is read.
+            if (source.Spec.Family == TowerFamily.Hero || target.Spec.Family == TowerFamily.Hero)
+            {
+                error = "Anh hùng tự tấn công và không thể nối link.";
                 return false;
             }
 
             if (source.Spec.OutputPortCount <= 0)
             {
-                error = "The selected source tower has no output port.";
+                error = "Trụ nguồn không có cổng đầu ra.";
                 return false;
             }
 
             if (target.Spec.InputPortCount <= 0)
             {
-                error = "The selected target tower has no input port.";
+                error = "Trụ đích không có cổng đầu vào.";
                 return false;
             }
 
-            if (TowerWorldPosition.Distance(source.Position, target.Position) > maximumLinkRangeMeters)
+            if (TowerWorldPosition.Distance(source.Position, target.Position) > source.Spec.RangeMeters)
             {
-                error = $"Target is outside the {maximumLinkRangeMeters:0.##}m link range.";
+                error = $"Trụ đích nằm ngoài tầm nối {source.Spec.RangeMeters:0.##}m.";
                 return false;
             }
 
@@ -151,7 +178,21 @@ namespace TowerDefense3D.Towers
 
         private bool TryBuildAndCommitRewire(NodeState source, NodeState target, out string error)
         {
-            Dictionary<TowerNodeId, LinkState> candidate = new Dictionary<TowerNodeId, LinkState>(outgoingLinks);
+            if (!TryBuildRewireCandidate(source, target, out Dictionary<TowerNodeId, LinkState> candidate, out error))
+            {
+                return false;
+            }
+
+            CommitLinks(candidate);
+            RebuildValidChains();
+            PublishStateChanged();
+            return true;
+        }
+
+        private bool TryBuildRewireCandidate(NodeState source, NodeState target,
+            out Dictionary<TowerNodeId, LinkState> candidate, out string error)
+        {
+            candidate = new Dictionary<TowerNodeId, LinkState>(outgoingLinks);
             candidate.Remove(source.Id);
 
             int targetInputPort;
@@ -164,7 +205,7 @@ namespace TowerDefense3D.Towers
                 targetInputPort = FindFirstFreeInputPort(candidate, target.Id, target.Spec.InputPortCount);
                 if (targetInputPort < 0)
                 {
-                    error = "Every target input port is occupied.";
+                    error = "Tất cả cổng đầu vào của trụ đích đã được dùng.";
                     return false;
                 }
             }
@@ -172,14 +213,48 @@ namespace TowerDefense3D.Towers
             candidate[source.Id] = new LinkState(source.Id, target.Id, targetInputPort);
             if (ContainsCycle(candidate))
             {
-                error = "The requested link would create a cycle.";
+                    error = "Link này sẽ tạo thành vòng lặp.";
                 return false;
             }
 
-            CommitLinks(candidate);
-            RebuildValidChains();
-            PublishStateChanged();
             error = string.Empty;
+            return true;
+        }
+
+        public bool TryCollectPreviewValidLinks(TowerNodeId sourceId, TowerNodeId targetId,
+            IDictionary<TowerNodeId, TowerNodeId> validLinks)
+        {
+            validLinks.Clear();
+            if (!TryOpenLinkGate(sourceId, targetId, out NodeState source, out NodeState target, out _))
+            {
+                return false;
+            }
+
+            IReadOnlyDictionary<TowerNodeId, LinkState> candidate = outgoingLinks;
+            if (!outgoingLinks.TryGetValue(sourceId, out LinkState existing) || !existing.Target.Equals(targetId))
+            {
+                if (!TryBuildRewireCandidate(source, target, out Dictionary<TowerNodeId, LinkState> proposed, out _))
+                {
+                    return false;
+                }
+
+                candidate = proposed;
+            }
+
+            var route = new List<TowerNodeId>();
+            foreach (TowerNodeId nodeId in orderedNodeIds)
+            {
+                if (!TryCollectValidRoute(nodeId, route, candidate))
+                {
+                    continue;
+                }
+
+                for (int index = 0; index < route.Count - 1; index++)
+                {
+                    validLinks[route[index]] = route[index + 1];
+                }
+            }
+
             return true;
         }
 
@@ -280,13 +355,13 @@ namespace TowerDefense3D.Towers
         {
             if (!HasLevelSession)
             {
-                error = "No active tower-network level session.";
+                error = "Chưa có phiên bản đồ đang hoạt động.";
                 return false;
             }
 
             if (IsRunning)
             {
-                error = "Tower topology cannot change while simulation is running.";
+                error = "Không thể thay đổi link khi mô phỏng đang chạy.";
                 return false;
             }
 

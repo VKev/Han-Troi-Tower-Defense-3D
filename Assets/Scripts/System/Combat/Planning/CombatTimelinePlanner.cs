@@ -39,7 +39,7 @@ namespace TowerDefense3D.Enemies
             this.roadPaths = roadPaths;
             this.reactionCatalog = reactionCatalog;
             tickSeconds = towerNetworkManager.TickSeconds;
-            projectileSpeed = towerNetworkManager.ProjectileSpeedMetersPerSecond;
+            projectileSpeed = towerNetworkManager.MinimumProjectileSpeedMetersPerSecond;
             maximumPushSpeedFraction = Mathf.Clamp01(towerNetworkManager.MaximumPushSpeedFraction);
         }
 
@@ -327,7 +327,13 @@ namespace TowerDefense3D.Enemies
                 if (phaseIndex != boss.SummonPhaseIndex)
                 {
                     boss.SummonPhaseIndex = phaseIndex;
-                    boss.SummonElapsedSeconds = 0f;
+
+                    // Due at once rather than after a full interval. Entering a phase is the
+                    // moment worth announcing: the boss arrives, roars where it stands, and the
+                    // wave walks out of the roar - instead of trudging forward in silence for the
+                    // first eight seconds and casting once it is already among the towers.
+                    boss.SummonElapsedSeconds =
+                        definition.SummonPhases[phaseIndex].SummonIntervalSeconds;
                 }
 
                 if (boss.SummonCastRemainingSeconds > 0f)
@@ -427,7 +433,10 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
-                float speedMultiplier = 1f + speedBonus;
+                float slowMultiplier = tick < enemy.SlowEndTick
+                    ? 1f - enemy.SlowStrengthFraction
+                    : 1f;
+                float speedMultiplier = Mathf.Max(0f, 1f + speedBonus) * slowMultiplier;
                 float distance = enemy.Definition.BaseMoveSpeed * speedMultiplier * tickSeconds;
                 Vector3 position = enemy.Position;
                 int targetPointIndex = enemy.TargetPointIndex;
@@ -665,7 +674,10 @@ namespace TowerDefense3D.Enemies
                     continue;
                 }
 
-                projectile.MovementDurationSeconds = Mathf.Min(tickSeconds, distance / projectileSpeed);
+                float projectileSpeed = projectile.Payload.ProjectileSpeedMetersPerSecond;
+                projectile.MovementDurationSeconds = Mathf.Min(
+                    tickSeconds,
+                    distance / projectileSpeed);
                 projectile.Position = Vector3.MoveTowards(
                     projectile.Position,
                     projectile.TargetPosition,
@@ -771,6 +783,12 @@ namespace TowerDefense3D.Enemies
             {
                 ApplyPush(enemy, payload.PushDistanceMeters);
             }
+
+            ApplySlow(
+                enemy,
+                payload.SlowStrengthFraction,
+                payload.SlowDurationSeconds,
+                tick);
 
             ApplyDamage(enemy, payload.Damage, isThermalShock: false);
 
@@ -931,6 +949,27 @@ namespace TowerDefense3D.Enemies
             enemy.BurnIntervalTicks = intervalTicks;
             enemy.NextBurnTick = tick + intervalTicks;
             enemy.BurnEndTick = tick + SecondsToDurationTicks(durationSeconds);
+        }
+
+        private void ApplySlow(
+            ShadowEnemy enemy,
+            float strengthFraction,
+            float durationSeconds,
+            long tick)
+        {
+            if (strengthFraction <= 0f || durationSeconds <= 0f)
+            {
+                return;
+            }
+
+            long endTick = tick + SecondsToDurationTicks(durationSeconds);
+            if (strengthFraction >= enemy.SlowStrengthFraction || endTick > enemy.SlowEndTick)
+            {
+                enemy.SlowStrengthFraction = Mathf.Max(
+                    enemy.SlowStrengthFraction,
+                    strengthFraction);
+                enemy.SlowEndTick = Math.Max(enemy.SlowEndTick, endTick);
+            }
         }
 
         private static void ApplyDamage(
@@ -1243,6 +1282,8 @@ namespace TowerDefense3D.Enemies
             public long LiftImmuneUntilTick { get; set; }
             public float LiftPeakHeightMeters { get; set; }
             public float PushBudgetMeters { get; set; }
+            public float SlowStrengthFraction { get; set; }
+            public long SlowEndTick { get; set; }
             public float BurnDamagePerTick { get; set; }
             public int BurnIntervalTicks { get; set; }
             public long NextBurnTick { get; set; }

@@ -12,6 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0edee3c651e0ab1468803aa169331591, type: 3}
   m_Name: Water
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.WaterTowerDefinition
+  upgradeCosts:
+    tierOne:
+      cost: 280
+      attackIntervalSeconds: 0.85
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.35
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
+    tierTwo:
+      cost: 420
+      attackIntervalSeconds: 0.85
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.7
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
   core:
     stableId: water
     displayName: Water
@@ -30,17 +55,8 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 200
-      linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
-    upgrade:
-      maxLevel: 2
-      costPerLevel: 100
-      damageBonusPerLevel: 0.35
-  upgradeCosts:
-    tierOneCost: 280
-    tierTwoCost: 420
-    tierThreeCost: 140
   directDamage:
     amount: 0
   burn:
@@ -48,4 +64,8 @@ MonoBehaviour:
     tickIntervalSeconds: 0.5
     durationSeconds: 0
     snapshotsDamageOnApply: 1
+    stackingRule: 0
+  slow:
+    strengthFraction: 0
+    durationSeconds: 0
     stackingRule: 0

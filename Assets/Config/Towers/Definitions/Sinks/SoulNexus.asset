@@ -12,6 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cb37f3b834003f4ca1da0f5aa80c198, type: 3}
   m_Name: SoulNexus
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.SoulNexusDefinition
+  upgradeCosts:
+    tierOne:
+      cost: 0
+      attackIntervalSeconds: 0.75
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.35
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
+    tierTwo:
+      cost: 0
+      attackIntervalSeconds: 0.75
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.7
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
   core:
     stableId: soul_nexus
     displayName: Soul Nexus
@@ -30,13 +55,8 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 0
-      linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 1
-    upgrade:
-      maxLevel: 0
-      costPerLevel: 0
-      damageBonusPerLevel: 0.35
   maximumSoul: 50
   upgradedConsumeBatchSize: 2
   consumeOrder: 0

@@ -12,6 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c42ae0b2184d1940a0d98458938b8b5, type: 3}
   m_Name: Wind
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.WindTowerDefinition
+  upgradeCosts:
+    tierOne:
+      cost: 60
+      attackIntervalSeconds: 0.65
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.35
+      pushDistanceMeters: 0.5
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
+    tierTwo:
+      cost: 90
+      attackIntervalSeconds: 0.65
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.7
+      pushDistanceMeters: 0.5
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
   core:
     stableId: wind
     displayName: Wind
@@ -30,17 +55,8 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 200
-      linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
-    upgrade:
-      maxLevel: 2
-      costPerLevel: 100
-      damageBonusPerLevel: 0.35
-  upgradeCosts:
-    tierOneCost: 60
-    tierTwoCost: 90
-    tierThreeCost: 140
   basePushDistanceMeters: 0.5
   directDamage:
     amount: 5

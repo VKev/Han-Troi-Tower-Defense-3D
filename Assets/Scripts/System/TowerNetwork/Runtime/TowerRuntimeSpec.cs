@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Core;
 
 namespace TowerDefense3D.Towers
 {
@@ -8,7 +9,7 @@ namespace TowerDefense3D.Towers
             TowerFamily family, TowerNetworkRole networkRole, string stableId, int inputPortCount, int outputPortCount,
             int queueCapacityPerInput, int cycleTicks, int outputProjectileCount,
             int requiredDownstreamReservationCount, int sequenceSpacingTicks, ProjectilePayload outputPayload,
-            int consumeBatchSize = 0, SoulConsumeOrder? consumeOrder = null)
+            int consumeBatchSize = 0, SoulConsumeOrder? consumeOrder = null, float rangeMeters = 12f)
         {
             if (string.IsNullOrWhiteSpace(stableId))
             {
@@ -55,6 +56,11 @@ namespace TowerDefense3D.Towers
                 throw new ArgumentOutOfRangeException(nameof(consumeBatchSize));
             }
 
+            if (!FiniteNumber.IsFinite(rangeMeters) || rangeMeters <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(rangeMeters));
+            }
+
             ValidateNetworkRole(networkRole, inputPortCount, outputPortCount, queueCapacityPerInput,
                 outputProjectileCount, requiredDownstreamReservationCount, outputPayload);
 
@@ -73,6 +79,7 @@ namespace TowerDefense3D.Towers
             OutputPayload = outputPayload;
             ConsumeBatchSize = consumeBatchSize;
             ConsumeOrder = consumeOrder;
+            RangeMeters = rangeMeters;
         }
 
         public TowerFamily Family { get; }
@@ -88,6 +95,7 @@ namespace TowerDefense3D.Towers
         public ProjectilePayload OutputPayload { get; }
         public int ConsumeBatchSize { get; }
         public SoulConsumeOrder? ConsumeOrder { get; }
+        public float RangeMeters { get; }
 
         private static void ValidateNetworkRole(TowerNetworkRole networkRole, int inputPortCount, int outputPortCount,
             int queueCapacityPerInput, int outputProjectileCount, int requiredDownstreamReservationCount,

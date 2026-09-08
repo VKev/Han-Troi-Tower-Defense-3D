@@ -22,7 +22,11 @@ namespace TowerDefense3D.Towers
                 throw new InvalidOperationException("Tower node identifier range has been exhausted.");
             }
 
-            TowerRuntimeSpec spec = TowerRuntimeSpecFactory.Create(definition, tickSeconds);
+            TowerRuntimeSpec spec = TowerRuntimeSpecFactory.Create(
+                definition,
+                tickSeconds,
+                defaultProjectileSpeedMetersPerSecond: projectileSpeedMetersPerSecond,
+                defaultRangeMeters: maximumLinkRangeMeters);
             TowerNodeId nodeId = new TowerNodeId(nextNodeId);
             nextNodeId++;
 
@@ -60,7 +64,7 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
-            TowerUpgradeProfile upgrade = node.Definition.Core.Upgrade;
+            TowerUpgradeCostProfile upgrade = node.Definition.UpgradeCosts;
             if (!upgrade.IsUpgradable || node.UpgradeLevel >= upgrade.MaxLevel)
             {
                 error = "Tower is already at its highest level.";
@@ -68,7 +72,12 @@ namespace TowerDefense3D.Towers
             }
 
             node.UpgradeLevel++;
-            node.Spec = TowerRuntimeSpecFactory.Create(node.Definition, tickSeconds, node.UpgradeLevel);
+            node.Spec = TowerRuntimeSpecFactory.Create(
+                node.Definition,
+                tickSeconds,
+                node.UpgradeLevel,
+                projectileSpeedMetersPerSecond,
+                maximumLinkRangeMeters);
             PublishStateChanged();
             error = string.Empty;
             return true;
@@ -173,8 +182,8 @@ namespace TowerDefense3D.Towers
                 snapshot.Add(new HeroAttackTowerSnapshot(
                     node.Id,
                     node.Position,
-                    hero.AttackRangeMeters,
-                    hero.AttackDamage.Amount,
+                    node.Spec.RangeMeters,
+                    node.Spec.OutputPayload.Damage,
                     hero.AttackAoeRadiusMeters,
                     node.Spec.CycleTicks,
                     hero.PrepareDurationSeconds,

@@ -19,7 +19,7 @@ namespace TowerDefense3D.Towers
             "Hero",
             new TowerNetworkProfile(0, 1, 0, false),
             new TowerThroughputProfile(1.2f, 1, 1),
-            new TowerEconomyProfile(150, 0, 1, true));
+            new TowerEconomyProfile(150, 1, true));
         [Tooltip("How far, in meters, the hero reaches from its own position.")]
         [SerializeField, Min(0.01f)] private float attackRangeMeters = 4f;
         [SerializeField] private DamageProfile attackDamage = new DamageProfile(14f);

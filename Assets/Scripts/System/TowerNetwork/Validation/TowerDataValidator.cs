@@ -98,8 +98,7 @@ namespace TowerDefense3D.Towers
                 errors.Add("Combat rules require a positive normal queue.");
             }
 
-            if (rules.SellRefundFraction < 0f || rules.SellRefundFraction > 1f ||
-                rules.MaximumTierThreeElementTowers != 2)
+            if (rules.SellRefundFraction < 0f || rules.SellRefundFraction > 1f)
             {
                 errors.Add("Economy or progression limits are invalid.");
             }
@@ -233,8 +232,7 @@ namespace TowerDefense3D.Towers
                 return;
             }
 
-            if (economy.BuildCost < 0 || economy.LinearUpgradeCost < 0 ||
-                economy.MaxInstancesPerLevel < 0)
+            if (economy.BuildCost < 0 || economy.MaxInstancesPerLevel < 0)
             {
                 errors.Add("Tower Economy values cannot be negative.");
             }

@@ -13,9 +13,7 @@ namespace TowerDefense3D.Towers
             "Wind",
             new TowerNetworkProfile(1, 1, 3, true),
             new TowerThroughputProfile(0.85f, 1, 1),
-            new TowerEconomyProfile(70, 0, 0, true));
-        [SerializeField] private ElementUpgradeCostProfile upgradeCosts =
-            new ElementUpgradeCostProfile();
+            new TowerEconomyProfile(70, 0, true));
         [SerializeField, Min(0.01f)] private float basePushDistanceMeters = 0.5f;
 
         // Authored at zero on purpose: Wind's identity is the push, not damage. The knobs
@@ -29,7 +27,6 @@ namespace TowerDefense3D.Towers
         public override TowerFamily Family => TowerFamily.Wind;
         public override ElementType Element => ElementType.Wind;
         public override TowerCoreProfile Core => core;
-        public override ElementUpgradeCostProfile UpgradeCosts => upgradeCosts;
         public float BasePushDistanceMeters => basePushDistanceMeters;
         public DamageProfile DirectDamage => directDamage;
         public BurnProfile Burn => burn;

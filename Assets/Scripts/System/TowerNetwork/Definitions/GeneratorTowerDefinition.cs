@@ -32,7 +32,7 @@ namespace TowerDefense3D.Towers
             "Generator",
             new TowerNetworkProfile(0, 1, 0, false),
             new TowerThroughputProfile(1f, 1, 1, 0.08f),
-            new TowerEconomyProfile(90, 80, 0, true));
+            new TowerEconomyProfile(90, 0, true));
         [SerializeField] private GenerationProfile generation = new GenerationProfile();
 
         public override TowerFamily Family => TowerFamily.Generator;

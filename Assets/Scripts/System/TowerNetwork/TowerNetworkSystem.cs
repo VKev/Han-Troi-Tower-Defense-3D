@@ -17,6 +17,7 @@ namespace TowerDefense3D.Towers
         private readonly TowerRuntimeViewRegistry viewRegistry;
         private readonly Dictionary<ITowerRuntimeView, int> placementOwnerByView =
             new Dictionary<ITowerRuntimeView, int>();
+        private readonly HashSet<TowerNodeId> authoredTowerIds = new HashSet<TowerNodeId>();
         private readonly int levelNumber;
 
         private TowerCombatDefinition placementCombatDefinition;
@@ -52,6 +53,10 @@ namespace TowerDefense3D.Towers
         public bool IsRunning => manager.IsRunning;
         public bool CanEditTopology => manager.HasLevelSession && !manager.IsRunning;
         public int RegisteredTowerCount => viewRegistry.Count;
+        public bool CanSellSelected => selectedTower != null
+            && CanEditTopology
+            && !authoredTowerIds.Contains(viewRegistry.GetNodeId(selectedTower))
+            && selectedTower.CombatDefinition?.Core?.Economy?.Sellable == true;
 
         public void Start()
         {
@@ -76,6 +81,7 @@ namespace TowerDefense3D.Towers
             placementCombatDefinition = null;
             selectedTower = null;
             lastFeedback = string.Empty;
+            authoredTowerIds.Clear();
             viewRegistry.Clear();
             manager.EndLevelSession();
         }
@@ -90,6 +96,15 @@ namespace TowerDefense3D.Towers
         public bool TryRegisterAuthoredTower(
             ITowerRuntimeView runtimeView,
             TowerCombatDefinition definition,
+            out string error)
+        {
+            return TryRegisterAuthoredTower(runtimeView, definition, null, out error);
+        }
+
+        public bool TryRegisterAuthoredTower(
+            ITowerRuntimeView runtimeView,
+            TowerCombatDefinition definition,
+            GridCell? authoredAnchor,
             out string error)
         {
             if (runtimeView == null)
@@ -109,11 +124,19 @@ namespace TowerDefense3D.Towers
             }
 
             runtimeView.Configure(definition);
-            bool hasPlacement = placementSystem.TryOccupyAuthoredTower(
-                runtimeView.FootprintOrigin,
-                placementDefinition.Footprint,
-                out Vector3 snappedPosition,
-                out int ownerId);
+            Vector3 snappedPosition;
+            int ownerId;
+            bool hasPlacement = authoredAnchor.HasValue
+                ? placementSystem.TryOccupyAuthoredTower(
+                    authoredAnchor.Value,
+                    placementDefinition.Footprint,
+                    out snappedPosition,
+                    out ownerId)
+                : placementSystem.TryOccupyAuthoredTower(
+                    runtimeView.FootprintOrigin,
+                    placementDefinition.Footprint,
+                    out snappedPosition,
+                    out ownerId);
             if (!hasPlacement && !(definition is HeroTowerDefinition))
             {
                 error = $"{definition.Core.DisplayName} does not fit the board where the level placed it.";
@@ -137,6 +160,8 @@ namespace TowerDefense3D.Towers
                 {
                     placementOwnerByView[runtimeView] = ownerId;
                 }
+
+                authoredTowerIds.Add(nodeId);
             }
             catch
             {
@@ -177,6 +202,20 @@ namespace TowerDefense3D.Towers
         }
 
         /// <summary>
+        /// Whether a link gesture may begin on <paramref name="source"/> at all.
+        /// </summary>
+        /// <remarks>
+        /// Read before the drag starts, so a link that could never be made is never offered. It
+        /// answers the part that does not depend on where the finger ends up.
+        /// </remarks>
+        public bool CanStartLinkFrom(ITowerRuntimeView source)
+        {
+            return source != null
+                && viewRegistry.TryGetNodeId(source, out TowerNodeId sourceId)
+                && manager.CanStartLink(sourceId);
+        }
+
+        /// <summary>
         /// Whether linking <paramref name="source"/> to <paramref name="target"/> would be
         /// accepted right now, asked without linking anything.
         /// </summary>
@@ -198,7 +237,7 @@ namespace TowerDefense3D.Towers
         {
             if (!CanEditTopology)
             {
-                ReportFeedback("Tower placement is locked while simulation is running.");
+                ReportFeedback("Không thể đặt trụ khi đợt đang diễn ra.");
                 return false;
             }
 
@@ -209,7 +248,7 @@ namespace TowerDefense3D.Towers
 
             if (!goldSystem.CanAfford(GetBuildCost(definition)))
             {
-                ReportFeedback("Not enough Gold.");
+                ReportFeedback("Không đủ vàng.");
                 return false;
             }
 
@@ -221,13 +260,16 @@ namespace TowerDefense3D.Towers
 
             ClearSelection();
             placementCombatDefinition = definition;
-            // The ring the drag preview draws is the network's own rule, so it comes from the
-            // manager rather than from the tower: every tower links the same distance.
+
+            // The same answer selection uses, so the ring a tower shows while being dragged onto
+            // the board is the ring it shows once it stands there. It used to read the network's
+            // link rule directly, on the assumption that every tower reaches the same distance -
+            // which stopped being true once a hero fought on its own instead of linking.
             placementSystem.BeginPlacementDrag(
                 placementDefinition,
-                manager.MaximumLinkRangeMeters,
+                DescribeRangeMeters(definition),
                 pointerId);
-            ReportFeedback($"Drag {definition.Core.DisplayName} onto the board.");
+            ReportFeedback($"Kéo {definition.Core.DisplayName} vào bản đồ.");
             return true;
         }
 
@@ -253,7 +295,7 @@ namespace TowerDefense3D.Towers
             {
                 placementSystem.CancelPlacementDrag(pointerId);
                 placementCombatDefinition = null;
-                ReportFeedback("Not enough Gold.");
+                ReportFeedback("Không đủ vàng.");
                 return false;
             }
 
@@ -262,7 +304,7 @@ namespace TowerDefense3D.Towers
             if (!placed)
             {
                 goldSystem.Add(GetBuildCost(definition));
-                ReportFeedback("Tower placement canceled.");
+                ReportFeedback("Đã hủy đặt trụ.");
             }
 
             return placed;
@@ -273,7 +315,7 @@ namespace TowerDefense3D.Towers
             if (placementSystem.CancelPlacementDrag(pointerId))
             {
                 placementCombatDefinition = null;
-                ReportFeedback("Tower placement canceled.");
+                ReportFeedback("Đã hủy đặt trụ.");
             }
         }
 
@@ -331,7 +373,35 @@ namespace TowerDefense3D.Towers
                 return 0f;
             }
 
-            return tower.CombatDefinition is HeroTowerDefinition hero
+            if (viewRegistry.TryGetNodeId(tower, out TowerNodeId nodeId)
+                && manager.TryGetNodeSpec(nodeId, out TowerRuntimeSpec spec))
+            {
+                return spec.RangeMeters;
+            }
+
+            return DescribeRangeMeters(tower.CombatDefinition);
+        }
+
+        /// <summary>
+        /// How far a tower of this kind reaches, in metres.
+        /// </summary>
+        /// <remarks>
+        /// One function for every ring the game draws around a tower - while it is being dragged
+        /// onto the board, and once it is standing there and selected. Two copies of this answer
+        /// is how the placement preview came to promise a hero a twelve metre reach that it never
+        /// had.
+        ///
+        /// A hero carries its own attack radius; everything else reaches by linking, and that
+        /// distance is a rule of the network rather than a property of the tower.
+        /// </remarks>
+        public float DescribeRangeMeters(TowerCombatDefinition definition)
+        {
+            if (definition == null)
+            {
+                return 0f;
+            }
+
+            return definition is HeroTowerDefinition hero
                 ? hero.AttackRangeMeters
                 : manager.MaximumLinkRangeMeters;
         }
@@ -376,7 +446,7 @@ namespace TowerDefense3D.Towers
 
             TowerNodeId nodeId = viewRegistry.GetNodeId(selectedTower);
             bool succeeded = manager.TryUnlinkAll(nodeId, out error);
-            ReportFeedback(succeeded ? $"Unlinked {GetDisplayName(selectedTower)}." : error);
+            ReportFeedback(succeeded ? $"Đã tháo link {GetDisplayName(selectedTower)}." : error);
             return succeeded;
         }
 
@@ -402,15 +472,22 @@ namespace TowerDefense3D.Towers
             }
 
             ITowerRuntimeView tower = selectedTower;
-            TowerEconomyProfile economy = tower.CombatDefinition?.Core?.Economy;
-            if (economy == null || !economy.Sellable)
+            TowerNodeId nodeId = viewRegistry.GetNodeId(tower);
+            if (authoredTowerIds.Contains(nodeId))
             {
-                error = $"{GetDisplayName(tower)} cannot be sold.";
+                error = $"{GetDisplayName(tower)} là trụ có sẵn và không thể bán.";
                 ReportFeedback(error);
                 return false;
             }
 
-            TowerNodeId nodeId = viewRegistry.GetNodeId(tower);
+            TowerEconomyProfile economy = tower.CombatDefinition?.Core?.Economy;
+            if (economy == null || !economy.Sellable)
+            {
+                error = $"Không thể bán {GetDisplayName(tower)}.";
+                ReportFeedback(error);
+                return false;
+            }
+
             if (!manager.TryUnlinkAll(nodeId, out error))
             {
                 ReportFeedback(error);
@@ -429,7 +506,7 @@ namespace TowerDefense3D.Towers
             ClearSelection();
             tower.Despawn();
             goldSystem.Add(refund);
-            ReportFeedback($"Sold {displayName} for {refund} gold.");
+            ReportFeedback($"Đã bán {displayName} với giá {refund} vàng.");
             error = string.Empty;
             return true;
         }
@@ -453,7 +530,7 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
-            TowerUpgradeProfile upgrade = selectedTower.CombatDefinition?.Core?.Upgrade;
+            TowerUpgradeCostProfile upgrade = selectedTower.CombatDefinition?.UpgradeCosts;
             if (upgrade == null || !upgrade.IsUpgradable)
             {
                 return false;
@@ -470,7 +547,10 @@ namespace TowerDefense3D.Towers
         public int DescribeSelectedSellRefund()
         {
             TowerEconomyProfile economy = selectedTower?.CombatDefinition?.Core?.Economy;
-            if (economy == null || !economy.Sellable)
+            if (selectedTower == null
+                || authoredTowerIds.Contains(viewRegistry.GetNodeId(selectedTower))
+                || economy == null
+                || !economy.Sellable)
             {
                 return 0;
             }
@@ -503,21 +583,21 @@ namespace TowerDefense3D.Towers
 
             if (!TryDescribeSelectedUpgrade(out int cost, out bool affordable, out bool atMaxLevel))
             {
-                error = $"{GetDisplayName(selectedTower)} cannot be upgraded.";
+                error = $"Không thể nâng cấp {GetDisplayName(selectedTower)}.";
                 ReportFeedback(error);
                 return false;
             }
 
             if (atMaxLevel)
             {
-                error = $"{GetDisplayName(selectedTower)} is already at its highest level.";
+                error = $"{GetDisplayName(selectedTower)} đã đạt cấp tối đa.";
                 ReportFeedback(error);
                 return false;
             }
 
             if (!affordable)
             {
-                error = $"Upgrading {GetDisplayName(selectedTower)} costs {cost} gold.";
+                error = $"Nâng cấp {GetDisplayName(selectedTower)} cần {cost} vàng.";
                 ReportFeedback(error);
                 return false;
             }
@@ -531,7 +611,7 @@ namespace TowerDefense3D.Towers
 
             goldSystem.TrySpend(cost);
             ReportFeedback(
-                $"Upgraded {GetDisplayName(selectedTower)} to level {manager.GetUpgradeLevel(nodeId)}.");
+                $"Đã nâng cấp {GetDisplayName(selectedTower)} lên cấp {manager.GetUpgradeLevel(nodeId)}.");
             error = string.Empty;
             return true;
         }
@@ -541,14 +621,14 @@ namespace TowerDefense3D.Towers
             CancelPlacement();
             ClearSelection();
             bool succeeded = manager.TryStartSimulation(out error);
-            ReportFeedback(succeeded ? "Tower simulation started." : error);
+            ReportFeedback(succeeded ? "Đã bắt đầu mô phỏng trụ." : error);
             return succeeded;
         }
 
         public void StopSimulation()
         {
             manager.StopSimulation();
-            ReportFeedback("Tower simulation stopped.");
+            ReportFeedback("Đã dừng mô phỏng trụ.");
         }
 
         public bool TryCreateSelectedQueueSummary(out TowerQueueSummary summary)
@@ -587,7 +667,7 @@ namespace TowerDefense3D.Towers
             {
                 viewRegistry.Register(nodeId, runtimeView);
                 placementOwnerByView[runtimeView] = placement.OwnerId;
-                ReportFeedback($"Placed {GetDisplayName(runtimeView)}.");
+                ReportFeedback($"Đã đặt {GetDisplayName(runtimeView)}.");
             }
             catch
             {
@@ -598,6 +678,7 @@ namespace TowerDefense3D.Towers
 
         private void HandleTowerDestroyed(TowerNodeId nodeId)
         {
+            authoredTowerIds.Remove(nodeId);
             ClearSelection();
             manager.StopSimulation();
             manager.UnregisterTower(nodeId);

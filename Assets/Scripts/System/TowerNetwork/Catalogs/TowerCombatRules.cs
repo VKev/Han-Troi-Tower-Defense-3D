@@ -26,9 +26,6 @@ namespace TowerDefense3D.Towers
         [Header("Level Economy")]
         [SerializeField, Range(0f, 1f)] private float sellRefundFraction = 0.7f;
 
-        [Header("Progression Limits")]
-        [SerializeField, Min(0)] private int maximumTierThreeElementTowers = 2;
-
         [Header("Simulation")]
         [SerializeField, Min(0.0001f)]
         private float simulationTickSeconds = 0.05f;
@@ -49,7 +46,6 @@ namespace TowerDefense3D.Towers
         public float MinimumProcessIntervalSeconds => minimumProcessIntervalSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
         public float SellRefundFraction => sellRefundFraction;
-        public int MaximumTierThreeElementTowers => maximumTierThreeElementTowers;
         public float CalculateProcessInterval(
             float baseIntervalSeconds,
             float totalProcessSpeedBonusFraction)

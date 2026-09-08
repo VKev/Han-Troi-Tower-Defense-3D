@@ -19,6 +19,5 @@ MonoBehaviour:
   minimumProcessIntervalSeconds: 0.15
   projectileSpeedMetersPerSecond: 10
   sellRefundFraction: 0.7
-  maximumTierThreeElementTowers: 2
   simulationTickSeconds: 0.05
   maximumPushSpeedFraction: 0.4

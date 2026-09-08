@@ -12,6 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16d365ff2957b7f48a558f39d92222a9, type: 3}
   m_Name: Fire
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.FireTowerDefinition
+  upgradeCosts:
+    tierOne:
+      cost: 280
+      attackIntervalSeconds: 0.85
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.35
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 2
+      burnTickIntervalSeconds: 0.5
+      burnDurationSeconds: 2
+    tierTwo:
+      cost: 420
+      attackIntervalSeconds: 0.85
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 12
+      damageMultiplier: 1.7
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 2
+      burnTickIntervalSeconds: 0.5
+      burnDurationSeconds: 2
   core:
     stableId: fire
     displayName: Fire
@@ -30,17 +55,8 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 200
-      linearUpgradeCost: 0
       maxInstancesPerLevel: 0
       sellable: 1
-    upgrade:
-      maxLevel: 2
-      costPerLevel: 100
-      damageBonusPerLevel: 0.35
-  upgradeCosts:
-    tierOneCost: 280
-    tierTwoCost: 420
-    tierThreeCost: 780
   directDamage:
     amount: 10
   burn:

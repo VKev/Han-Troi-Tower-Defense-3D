@@ -18,7 +18,7 @@ namespace TowerDefense3D.Towers
             "Soul Nexus",
             new TowerNetworkProfile(2, 0, 4, true),
             new TowerThroughputProfile(0.75f, 1, 1),
-            new TowerEconomyProfile(0, 80, 1, false));
+            new TowerEconomyProfile(0, 1, false));
         [SerializeField, Min(1)] private int maximumSoul = 50;
         [SerializeField, Min(1)] private int upgradedConsumeBatchSize = 2;
         [SerializeField] private SoulConsumeOrder consumeOrder =

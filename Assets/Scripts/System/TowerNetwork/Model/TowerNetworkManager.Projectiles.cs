@@ -46,7 +46,6 @@ namespace TowerDefense3D.Towers
 
         private void StepActiveProjectiles()
         {
-            float travelDistancePerTick = projectileSpeedMetersPerSecond * tickSeconds;
             int projectileIndex = 0;
 
             while (projectileIndex < activeProjectiles.Count)
@@ -61,6 +60,8 @@ namespace TowerDefense3D.Towers
                 }
 
                 NodeState target = nodes[projectile.Target];
+                float travelDistancePerTick = projectile.Payload.ProjectileSpeedMetersPerSecond
+                    * tickSeconds;
                 projectile.Position = TowerWorldPosition.MoveTowards(
                     projectile.Position, target.Position, travelDistancePerTick);
 
@@ -220,7 +221,11 @@ namespace TowerDefense3D.Towers
                 || projectile.Payload.BurnDamagePerTick != payload.BurnDamagePerTick
                 || projectile.Payload.BurnTickIntervalSeconds != payload.BurnTickIntervalSeconds
                 || projectile.Payload.BurnDurationSeconds != payload.BurnDurationSeconds
-                || projectile.Payload.PushDistanceMeters != payload.PushDistanceMeters)
+                || projectile.Payload.PushDistanceMeters != payload.PushDistanceMeters
+                || projectile.Payload.ProjectileSpeedMetersPerSecond
+                    != payload.ProjectileSpeedMetersPerSecond
+                || projectile.Payload.SlowStrengthFraction != payload.SlowStrengthFraction
+                || projectile.Payload.SlowDurationSeconds != payload.SlowDurationSeconds)
             {
                 throw new InvalidOperationException(
                     $"Projectile plan diverged at tick {CurrentTick} for tower {source.Id}.");

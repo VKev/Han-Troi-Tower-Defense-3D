@@ -12,6 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23f2106d05b0e2248953019070e24efb, type: 3}
   m_Name: CrabHero
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Towers.HeroTowerDefinition
+  upgradeCosts:
+    tierOne:
+      cost: 150
+      attackIntervalSeconds: 2
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 4
+      damageMultiplier: 1.35
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
+    tierTwo:
+      cost: 300
+      attackIntervalSeconds: 2
+      projectileSpeedMetersPerSecond: 10
+      rangeMeters: 4
+      damageMultiplier: 1.7
+      pushDistanceMeters: 0
+      slowStrengthFraction: 0
+      slowDurationSeconds: 0
+      burnDamagePerTick: 0
+      burnTickIntervalSeconds: 0
+      burnDurationSeconds: 0
   core:
     stableId: hero_crab
     displayName: Hero
@@ -30,13 +55,8 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 300
-      linearUpgradeCost: 0
       maxInstancesPerLevel: 1
       sellable: 1
-    upgrade:
-      maxLevel: 2
-      costPerLevel: 150
-      damageBonusPerLevel: 0.35
   attackRangeMeters: 4
   attackDamage:
     amount: 5

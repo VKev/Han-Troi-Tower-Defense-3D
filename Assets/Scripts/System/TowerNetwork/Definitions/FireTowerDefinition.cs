@@ -13,16 +13,13 @@ namespace TowerDefense3D.Towers
             "Fire",
             new TowerNetworkProfile(1, 1, 3, true),
             new TowerThroughputProfile(0.85f, 1, 1),
-            new TowerEconomyProfile(70, 0, 0, true));
-        [SerializeField] private ElementUpgradeCostProfile upgradeCosts =
-            new ElementUpgradeCostProfile();
+            new TowerEconomyProfile(70, 0, true));
         [SerializeField] private DamageProfile directDamage = new DamageProfile(5f);
         [SerializeField] private BurnProfile burn = new BurnProfile(1f, 0.5f, 2f, true);
 
         public override TowerFamily Family => TowerFamily.Fire;
         public override ElementType Element => ElementType.Fire;
         public override TowerCoreProfile Core => core;
-        public override ElementUpgradeCostProfile UpgradeCosts => upgradeCosts;
         public DamageProfile DirectDamage => directDamage;
         public BurnProfile Burn => burn;
 
