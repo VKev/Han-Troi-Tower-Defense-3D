@@ -25,6 +25,7 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private Font instructionFont;
         [SerializeField] private TutorialHandView hand;
         [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private Canvas cameraCanvas;
         [SerializeField, Range(0f, 1f)] private float darkness = 0.72f;
         [SerializeField, Range(0.02f, 0.5f)] private float edgeSoftness = 0.2f;
         [SerializeField, Min(0f)] private float focusPadding = 28f;
@@ -36,7 +37,6 @@ namespace TowerDefense3D.GameFlow
         private Tween instructionTween;
         private string instructionValue;
         private TutorialSoftMaskRaycastFilter raycastFilter;
-        private Canvas cameraCanvas;
 
         public bool IsInstructionComplete { get; private set; }
 
@@ -47,9 +47,17 @@ namespace TowerDefense3D.GameFlow
             Hide();
         }
 
+        private void Start()
+        {
+            // The application overlay is created before the level camera. Re-apply the camera
+            // binding after scene load so the tutorial stays above gameplay UI and receives bloom.
+            ConfigureCameraCanvas();
+        }
+
         public void Show(TutorialStep step, TutorialContext context)
         {
             EnsureParts();
+            ConfigureCameraCanvas();
             Rect[] areas = GetFocusRects(step.TargetId, context);
             for (int index = 0; index < areas.Length; index++) areas[index] = Expand(areas[index], focusPadding);
             if (step.Id == "protect_frog")
@@ -301,7 +309,7 @@ namespace TowerDefense3D.GameFlow
             cameraCanvas.worldCamera = camera;
             cameraCanvas.planeDistance = 1f;
             cameraCanvas.overrideSorting = true;
-            cameraCanvas.sortingOrder = 100;
+            cameraCanvas.sortingOrder = 200;
         }
 
         private Image EnsureImage(Image value, string childName)

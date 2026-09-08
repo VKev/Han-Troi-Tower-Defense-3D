@@ -46,6 +46,14 @@ namespace TowerDefense3D.GameFlow
             ? previewToggleButton.transform
             : null;
 
+        /// <summary>
+        /// The first portrait in the next-wave roster. Tutorial highlighting uses this stable
+        /// target instead of guessing a screen position, even when the roster is collapsed.
+        /// </summary>
+        public Transform NextEnemyTransform => previewSlots != null && previewSlots.Length > 0
+            ? previewSlots[0]?.transform
+            : previewGrid != null ? previewGrid.transform : null;
+
         public void Initialize()
         {
             if (isInitialized)
