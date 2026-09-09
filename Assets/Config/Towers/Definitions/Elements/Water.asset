@@ -18,10 +18,10 @@ MonoBehaviour:
       attackIntervalSeconds: 0.85
       projectileSpeedMetersPerSecond: 10
       rangeMeters: 12
-      damageMultiplier: 1.35
+      damageMultiplier: 1
       pushDistanceMeters: 0
-      slowStrengthFraction: 0
-      slowDurationSeconds: 0
+      slowStrengthFraction: 0.402
+      slowDurationSeconds: 3
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
@@ -30,10 +30,10 @@ MonoBehaviour:
       attackIntervalSeconds: 0.85
       projectileSpeedMetersPerSecond: 10
       rangeMeters: 12
-      damageMultiplier: 1.7
+      damageMultiplier: 0
       pushDistanceMeters: 0
-      slowStrengthFraction: 0
-      slowDurationSeconds: 0
+      slowStrengthFraction: 0.503
+      slowDurationSeconds: 4
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
@@ -66,6 +66,6 @@ MonoBehaviour:
     snapshotsDamageOnApply: 1
     stackingRule: 0
   slow:
-    strengthFraction: 0
-    durationSeconds: 0
+    strengthFraction: 0.304
+    durationSeconds: 2
     stackingRule: 0
