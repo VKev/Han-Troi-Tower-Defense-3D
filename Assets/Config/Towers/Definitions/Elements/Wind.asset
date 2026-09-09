@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.WindTowerDefinition
   upgradeCosts:
     tierOne:
-      cost: 60
+      cost: 280
       attackIntervalSeconds: 0.65
       projectileSpeedMetersPerSecond: 10
       rangeMeters: 12
@@ -26,7 +26,7 @@ MonoBehaviour:
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
     tierTwo:
-      cost: 90
+      cost: 350
       attackIntervalSeconds: 0.65
       projectileSpeedMetersPerSecond: 10
       rangeMeters: 12
