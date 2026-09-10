@@ -46,8 +46,8 @@ MonoBehaviour:
     network:
       inputPortCount: 2
       outputPortCount: 0
-      queueCapacityPerInput: 4
-      createsBackpressure: 1
+      queueCapacityPerInput: 0
+      createsBackpressure: 0
     throughput:
       cycleIntervalSeconds: 0.75
       batchSize: 1
@@ -58,8 +58,6 @@ MonoBehaviour:
       maxInstancesPerLevel: 1
       sellable: 1
   maximumSoul: 50
-  upgradedConsumeBatchSize: 2
-  consumeOrder: 0
   soulUsesUniqueDirectHitCount: 1
   consumesWhenSoulIsFull: 1
   discardsOverflowSoul: 1

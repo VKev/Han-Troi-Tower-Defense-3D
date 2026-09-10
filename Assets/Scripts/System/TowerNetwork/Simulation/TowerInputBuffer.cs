@@ -26,12 +26,6 @@ namespace TowerDefense3D.Towers
                     "A node without input ports must have zero queue capacity.", nameof(capacityPerInput));
             }
 
-            if (inputPortCount > 0 && capacityPerInput <= 0)
-            {
-                throw new ArgumentException(
-                    "A node with input ports requires positive queue capacity.", nameof(capacityPerInput));
-            }
-
             InputPortCount = inputPortCount;
             CapacityPerInput = capacityPerInput;
             queues = new Queue<ProjectileQueueEntry>[inputPortCount];

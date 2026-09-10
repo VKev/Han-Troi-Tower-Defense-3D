@@ -86,6 +86,11 @@ namespace TowerDefense3D.Towers
 
         private void CommitProjectileArrival(ProjectileState projectile, NodeState target)
         {
+            if (target.Spec.NetworkRole == TowerNetworkRole.Sink)
+            {
+                return;
+            }
+
             ProjectileQueueEntry queueEntry = new ProjectileQueueEntry(
                 projectile.ProjectileId,
                 CurrentTick,
@@ -129,7 +134,9 @@ namespace TowerDefense3D.Towers
             ValidateProjectileBatchCreation(spec);
 
             int reservationCount = spec.RequiredDownstreamReservationCount;
-            if (!target.InputBuffer.TryReserve(link.TargetInputPort, reservationCount))
+            bool requiresReservation = target.Spec.NetworkRole != TowerNetworkRole.Sink;
+            if (requiresReservation
+                && !target.InputBuffer.TryReserve(link.TargetInputPort, reservationCount))
             {
                 return false;
             }
@@ -186,7 +193,11 @@ namespace TowerDefense3D.Towers
                     activeProjectiles.RemoveRange(firstProjectileIndex, createdProjectileCount);
                 }
 
-                target.InputBuffer.CancelReservation(link.TargetInputPort, reservationCount);
+                if (requiresReservation)
+                {
+                    target.InputBuffer.CancelReservation(link.TargetInputPort, reservationCount);
+                }
+
                 nextProjectileId = firstProjectileId;
                 nextProjectileSpawnOrderIndex = firstSpawnOrderIndex;
                 throw;

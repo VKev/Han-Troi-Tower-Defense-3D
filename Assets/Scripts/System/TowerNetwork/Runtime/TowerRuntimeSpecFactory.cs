@@ -26,10 +26,7 @@ namespace TowerDefense3D.Towers
             TowerCoreProfile core = definition.Core;
             TowerNetworkProfile network = core.Network;
             TowerThroughputProfile throughput = core.Throughput;
-            SoulNexusDefinition soulNexus = definition as SoulNexusDefinition;
             TowerUpgradeTierProfile tier = definition.UpgradeCosts?.GetTier(upgradeLevel);
-            int consumeBatchSize = soulNexus == null ? 0 : throughput.BatchSize;
-            SoulConsumeOrder? consumeOrder = soulNexus?.ConsumeOrder;
             float attackIntervalSeconds = tier != null && tier.AttackIntervalSeconds > 0f
                 ? tier.AttackIntervalSeconds
                 : throughput.CycleIntervalSeconds;
@@ -58,8 +55,6 @@ namespace TowerDefense3D.Towers
                 reservationCount,
                 sequenceSpacingTicks,
                 outputPayload,
-                consumeBatchSize,
-                consumeOrder,
                 rangeMeters);
         }
 

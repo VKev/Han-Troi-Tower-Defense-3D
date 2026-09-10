@@ -9,7 +9,7 @@ namespace TowerDefense3D.Towers
             TowerFamily family, TowerNetworkRole networkRole, string stableId, int inputPortCount, int outputPortCount,
             int queueCapacityPerInput, int cycleTicks, int outputProjectileCount,
             int requiredDownstreamReservationCount, int sequenceSpacingTicks, ProjectilePayload outputPayload,
-            int consumeBatchSize = 0, SoulConsumeOrder? consumeOrder = null, float rangeMeters = 12f)
+            float rangeMeters = 12f)
         {
             if (string.IsNullOrWhiteSpace(stableId))
             {
@@ -51,11 +51,6 @@ namespace TowerDefense3D.Towers
                 throw new ArgumentOutOfRangeException(nameof(sequenceSpacingTicks));
             }
 
-            if (consumeBatchSize < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(consumeBatchSize));
-            }
-
             if (!FiniteNumber.IsFinite(rangeMeters) || rangeMeters <= 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(rangeMeters));
@@ -63,8 +58,6 @@ namespace TowerDefense3D.Towers
 
             ValidateNetworkRole(networkRole, inputPortCount, outputPortCount, queueCapacityPerInput,
                 outputProjectileCount, requiredDownstreamReservationCount, outputPayload);
-
-            ValidateSinkConsumption(networkRole, consumeBatchSize, consumeOrder);
 
             Family = family;
             NetworkRole = networkRole;
@@ -77,8 +70,6 @@ namespace TowerDefense3D.Towers
             RequiredDownstreamReservationCount = requiredDownstreamReservationCount;
             SequenceSpacingTicks = sequenceSpacingTicks;
             OutputPayload = outputPayload;
-            ConsumeBatchSize = consumeBatchSize;
-            ConsumeOrder = consumeOrder;
             RangeMeters = rangeMeters;
         }
 
@@ -93,8 +84,6 @@ namespace TowerDefense3D.Towers
         public int RequiredDownstreamReservationCount { get; }
         public int SequenceSpacingTicks { get; }
         public ProjectilePayload OutputPayload { get; }
-        public int ConsumeBatchSize { get; }
-        public SoulConsumeOrder? ConsumeOrder { get; }
         public float RangeMeters { get; }
 
         private static void ValidateNetworkRole(TowerNetworkRole networkRole, int inputPortCount, int outputPortCount,
@@ -178,9 +167,9 @@ namespace TowerDefense3D.Towers
                 throw new ArgumentException("A sink cannot have an output port.");
             }
 
-            if (queueCapacityPerInput <= 0)
+            if (queueCapacityPerInput != 0)
             {
-                throw new ArgumentException("A sink requires a positive input queue capacity.");
+                throw new ArgumentException("A sink cannot own an input queue.");
             }
 
             if (outputProjectileCount != 0)
@@ -215,35 +204,5 @@ namespace TowerDefense3D.Towers
             }
         }
 
-        private static void ValidateSinkConsumption(
-            TowerNetworkRole networkRole,
-            int consumeBatchSize,
-            SoulConsumeOrder? consumeOrder)
-        {
-            if (networkRole == TowerNetworkRole.Sink)
-            {
-                if (consumeBatchSize <= 0)
-                {
-                    throw new ArgumentException("A sink requires a positive consume batch size.");
-                }
-
-                if (!consumeOrder.HasValue)
-                {
-                    throw new ArgumentException("A sink requires an input consume order.");
-                }
-
-                if (!Enum.IsDefined(typeof(SoulConsumeOrder), consumeOrder.Value))
-                {
-                    throw new ArgumentOutOfRangeException(nameof(consumeOrder));
-                }
-
-                return;
-            }
-
-            if (consumeBatchSize != 0 || consumeOrder.HasValue)
-            {
-                throw new ArgumentException("Only a sink can own input consumption data.");
-            }
-        }
     }
 }

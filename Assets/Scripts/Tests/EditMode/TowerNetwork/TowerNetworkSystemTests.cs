@@ -182,6 +182,25 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
+        public void SoulNexus_ImmediatelyAcceptsProjectilesWithoutQueueOrReservation()
+        {
+            system.Start();
+            TowerRuntimeView generatorView = RegisterTower(TowerFamily.Generator, Vector3.zero, 1);
+            TowerRuntimeView nexusView = RegisterTower(TowerFamily.SoulNexus, Vector3.right, 2);
+            Assert.That(system.TryRewire(generatorView, nexusView, out string linkError), Is.True, linkError);
+            Assert.That(system.TryStartSimulation(out string startError), Is.True, startError);
+
+            for (int tick = 0; tick < 50; tick++)
+            {
+                Assert.That(manager.StepOneTick(), Is.True);
+                Assert.That(manager.TryCreateQueueSummary(nexusView.NodeId, out TowerQueueSummary queue), Is.True);
+                Assert.That(queue.Capacity, Is.Zero);
+                Assert.That(queue.QueuedProjectileCount, Is.Zero);
+                Assert.That(queue.ReservedProjectileCount, Is.Zero);
+            }
+        }
+
+        [Test]
         public void DestroyedRuntimeView_UnregistersItsNodeAndLinks()
         {
             system.Start();

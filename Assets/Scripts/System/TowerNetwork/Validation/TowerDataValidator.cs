@@ -191,11 +191,16 @@ namespace TowerDefense3D.Towers
                     $"{expectedOutputs} output(s).");
             }
 
-            bool requiresQueue = definition.NetworkRole == TowerNetworkRole.Processor ||
-                                 definition.Family == TowerFamily.SoulNexus;
+            bool requiresQueue = definition.NetworkRole == TowerNetworkRole.Processor;
             if (requiresQueue && network.QueueCapacityPerInput <= 0)
             {
                 errors.Add($"{definition.Family}: finite input queue capacity is required.");
+            }
+
+            if (definition.NetworkRole == TowerNetworkRole.Sink
+                && (network.QueueCapacityPerInput != 0 || network.CreatesBackpressure))
+            {
+                errors.Add($"{definition.Family}: Sink cannot queue inputs or create backpressure.");
             }
 
         }

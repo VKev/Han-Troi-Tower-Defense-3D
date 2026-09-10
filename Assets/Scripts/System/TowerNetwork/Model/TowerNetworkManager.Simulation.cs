@@ -71,7 +71,6 @@ namespace TowerDefense3D.Towers
 
             CurrentTick++;
             StepActiveProjectiles();
-            StepSinks();
             StepProcessors();
             StepGeneratorSources();
             return true;
