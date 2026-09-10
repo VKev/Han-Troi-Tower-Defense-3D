@@ -11,14 +11,14 @@ namespace TowerDefense3D.Towers
     {
         [SerializeField, Min(1)] private int defaultPoolCapacity = 16;
         [SerializeField, Min(1)] private int maximumPoolSize = 128;
+        [SerializeField] private Transform presentationRoot;
+        [SerializeField] private GlobalEffectEmitterView hitEffectEmitter;
 
         private readonly Dictionary<long, ActiveProjectileView> activeViews =
             new Dictionary<long, ActiveProjectileView>();
         private readonly Dictionary<GameObject, ComponentPool<TowerProjectileView>> poolsByPrefab =
             new Dictionary<GameObject, ComponentPool<TowerProjectileView>>();
         private readonly List<RetiringProjectileView> retiringViews = new List<RetiringProjectileView>();
-        private Transform presentationRoot;
-        private GlobalEffectEmitterView hitEffectEmitter;
 
         public int ActiveViewCount => activeViews.Count;
         public int InactiveViewCount
@@ -38,20 +38,11 @@ namespace TowerDefense3D.Towers
 
         public void Initialize()
         {
-            if (presentationRoot != null)
+            if (presentationRoot == null || hitEffectEmitter == null)
             {
-                return;
+                throw new MissingReferenceException(
+                    "TowerProjectilePoolView requires authored presentation and hit-effect roots.");
             }
-
-            presentationRoot = new GameObject("Tower Projectile Visuals").transform;
-            presentationRoot.SetParent(transform, false);
-
-            // Kept at the world origin with an identity transform: the shared rigs hold systems
-            // authored in Local simulation space, which only behave correctly there.
-            var emitterRoot = new GameObject("Tower Hit Effect Emitter");
-            emitterRoot.transform.SetParent(null, false);
-            emitterRoot.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            hitEffectEmitter = emitterRoot.AddComponent<GlobalEffectEmitterView>();
         }
 
         public void Show(long projectileId, GameObject projectilePrefab, Vector3 position)
@@ -59,11 +50,6 @@ namespace TowerDefense3D.Towers
             if (projectilePrefab == null)
             {
                 throw new ArgumentNullException(nameof(projectilePrefab));
-            }
-
-            if (presentationRoot == null)
-            {
-                Initialize();
             }
 
             if (!activeViews.TryGetValue(projectileId, out ActiveProjectileView activeView))
@@ -89,11 +75,6 @@ namespace TowerDefense3D.Towers
             if (hitEffectPrefab == null)
             {
                 throw new ArgumentNullException(nameof(hitEffectPrefab));
-            }
-
-            if (presentationRoot == null)
-            {
-                Initialize();
             }
 
             hitEffectEmitter.Play(hitEffectPrefab, position);
@@ -181,7 +162,8 @@ namespace TowerDefense3D.Towers
             TowerProjectileView view = instance.GetComponent<TowerProjectileView>();
             if (view == null)
             {
-                view = instance.AddComponent<TowerProjectileView>();
+                throw new MissingReferenceException(
+                    $"Projectile prefab '{projectilePrefab.name}' requires an authored TowerProjectileView.");
             }
 
             view.Initialize();
@@ -198,11 +180,6 @@ namespace TowerDefense3D.Towers
             }
 
             poolsByPrefab.Clear();
-            if (hitEffectEmitter != null)
-            {
-                Destroy(hitEffectEmitter.gameObject);
-                hitEffectEmitter = null;
-            }
         }
 
         private readonly struct ActiveProjectileView

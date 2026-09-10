@@ -250,12 +250,12 @@ namespace TowerDefense3D.GridPlacement
         {
             if (rimMeshFilter == null || rimRenderer == null)
             {
-                CreateChild("Rim", out rimMeshFilter, out rimRenderer);
+                throw new MissingReferenceException("LinkRangeRingView requires an authored Rim renderer.");
             }
 
             if (fillMeshFilter == null || fillRenderer == null)
             {
-                CreateChild("Fill", out fillMeshFilter, out fillRenderer);
+                throw new MissingReferenceException("LinkRangeRingView requires an authored Fill renderer.");
             }
 
             if (rimMesh == null)
@@ -274,15 +274,6 @@ namespace TowerDefense3D.GridPlacement
 
             Configure(rimRenderer);
             Configure(fillRenderer);
-        }
-
-        private void CreateChild(string childName, out MeshFilter filter, out MeshRenderer renderer)
-        {
-            var child = new GameObject(childName);
-            child.layer = gameObject.layer;
-            child.transform.SetParent(transform, false);
-            filter = child.AddComponent<MeshFilter>();
-            renderer = child.AddComponent<MeshRenderer>();
         }
 
         private static void Configure(MeshRenderer renderer)

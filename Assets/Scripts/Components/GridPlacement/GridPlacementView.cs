@@ -289,12 +289,12 @@ namespace TowerDefense3D.GridPlacement
 
             if (footprintMeshFilter == null || footprintRenderer == null)
             {
-                CreateRendererChild("Footprint", out footprintMeshFilter, out footprintRenderer);
+                throw new MissingReferenceException("GridPlacementView requires an authored Footprint renderer.");
             }
 
             if (ghostMeshFilter == null || ghostRenderer == null)
             {
-                CreateRendererChild("GhostVolume", out ghostMeshFilter, out ghostRenderer);
+                throw new MissingReferenceException("GridPlacementView requires an authored GhostVolume renderer.");
             }
 
             if (footprintMesh == null)
@@ -314,15 +314,6 @@ namespace TowerDefense3D.GridPlacement
             ConfigureRenderer(footprintRenderer);
             ConfigureRenderer(ghostRenderer);
 
-        }
-
-        private void CreateRendererChild(string childName, out MeshFilter meshFilter, out MeshRenderer meshRenderer)
-        {
-            var child = new GameObject(childName);
-            child.layer = gameObject.layer;
-            child.transform.SetParent(transform, false);
-            meshFilter = child.AddComponent<MeshFilter>();
-            meshRenderer = child.AddComponent<MeshRenderer>();
         }
 
         private static void ConfigureRenderer(MeshRenderer renderer)

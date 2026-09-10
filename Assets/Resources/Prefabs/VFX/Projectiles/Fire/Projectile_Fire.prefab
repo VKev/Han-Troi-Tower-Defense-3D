@@ -112,8 +112,8 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 0.900276, b: 0.495283, a: 0}
-      key1: {r: 1, g: 0.44217932, b: 0.033018887, a: 1}
+      key0: {r: 1, g: 0.6097461, b: 0.07861614, a: 0}
+      key1: {r: 1, g: 0.2621606, b: 0, a: 1}
       key2: {r: 0, g: 0.8551445, b: 1, a: 1}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
@@ -137,7 +137,7 @@ TrailRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_ColorSpace: -1
+      m_ColorSpace: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 4
     numCornerVertices: 0
@@ -5186,6 +5186,7 @@ GameObject:
   - component: {fileID: 3636966862306484146}
   - component: {fileID: 8477386486465241893}
   - component: {fileID: 6892244924682072311}
+  - component: {fileID: 144388675819283272}
   m_Layer: 0
   m_Name: Projectile_Fire
   m_TagString: Untagged
@@ -10086,6 +10087,18 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &144388675819283272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4902678909351950094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2477d5f053ff50c48b459ec49226bf56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerProjectileView
 --- !u!1 &5766013250208826286
 GameObject:
   m_ObjectHideFlags: 0
@@ -10309,7 +10322,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 1, g: 0.74314576, b: 0.25943398, a: 1}
+      maxColor: {r: 1, g: 0.4586428, b: 0, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -15233,7 +15246,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 1, g: 0.3331868, b: 0.12549019, a: 1}
+      maxColor: {r: 1, g: 0.16385771, b: 0, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}

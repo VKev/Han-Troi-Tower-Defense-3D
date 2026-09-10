@@ -12,33 +12,35 @@ namespace TowerDefense3D.Towers
         /// The selection bracket, loaded rather than authored per scene so its look - stroke,
         /// gaps, colour - is tuned once in the prefab instead of ten times over.
         /// </summary>
-        private const string SelectionRingResourcePath = "Prefabs/TowerSelectionRing";
-        private const string LinkEffectResourcePath = "Prefabs/VFX/VFX_TowerLink";
-
         private static readonly Color ValidLinkColor = new Color(0.1f, 1f, 0.1f, 0.9f);
         private static readonly Color InvalidLinkColor = new Color(1f, 0.25f, 0.015f, 0.9f);
 
         [SerializeField, Min(0.02f)] private float linkWidth = 0.1f;
         [SerializeField, Min(0.02f)] private float previewWidth = 0.08f;
+        [SerializeField] private Transform presentationRoot;
+        [SerializeField] private TowerLinkLineView linePrefab;
+        [SerializeField] private TowerLinkLineView previewLine;
+        [SerializeField] private TowerSelectionRingView selectionRing;
 
         private readonly Dictionary<TowerNodeId, TowerLinkLineView> linkLines =
             new Dictionary<TowerNodeId, TowerLinkLineView>();
         private readonly HashSet<TowerNodeId> visibleSources = new HashSet<TowerNodeId>();
         private readonly List<TowerNodeId> removedSources = new List<TowerNodeId>();
 
-        private Transform presentationRoot;
         private Material lineMaterial;
-        private GameObject linkEffectPrefab;
-        private TowerLinkLineView previewLine;
-        private TowerSelectionRingView selectionRing;
         private Vector3 previewSource;
         private bool isPreviewVisible;
 
         public void Initialize()
         {
-            if (presentationRoot != null)
+            if (lineMaterial != null)
             {
                 return;
+            }
+
+            if (presentationRoot == null || linePrefab == null || previewLine == null || selectionRing == null)
+            {
+                throw new MissingReferenceException("TowerLinkView requires authored presentation references.");
             }
 
             Shader shader = Shader.Find("Sprites/Default");
@@ -47,43 +49,11 @@ namespace TowerDefense3D.Towers
                 throw new InvalidOperationException("Tower link presentation requires the Sprites/Default shader.");
             }
 
-            presentationRoot = new GameObject("Tower Link Visuals").transform;
-            presentationRoot.SetParent(transform, false);
             lineMaterial = new Material(shader)
             {
                 name = "Tower Link Runtime Material"
             };
-            linkEffectPrefab = Resources.Load<GameObject>(LinkEffectResourcePath);
-            if (linkEffectPrefab == null)
-            {
-                Debug.LogWarning("Tower link VFX prefab missing at Resources/" + LinkEffectResourcePath);
-            }
-
-            previewLine = CreateLine("Link Preview", previewWidth, 2);
-            selectionRing = CreateSelectionRing();
-        }
-
-        /// <summary>
-        /// Instantiates the selection bracket under the presentation root.
-        /// </summary>
-        /// <remarks>
-        /// A missing prefab leaves the field null and costs the game a bracket, not a level: every
-        /// use of it is guarded. It is worth a warning rather than a throw, because the selection
-        /// still works - only its outline is gone.
-        /// </remarks>
-        private TowerSelectionRingView CreateSelectionRing()
-        {
-            var prefab = Resources.Load<GameObject>(SelectionRingResourcePath);
-            if (prefab == null)
-            {
-                Debug.LogWarning(
-                    "Tower selection ring prefab missing at Resources/" + SelectionRingResourcePath);
-                return null;
-            }
-
-            GameObject instance = Instantiate(prefab, presentationRoot);
-            instance.name = "Tower Selection";
-            return instance.GetComponent<TowerSelectionRingView>();
+            previewLine.Initialize(lineMaterial, previewWidth, 2);
         }
 
         public void RenderLinks(IReadOnlyList<TowerLinkViewItem> links)
@@ -189,10 +159,9 @@ namespace TowerDefense3D.Towers
 
         private TowerLinkLineView CreateLine(string objectName, float width, int positionCount)
         {
-            GameObject lineObject = new GameObject(objectName);
-            lineObject.transform.SetParent(presentationRoot, false);
-            TowerLinkLineView line = lineObject.AddComponent<TowerLinkLineView>();
-            line.Initialize(lineMaterial, linkEffectPrefab, width, positionCount);
+            TowerLinkLineView line = Instantiate(linePrefab, presentationRoot);
+            line.gameObject.name = objectName;
+            line.Initialize(lineMaterial, width, positionCount);
             return line;
         }
 

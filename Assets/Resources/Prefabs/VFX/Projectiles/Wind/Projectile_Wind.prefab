@@ -19700,6 +19700,7 @@ GameObject:
   - component: {fileID: 3944559467908099334}
   - component: {fileID: 3858969462129749656}
   - component: {fileID: 7793973137389807896}
+  - component: {fileID: 7641084520791478839}
   m_Layer: 0
   m_Name: Projectile_Wind
   m_TagString: Untagged
@@ -24601,6 +24602,18 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &7641084520791478839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5621757413702188953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2477d5f053ff50c48b459ec49226bf56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerProjectileView
 --- !u!1 &7555501780975394171
 GameObject:
   m_ObjectHideFlags: 0

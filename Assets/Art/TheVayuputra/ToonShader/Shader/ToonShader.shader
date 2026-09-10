@@ -16,6 +16,96 @@ Shader "TheVayuputra/ToonShader"
 
     }
 
+    // PowerVR Rogue ARMv7 devices reject the full baked-lighting variant even though they
+    // report OpenGL ES 3 support. Keep a deliberately small URP forward pass first so those
+    // devices use the same toon art rather than Unity's magenta error shader.
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
+
+        Pass
+        {
+            Name "MobileForwardPass"
+            Tags { "LightMode"="UniversalForward" }
+
+            HLSLPROGRAM
+            #pragma only_renderers gles3 vulkan metal
+            #pragma target 2.0
+            #pragma vertex MobileVert
+            #pragma fragment MobileFrag
+            #pragma multi_compile_fog
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                float4 _BaseColor;
+                float _ShadeThreshold;
+                float _ShadeSoftness;
+                float _GlossThreshold;
+                float _GlossSoftness;
+                float4 _GlossTint;
+                float4 _DamageFlashColor;
+                float _DamageFlashAmount;
+            CBUFFER_END
+
+            struct MobileAttributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct MobileVaryings
+            {
+                float2 uv : TEXCOORD0;
+                half3 normalWS : TEXCOORD1;
+                half3 viewDirWS : TEXCOORD2;
+                half fogCoord : TEXCOORD3;
+                float4 positionCS : SV_POSITION;
+            };
+
+            MobileVaryings MobileVert(MobileAttributes input)
+            {
+                MobileVaryings output = (MobileVaryings)0;
+                VertexPositionInputs position = GetVertexPositionInputs(input.positionOS.xyz);
+                VertexNormalInputs normal = GetVertexNormalInputs(input.normalOS, float4(1, 0, 0, 1));
+                output.positionCS = position.positionCS;
+                output.normalWS = normal.normalWS;
+                output.viewDirWS = GetCameraPositionWS() - position.positionWS;
+                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.fogCoord = ComputeFogFactor(position.positionCS.z);
+                return output;
+            }
+
+            half4 MobileFrag(MobileVaryings input) : SV_Target
+            {
+                half3 normal = normalize(input.normalWS);
+                half3 viewDirection = normalize(input.viewDirWS);
+                Light mainLight = GetMainLight();
+                half lightAmount = dot(normal, mainLight.direction) * 0.5h + 0.5h;
+                half shade = smoothstep(
+                    _ShadeThreshold - _ShadeSoftness,
+                    _ShadeThreshold + _ShadeSoftness,
+                    lightAmount);
+                half3 halfVector = normalize(viewDirection + mainLight.direction);
+                half gloss = smoothstep(
+                    (1 - _GlossThreshold * 0.05) - _GlossSoftness * 0.05,
+                    (1 - _GlossThreshold * 0.05) + _GlossSoftness * 0.05,
+                    dot(normal, halfVector));
+                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb * _BaseColor.rgb;
+                half3 color = baseColor * (SampleSH(normal) + mainLight.color * shade)
+                    + _GlossTint.rgb * shade * gloss;
+                color = lerp(color, _DamageFlashColor.rgb, saturate(_DamageFlashAmount));
+                return half4(MixFog(color, input.fogCoord), 1);
+            }
+            ENDHLSL
+        }
+    }
+
     SubShader
     {
         Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
@@ -26,16 +116,34 @@ Shader "TheVayuputra/ToonShader"
             Tags { "LightMode"="UniversalForward" }
 
             HLSLPROGRAM
+            // Match URP Lit's mobile baseline so Android ARMv7 and API 30 GLES3 devices retain
+            // a compiled forward variant instead of falling back to Unity's magenta error pass.
+            #pragma target 2.0
             #pragma vertex vert
             #pragma fragment frag
 
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
-            // Brings in Core/Lighting/Shadows plus the whole baked-lighting keyword set.
-            // Without those keywords the SAMPLE_* macros below compile down to "no baked
-            // data" and the scene's lightmaps, shadowmask and probe volumes are ignored.
-            #include_with_pragmas "Assets/Shaders/ToonBakedLighting.hlsl"
+            // Select by graphics API before includes, including GLES3 on ARMv7.
+            // Mobile uses lightmaps and SH without the desktop APV variants.
+            #if defined(SHADER_API_MOBILE) || defined(SHADER_API_GLES3) || defined(SHADER_API_VULKAN)
+                #define TOON_MOBILE_LIGHTING 1
+            #endif
+            #if defined(TOON_MOBILE_LIGHTING)
+                #pragma multi_compile _ LIGHTMAP_ON
+                #pragma multi_compile _ DIRLIGHTMAP_COMBINED
+                #pragma multi_compile _ SHADOWS_SHADOWMASK
+                #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
+                #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+                #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+
+                #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+                #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+                #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+            #else
+                #include_with_pragmas "Assets/Shaders/ToonBakedLighting.hlsl"
+            #endif
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
@@ -75,7 +183,9 @@ Shader "TheVayuputra/ToonShader"
                 float3 positionWS : TEXCOORD4;
                 // Becomes a lightmap UV when LIGHTMAP_ON, else per-vertex SH.
                 DECLARE_LIGHTMAP_OR_SH(staticLightmapUV, vertexSH, 5);
-                TOON_PROBE_OCCLUSION_VARYING(6)
+                #if !defined(TOON_MOBILE_LIGHTING)
+                    TOON_PROBE_OCCLUSION_VARYING(6)
+                #endif
                 float4 positionCS : SV_POSITION;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -98,7 +208,12 @@ Shader "TheVayuputra/ToonShader"
 
                 output.fogCoord = ComputeFogFactor(posInput.positionCS.z);
 
-                TOON_TRANSFER_BAKED(input, output, posInput.positionWS, output.normalWS);
+                #if defined(TOON_MOBILE_LIGHTING)
+                    OUTPUT_LIGHTMAP_UV(input.staticLightmapUV, unity_LightmapST, output.staticLightmapUV);
+                    OUTPUT_SH(output.normalWS, output.vertexSH);
+                #else
+                    TOON_TRANSFER_BAKED(input, output, posInput.positionWS, output.normalWS);
+                #endif
 
                 return output;
             }
@@ -131,16 +246,25 @@ Shader "TheVayuputra/ToonShader"
                 // back to the realtime shadow alone rather than to black.
                 half4 shadowMask = half4(1, 1, 1, 1);
                 half3 bakedGI = half3(0, 0, 0);
-                TOON_RESOLVE_BAKED(input, N, input.positionWS, V, bakedGI, shadowMask);
+                #if defined(TOON_MOBILE_LIGHTING)
+                    bakedGI = SAMPLE_GI(input.staticLightmapUV, input.vertexSH, N);
+                    shadowMask = SAMPLE_SHADOWMASK(input.staticLightmapUV);
+                #else
+                    TOON_RESOLVE_BAKED(input, N, input.positionWS, V, bakedGI, shadowMask);
+                #endif
 
-                // Computed per-fragment (not interpolated from the vertex stage) so cascade
-                // selection is correct per pixel; a per-vertex shadow coordinate is only valid
-                // when a single cascade covers the whole triangle, and produces visibly warped,
-                // blocky shadows once the object spans or crosses a cascade boundary.
-                float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
-                // Mixes the realtime shadow with the baked one and cross-fades to baked at the
-                // shadow distance, so static geometry keeps its shadows past the last cascade.
-                float shadow = MainLightShadow(shadowCoord, input.positionWS, shadowMask, _MainLightOcclusionProbes);
+                // URP strips all main-light shadow uniforms when shadows are disabled. Calling
+                // MainLightShadow in that variant works in the Editor's desktop compiler by
+                // accident, but leaves no valid GLES3 program on ARMv7 devices.
+                float shadow = 1.0;
+                #if defined(_MAIN_LIGHT_SHADOWS) || defined(_MAIN_LIGHT_SHADOWS_CASCADE) || defined(_MAIN_LIGHT_SHADOWS_SCREEN)
+                    float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+                    shadow = MainLightShadow(
+                        shadowCoord,
+                        input.positionWS,
+                        shadowMask,
+                        _MainLightOcclusionProbes);
+                #endif
 
                 float3 diffuse = _MainLightColor.rgb * baseMap * _BaseColor.rgb * shadeFactor * shadow;
                 float3 specular = _GlossTint.rgb * shadow * shadeFactor * glossFactor;

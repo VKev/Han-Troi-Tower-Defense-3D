@@ -14807,6 +14807,7 @@ GameObject:
   - component: {fileID: 7408853247947674556}
   - component: {fileID: 172427509530254563}
   - component: {fileID: 7886774352177097501}
+  - component: {fileID: 9045244059745885946}
   m_Layer: 0
   m_Name: Projectile_Water
   m_TagString: Untagged
@@ -19708,6 +19709,18 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &9045244059745885946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6049655604910014065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2477d5f053ff50c48b459ec49226bf56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerProjectileView
 --- !u!1 &7151836626645994570
 GameObject:
   m_ObjectHideFlags: 0

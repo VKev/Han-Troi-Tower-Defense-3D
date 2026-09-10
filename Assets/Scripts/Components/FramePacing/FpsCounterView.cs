@@ -14,6 +14,7 @@ namespace TowerDefense3D.Mobile
     public sealed class FpsCounterView : MonoBehaviour
     {
         [SerializeField] private Text label;
+        private Text diagnosticLabel;
 
         [Tooltip("How long each average is measured over. Longer is steadier but slower to react.")]
         [SerializeField] private float sampleWindowSeconds = 0.25f;
@@ -51,6 +52,43 @@ namespace TowerDefense3D.Mobile
             label.text = Mathf.RoundToInt(framesPerSecond) + " FPS";
             label.color = ResolveColor(
                 FrameRateHealthScale.Resolve(framesPerSecond, FramePacingSystem.TargetFrameRate));
+        }
+
+        public void SetDiagnostic(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || label == null)
+            {
+                return;
+            }
+
+            if (diagnosticLabel == null)
+            {
+                var diagnosticObject = new GameObject(
+                    "Graphics Diagnostic",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Text));
+                diagnosticObject.transform.SetParent(label.transform.parent, false);
+                diagnosticLabel = diagnosticObject.GetComponent<Text>();
+                diagnosticLabel.font = label.font;
+                diagnosticLabel.fontSize = 13;
+                diagnosticLabel.fontStyle = FontStyle.Bold;
+                diagnosticLabel.alignment = TextAnchor.MiddleLeft;
+                diagnosticLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+                diagnosticLabel.verticalOverflow = VerticalWrapMode.Overflow;
+                diagnosticLabel.raycastTarget = false;
+                diagnosticLabel.color = new Color(1f, 0.85f, 0.34f, 1f);
+
+                RectTransform rect = diagnosticLabel.rectTransform;
+                RectTransform fpsRect = label.rectTransform;
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.zero;
+                rect.pivot = Vector2.zero;
+                rect.anchoredPosition = fpsRect.anchoredPosition + new Vector2(85f, 0f);
+                rect.sizeDelta = new Vector2(620f, 58f);
+            }
+
+            diagnosticLabel.text = value;
         }
 
         private Color ResolveColor(FrameRateHealth health)

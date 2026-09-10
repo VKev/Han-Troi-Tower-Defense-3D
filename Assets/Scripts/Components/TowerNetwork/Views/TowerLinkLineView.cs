@@ -16,8 +16,9 @@ namespace TowerDefense3D.Towers
         private const float EffectDarkBrightness = 0.8f;
         private const float EffectLightBrightness = 1f;
 
+        [SerializeField] private GameObject linkEffect;
+
         private LineRenderer lineRenderer;
-        private GameObject linkEffect;
         private ParticleSystem[] linkParticles;
         private float[] baseStartSpeeds;
         private float[] baseEmissionRates;
@@ -25,7 +26,7 @@ namespace TowerDefense3D.Towers
         private bool hasEffectColor;
         private bool effectNeedsWarmup = true;
 
-        public void Initialize(Material material, GameObject effectPrefab, float width, int positionCount)
+        public void Initialize(Material material, float width, int positionCount)
         {
             lineRenderer = GetComponent<LineRenderer>();
             lineRenderer.sharedMaterial = material;
@@ -38,10 +39,8 @@ namespace TowerDefense3D.Towers
             lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             lineRenderer.receiveShadows = false;
 
-            if (effectPrefab != null)
+            if (linkEffect != null)
             {
-                linkEffect = Instantiate(effectPrefab, transform);
-                linkEffect.name = "Directional Flow";
                 linkParticles = linkEffect.GetComponentsInChildren<ParticleSystem>(true);
                 baseStartSpeeds = new float[linkParticles.Length];
                 baseEmissionRates = new float[linkParticles.Length];
