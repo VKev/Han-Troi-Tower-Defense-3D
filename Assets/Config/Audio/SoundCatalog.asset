@@ -1,0 +1,186 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69ceb647a97640b8bf7987a2e58daa86, type: 3}
+  m_Name: SoundCatalog
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Audio.SoundCatalogDefinition
+  sounds:
+  - id: 1
+    clip: {fileID: 8300000, guid: d96d2bb321b3dc24e8f07eb88115ff98, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 20
+    clip: {fileID: 8300000, guid: a6c0043991d3459e9bd54536dc1a9e3d, type: 3}
+    volume: 0.45
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 90
+    isProtected: 1
+    loop: 1
+  - id: 16
+    clip: {fileID: 8300000, guid: 3f4cbb5e70c74407ba35bd5566a785ea, type: 3}
+    volume: 0.171
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 17
+    clip: {fileID: 8300000, guid: 7497d84aacbd477993d3770a7e3c8804, type: 3}
+    volume: 0.384
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 18
+    clip: {fileID: 8300000, guid: 63692073b28c419dbe13d50c89aea82a, type: 3}
+    volume: 0.577
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 19
+    clip: {fileID: 8300000, guid: 5688a6a7d3f94a35b911ce6359cd5406, type: 3}
+    volume: 0.558
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 5
+    clip: {fileID: 8300000, guid: 5ef9244a948a4a18ae3dd5ba4e9059d3, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0
+    priority: 40
+    isProtected: 0
+    loop: 0
+  - id: 14
+    clip: {fileID: 8300000, guid: be966db0a5e3bf0459e435208df2590e, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 15
+    clip: {fileID: 8300000, guid: 622d44edee24ea948b08ff7a76b1f04f, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 8
+    clip: {fileID: 8300000, guid: a61479c8e028e3b488952c7b301124d0, type: 3}
+    volume: 0.362
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 100
+    isProtected: 1
+    loop: 1
+  - id: 9
+    clip: {fileID: 8300000, guid: c4d28d563cc0ce84ea6bf54d3423e8ea, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 10
+    clip: {fileID: 8300000, guid: d7a97ecd6d3c76948b8fa0f1ef55248c, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 20
+    isProtected: 0
+    loop: 0
+  - id: 11
+    clip: {fileID: 8300000, guid: 28edf8e23d610ff4e9d9cd690e528737, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 30
+    isProtected: 0
+    loop: 0
+  - id: 12
+    clip: {fileID: 8300000, guid: e1565d9562a6a6247ac96febf1ae253d, type: 3}
+    volume: 0.25
+    pitch: 0.67
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 90
+    isProtected: 1
+    loop: 1
+  - id: 13
+    clip: {fileID: 8300000, guid: 436a500fae0a40742bb52999d5107a18, type: 3}
+    volume: 0.51
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 40
+    isProtected: 0
+    loop: 1
+  - id: 2
+    clip: {fileID: 8300000, guid: 841119f13c75d8140b32f327465c69c7, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0.05
+    priority: 70
+    isProtected: 0
+    loop: 0
+  - id: 21
+    clip: {fileID: 8300000, guid: f2ce0cee3bbd0b849b3d4719b24053e6, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 100
+    isProtected: 1
+    loop: 0
+  - id: 22
+    clip: {fileID: 8300000, guid: 7444724ad41d9cc41a8bc967ac53790d, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 100
+    isProtected: 1
+    loop: 0
+  - id: 23
+    clip: {fileID: 8300000, guid: b88370ab55e75d649aa6577f3b6d4cb9, type: 3}
+    volume: 0.874
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0.08
+    priority: 80
+    isProtected: 0
+    loop: 0

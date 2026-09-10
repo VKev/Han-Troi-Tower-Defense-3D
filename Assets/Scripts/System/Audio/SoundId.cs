@@ -1,0 +1,30 @@
+namespace TowerDefense3D.Audio
+{
+    public enum SoundId
+    {
+        None,
+        TowerPlaced,
+        WaveStarted,
+        ProjectileImpact,
+        HeroAttack,
+        ThermalShock,
+        Firestorm,
+        WaterLift,
+        LobbyMusic,
+        LevelSelected,
+        GameStarted,
+        EnterLevel,
+        LevelPreparationMusic,
+        TutorialTyping,
+        TowerTouched,
+        LinkConnected,
+        GeneratorFired,
+        WaterFired,
+        WindFired,
+        FireFired,
+        WaveMusic,
+        LevelWon,
+        LevelLost,
+        FrogDamaged
+    }
+}
