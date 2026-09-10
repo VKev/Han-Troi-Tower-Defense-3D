@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyDefinition
   stableId: armored
   displayName: Armored
+  description: Cân nặng của ta tỉ lệ thuận với sức mạnh.
   rank: 0
   viewPrefab: {fileID: 4908893629078330938, guid: 50901bde7e200eb47832491eb480a1fe, type: 3}
   icon: {fileID: -1791160941, guid: be9de011f11916341bf3573aea25f250, type: 3}

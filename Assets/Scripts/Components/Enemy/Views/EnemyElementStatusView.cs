@@ -21,6 +21,8 @@ namespace TowerDefense3D.Enemies
         private Mesh[] slotMeshes;
         private float reactionRemainingSeconds;
 
+        public Transform FireIconTransform => fireIcon;
+
         /// <summary>
         /// The board camera never moves, so the billboard rotation is resolved once here instead
         /// of every frame. The icon scale is normalised at the same time so enemies authored at

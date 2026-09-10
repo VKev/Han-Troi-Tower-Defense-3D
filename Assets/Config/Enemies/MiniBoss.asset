@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyDefinition
   stableId: mini-boss
   displayName: Mini-boss
+  description: Không có gì làm ta phải sợ.
   rank: 1
   viewPrefab: {fileID: 3159256691750910483, guid: e42c511f63426bd49aff5c41fef80cdf, type: 3}
   icon: {fileID: -807458088, guid: be9de011f11916341bf3573aea25f250, type: 3}

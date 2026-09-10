@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.SummonerBossEnemyDefinition
   stableId: summoner-boss
   displayName: Summoner Boss
+  description: Đi theo bầy đàn là bí quyết giúp ta đứng ở đỉnh cao chuỗi thức ăn.
   rank: 2
   viewPrefab: {fileID: 6883415940259301562, guid: 1d980e33de5cb7643b1094a93e32d6f8, type: 3}
   icon: {fileID: 197390862, guid: be9de011f11916341bf3573aea25f250, type: 3}

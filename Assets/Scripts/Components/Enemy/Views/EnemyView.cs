@@ -73,6 +73,16 @@ namespace TowerDefense3D.Enemies
         }
 
         /// <summary>
+        /// The fire mark icon floating over this enemy, for a tutorial to point at. Null when the
+        /// view has no element status part.
+        /// </summary>
+        public Transform GetFireMarkIconTransform()
+        {
+            EnemyElementStatusView statusView = GetElementStatusView();
+            return statusView != null ? statusView.FireIconTransform : null;
+        }
+
+        /// <summary>
         /// Takes a new enemy id without being rebound, for a view whose enemy carries on under a
         /// different id.
         /// </summary>

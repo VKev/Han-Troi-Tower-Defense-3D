@@ -12,6 +12,7 @@ namespace TowerDefense3D.Enemies
 
         [SerializeField, Min(1)] private int defaultPoolCapacity = 16;
         [SerializeField, Min(1)] private int maximumPoolSize = 128;
+        [SerializeField] private GlobalEffectEmitterView reactionEffectEmitter;
 
         private readonly Dictionary<long, ActiveEnemyView> activeViews =
             new Dictionary<long, ActiveEnemyView>();
@@ -21,30 +22,14 @@ namespace TowerDefense3D.Enemies
             new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
         private readonly List<ActiveEnemyView> pendingDeathSnapshot = new List<ActiveEnemyView>();
         private Camera worldCamera;
-        private GlobalEffectEmitterView reactionEffectEmitter;
 
         public void Configure(Camera camera)
         {
             worldCamera = camera;
-        }
-
-        /// <summary>
-        /// One rig set shared by every enemy, so a reaction firing on ten enemies at once still
-        /// costs one set of particle systems. Parked at the world origin with an identity
-        /// transform, which is what keeps Local-space systems behaving as authored.
-        /// </summary>
-        private GlobalEffectEmitterView EnsureReactionEffectEmitter()
-        {
-            if (reactionEffectEmitter != null)
+            if (reactionEffectEmitter == null)
             {
-                return reactionEffectEmitter;
+                throw new MissingReferenceException("EnemyViewPool requires an authored reaction effect emitter.");
             }
-
-            var root = new GameObject("Enemy Reaction Effect Emitter");
-            root.transform.SetParent(null, false);
-            root.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            reactionEffectEmitter = root.AddComponent<GlobalEffectEmitterView>();
-            return reactionEffectEmitter;
         }
 
         public void Spawn(EnemySnapshot enemy)
@@ -93,6 +78,18 @@ namespace TowerDefense3D.Enemies
             activeViews.Remove(oldEnemyId);
             activeViews[newEnemyId] = activeView;
             activeView.View.Rekey(newEnemyId);
+        }
+
+        public bool TryGetActiveView(long enemyId, out EnemyView view)
+        {
+            if (activeViews.TryGetValue(enemyId, out ActiveEnemyView activeView))
+            {
+                view = activeView.View;
+                return true;
+            }
+
+            view = null;
+            return false;
         }
 
         public void ShowReaction(long enemyId, ElementReactionEvent reaction)
@@ -191,7 +188,7 @@ namespace TowerDefense3D.Enemies
                     $"Enemy View Prefab '{definition.ViewPrefab.name}' must have an EnemyView on its root.");
             }
 
-            view.Configure(worldCamera, EnsureReactionEffectEmitter());
+            view.Configure(worldCamera, reactionEffectEmitter);
             view.Release();
             return view;
         }

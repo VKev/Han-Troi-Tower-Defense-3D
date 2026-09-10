@@ -8,18 +8,14 @@ namespace TowerDefense3D.Enemies
     [DisallowMultipleComponent]
     public sealed class EnemySpeedTrailView : MonoBehaviour
     {
-        [SerializeField] private GameObject trailPrefab;
+        [SerializeField] private GameObject trailRoot;
 
-        private GameObject trailRoot;
         private TrailRenderer[] trailRenderers;
         private AudioSource[] audioSources;
-        private Vector3 bodyCenterLocal;
-        private bool hasBodyCenter;
 
         public void Bind()
         {
             SetVisible(false);
-            hasBodyCenter = false;
         }
 
         public void Render(bool isSpeedBuffed)
@@ -66,52 +62,14 @@ namespace TowerDefense3D.Enemies
 
         private void EnsureTrail()
         {
-            if (trailRoot != null || trailPrefab == null)
+            if (trailRoot == null)
             {
-                return;
+                throw new MissingReferenceException("EnemySpeedTrailView requires an authored trail child.");
             }
 
-            if (!hasBodyCenter)
-            {
-                bodyCenterLocal = FindBodyCenterLocal();
-                hasBodyCenter = true;
-            }
-
-            trailRoot = Instantiate(trailPrefab, transform);
-            trailRoot.name = trailPrefab.name + " (speed buff)";
-            trailRoot.transform.localPosition = bodyCenterLocal;
-            trailRoot.transform.localRotation = Quaternion.identity;
             trailRenderers = trailRoot.GetComponentsInChildren<TrailRenderer>(true);
             audioSources = trailRoot.GetComponentsInChildren<AudioSource>(true);
             trailRoot.SetActive(false);
-        }
-
-        private Vector3 FindBodyCenterLocal()
-        {
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-            Bounds bounds = default;
-            bool hasBounds = false;
-            for (int index = 0; index < renderers.Length; index++)
-            {
-                Renderer renderer = renderers[index];
-                if (renderer is ParticleSystemRenderer || renderer is TrailRenderer
-                    || renderer.GetComponentInParent<EnemyElementStatusView>() != null)
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = renderer.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(renderer.bounds);
-                }
-            }
-
-            return hasBounds ? transform.InverseTransformPoint(bounds.center) : Vector3.zero;
         }
     }
 }

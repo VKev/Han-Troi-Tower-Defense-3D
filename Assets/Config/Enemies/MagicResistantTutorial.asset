@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d1591757b8a62da429e474d85a2c2284, type: 3}
-  m_Name: MagicResistant
+  m_Name: MagicResistantTutorial
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyDefinition
   stableId: magic-resistant
   displayName: Magic Resistant
@@ -22,7 +22,7 @@ MonoBehaviour:
   baseMaxHealth: 30
   baseMoveSpeed: 1.8
   baseHitRadius: 0.371
-  thermalShockHitsToBreakShield: 2
+  thermalShockHitsToBreakShield: 1
   goldOnDeath: 30
   soulOnDirectHit: 1
   leakDamage: 1

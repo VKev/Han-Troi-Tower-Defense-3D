@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Enemies.EnemyDefinition
   stableId: basic
   displayName: Basic
+  description: Chỉ là một con chuột thường xấu số.
   rank: 0
   viewPrefab: {fileID: 4335825930434105279, guid: 8462596efaaeab6438481e013751921e, type: 3}
   icon: {fileID: -573247255, guid: be9de011f11916341bf3573aea25f250, type: 3}

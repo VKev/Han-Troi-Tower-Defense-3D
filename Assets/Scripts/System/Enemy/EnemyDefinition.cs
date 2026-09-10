@@ -18,6 +18,7 @@ namespace TowerDefense3D.Enemies
         [Header("Identity")]
         [SerializeField] private string stableId = "basic";
         [SerializeField] private string displayName = "Basic";
+        [SerializeField, TextArea(2, 3)] private string description = "Kẻ địch cơ bản.";
         [SerializeField] private EnemyRank rank;
 
         [Header("Presentation")]
@@ -43,6 +44,7 @@ namespace TowerDefense3D.Enemies
 
         public string StableId => stableId;
         public string DisplayName => displayName;
+        public string Description => description;
         public EnemyRank Rank => rank;
         public GameObject ViewPrefab => viewPrefab;
         public Sprite Icon => icon;

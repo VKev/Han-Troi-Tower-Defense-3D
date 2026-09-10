@@ -11,7 +11,7 @@ namespace TowerDefense3D.Enemies
         private static readonly int PrepareState = Animator.StringToHash("Prepare");
         private static readonly int IdleState = Animator.StringToHash("Idle");
 
-        [SerializeField] private GameObject firingClawPrefab;
+        [SerializeField] private GameObject firingClawInstance;
         [SerializeField] private GameObject hitEffectPrefab;
         [SerializeField, Min(0f)] private float impactHeightMeters;
         [SerializeField, Min(0f)] private float minimumArcHeightMeters = 0.75f;
@@ -26,7 +26,6 @@ namespace TowerDefense3D.Enemies
         private HeroTowerDefinition authoredHero;
         private Transform bodyAimTransform;
         private TowerProjectilePoolView hitEffectPool;
-        private GameObject firingClawInstance;
         private Coroutine sequence;
         private Vector3 aimPosition;
         private bool isAiming;
@@ -45,6 +44,12 @@ namespace TowerDefense3D.Enemies
             authoredHero = authoredTower != null
                 ? authoredTower.Definition as HeroTowerDefinition
                 : null;
+            if (firingClawInstance == null)
+            {
+                throw new MissingReferenceException("CrabFiringClawSequence requires an authored firing claw.");
+            }
+
+            firingClawAuthoredScale = firingClawInstance.transform.localScale;
             EnsureBodyAimTransform();
         }
 
@@ -206,12 +211,11 @@ namespace TowerDefense3D.Enemies
 
         private bool TryShowFiringClawAtCurrentPose()
         {
-            if (firingClawPrefab == null)
+            if (firingClawInstance == null)
             {
                 return false;
             }
 
-            EnsureFiringClawInstance();
             Transform sourceSkeleton = transform.Find("UniRigArmature");
             Transform clawSkeleton = firingClawInstance.transform.Find("UniRigArmature");
             if (sourceSkeleton == null || clawSkeleton == null)
@@ -229,24 +233,6 @@ namespace TowerDefense3D.Enemies
             HideOriginalFiringClaw();
             SetFiringClawVisible(true);
             return true;
-        }
-
-        private void EnsureFiringClawInstance()
-        {
-            if (firingClawInstance != null)
-            {
-                return;
-            }
-
-            firingClawInstance = Instantiate(firingClawPrefab, transform);
-            firingClawInstance.name = "Firing Claw IK (runtime)";
-            firingClawAuthoredScale = firingClawInstance.transform.localScale;
-            SetFiringClawVisible(false);
-            Animator clawAnimator = firingClawInstance.GetComponent<Animator>();
-            if (clawAnimator != null)
-            {
-                clawAnimator.runtimeAnimatorController = null;
-            }
         }
 
         private void CalculateFiringClawReachScale(Vector3 impactPosition)
