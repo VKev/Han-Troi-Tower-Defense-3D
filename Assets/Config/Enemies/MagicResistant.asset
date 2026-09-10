@@ -21,6 +21,6 @@ MonoBehaviour:
   baseMoveSpeed: 1.8
   baseHitRadius: 0.371
   thermalShockHitsToBreakShield: 2
-  goldOnDeath: 18
+  goldOnDeath: 30
   soulOnDirectHit: 1
   leakDamage: 1
