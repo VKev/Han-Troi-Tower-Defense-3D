@@ -147,6 +147,29 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         }
 
         [Test]
+        public void SpeedSupport_AdditionalAurasAddOneQuarterOfTheFirstBuff()
+        {
+            SpeedSupportEnemyDefinition support = AssetDatabase.LoadAssetAtPath<SpeedSupportEnemyDefinition>(
+                "Assets/Config/Enemies/SpeedSupport.asset");
+            EnemyDefinition basic = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(
+                "Assets/Config/Enemies/Basic.asset");
+            var system = CreateLongRoadSystem();
+
+            EnemyInstance firstSupport = system.Spawn(support);
+            EnemyInstance secondSupport = system.Spawn(support);
+            EnemyInstance basicEnemy = system.Spawn(basic);
+            SkipSpawnDelay(firstSupport, secondSupport, basicEnemy);
+
+            system.Step(support.ActivationDelaySeconds);
+
+            float stackedBonus = support.RegularSpeedBonusFraction * 1.25f;
+            float expectedDistance = basic.BaseMoveSpeed
+                * (1f + stackedBonus)
+                * support.ActivationDelaySeconds;
+            Assert.That(basicEnemy.Position.x, Is.EqualTo(expectedDistance).Within(0.0001f));
+        }
+
+        [Test]
         public void SpeedSupport_StopsMovingDuringSkillCast()
         {
             SpeedSupportEnemyDefinition support = AssetDatabase.LoadAssetAtPath<SpeedSupportEnemyDefinition>(

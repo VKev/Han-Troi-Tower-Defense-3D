@@ -346,6 +346,7 @@ namespace TowerDefense3D.Enemies
             }
 
             float strongestBonus = 0f;
+            int stackCount = 0;
             for (int index = 0; index < states.Count; index++)
             {
                 EnemyTrajectoryState source = states[index];
@@ -368,9 +369,10 @@ namespace TowerDefense3D.Enemies
                     ? support.MiniBossSpeedBonusFraction
                     : support.RegularSpeedBonusFraction;
                 strongestBonus = Mathf.Max(strongestBonus, bonus);
+                stackCount++;
             }
 
-            return strongestBonus;
+            return SpeedSupportEnemyDefinition.CalculateStackedBonus(strongestBonus, stackCount);
         }
 
         private static bool IsActive(EnemyTrajectoryState state, long currentTick)

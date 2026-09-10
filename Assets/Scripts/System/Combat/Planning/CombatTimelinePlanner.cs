@@ -460,6 +460,7 @@ namespace TowerDefense3D.Enemies
             }
 
             float strongest = 0f;
+            int stackCount = 0;
             for (int index = 0; index < enemies.Count; index++)
             {
                 ShadowEnemy source = enemies[index];
@@ -482,9 +483,10 @@ namespace TowerDefense3D.Enemies
                     ? support.MiniBossSpeedBonusFraction
                     : support.RegularSpeedBonusFraction;
                 strongest = Mathf.Max(strongest, bonus);
+                stackCount++;
             }
 
-            return strongest;
+            return SpeedSupportEnemyDefinition.CalculateStackedBonus(strongest, stackCount);
         }
 
         private void SpawnSummons(
@@ -1004,6 +1006,12 @@ namespace TowerDefense3D.Enemies
             // Knockback spends a budget that refills at a fraction of the enemy's own move
             // speed, so however many pushing towers fire at once they can never drag it
             // backwards faster than it walks forwards.
+            if (enemy.Definition.Rank == EnemyRank.MiniBoss
+                || enemy.Definition.Rank == EnemyRank.Boss)
+            {
+                distance *= 0.5f;
+            }
+
             float effectiveDistance = Mathf.Min(distance, enemy.PushBudgetMeters);
             if (effectiveDistance <= 0f)
             {

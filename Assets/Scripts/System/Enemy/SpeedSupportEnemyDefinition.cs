@@ -8,6 +8,8 @@ namespace TowerDefense3D.Enemies
         menuName = "Tower Defense/Enemies/Speed Support Enemy")]
     public sealed class SpeedSupportEnemyDefinition : EnemyDefinition
     {
+        private const float AdditionalStackFraction = 0.25f;
+
         [SerializeField, Min(0.01f)] private float auraRadiusMeters = 3f;
         [SerializeField, Range(0f, 1f)] private float regularSpeedBonusFraction = 0.25f;
         [SerializeField, Range(0f, 1f)] private float miniBossSpeedBonusFraction = 0.10f;
@@ -19,6 +21,13 @@ namespace TowerDefense3D.Enemies
         public float MiniBossSpeedBonusFraction => miniBossSpeedBonusFraction;
         public float ActivationDelaySeconds => activationDelaySeconds;
         public float SkillDurationSeconds => skillDurationSeconds;
+
+        public static float CalculateStackedBonus(float firstBonus, int stackCount)
+        {
+            return stackCount <= 0
+                ? 0f
+                : firstBonus * (1f + AdditionalStackFraction * (stackCount - 1));
+        }
 
         internal override void CollectSpecificValidationErrors(ICollection<string> errors)
         {

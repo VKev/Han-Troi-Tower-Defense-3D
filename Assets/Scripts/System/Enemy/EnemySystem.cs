@@ -632,6 +632,7 @@ namespace TowerDefense3D.Enemies
             }
 
             float strongestBonus = 0f;
+            int stackCount = 0;
             for (int index = 0; index < activeEnemies.Count; index++)
             {
                 EnemyInstance source = activeEnemies[index];
@@ -655,9 +656,10 @@ namespace TowerDefense3D.Enemies
                     ? support.MiniBossSpeedBonusFraction
                     : support.RegularSpeedBonusFraction;
                 strongestBonus = Mathf.Max(strongestBonus, bonus);
+                stackCount++;
             }
 
-            return strongestBonus;
+            return SpeedSupportEnemyDefinition.CalculateStackedBonus(strongestBonus, stackCount);
         }
 
         private void QueueBossSummons(EnemyInstance boss, float stepSeconds)
