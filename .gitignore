@@ -135,6 +135,7 @@ InitTestScene*.unity*
 /.serena/
 /.agent-temp/
 /Assets/AgentSetupZLinqProbe/
+/ProfilerCaptures/
 /.art-temp/
 /.config-mcp/
 /.mcp.json
