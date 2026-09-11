@@ -17,7 +17,8 @@ namespace TowerDefense3D.GameFlow
             bool startWaveEnabled,
             IReadOnlyList<EnemyDefinition> previewEnemies = null,
             IReadOnlyList<bool> previewEnemiesAreNew = null,
-            bool showStartWaveBlockedHint = false)
+            bool showStartWaveBlockedHint = false,
+            string startWaveBlockedHintText = null)
         {
             WaveCounterText = waveCounterText;
             StatusText = statusText;
@@ -30,6 +31,7 @@ namespace TowerDefense3D.GameFlow
             PreviewEnemies = previewEnemies;
             PreviewEnemiesAreNew = previewEnemiesAreNew;
             ShowStartWaveBlockedHint = showStartWaveBlockedHint;
+            StartWaveBlockedHintText = startWaveBlockedHintText;
         }
 
         public string WaveCounterText { get; }
@@ -62,5 +64,6 @@ namespace TowerDefense3D.GameFlow
         /// fix by linking anything, so a line telling them to link would be wrong there.
         /// </remarks>
         public bool ShowStartWaveBlockedHint { get; }
+        public string StartWaveBlockedHintText { get; }
     }
 }

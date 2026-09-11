@@ -84,6 +84,21 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
+        public void Prefab_LayoutsHeroCardAfterTheElementCards()
+        {
+            Transform towerButtons = view.transform.Find("Tower Buttons");
+            Transform elements = towerButtons.Find("Group Elements");
+            Transform heroes = towerButtons.Find("Group Heroes");
+            HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
+
+            Assert.That(row, Is.Not.Null);
+            Assert.That(row.enabled, Is.True);
+            Assert.That(heroes, Is.Not.Null);
+            Assert.That(heroes.parent, Is.EqualTo(towerButtons));
+            Assert.That(heroes.GetSiblingIndex(), Is.GreaterThan(elements.GetSiblingIndex()));
+        }
+
+        [Test]
         public void RenderAndButtons_ExposeNetworkActionsAndSimulationGate()
         {
             bool unlinkRequested = false;

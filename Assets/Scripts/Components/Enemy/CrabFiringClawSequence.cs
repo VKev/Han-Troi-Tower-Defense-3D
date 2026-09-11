@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TowerDefense3D.Towers;
 using UnityEngine;
@@ -35,6 +36,9 @@ namespace TowerDefense3D.Enemies
         private Vector3 firingClawAuthoredScale;
         private Vector3 firingClawReturnPosition;
         private float firingClawReachScale = 1f;
+        private float animationSpeed = 1f;
+
+        public event Action HitEffectPlayed;
 
         private void Awake()
         {
@@ -96,7 +100,7 @@ namespace TowerDefense3D.Enemies
                 : Quaternion.RotateTowards(
                     bodyAimTransform.rotation,
                     targetRotation,
-                    bodyTurnSpeedDegreesPerSecond * Time.deltaTime);
+                    bodyTurnSpeedDegreesPerSecond * Time.deltaTime * animationSpeed);
         }
 
         private void EnsureBodyAimTransform()
@@ -175,12 +179,21 @@ namespace TowerDefense3D.Enemies
             sequence = StartCoroutine(RunAttack(attack));
         }
 
+        public void SetAnimationSpeed(float speed)
+        {
+            animationSpeed = Mathf.Max(0.01f, speed);
+            if (animator != null)
+            {
+                animator.speed = animationSpeed;
+            }
+        }
+
         private IEnumerator RunAttack(HeroAttackEvent attack)
         {
             aimPosition = attack.ImpactPosition;
             isAiming = true;
             animator.Play(PrepareState, 0, 0f);
-            yield return new WaitForSeconds(attack.PrepareDurationSeconds);
+            yield return WaitForAnimationSeconds(attack.PrepareDurationSeconds);
 
             animator.Play(PrepareState, 0, 1f);
             animator.Update(0f);
@@ -190,8 +203,11 @@ namespace TowerDefense3D.Enemies
                     attack.ImpactPosition,
                     attack.LungeDurationSeconds,
                     true);
-                PlayHitEffect(attack.ImpactPosition);
-                yield return new WaitForSeconds(attack.ImpactHoldDurationSeconds);
+                if (PlayHitEffect(attack.ImpactPosition))
+                {
+                    HitEffectPlayed?.Invoke();
+                }
+                yield return WaitForAnimationSeconds(attack.ImpactHoldDurationSeconds);
                 yield return MoveClawTargetAlongArc(
                     firingClawReturnPosition,
                     attack.ReturnDurationSeconds,
@@ -207,6 +223,16 @@ namespace TowerDefense3D.Enemies
             animator.Update(0f);
             isAiming = false;
             sequence = null;
+        }
+
+        private IEnumerator WaitForAnimationSeconds(float durationSeconds)
+        {
+            float elapsedSeconds = 0f;
+            while (elapsedSeconds < durationSeconds)
+            {
+                elapsedSeconds += Time.deltaTime * animationSpeed;
+                yield return null;
+            }
         }
 
         private bool TryShowFiringClawAtCurrentPose()
@@ -364,7 +390,7 @@ namespace TowerDefense3D.Enemies
             float elapsedSeconds = 0f;
             while (elapsedSeconds < durationSeconds)
             {
-                elapsedSeconds += Time.deltaTime;
+                elapsedSeconds += Time.deltaTime * animationSpeed;
                 float progress = Mathf.Clamp01(elapsedSeconds / durationSeconds);
                 target.position = CalculateQuadraticBezier(startPosition, apex, end, progress);
                 if (isReturning)
@@ -393,7 +419,7 @@ namespace TowerDefense3D.Enemies
             float elapsedSeconds = 0f;
             while (elapsedSeconds < raiseDuration)
             {
-                elapsedSeconds += Time.deltaTime;
+                elapsedSeconds += Time.deltaTime * animationSpeed;
                 float progress = Mathf.Clamp01(elapsedSeconds / raiseDuration);
                 float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
                 target.position = Vector3.Lerp(startPosition, apex, easedProgress);
@@ -408,7 +434,7 @@ namespace TowerDefense3D.Enemies
             elapsedSeconds = 0f;
             while (elapsedSeconds < strikeDuration)
             {
-                elapsedSeconds += Time.deltaTime;
+                elapsedSeconds += Time.deltaTime * animationSpeed;
                 float progress = Mathf.Clamp01(elapsedSeconds / strikeDuration);
                 target.position = Vector3.Lerp(apex, impactPosition, progress * progress);
                 float fastScaleProgress = 1f - Mathf.Pow(1f - progress, 3f);
@@ -431,11 +457,11 @@ namespace TowerDefense3D.Enemies
                 progress);
         }
 
-        private void PlayHitEffect(Vector3 fallbackPosition)
+        private bool PlayHitEffect(Vector3 fallbackPosition)
         {
             if (hitEffectPrefab == null)
             {
-                return;
+                return false;
             }
 
             if (hitEffectPool == null)
@@ -446,7 +472,7 @@ namespace TowerDefense3D.Enemies
 
             if (hitEffectPool == null)
             {
-                return;
+                return false;
             }
 
             Transform target = firingClawInstance != null
@@ -455,6 +481,7 @@ namespace TowerDefense3D.Enemies
             hitEffectPool.PlayHitEffect(
                 hitEffectPrefab,
                 target != null ? target.position : fallbackPosition);
+            return true;
         }
 
         private Vector3 GetOriginalTipPosition()

@@ -15,6 +15,7 @@ namespace TowerDefense3D.Audio
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly IWaveSystem waveSystem;
         private readonly CombatTimelineSystem combatTimelineSystem;
+        private readonly HeroAttackPresentationSystem heroAttackPresentationSystem;
         private readonly LevelBaseHealthSystem healthSystem;
         private bool wasWaveRunning;
         private int observedHealth;
@@ -26,6 +27,7 @@ namespace TowerDefense3D.Audio
             TowerNetworkSystem towerNetworkSystem,
             IWaveSystem waveSystem,
             CombatTimelineSystem combatTimelineSystem,
+            HeroAttackPresentationSystem heroAttackPresentationSystem,
             LevelBaseHealthSystem healthSystem)
         {
             this.soundPlayer = soundPlayer ?? throw new ArgumentNullException(nameof(soundPlayer));
@@ -36,6 +38,8 @@ namespace TowerDefense3D.Audio
             this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
             this.combatTimelineSystem = combatTimelineSystem
                 ?? throw new ArgumentNullException(nameof(combatTimelineSystem));
+            this.heroAttackPresentationSystem = heroAttackPresentationSystem
+                ?? throw new ArgumentNullException(nameof(heroAttackPresentationSystem));
             this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
         }
 
@@ -54,7 +58,7 @@ namespace TowerDefense3D.Audio
             towerNetworkSystem.TowerSold += HandleTowerSold;
             waveSystem.StateChanged += HandleWaveStateChanged;
             combatTimelineSystem.ProjectileImpacted += HandleProjectileImpacted;
-            combatTimelineSystem.HeroAttackStarted += HandleHeroAttackStarted;
+            heroAttackPresentationSystem.HeroHitEffectPlayed += HandleHeroHitEffectPlayed;
             combatTimelineSystem.ReactionTriggered += HandleReactionTriggered;
             healthSystem.HealthChanged += HandleHealthChanged;
             isStarted = true;
@@ -74,7 +78,7 @@ namespace TowerDefense3D.Audio
             towerNetworkSystem.TowerSold -= HandleTowerSold;
             waveSystem.StateChanged -= HandleWaveStateChanged;
             combatTimelineSystem.ProjectileImpacted -= HandleProjectileImpacted;
-            combatTimelineSystem.HeroAttackStarted -= HandleHeroAttackStarted;
+            heroAttackPresentationSystem.HeroHitEffectPlayed -= HandleHeroHitEffectPlayed;
             combatTimelineSystem.ReactionTriggered -= HandleReactionTriggered;
             healthSystem.HealthChanged -= HandleHealthChanged;
         }
@@ -132,9 +136,8 @@ namespace TowerDefense3D.Audio
             soundPlayer.Play(SoundId.ProjectileImpact);
         }
 
-        private void HandleHeroAttackStarted(HeroAttackEvent attack)
+        private void HandleHeroHitEffectPlayed()
         {
-            _ = attack;
             soundPlayer.Play(SoundId.HeroAttack);
         }
 

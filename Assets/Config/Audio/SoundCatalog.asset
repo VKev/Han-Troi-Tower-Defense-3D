@@ -13,6 +13,15 @@ MonoBehaviour:
   m_Name: SoundCatalog
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Audio.SoundCatalogDefinition
   sounds:
+  - id: 4
+    clip: {fileID: 8300000, guid: c5d0ff65d4414bd3836d4a3fc6b42a7b, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0.05
+    priority: 80
+    isProtected: 0
+    loop: 0
   - id: 1
     clip: {fileID: 8300000, guid: d96d2bb321b3dc24e8f07eb88115ff98, type: 3}
     volume: 0.8

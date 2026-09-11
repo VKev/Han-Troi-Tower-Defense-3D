@@ -133,6 +133,12 @@ namespace TowerDefense3D.GameFlow
         public void Render(WaveHudState state)
         {
             startWaveButton.interactable = state.StartWaveEnabled;
+            if (startWaveBlockedHintText != null
+                && !string.IsNullOrEmpty(state.StartWaveBlockedHintText))
+            {
+                startWaveBlockedHintText.text = state.StartWaveBlockedHintText;
+            }
+
             if (isTutorialPreviewOnly && !state.StartWaveEnabled)
             {
                 startWaveButton.gameObject.SetActive(false);

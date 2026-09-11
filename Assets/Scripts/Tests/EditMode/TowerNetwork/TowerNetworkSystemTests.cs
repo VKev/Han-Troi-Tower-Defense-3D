@@ -105,6 +105,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         [Test]
+        public void HeroTower_AllowsStartingSimulationWithoutLinkedChain()
+        {
+            system.Start();
+            RegisterTower(TowerFamily.Hero, Vector3.zero, 1);
+
+            Assert.That(system.HasValidChain, Is.False);
+            Assert.That(system.HasStartWaveRequirement, Is.True);
+            Assert.That(system.TryStartSimulation(out string error), Is.True, error);
+        }
+
+        [Test]
         public void AuthoredHeroOutsideBuildableCells_RegistersForDirectCombat()
         {
             system.Start();

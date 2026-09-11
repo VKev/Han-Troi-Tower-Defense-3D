@@ -50,6 +50,7 @@ namespace TowerDefense3D.Towers
         public TowerCatalog Catalog => catalog;
         public int ValidChainCount { get; private set; }
         public bool HasValidChain => ValidChainCount > 0;
+        public bool HasStartWaveRequirement => HasValidChain || HasHeroTower;
         public int ValidNodeCount => nodesInValidChains.Count;
         public float TickSeconds => tickSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;

@@ -75,7 +75,7 @@ namespace TowerDefense3D.Waves
                 CurrentWaveNumber,
                 WaveCount,
                 enemySystem.LivingCount,
-                Phase == WavePhase.Preparation && towerNetworkSystem.HasValidChain,
+                Phase == WavePhase.Preparation && towerNetworkSystem.HasStartWaveRequirement,
                 NextWaveClearGold,
                 RemainingEnemyCount);
         }

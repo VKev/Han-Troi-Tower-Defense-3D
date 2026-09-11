@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TowerDefense3D.Enemies;
+using TowerDefense3D.Towers;
 using TowerDefense3D.Waves;
 using UnityEngine;
 
@@ -11,15 +12,21 @@ namespace TowerDefense3D.GameFlow
         private readonly IWaveSystem waveSystem;
         private readonly IWaveHudView view;
         private readonly EnemyDiscoveryProgress enemyDiscoveryProgress;
+        private readonly TowerCatalog towerCatalog;
+        private readonly SaveSystem saveSystem;
 
         public WaveHudPresenter(
             IWaveSystem waveSystem,
             IWaveHudView view,
-            EnemyDiscoveryProgress enemyDiscoveryProgress = null)
+            EnemyDiscoveryProgress enemyDiscoveryProgress = null,
+            TowerCatalog towerCatalog = null,
+            SaveSystem saveSystem = null)
         {
             this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.enemyDiscoveryProgress = enemyDiscoveryProgress;
+            this.towerCatalog = towerCatalog;
+            this.saveSystem = saveSystem;
         }
 
         public void Connect()
@@ -52,7 +59,8 @@ namespace TowerDefense3D.GameFlow
                 state.CanStartWave,
                 previewEnemies,
                 CreatePreviewEnemyDiscovery(previewEnemies),
-                ShouldShowStartWaveBlockedHint(state)));
+                ShouldShowStartWaveBlockedHint(state),
+                CreateStartWaveBlockedHintText()));
         }
 
         /// <summary>
@@ -62,6 +70,22 @@ namespace TowerDefense3D.GameFlow
         private static bool ShouldShowStartWaveBlockedHint(WaveState state)
         {
             return state.Phase == WavePhase.Preparation && !state.CanStartWave;
+        }
+
+        private string CreateStartWaveBlockedHintText()
+        {
+            return IsCrabHeroUnlocked()
+                ? "Để bắt đầu cần phải nối đạn vào ít nhất 1 <color=#E81414>Trụ thu đạn</color> hoặc <color=#B8860B>Trụ cua</color>"
+                : "Để bắt đầu cần phải nối đạn vào ít nhất 1 <color=#E81414>Trụ thu đạn</color>";
+        }
+
+        private bool IsCrabHeroUnlocked()
+        {
+            return towerCatalog != null
+                && saveSystem?.Progress != null
+                && towerCatalog.TryGet(TowerFamily.Hero, out TowerCombatDefinition hero)
+                && (hero.UnlockAfterClearingLevelNumber <= 0
+                    || saveSystem.Progress.IsCleared(hero.UnlockAfterClearingLevelNumber));
         }
 
         private void HandleStartWaveRequested()

@@ -107,6 +107,25 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             towerNetworkSystem.Dispose();
         }
 
+        [Test]
+        public void WaveHudPresenter_AfterClearingLevelSeven_ExplainsTheCrabHeroAlternative()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            SaveSystem saveSystem = CreateSaveSystem();
+            Assert.That(saveSystem.Progress.TryMarkCleared(7, 1), Is.EqualTo(UnlockAttemptResult.Unlocked));
+            var waveHudView = new WaveHudViewStub();
+            var presenter = new WaveHudPresenter(
+                new WaveSystemStub(),
+                waveHudView,
+                towerCatalog: towerCatalog,
+                saveSystem: saveSystem);
+
+            presenter.Refresh();
+
+            StringAssert.Contains("</color> hoặc", waveHudView.LastState.StartWaveBlockedHintText);
+            StringAssert.Contains("<color=#B8860B>Trụ cua</color>", waveHudView.LastState.StartWaveBlockedHintText);
+        }
+
         /// <summary>
         /// The skip cheat only calls ForceVictory; everything the player then sees comes out of
         /// the real phase machine, so this walks that machine rather than a stub of it.
@@ -673,6 +692,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             public int RenderCount { get; private set; }
             public int ShowCount { get; private set; }
+            public WaveHudState LastState { get; private set; }
 
             public void Initialize()
             {
@@ -680,7 +700,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             public void Render(WaveHudState state)
             {
-                _ = state;
+                LastState = state;
                 RenderCount++;
             }
 

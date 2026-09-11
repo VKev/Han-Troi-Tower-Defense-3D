@@ -18,9 +18,9 @@ namespace TowerDefense3D.Towers
                 return true;
             }
 
-            if (!HasValidChain)
+            if (!HasStartWaveRequirement)
             {
-                error = "Cần ít nhất một chuỗi Generator đến Soul Nexus hợp lệ.";
+                error = "Cần ít nhất một chuỗi Generator đến Soul Nexus hợp lệ hoặc một trụ cua.";
                 return false;
             }
 

@@ -106,6 +106,7 @@ namespace TowerDefense3D.GameFlow
         {
             towerLinkPresentationSystem.LateTick();
             towerProjectilePresentationSystem.LateTick(deltaTime);
+            heroAttackPresentationSystem.LateTick(gameplaySimulationSystem.SpeedMultiplier);
             enemyPresentationSystem.LateTick(
                 gameplaySimulationSystem.InterpolationAlpha,
                 gameplaySimulationSystem.SpeedMultiplier);

@@ -195,6 +195,22 @@ namespace TowerDefense3D.Towers
             return snapshot;
         }
 
+        private bool HasHeroTower
+        {
+            get
+            {
+                for (int index = 0; index < orderedNodeIds.Count; index++)
+                {
+                    if (nodes[orderedNodeIds[index]].Spec.Family == TowerFamily.Hero)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         public bool TryPeekInputProjectile(TowerNodeId nodeId, int inputPort, out ProjectileQueueEntry entry)
         {
             if (!nodes.TryGetValue(nodeId, out NodeState node) || !node.InputBuffer.IsValidPort(inputPort))

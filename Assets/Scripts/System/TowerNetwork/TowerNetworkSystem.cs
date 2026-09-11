@@ -81,6 +81,7 @@ namespace TowerDefense3D.Towers
         public ITowerRuntimeView SelectedTower => selectedTower;
         public string LastFeedback => lastFeedback;
         public bool HasValidChain => manager.HasValidChain;
+        public bool HasStartWaveRequirement => manager.HasStartWaveRequirement;
         public int ValidChainCount => manager.ValidChainCount;
         public bool IsRunning => manager.IsRunning;
         public bool CanEditTopology => manager.HasLevelSession && !manager.IsRunning;
