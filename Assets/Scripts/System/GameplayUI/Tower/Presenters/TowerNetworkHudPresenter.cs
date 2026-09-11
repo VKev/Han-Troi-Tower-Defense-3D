@@ -62,6 +62,7 @@ namespace TowerDefense3D.GameFlow
         {
             towerNetworkHud.Initialize();
             towerNetworkHud.ApplyTowerLocks(CollectLockedDefinitions());
+            towerNetworkHud.ApplyTowerAffordability(CollectUnaffordableDefinitions());
             towerNetworkHud.TowerDragBegan += HandleTowerDragBegan;
             towerNetworkHud.TowerDragMoved += HandleTowerDragMoved;
             towerNetworkHud.TowerDragEnded += HandleTowerDragEnded;
@@ -88,6 +89,7 @@ namespace TowerDefense3D.GameFlow
         public void Refresh()
         {
             towerNetworkHud.ApplyTowerLocks(CollectLockedDefinitions());
+            towerNetworkHud.ApplyTowerAffordability(CollectUnaffordableDefinitions());
             towerNetworkHud.SetTowerActionsAvailable(AreTowerActionsAvailable());
             ITowerRuntimeView selectedTower = towerNetworkSystem.SelectedTower;
             string selectedText = selectedTower == null
@@ -133,6 +135,35 @@ namespace TowerDefense3D.GameFlow
                 case TowerNetworkRole.Processor: return "Xử lý";
                 default: return role.ToString();
             }
+        }
+
+        /// <summary>
+        /// The towers whose build cost is past the current balance.
+        /// </summary>
+        /// <remarks>
+        /// Empty while a tutorial step is paying, so a card being handed over for free is never
+        /// dimmed as though it were out of reach.
+        /// </remarks>
+        private IReadOnlyList<TowerCombatDefinition> CollectUnaffordableDefinitions()
+        {
+            var unaffordable = new List<TowerCombatDefinition>();
+            if (goldSystem == null || towerNetworkSystem.IsPlacementFree)
+            {
+                return unaffordable;
+            }
+
+            IReadOnlyList<TowerCombatDefinition> definitions = towerCatalog.Definitions;
+            for (int index = 0; index < definitions.Count; index++)
+            {
+                TowerCombatDefinition definition = definitions[index];
+                TowerEconomyProfile economy = definition?.Core?.Economy;
+                if (economy != null && !goldSystem.CanAfford(economy.BuildCost))
+                {
+                    unaffordable.Add(definition);
+                }
+            }
+
+            return unaffordable;
         }
 
         /// <summary>
@@ -190,8 +221,10 @@ namespace TowerDefense3D.GameFlow
             return AreTowerToolsUnlocked() && (levelNumber != 1 || CurrentWaveNumber >= 6);
         }
 
-        // Water arrives with the first Stealth wave, whose enemies it exists to reveal,
-        // rather than a wave later when the player has already had to cope without it.
+        // Water unlocks one wave ahead of the Stealth enemies it exists to reveal, which first
+        // walk in on wave 6 of Level_001_Waves. The player therefore has it in hand, and has been
+        // told what it is for, before the wave that needs it. WaterTowerHintTutorial is gated on
+        // this same wave; the two have to move together.
         private const int WaterUnlockWaveNumber = 5;
 
         private bool IsTutorialTowerUnlocked(TowerFamily family)

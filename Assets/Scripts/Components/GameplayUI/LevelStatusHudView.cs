@@ -31,6 +31,16 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("How long the gold counter takes to run down to a new balance. Zero snaps it.")]
         [SerializeField, Min(0f)] private float goldTweenDuration = 0.35f;
 
+        [Header("Cannot afford")]
+        [Tooltip("The colour the balance flashes when a purchase is refused for want of gold.")]
+        [SerializeField] private Color goldRefusedFlashColor = new Color(0.95f, 0.26f, 0.22f, 1f);
+
+        [Tooltip("How long the refused balance stays red before returning to its authored colour.")]
+        [SerializeField, Min(0f)] private float goldRefusedFlashDuration = 0.5f;
+
+        [Tooltip("How far the balance swells on a refused purchase, as a fraction of its size.")]
+        [SerializeField, Min(0f)] private float goldRefusedPunchScale = 0.35f;
+
         [Header("Wave 3 Retry")]
         [SerializeField] private RectTransform failurePresentationTarget;
         [SerializeField] private Text failureMessageText;
@@ -49,7 +59,10 @@ namespace TowerDefense3D.GameFlow
         private Tween healthShakeTween;
         private Tween healthFlashTween;
         private Tween goldTween;
+        private Tween goldRefusedFlashTween;
+        private Tween goldRefusedPunchTween;
         private Color healthBaseColor;
+        private Color goldBaseColor;
         private int previousHealth;
         private int displayedGold;
         private bool hasRenderedGold;
@@ -82,6 +95,10 @@ namespace TowerDefense3D.GameFlow
 
             CaptureNormalLayout();
             healthBaseColor = healthFill.color;
+            if (goldText != null)
+            {
+                goldBaseColor = goldText.color;
+            }
             failureMessageText.gameObject.SetActive(false);
             failureDimmer.gameObject.SetActive(false);
             failurePresentationCanvas.overrideSorting = false;
@@ -259,6 +276,81 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        /// <summary>
+        /// Shakes the status HUD and throws the balance red for a moment, because a purchase the
+        /// player cannot afford leaves the number unchanged and so has nothing else to show them.
+        /// </summary>
+        /// <remarks>
+        /// The same shake damage uses. Two different refusals reading as the same nudge is the
+        /// point: it means "the HUD is answering you", and the red on the balance says which part
+        /// of the HUD to look at.
+        /// </remarks>
+        public void PlayPurchaseRefusedFeedback()
+        {
+            PlayDamageShake();
+            PlayGoldRefusedFlash();
+        }
+
+        private void PlayGoldRefusedFlash()
+        {
+            if (goldText == null)
+            {
+                return;
+            }
+
+            // Restarted rather than stacked. Players tap a card they cannot afford several times
+            // in a row, and each tap should restate the answer rather than queue another one
+            // behind it or settle the number on a half-red colour.
+            goldRefusedFlashTween?.Kill();
+            goldRefusedPunchTween?.Kill();
+            RectTransform goldRect = goldText.rectTransform;
+            goldRect.localScale = Vector3.one;
+            goldText.color = goldBaseColor;
+
+            if (goldRefusedFlashDuration > 0f)
+            {
+                goldRefusedFlashTween = DOTween.To(
+                        () => goldText.color,
+                        value => goldText.color = value,
+                        goldRefusedFlashColor,
+                        goldRefusedFlashDuration * 0.5f)
+                    .SetLoops(2, LoopType.Yoyo)
+                    .SetEase(Ease.InOutSine)
+                    .SetTarget(this)
+                    .OnKill(RestoreGoldColor);
+            }
+
+            if (goldRefusedPunchScale > 0f && goldRefusedFlashDuration > 0f)
+            {
+                goldRefusedPunchTween = goldRect
+                    .DOPunchScale(
+                        Vector3.one * goldRefusedPunchScale,
+                        goldRefusedFlashDuration,
+                        6,
+                        0.6f)
+                    .SetTarget(this)
+                    .OnKill(RestoreGoldScale);
+            }
+        }
+
+        private void RestoreGoldColor()
+        {
+            goldRefusedFlashTween = null;
+            if (goldText != null)
+            {
+                goldText.color = goldBaseColor;
+            }
+        }
+
+        private void RestoreGoldScale()
+        {
+            goldRefusedPunchTween = null;
+            if (goldText != null)
+            {
+                goldText.rectTransform.localScale = Vector3.one;
+            }
+        }
+
         public void ShowWaveThreeDefeat()
         {
             if (isShowingWaveThreeDefeat)
@@ -400,10 +492,14 @@ namespace TowerDefense3D.GameFlow
             healthShakeTween?.Kill();
             healthFlashTween?.Kill();
             goldTween?.Kill();
+            goldRefusedFlashTween?.Kill();
+            goldRefusedPunchTween?.Kill();
             healthFillTween = null;
             healthShakeTween = null;
             healthFlashTween = null;
             goldTween = null;
+            goldRefusedFlashTween = null;
+            goldRefusedPunchTween = null;
             failureMoveTween?.Kill();
             failureHealthTween?.Kill();
             failureMessageTween?.Kill();

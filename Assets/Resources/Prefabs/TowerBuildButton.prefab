@@ -243,6 +243,7 @@ GameObject:
   - component: {fileID: 8146470416435935005}
   - component: {fileID: 6803907320093881491}
   - component: {fileID: 8381561023883885925}
+  - component: {fileID: 7714455201330019001}
   m_Layer: 0
   m_Name: TowerBuildButton
   m_TagString: Untagged
@@ -375,6 +376,8 @@ MonoBehaviour:
   coinImage: {fileID: 7314395301640735524}
   costShade: {fileID: 1792337939744433386}
   lockBadge: {fileID: 7851013857261894564}
+  affordabilityGroup: {fileID: 7714455201330019001}
+  unaffordableAlpha: 0.45
 --- !u!114 &8381561023883885925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -630,3 +633,15 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!225 &7714455201330019001
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5364007961712222336}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0

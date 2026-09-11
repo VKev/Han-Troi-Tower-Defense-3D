@@ -37,6 +37,11 @@ namespace TowerDefense3D.GameFlow
         /// build bar, greyed out, so its existence reads as a goal rather than a missing button.
         /// </summary>
         void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions);
+
+        /// <summary>
+        /// Dims the cards the player cannot currently pay for. They stay pressable.
+        /// </summary>
+        void ApplyTowerAffordability(IReadOnlyList<TowerCombatDefinition> unaffordableDefinitions);
         void SetTowerActionsAvailable(bool available);
 
         void Render(TowerNetworkHudState state);

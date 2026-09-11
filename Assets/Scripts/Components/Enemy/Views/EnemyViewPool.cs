@@ -23,6 +23,7 @@ namespace TowerDefense3D.Enemies
         private readonly List<ActiveEnemyView> pendingDeathSnapshot = new List<ActiveEnemyView>();
         private Camera worldCamera;
         private Audio.ISoundPlayer soundPlayer;
+        private float animationSpeed = 1f;
 
         public void Configure(Camera camera, Audio.ISoundPlayer player = null)
         {
@@ -41,12 +42,43 @@ namespace TowerDefense3D.Enemies
             activeViews.Add(enemy.EnemyId, new ActiveEnemyView(pool, view));
             view.Bind(enemy, activateImmediately: false);
 
+            // Applied on arrival too: an enemy that walks in mid-wave would otherwise be the one
+            // creature on the board still animating at normal speed.
+            view.SetAnimationSpeed(animationSpeed);
+
             // A boss taking over from the one that was standing there is not arriving; it is
             // continuing. Announcing it with the arrival puff would give away a swap the player
             // is not meant to notice.
             if (!enemy.SuppressEntranceEffect)
             {
                 PlayPrespawnEffect(view);
+            }
+        }
+
+        /// <summary>
+        /// Pushes the playback rate onto every view, dying ones included.
+        /// </summary>
+        /// <remarks>
+        /// Dying ones as well because a death is an animation the pool is waiting on before it
+        /// reclaims the view: left at one while everything else runs at two, it would hold its
+        /// corpse on screen for twice as long as the fight around it.
+        /// </remarks>
+        public void SetAnimationSpeed(float speed)
+        {
+            if (Mathf.Approximately(animationSpeed, speed))
+            {
+                return;
+            }
+
+            animationSpeed = speed;
+            foreach (KeyValuePair<long, ActiveEnemyView> entry in activeViews)
+            {
+                entry.Value.View.SetAnimationSpeed(speed);
+            }
+
+            foreach (KeyValuePair<long, ActiveEnemyView> entry in pendingDeaths)
+            {
+                entry.Value.View.SetAnimationSpeed(speed);
             }
         }
 

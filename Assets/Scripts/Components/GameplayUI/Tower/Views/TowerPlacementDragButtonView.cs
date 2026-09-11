@@ -26,9 +26,15 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("The padlock. It becomes the tile's icon while the tower is locked.")]
         [SerializeField] private GameObject lockBadge;
 
+        [Tooltip("Dims the whole card while its price is out of reach. This cannot be done the way the locked look is: that comes from the Button's disabledColor, and an unaffordable card stays pressable so the HUD can answer the tap that cannot be paid for.")]
+        [SerializeField] private CanvasGroup affordabilityGroup;
+
+        [SerializeField, Range(0.1f, 1f)] private float unaffordableAlpha = 0.45f;
+
         private int activePointerId;
         private bool isDragging;
         private bool isLocked;
+        private bool isAffordable = true;
 
         public event Action<TowerCombatDefinition, TowerPlacementPointerEvent> DragBegan;
         public event Action<TowerPlacementPointerEvent> DragMoved;
@@ -80,7 +86,34 @@ namespace TowerDefense3D.GameFlow
             }
 
             ApplyLockedVisibility();
+            ApplyAffordability();
             ApplyDefinitionLabels();
+        }
+
+        /// <summary>
+        /// Dims the card when the player cannot pay for it, while leaving it pressable.
+        /// </summary>
+        /// <remarks>
+        /// Pressable on purpose. A card that went dead would take the tap with it, and the tap is
+        /// what the status HUD answers with its shake and its red balance - the player would be
+        /// told nothing at all rather than told why.
+        /// </remarks>
+        public void SetAffordable(bool affordable)
+        {
+            isAffordable = affordable;
+            ApplyAffordability();
+        }
+
+        private void ApplyAffordability()
+        {
+            if (affordabilityGroup == null)
+            {
+                return;
+            }
+
+            // A locked card already reads as unavailable through its padlock and disabled tint,
+            // so the price dim only speaks while the card is otherwise being offered.
+            affordabilityGroup.alpha = !isLocked && !isAffordable ? unaffordableAlpha : 1f;
         }
 
         public void SetInteractable(bool interactable)

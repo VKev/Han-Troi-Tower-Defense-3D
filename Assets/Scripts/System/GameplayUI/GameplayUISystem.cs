@@ -124,6 +124,7 @@ namespace TowerDefense3D.GameFlow
             enemySystem.EnemyLeaked += MarkDirty;
             goldSystem.BalanceChanged += HandleGoldChanged;
             healthSystem.HealthChanged += HandleHealthChanged;
+            towerNetworkSystem.PurchaseRefusedForGold += HandlePurchaseRefusedForGold;
             statusHudView.RenderGold(goldSystem.Balance);
             statusHudView.RenderHealth(healthSystem.CurrentHealth, healthSystem.MaximumHealth);
             statusHudView.SetHealthVisible(true);
@@ -133,6 +134,8 @@ namespace TowerDefense3D.GameFlow
                 pauseHudView.Render(simulationSystem.IsPaused);
                 pauseHudView.Show();
                 pauseHudView.PauseToggleRequested += HandlePauseToggleRequested;
+                pauseHudView.FastForwardToggleRequested += HandleFastForwardToggleRequested;
+                pauseHudView.RenderFastForward(simulationSystem.IsFastForward);
                 tutorialOverlay.BlackOverlayVisibilityChanged += HandleTutorialBlackOverlayVisibilityChanged;
                 HandleTutorialBlackOverlayVisibilityChanged(tutorialOverlay.IsBlackOverlayVisible);
             }
@@ -157,6 +160,14 @@ namespace TowerDefense3D.GameFlow
             }
 
             isDirty = false;
+
+            // Re-read rather than assumed: a tutorial beat can drop double speed on its own, and
+            // the button would otherwise keep showing the state the player last chose.
+            if (simulationSystem != null && pauseHudView != null)
+            {
+                pauseHudView.RenderFastForward(simulationSystem.IsFastForward);
+            }
+
             towerNetworkHudPresenter.Refresh();
             waveHudPresenter.Refresh();
             skipCheatPresenter?.Refresh();
@@ -179,9 +190,11 @@ namespace TowerDefense3D.GameFlow
             enemySystem.EnemyLeaked -= MarkDirty;
             goldSystem.BalanceChanged -= HandleGoldChanged;
             healthSystem.HealthChanged -= HandleHealthChanged;
+            towerNetworkSystem.PurchaseRefusedForGold -= HandlePurchaseRefusedForGold;
             if (simulationSystem != null && pauseHudView != null)
             {
                 pauseHudView.PauseToggleRequested -= HandlePauseToggleRequested;
+                pauseHudView.FastForwardToggleRequested -= HandleFastForwardToggleRequested;
                 tutorialOverlay.BlackOverlayVisibilityChanged -= HandleTutorialBlackOverlayVisibilityChanged;
                 pauseHudView.Shutdown();
             }
@@ -212,6 +225,16 @@ namespace TowerDefense3D.GameFlow
         private void HandleGoldChanged(int balance)
         {
             statusHudView.RenderGold(balance);
+
+            // The build cards dim by what the balance can reach, so the tower HUD has to be
+            // rebuilt when it moves. Without this the dim only caught up on the next unrelated
+            // change - typically not until a tower was placed or a wave ended.
+            MarkDirty();
+        }
+
+        private void HandlePurchaseRefusedForGold()
+        {
+            statusHudView.PlayPurchaseRefusedFeedback();
         }
 
         private void HandleHealthChanged(int currentHealth, int maximumHealth)
@@ -228,6 +251,18 @@ namespace TowerDefense3D.GameFlow
 
             soundPlayer?.Play(SoundId.PausePressed);
             SetPaused(!simulationSystem.IsPaused);
+        }
+
+        private void HandleFastForwardToggleRequested()
+        {
+            if (simulationSystem == null || pauseHudView == null)
+            {
+                return;
+            }
+
+            soundPlayer?.Play(SoundId.ButtonPressed);
+            simulationSystem.SetFastForward(!simulationSystem.IsFastForward);
+            pauseHudView.RenderFastForward(simulationSystem.IsFastForward);
         }
 
         private void HandleTutorialBlackOverlayVisibilityChanged(bool visible)

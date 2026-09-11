@@ -26,6 +26,12 @@ namespace TowerDefense3D.Enemies
         /// </remarks>
         void Rekey(long oldEnemyId, long newEnemyId);
         void ShowReaction(long enemyId, ElementReactionEvent reaction);
+        /// <summary>
+        /// Sets the animation playback rate for every enemy on the board, and for the ones spawned
+        /// after this call.
+        /// </summary>
+        void SetAnimationSpeed(float speed);
+
         void Render(IReadOnlyList<EnemySnapshot> enemies, float interpolationAlpha);
         void ReleaseAll();
     }

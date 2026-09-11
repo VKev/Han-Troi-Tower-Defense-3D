@@ -524,6 +524,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public int LastGold { get; private set; }
             public int LastHealth { get; private set; }
             public int LastMaximumHealth { get; private set; }
+            public int PurchaseRefusedCount { get; private set; }
 
             public void RenderGold(int gold)
             {
@@ -538,6 +539,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             public void SetHealthVisible(bool visible)
             {
+            }
+
+            public void PlayPurchaseRefusedFeedback()
+            {
+                PurchaseRefusedCount++;
             }
         }
 
@@ -568,6 +574,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions)
             {
                 LastLockedDefinitions = lockedDefinitions;
+            }
+
+            public IReadOnlyList<TowerCombatDefinition> LastUnaffordableDefinitions { get; private set; }
+
+            public void ApplyTowerAffordability(
+                IReadOnlyList<TowerCombatDefinition> unaffordableDefinitions)
+            {
+                LastUnaffordableDefinitions = unaffordableDefinitions;
             }
 
             public void SetTowerActionsAvailable(bool available)

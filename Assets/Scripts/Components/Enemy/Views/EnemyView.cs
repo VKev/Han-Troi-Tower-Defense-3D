@@ -65,6 +65,23 @@ namespace TowerDefense3D.Enemies
             spawnLocalScale = transform.localScale;
         }
 
+        /// <summary>
+        /// Plays this enemy's animation at the simulation's own rate.
+        /// </summary>
+        /// <remarks>
+        /// The animator runs on Unity's clock, not on the fixed-step one the simulation advances,
+        /// so double speed would otherwise leave an enemy sliding along the road at twice the pace
+        /// while still walking at one.
+        /// </remarks>
+        public void SetAnimationSpeed(float speed)
+        {
+            Animator targetAnimator = animator != null ? animator : GetComponent<Animator>();
+            if (targetAnimator != null)
+            {
+                targetAnimator.speed = speed;
+            }
+        }
+
         public void Configure(
             Camera worldCamera,
             Vfx.GlobalEffectEmitterView reactionEffectEmitter,

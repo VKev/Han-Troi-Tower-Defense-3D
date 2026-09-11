@@ -58,6 +58,25 @@ namespace TowerDefense3D.Towers
         /// </remarks>
         public event Action TowerSold;
 
+        /// <summary>
+        /// Raised when a build or upgrade is turned away purely for want of gold.
+        /// </summary>
+        /// <remarks>
+        /// Only that reason. A wave in progress, a full board or a maxed tower are refusals too,
+        /// but pointing at the purse for those would be a lie, and the HUD reacts by drawing
+        /// attention to the balance.
+        /// </remarks>
+        public event Action PurchaseRefusedForGold;
+
+        /// <summary>
+        /// Whether a tutorial beat is currently paying for placements.
+        /// </summary>
+        /// <remarks>
+        /// The HUD needs it to keep from dimming a card as unaffordable during a step that is
+        /// handing the tower over for nothing.
+        /// </remarks>
+        public bool IsPlacementFree => tutorialPlacementIsFree;
+
         public TowerNetworkManager Manager => manager;
         public ITowerRuntimeView SelectedTower => selectedTower;
         public string LastFeedback => lastFeedback;
@@ -301,6 +320,7 @@ namespace TowerDefense3D.Towers
 
             if (!tutorialPlacementIsFree && !goldSystem.CanAfford(GetBuildCost(definition)))
             {
+                PurchaseRefusedForGold?.Invoke();
                 ReportFeedback("Không đủ vàng.");
                 return false;
             }
@@ -349,6 +369,13 @@ namespace TowerDefense3D.Towers
             {
                 placementSystem.CancelPlacementDrag(pointerId);
                 placementCombatDefinition = null;
+                if (definition != null)
+                {
+                    // Guarded on the definition: the other way into this branch is a drag that was
+                    // never carrying a tower, which is not a refused purchase.
+                    PurchaseRefusedForGold?.Invoke();
+                }
+
                 ReportFeedback("Không đủ vàng.");
                 return false;
             }
@@ -655,6 +682,7 @@ namespace TowerDefense3D.Towers
 
             if (!affordable)
             {
+                PurchaseRefusedForGold?.Invoke();
                 error = $"Nâng cấp {GetDisplayName(selectedTower)} cần {cost} vàng.";
                 ReportFeedback(error);
                 return false;

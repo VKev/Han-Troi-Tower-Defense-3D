@@ -33,8 +33,9 @@ namespace TowerDefense3D.Enemies
             isStarted = true;
         }
 
-        public void LateTick(float interpolationAlpha)
+        public void LateTick(float interpolationAlpha, float animationSpeed = 1f)
         {
+            viewPool.SetAnimationSpeed(animationSpeed);
             enemySystem.CopySnapshotsTo(snapshots);
             viewPool.Render(snapshots, interpolationAlpha);
         }

@@ -167,6 +167,20 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        public void ApplyTowerAffordability(IReadOnlyList<TowerCombatDefinition> unaffordableDefinitions)
+        {
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView dragButton = towerDragButtons[index];
+                if (dragButton == null)
+                {
+                    continue;
+                }
+
+                dragButton.SetAffordable(!Contains(unaffordableDefinitions, dragButton.Definition));
+            }
+        }
+
         private static bool Contains(
             IReadOnlyList<TowerCombatDefinition> definitions,
             TowerCombatDefinition definition)
@@ -501,7 +515,23 @@ namespace TowerDefense3D.GameFlow
             return towerButtons != null ? towerButtons.transform : transform;
         }
 
+        /// <summary>
+        /// Shows the Generator card on its own, ready to be dragged onto the board.
+        /// </summary>
+        /// <remarks>
+        /// States the unlocked flag rather than inheriting it. This used to leave
+        /// <see cref="tutorialGeneratorLocked"/> alone, which was only ever correct because no
+        /// mode that locks the card ran before this one. The moment a beat that does - the enemy
+        /// preview at wave 2 - was put ahead of it, the lock leaked through and the card the
+        /// tutorial was pointing at could not be picked up.
+        /// </remarks>
         public void SetTutorialGeneratorOnly()
+        {
+            tutorialGeneratorLocked = false;
+            ApplyTutorialGeneratorLayout();
+        }
+
+        private void ApplyTutorialGeneratorLayout()
         {
             tutorialControlsVisible = false;
             buildBar ??= transform.Find("Build Bar")?.gameObject;
@@ -567,10 +597,14 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        /// <summary>
+        /// The same single-card layout, with the card no longer pickable: the generator it was
+        /// asking for is already standing on the board.
+        /// </summary>
         public void SetTutorialGeneratorPlaced()
         {
             tutorialGeneratorLocked = true;
-            SetTutorialGeneratorOnly();
+            ApplyTutorialGeneratorLayout();
         }
 
         public void SetTutorialSinkPlacement()
