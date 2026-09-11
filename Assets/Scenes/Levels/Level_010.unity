@@ -3563,6 +3563,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Enemies.EnemyViewPool
   defaultPoolCapacity: 16
   maximumPoolSize: 128
+  reactionEffectEmitter: {fileID: 443337446}
 --- !u!1001 &253056613
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4344,6 +4345,50 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 303628807}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &304505671
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 304505673}
+  - component: {fileID: 304505672}
+  m_Layer: 0
+  m_Name: Tower Hit Effect Emitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &304505672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304505671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0077a7a9094537149ae090c5a7dbc52b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Vfx.GlobalEffectEmitterView
+--- !u!4 &304505673
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304505671}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &305475362
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4429,6 +4474,79 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e9ec5d8d2cd94e74ab38af39c46125f8, type: 3}
+--- !u!1001 &319280734
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2091203820}
+    m_Modifications:
+    - target: {fileID: 1358139460169368894, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_Name
+      value: Link Preview
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+--- !u!4 &319280735 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6376027631015423263, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+  m_PrefabInstance: {fileID: 319280734}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &319280736 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3866261310728010899, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+  m_PrefabInstance: {fileID: 319280734}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e98f112a06bde6479f46e1276bc1bf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerLinkLineView
 --- !u!1 &319660008
 GameObject:
   m_ObjectHideFlags: 0
@@ -6477,6 +6595,50 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6731087487509297192, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
   m_PrefabInstance: {fileID: 440229431}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &443337445
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 443337447}
+  - component: {fileID: 443337446}
+  m_Layer: 0
+  m_Name: Enemy Reaction Effect Emitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &443337446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443337445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0077a7a9094537149ae090c5a7dbc52b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Vfx.GlobalEffectEmitterView
+--- !u!4 &443337447
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 443337445}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &463954335 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3956043010580749071, guid: 35fddd5776055f0428502b83452eae34, type: 3}
@@ -10065,75 +10227,75 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3746147505857208394, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3746147505857208394, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3746147505857208394, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 354.44443
       objectReference: {fileID: 0}
     - target: {fileID: 3746147505857208394, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 190
       objectReference: {fileID: 0}
     - target: {fileID: 3746147505857208394, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 753.71124
       objectReference: {fileID: 0}
     - target: {fileID: 3746147505857208394, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -95
       objectReference: {fileID: 0}
     - target: {fileID: 5109355266551367829, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5109355266551367829, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5109355266551367829, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 142.6393
       objectReference: {fileID: 0}
     - target: {fileID: 5109355266551367829, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 190
       objectReference: {fileID: 0}
     - target: {fileID: 5109355266551367829, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 347.85373
       objectReference: {fileID: 0}
     - target: {fileID: 5109355266551367829, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -95
       objectReference: {fileID: 0}
     - target: {fileID: 5899757526959759134, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5899757526959759134, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5899757526959759134, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 137.31563
       objectReference: {fileID: 0}
     - target: {fileID: 5899757526959759134, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 190
       objectReference: {fileID: 0}
     - target: {fileID: 5899757526959759134, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 497.8312
       objectReference: {fileID: 0}
     - target: {fileID: 5899757526959759134, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -95
       objectReference: {fileID: 0}
     - target: {fileID: 5937587109827386728, guid: 7465a4b46eb174648934245f5006b1f3, type: 3}
       propertyPath: m_AnchorMax.y
@@ -11915,7 +12077,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 959174013}
+  - {fileID: 2091203820}
   m_Father: {fileID: 1331288970}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &933105063
@@ -11957,6 +12121,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerProjectilePoolView
   defaultPoolCapacity: 16
   maximumPoolSize: 128
+  presentationRoot: {fileID: 959174013}
+  hitEffectEmitter: {fileID: 304505672}
 --- !u!114 &933105066
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11971,6 +12137,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerLinkView
   linkWidth: 0.1
   previewWidth: 0.08
+  presentationRoot: {fileID: 2091203820}
+  linePrefab: {fileID: 3866261310728010899, guid: 1224df77a6dfe6e45a432b19debc44ac, type: 3}
+  previewLine: {fileID: 319280736}
+  selectionRing: {fileID: 1762329476}
 --- !u!1 &938266557
 GameObject:
   m_ObjectHideFlags: 0
@@ -12305,6 +12475,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 951211239}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &959174012
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 959174013}
+  m_Layer: 0
+  m_Name: Tower Projectile Visuals
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &959174013
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 959174012}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 933105056}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &967243626
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15156,6 +15357,8 @@ MonoBehaviour:
   generatedSignature: 8fda8ff6e28d311e5d4d9fd34484eb16eda26ee3525d567320f655c01e7085fa
   generatedGridPlaceableRoot: {fileID: 647749267}
   generatedGridPlaceableSignature: 6b2843fbf9c96a07ae6bf676c92847c99a2b1248a949cbc0fb179f0fa33db065
+  generatedAuthoredTowerRoot: {fileID: 0}
+  generatedAuthoredTowerSignature: 
 --- !u!1001 &1251350531
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20976,6 +21179,79 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3436904171721644269, guid: 02e55b51658898f41b3dd3ca7574b64b, type: 3}
   m_PrefabInstance: {fileID: 1758413657}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1762329474
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2091203820}
+    m_Modifications:
+    - target: {fileID: 1357764354640157317, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_Name
+      value: Tower Selection
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: acc145692d406344da48b749ee6faa70, type: 3}
+--- !u!4 &1762329475 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8334505806926635386, guid: acc145692d406344da48b749ee6faa70, type: 3}
+  m_PrefabInstance: {fileID: 1762329474}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1762329476 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4596345978958504606, guid: acc145692d406344da48b749ee6faa70, type: 3}
+  m_PrefabInstance: {fileID: 1762329474}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42e9e991713115c4c91cfa329aef0816, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Towers.TowerSelectionRingView
 --- !u!1001 &1778078872
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23301,6 +23577,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2091203819
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2091203820}
+  m_Layer: 0
+  m_Name: Tower Link Visuals
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2091203820
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2091203819}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 319280735}
+  - {fileID: 1762329475}
+  m_Father: {fileID: 933105056}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2091418481
 GameObject:
   m_ObjectHideFlags: 0
@@ -24822,3 +25131,5 @@ SceneRoots:
   - {fileID: 834969470}
   - {fileID: 491963728}
   - {fileID: 2086140115}
+  - {fileID: 443337447}
+  - {fileID: 304505673}
