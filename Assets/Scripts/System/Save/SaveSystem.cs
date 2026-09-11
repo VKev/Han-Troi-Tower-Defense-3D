@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Enemies;
 using TowerDefense3D.Tutorials;
 
 namespace TowerDefense3D.GameFlow
@@ -11,15 +12,26 @@ namespace TowerDefense3D.GameFlow
         private readonly ISaveRepository repository;
         private readonly string applicationVersion;
         private readonly TutorialProgress tutorialProgress;
+        private readonly EnemyDiscoveryProgress enemyDiscoveryProgress;
 
         public SaveSystem(
             ISaveRepository repository,
             string applicationVersion,
-            TutorialProgress tutorialProgress = null)
+            TutorialProgress tutorialProgress = null,
+            EnemyDiscoveryProgress enemyDiscoveryProgress = null)
         {
             this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
             this.applicationVersion = applicationVersion;
             this.tutorialProgress = tutorialProgress;
+            this.enemyDiscoveryProgress = enemyDiscoveryProgress;
+            if (tutorialProgress != null)
+            {
+                tutorialProgress.PermanentProgressChanged += SaveTutorialProgress;
+            }
+            if (enemyDiscoveryProgress != null)
+            {
+                enemyDiscoveryProgress.Changed += SaveTutorialProgress;
+            }
         }
 
         public UnlockProgress Progress { get; private set; }
@@ -36,6 +48,7 @@ namespace TowerDefense3D.GameFlow
                     loadResult.Data.ClearedLevelNumbers,
                     loadResult.Data.LevelStars);
                 tutorialProgress?.Restore(loadResult.Data.Tutorials);
+                enemyDiscoveryProgress?.Restore(loadResult.Data.DiscoveredEnemyIds);
                 LastWriteResult = new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
                 return loadResult;
             }
@@ -44,6 +57,7 @@ namespace TowerDefense3D.GameFlow
             {
                 Progress = new UnlockProgress();
                 tutorialProgress?.Restore(null);
+                enemyDiscoveryProgress?.Restore(null);
                 LastWriteResult = SaveCurrent();
                 return loadResult;
             }
@@ -94,8 +108,17 @@ namespace TowerDefense3D.GameFlow
 
             Progress = new UnlockProgress();
             tutorialProgress?.Restore(null);
+            enemyDiscoveryProgress?.Restore(null);
             LastWriteResult = SaveCurrent();
             return LastWriteResult;
+        }
+
+        private void SaveTutorialProgress()
+        {
+            if (Progress != null)
+            {
+                SaveCurrent();
+            }
         }
 
         private SaveWriteResult SaveCurrent()
@@ -105,6 +128,7 @@ namespace TowerDefense3D.GameFlow
                 Progress.CreateSortedClearedSnapshot(),
                 Progress.CreateSortedStarSnapshot(),
                 tutorialProgress?.CreateSnapshot() ?? Array.Empty<TutorialSaveRecord>(),
+                enemyDiscoveryProgress?.CreateSnapshot() ?? Array.Empty<string>(),
                 DateTime.UtcNow.ToString("O"),
                 applicationVersion);
             LastWriteResult = repository.Save(snapshot);

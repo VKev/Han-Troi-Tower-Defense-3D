@@ -18,6 +18,7 @@ namespace TowerDefense3D.GameFlow
         private bool isStarted;
 
         public GameFlowState State => stateMachine.CurrentState;
+        public event Action<GameFlowState> StateChanged;
 
         public GameFlowSystem(
             ApplicationBootFlow applicationBootFlow,
@@ -78,6 +79,7 @@ namespace TowerDefense3D.GameFlow
         internal void SetState(GameFlowState state)
         {
             stateMachine.TransitionTo(state);
+            StateChanged?.Invoke(State);
         }
 
         internal void ShowLevelMenu()

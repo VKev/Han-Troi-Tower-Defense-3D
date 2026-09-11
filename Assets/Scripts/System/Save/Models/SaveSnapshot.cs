@@ -24,6 +24,7 @@ namespace TowerDefense3D.GameFlow
         // as null and reports no score for any level, which is exactly what an old save means.
         [SerializeField] private LevelStarRecord[] levelStars = Array.Empty<LevelStarRecord>();
         [SerializeField] private TutorialSaveRecord[] tutorials = Array.Empty<TutorialSaveRecord>();
+        [SerializeField] private string[] discoveredEnemyIds = Array.Empty<string>();
 
         public int SchemaVersion => schemaVersion;
         public string SlotId => slotId;
@@ -33,6 +34,7 @@ namespace TowerDefense3D.GameFlow
         public int[] ClearedLevelNumbers => clearedLevelNumbers ?? Array.Empty<int>();
         public LevelStarRecord[] LevelStars => levelStars ?? Array.Empty<LevelStarRecord>();
         public TutorialSaveRecord[] Tutorials => tutorials ?? Array.Empty<TutorialSaveRecord>();
+        public string[] DiscoveredEnemyIds => discoveredEnemyIds ?? Array.Empty<string>();
 
         public static SaveSnapshot Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
         {
@@ -78,6 +80,25 @@ namespace TowerDefense3D.GameFlow
             string savedAtUtc,
             string appVersion)
         {
+            return Create(
+                unlockedLevelNumbers,
+                clearedLevelNumbers,
+                levelStars,
+                tutorials,
+                Array.Empty<string>(),
+                savedAtUtc,
+                appVersion);
+        }
+
+        public static SaveSnapshot Create(
+            int[] unlockedLevelNumbers,
+            int[] clearedLevelNumbers,
+            LevelStarRecord[] levelStars,
+            TutorialSaveRecord[] tutorials,
+            string[] discoveredEnemyIds,
+            string savedAtUtc,
+            string appVersion)
+        {
             return new SaveSnapshot
             {
                 schemaVersion = CurrentSchemaVersion,
@@ -87,7 +108,8 @@ namespace TowerDefense3D.GameFlow
                 unlockedLevelNumbers = unlockedLevelNumbers ?? Array.Empty<int>(),
                 clearedLevelNumbers = clearedLevelNumbers ?? Array.Empty<int>(),
                 levelStars = levelStars ?? Array.Empty<LevelStarRecord>(),
-                tutorials = tutorials ?? Array.Empty<TutorialSaveRecord>()
+                tutorials = tutorials ?? Array.Empty<TutorialSaveRecord>(),
+                discoveredEnemyIds = discoveredEnemyIds ?? Array.Empty<string>()
             };
         }
 

@@ -1,3 +1,4 @@
+using TowerDefense3D.Audio;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Mobile;
 using TowerDefense3D.Tutorials;
@@ -13,6 +14,7 @@ namespace TowerDefense3D.GameFlow
         private readonly SafeAreaSystem safeAreaSystem;
         private readonly ApplicationUISystem applicationUISystem;
         private readonly GameFlowSystem gameFlowSystem;
+        private readonly LobbyMusicSystem lobbyMusicSystem;
         private readonly TutorialSystem tutorialSystem;
         private readonly ITutorialOverlay tutorialOverlay;
         private readonly ITutorialInputGate tutorialInputGate;
@@ -22,6 +24,7 @@ namespace TowerDefense3D.GameFlow
             SafeAreaSystem safeAreaSystem,
             ApplicationUISystem applicationUISystem,
             GameFlowSystem gameFlowSystem,
+            LobbyMusicSystem lobbyMusicSystem,
             TutorialSystem tutorialSystem,
             ITutorialOverlay tutorialOverlay,
             ITutorialInputGate tutorialInputGate)
@@ -30,6 +33,7 @@ namespace TowerDefense3D.GameFlow
             this.safeAreaSystem = safeAreaSystem;
             this.applicationUISystem = applicationUISystem;
             this.gameFlowSystem = gameFlowSystem;
+            this.lobbyMusicSystem = lobbyMusicSystem;
             this.tutorialSystem = tutorialSystem;
             this.tutorialOverlay = tutorialOverlay;
             this.tutorialInputGate = tutorialInputGate;
@@ -47,6 +51,7 @@ namespace TowerDefense3D.GameFlow
                 gameFlowSystem,
                 null,
                 null,
+                null,
                 null)
         {
         }
@@ -57,12 +62,14 @@ namespace TowerDefense3D.GameFlow
             safeAreaSystem.Start();
             applicationUISystem.Start();
             tutorialSystem?.Bind(tutorialOverlay, tutorialInputGate);
+            lobbyMusicSystem?.Start();
             try
             {
                 gameFlowSystem.Start();
             }
             catch
             {
+                lobbyMusicSystem?.Dispose();
                 applicationUISystem.Dispose();
                 throw;
             }
@@ -77,6 +84,7 @@ namespace TowerDefense3D.GameFlow
         public void Shutdown()
         {
             gameFlowSystem.Dispose();
+            lobbyMusicSystem?.Dispose();
             applicationUISystem.Dispose();
         }
     }

@@ -17,6 +17,7 @@ namespace TowerDefense3D.Tutorials
         private float autoCompleteRemaining;
         private float showDelayRemaining;
         private bool stepIsShown;
+        private bool stepModeApplied;
         private bool isPaused;
 
         public TutorialSystem(TutorialProgress progress)
@@ -50,6 +51,11 @@ namespace TowerDefense3D.Tutorials
 
         public void UnbindLevel()
         {
+            if (context?.LevelNumber == 1 && !progress.HasCompletedLevelOneTutorial)
+            {
+                progress.ResetLevelOneSession();
+            }
+
             Stop();
             context = null;
         }
@@ -69,6 +75,16 @@ namespace TowerDefense3D.Tutorials
 
             if (!stepIsShown)
             {
+                if (!stepModeApplied && !ActivateQueuedStep())
+                {
+                    return;
+                }
+
+                if (stepIsShown)
+                {
+                    return;
+                }
+
                 showDelayRemaining = Math.Max(0f, showDelayRemaining - deltaTime);
                 if (showDelayRemaining <= 0f)
                 {
@@ -112,8 +128,16 @@ namespace TowerDefense3D.Tutorials
             stepIndex++;
             if (stepIndex >= steps.Count)
             {
-                progress.MarkCompleted(activeTutorial.Id);
-                Stop();
+                if (activeTutorial.Id == "fire_tower_v1")
+                {
+                    progress.CompleteLevelOneTutorial();
+                }
+                else
+                {
+                    progress.MarkCompleted(activeTutorial.Id);
+                }
+
+                Stop(step.CompletionGameplayUiMode);
                 return;
             }
 
@@ -126,7 +150,7 @@ namespace TowerDefense3D.Tutorials
             overlay?.SetPaused(paused);
         }
 
-        public void Stop()
+        public void Stop(TutorialGameplayUiMode completionGameplayUiMode = TutorialGameplayUiMode.Full)
         {
             activeTutorial = null;
             steps = null;
@@ -135,9 +159,10 @@ namespace TowerDefense3D.Tutorials
             autoCompleteRemaining = 0f;
             showDelayRemaining = 0f;
             stepIsShown = false;
+            stepModeApplied = false;
             overlay?.Hide();
             inputGate?.Clear();
-            context?.SetGameplayUiMode(TutorialGameplayUiMode.Full);
+            context?.SetGameplayUiMode(completionGameplayUiMode);
         }
 
         private void TryStartNext()
@@ -177,14 +202,41 @@ namespace TowerDefense3D.Tutorials
 
         private void QueueCurrentStep()
         {
+            stepIsShown = false;
+            stepModeApplied = false;
+            showDelayRemaining = 0f;
+            if (!ActivateQueuedStep())
+            {
+                // A deferred step (for example, the Wave 2 prompt while Wave 1 is running) must
+                // release the previous spotlight immediately. Otherwise its hand and black mask
+                // remain visible while the system waits for the activation condition.
+                overlay?.Hide();
+                inputGate?.Clear();
+            }
+            else if (showDelayRemaining > 0f)
+            {
+                overlay?.Hide();
+                inputGate?.Clear();
+            }
+        }
+
+        private bool ActivateQueuedStep()
+        {
             TutorialStep step = steps[stepIndex];
+            if (!step.CanShow(context))
+            {
+                return false;
+            }
+
             context.SetGameplayUiMode(step.GameplayUiMode);
             showDelayRemaining = step.ShowDelaySeconds;
-            stepIsShown = false;
+            stepModeApplied = true;
             if (showDelayRemaining <= 0f)
             {
                 PresentCurrentStep();
             }
+
+            return true;
         }
     }
 }

@@ -14,7 +14,11 @@ namespace TowerDefense3D.Tutorials
             float autoCompleteSeconds = -1f,
             float showDelaySeconds = 0f,
             TutorialGameplayUiMode gameplayUiMode = TutorialGameplayUiMode.Full,
-            bool requireInstructionComplete = false)
+            bool requireInstructionComplete = false,
+            Func<TutorialContext, bool> canShow = null,
+            string instructionTargetId = null,
+            TutorialGameplayUiMode completionGameplayUiMode = TutorialGameplayUiMode.Full,
+            bool keepInstructionVisible = false)
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Instruction = instruction ?? string.Empty;
@@ -26,6 +30,10 @@ namespace TowerDefense3D.Tutorials
             ShowDelaySeconds = Math.Max(0f, showDelaySeconds);
             GameplayUiMode = gameplayUiMode;
             RequireInstructionComplete = requireInstructionComplete;
+            CanShow = canShow ?? (_ => true);
+            InstructionTargetId = instructionTargetId ?? string.Empty;
+            CompletionGameplayUiMode = completionGameplayUiMode;
+            KeepInstructionVisible = keepInstructionVisible;
         }
 
         public string Id { get; }
@@ -37,6 +45,10 @@ namespace TowerDefense3D.Tutorials
         public float ShowDelaySeconds { get; }
         public TutorialGameplayUiMode GameplayUiMode { get; }
         public bool RequireInstructionComplete { get; }
+        public Func<TutorialContext, bool> CanShow { get; }
+        public string InstructionTargetId { get; }
+        public TutorialGameplayUiMode CompletionGameplayUiMode { get; }
+        public bool KeepInstructionVisible { get; }
         public Func<TutorialContext, bool> Completed { get; }
     }
 }

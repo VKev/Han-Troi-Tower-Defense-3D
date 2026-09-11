@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using TowerDefense3D.Audio;
 using TowerDefense3D.Tutorials;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,10 +36,21 @@ namespace TowerDefense3D.GameFlow
         private Tween overlayFade;
         private Tween instructionTween;
         private string instructionValue;
+        private TutorialStep pendingHandStep;
+        private Rect[] pendingHandAreas;
         private TutorialSoftMaskRaycastFilter raycastFilter;
         private Canvas cameraCanvas;
+        private ISoundPlayer soundPlayer;
+
+        public event Action<bool> BlackOverlayVisibilityChanged;
 
         public bool IsInstructionComplete { get; private set; }
+        public bool IsBlackOverlayVisible { get; private set; }
+
+        public void Initialize(ISoundPlayer player)
+        {
+            soundPlayer = player;
+        }
 
         private void Awake()
         {
@@ -51,7 +63,11 @@ namespace TowerDefense3D.GameFlow
         {
             EnsureParts();
             Rect[] areas = GetFocusRects(step.TargetId, context);
-            for (int index = 0; index < areas.Length; index++) areas[index] = Expand(areas[index], focusPadding);
+            float padding = step.Id == "wave_two_warning" || step.Id == "place_generator"
+                || step.Id == "fire_tower_intro"
+                ? 12f
+                : focusPadding;
+            for (int index = 0; index < areas.Length; index++) areas[index] = Expand(areas[index], padding);
             if (step.Id == "protect_frog")
             {
                 for (int index = 0; index < areas.Length; index++)
@@ -60,9 +76,28 @@ namespace TowerDefense3D.GameFlow
                 }
             }
             float glowAlpha = step.Id == "link_generator_to_nexus" ? 0.35f : 0f;
-            ApplySpotlights(areas, glowAlpha);
-            Rect instructionArea = step.Id == "highlight_next_enemy" ? areas[areas.Length - 1] : GetCombinedRect(areas);
-            ApplyInstruction(instructionArea, step);
+            bool isPlacementDrag = step.ActionId == "place_generator"
+                || step.ActionId == "place_sink"
+                || step.ActionId == "place_water"
+                || step.ActionId == "place_fire";
+            if (string.IsNullOrWhiteSpace(step.TargetId))
+            {
+                ClearSpotlights();
+                if (step.Id == "link_new_generator_to_nexus"
+                    || step.Id == "water_tower_hint")
+                {
+                    dimmer.color = Color.clear;
+                }
+            }
+            else
+            {
+                ApplySpotlights(areas, glowAlpha, !isPlacementDrag);
+            }
+            if (!step.KeepInstructionVisible)
+            {
+                Rect instructionArea = GetInstructionArea(step, context, areas);
+                ApplyInstruction(instructionArea, step);
+            }
             bool wasHidden = canvasGroup.alpha <= 0.01f;
             overlayFade?.Kill();
             if (wasHidden)
@@ -82,14 +117,34 @@ namespace TowerDefense3D.GameFlow
             }
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
+            SetBlackOverlayVisible(dimmer.color.a > 0.01f);
             handTween?.Kill();
-            bool hideHand = step.Id == "highlight_next_enemy" || step.Id == "protect_frog";
+            handTween = null;
+            pendingHandStep = null;
+            pendingHandAreas = null;
+            bool hideHand = step.Id == "highlight_next_enemy"
+                || step.Id == "protect_frog"
+                || step.Id == "read_enemy_description"
+                || step.Id == "link_new_generator_to_nexus"
+                || step.Id == "water_tower_hint"
+                || step.Id == "burn_status_focus"
+                || step.Id == "burn_status_hold";
             if (hand != null)
             {
-                hand.gameObject.SetActive(!hideHand);
+                hand.gameObject.SetActive(false);
             }
 
-            handTween = hideHand || hand == null ? null : hand.Play(step, areas);
+            if (!hideHand && hand != null)
+            {
+                pendingHandStep = step;
+                pendingHandAreas = areas;
+                if (IsInstructionComplete
+                    || step.Id == "fire_tower_intro"
+                    || step.Id == "enemy_strength_warning")
+                {
+                    PlayPendingHand();
+                }
+            }
         }
 
         public void Hide()
@@ -98,7 +153,11 @@ namespace TowerDefense3D.GameFlow
             overlayFade?.Kill();
             instructionTween?.Kill();
             handTween = null;
+            pendingHandStep = null;
+            pendingHandAreas = null;
             IsInstructionComplete = true;
+            StopTypingSound();
+            SetBlackOverlayVisible(false);
             if (hand != null) hand.gameObject.SetActive(false);
             if (canvasGroup == null) return;
             canvasGroup.alpha = 0f;
@@ -115,6 +174,8 @@ namespace TowerDefense3D.GameFlow
             color.a = 1f;
             instruction.color = color;
             IsInstructionComplete = true;
+            StopTypingSound();
+            PlayPendingHand();
         }
 
         public void SetPaused(bool paused)
@@ -123,7 +184,14 @@ namespace TowerDefense3D.GameFlow
             if (paused) handTween.Pause(); else handTween.Play();
         }
 
-        private void ApplySpotlights(Rect[] areas, float glowAlpha)
+        private void SetBlackOverlayVisible(bool visible)
+        {
+            if (IsBlackOverlayVisible == visible) return;
+            IsBlackOverlayVisible = visible;
+            BlackOverlayVisibilityChanged?.Invoke(visible);
+        }
+
+        private void ApplySpotlights(Rect[] areas, float glowAlpha, bool blockOutsideFocus)
         {
             Rect first = areas[0];
             Rect second = areas.Length > 1 ? areas[1] : first;
@@ -137,7 +205,15 @@ namespace TowerDefense3D.GameFlow
             dimmerMaterial.SetFloat(GlowWidthId, 0.012f);
             dimmerMaterial.SetFloat(GlowEnabledId, glowAlpha > 0f ? 1f : 0f);
             dimmer.color = new Color(0f, 0f, 0f, darkness);
-            raycastFilter.SetFocus(areas);
+            raycastFilter.SetFocus(areas, blockOutsideFocus);
+        }
+
+        private void ClearSpotlights()
+        {
+            dimmerMaterial.SetFloat(FocusCountId, 0f);
+            dimmerMaterial.SetFloat(GlowEnabledId, 0f);
+            dimmer.color = new Color(0f, 0f, 0f, darkness);
+            raycastFilter.SetFocus(Array.Empty<Rect>(), false);
         }
 
         private static Vector2 ToNormalizedCenter(Rect area) => new Vector2(
@@ -157,26 +233,43 @@ namespace TowerDefense3D.GameFlow
 
             RectTransform label = instruction.rectTransform;
             bool isFrogInstruction = step.Id == "protect_frog";
-            bool placeBesideTarget = step.Id == "highlight_next_enemy";
+            bool placeBesideTarget = step.Id == "highlight_next_enemy"
+                || step.Id == "inspect_next_enemy";
+            bool isMagicResistanceIntroduction = step.Id == "inspect_magic_resistant";
+            bool isWaveTwoWarning = step.Id == "wave_two_warning";
+            bool isEnemyStrengthWarning = step.Id == "enemy_strength_warning"
+                || step.Id == "water_tower_hint";
+            bool isTutorialWarning = isWaveTwoWarning
+                || isEnemyStrengthWarning
+                || step.Id == "highlight_generator_card"
+                || step.Id == "fire_tower_intro";
+            Rect safe = Screen.safeArea;
+            float safeTextWidth = Mathf.Max(1f, safe.width - 48f);
             label.sizeDelta = isFrogInstruction
                 ? new Vector2(Mathf.Min(480f, Screen.width * 0.42f), 120f)
-                : new Vector2(Mathf.Min(620f, Screen.width * 0.72f), 84f);
-            instruction.fontStyle = placeBesideTarget || isFrogInstruction ? FontStyle.Bold : FontStyle.Normal;
-            instruction.alignment = placeBesideTarget
+                : new Vector2(Mathf.Min(Mathf.Min(620f, Screen.width * 0.72f), safeTextWidth), 84f);
+            instruction.fontStyle = FontStyle.Bold;
+            instruction.alignment = placeBesideTarget || isMagicResistanceIntroduction
                 ? TextAnchor.MiddleLeft
                 : TextAnchor.MiddleCenter;
-            instruction.color = placeBesideTarget || isFrogInstruction
-                ? new Color(1f, 0.9f, 0.62f, 1f)
-                : Color.white;
+            instruction.color = new Color(1f, 0.9f, 0.62f, 1f);
             instruction.horizontalOverflow = HorizontalWrapMode.Wrap;
             instruction.verticalOverflow = VerticalWrapMode.Overflow;
 
-            Rect safe = Screen.safeArea;
             float halfWidth = label.sizeDelta.x * 0.5f;
             float halfHeight = label.sizeDelta.y * 0.5f;
             float x;
             float y;
-            if (placeBesideTarget)
+            if (isMagicResistanceIntroduction)
+            {
+                label.pivot = new Vector2(0f, 0.5f);
+                x = safe.xMin + 24f;
+                float below = area.yMin - halfHeight - 20f;
+                float above = area.yMax + halfHeight + 20f;
+                y = below >= safe.yMin + halfHeight ? below : above;
+                y = Mathf.Clamp(y, safe.yMin + halfHeight, safe.yMax - halfHeight);
+            }
+            else if (placeBesideTarget)
             {
                 float gap = 32f;
                 label.pivot = new Vector2(0f, 0.5f);
@@ -201,6 +294,24 @@ namespace TowerDefense3D.GameFlow
                 y = below >= safe.yMin + halfHeight ? below : above;
                 y = Mathf.Clamp(y, safe.yMin + halfHeight, safe.yMax - halfHeight);
             }
+            else if (isWaveTwoWarning)
+            {
+                label.pivot = new Vector2(0.5f, 0.5f);
+                x = Mathf.Clamp(area.center.x, safe.xMin + halfWidth, safe.xMax - halfWidth);
+                y = Mathf.Clamp(
+                    area.yMax + halfHeight + 28f,
+                    safe.yMin + halfHeight,
+                    safe.yMax - halfHeight);
+            }
+            else if (isEnemyStrengthWarning)
+            {
+                label.pivot = new Vector2(0.5f, 0.5f);
+                x = Mathf.Clamp(area.center.x, safe.xMin + halfWidth, safe.xMax - halfWidth);
+                y = Mathf.Clamp(
+                    area.yMax + halfHeight + 28f,
+                    safe.yMin + halfHeight,
+                    safe.yMax - halfHeight);
+            }
             else
             {
                 label.pivot = new Vector2(0.5f, 0.5f);
@@ -214,9 +325,29 @@ namespace TowerDefense3D.GameFlow
             PlayInstruction(step.Instruction);
         }
 
+        private static Rect GetInstructionArea(
+            TutorialStep step,
+            TutorialContext context,
+            Rect[] spotlightAreas)
+        {
+            if (!string.IsNullOrEmpty(step.InstructionTargetId))
+            {
+                Rect[] instructionAreas = GetFocusRects(step.InstructionTargetId, context);
+                if (instructionAreas.Length > 0)
+                {
+                    return instructionAreas[0];
+                }
+            }
+
+            return step.Id == "highlight_next_enemy"
+                ? spotlightAreas[spotlightAreas.Length - 1]
+                : GetCombinedRect(spotlightAreas);
+        }
+
         private void PlayInstruction(string value)
         {
             instructionTween?.Kill();
+            StopTypingSound();
             instructionValue = value;
             IsInstructionComplete = false;
             Color color = instruction.color;
@@ -227,6 +358,7 @@ namespace TowerDefense3D.GameFlow
             int visibleCharacters = 0;
             float duration = Mathf.Clamp(value.Length * 0.035f, 0.4f, 1.6f);
             Sequence sequence = DOTween.Sequence().SetTarget(this);
+            soundPlayer?.Play(SoundId.TutorialTyping);
             sequence.Append(DOTween.To(
                     () => instruction.color.a,
                     alpha =>
@@ -248,20 +380,55 @@ namespace TowerDefense3D.GameFlow
                     value.Length,
                     duration)
                 .SetEase(Ease.Linear));
-            sequence.OnComplete(() => IsInstructionComplete = true);
+            sequence.OnComplete(() =>
+            {
+                IsInstructionComplete = true;
+                StopTypingSound();
+                PlayPendingHand();
+            });
             instructionTween = sequence;
+        }
+
+        private void StopTypingSound()
+        {
+            soundPlayer?.Stop(SoundId.TutorialTyping);
+        }
+
+        private void PlayPendingHand()
+        {
+            if (pendingHandStep == null || pendingHandAreas == null || hand == null)
+            {
+                return;
+            }
+
+            TutorialStep step = pendingHandStep;
+            Rect[] areas = pendingHandAreas;
+            pendingHandStep = null;
+            pendingHandAreas = null;
+            hand.gameObject.SetActive(true);
+            handTween = hand.Play(step, areas);
         }
 
         private void EnsureParts()
         {
-            canvasGroup = canvasGroup != null ? canvasGroup
-                : GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
-            cameraCanvas = GetComponent<Canvas>() ?? gameObject.AddComponent<Canvas>();
-            dimmer = EnsureImage(dimmer, "Soft Dimmer");
+            cameraCanvas = GetComponent<Canvas>();
+            if (canvasGroup == null
+                || canvasGroup.gameObject != gameObject
+                || cameraCanvas == null
+                || dimmer == null
+                || instruction == null
+                || hand == null)
+            {
+                throw new InvalidOperationException("TutorialOverlayView requires fully authored UI references.");
+            }
+
             dimmer.rectTransform.SetAsFirstSibling();
             Stretch(dimmer.rectTransform);
-            raycastFilter = dimmer.GetComponent<TutorialSoftMaskRaycastFilter>()
-                ?? dimmer.gameObject.AddComponent<TutorialSoftMaskRaycastFilter>();
+            raycastFilter = dimmer.GetComponent<TutorialSoftMaskRaycastFilter>();
+            if (raycastFilter == null)
+            {
+                throw new InvalidOperationException("Tutorial dimmer requires an authored raycast filter.");
+            }
             if (dimmerMaterial == null)
             {
                 Shader shader = Resources.Load<Shader>("Shaders/TutorialSoftMask");
@@ -270,27 +437,7 @@ namespace TowerDefense3D.GameFlow
                 dimmer.material = dimmerMaterial;
             }
 
-            if (instruction != null)
-            {
-                Shadow shadow = instruction.GetComponent<Shadow>();
-                Outline outline = instruction.GetComponent<Outline>();
-                if (shadow != null) Destroy(shadow);
-                if (outline != null) Destroy(outline);
-                return;
-            }
-            GameObject child = new GameObject("Instruction", typeof(RectTransform), typeof(Text));
-            child.transform.SetParent(transform, false);
-            instruction = child.GetComponent<Text>();
-            instruction.alignment = TextAnchor.MiddleCenter;
-            instruction.color = Color.white;
-            instruction.font = instructionFont != null
-                ? instructionFont
-                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            instruction.fontSize = 28;
-            instruction.resizeTextForBestFit = true;
-            instruction.resizeTextMinSize = 18;
-            instruction.resizeTextMaxSize = 30;
-            instruction.raycastTarget = false;
+            if (instructionFont != null) instruction.font = instructionFont;
         }
 
         private void ConfigureCameraCanvas()
@@ -302,16 +449,6 @@ namespace TowerDefense3D.GameFlow
             cameraCanvas.planeDistance = 1f;
             cameraCanvas.overrideSorting = true;
             cameraCanvas.sortingOrder = 100;
-        }
-
-        private Image EnsureImage(Image value, string childName)
-        {
-            if (value != null) return value;
-            Transform existing = transform.Find(childName);
-            if (existing != null && existing.TryGetComponent(out Image existingImage)) return existingImage;
-            GameObject child = new GameObject(childName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            child.transform.SetParent(transform, false);
-            return child.GetComponent<Image>();
         }
 
         private static void Stretch(RectTransform target)
@@ -332,7 +469,13 @@ namespace TowerDefense3D.GameFlow
         {
             Vector3[] corners = new Vector3[4];
             target.GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+            Canvas canvas = target.GetComponentInParent<Canvas>();
+            Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera != null ? canvas.worldCamera : Camera.main
+                : null;
+            Vector2 bottomLeft = RectTransformUtility.WorldToScreenPoint(camera, corners[0]);
+            Vector2 topRight = RectTransformUtility.WorldToScreenPoint(camera, corners[2]);
+            return Rect.MinMaxRect(bottomLeft.x, bottomLeft.y, topRight.x, topRight.y);
         }
 
         private static Rect[] GetFocusRects(string targetIds, TutorialContext context)
@@ -358,6 +501,14 @@ namespace TowerDefense3D.GameFlow
         {
             Camera camera = Camera.main;
             if (camera == null) return default;
+
+            TutorialTargetView tutorialTarget = target.GetComponent<TutorialTargetView>();
+            if (tutorialTarget != null
+                && tutorialTarget.TryGetWorldBounds(out Bounds tutorialBounds)
+                && TryProjectBounds(camera, tutorialBounds, out Rect tutorialRect))
+            {
+                return tutorialRect;
+            }
 
             Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
             bool hasBounds = false;
@@ -432,6 +583,7 @@ namespace TowerDefense3D.GameFlow
             handTween?.Kill();
             overlayFade?.Kill();
             instructionTween?.Kill();
+            StopTypingSound();
             if (dimmerMaterial != null) Destroy(dimmerMaterial);
         }
     }

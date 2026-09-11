@@ -15,16 +15,49 @@ namespace TowerDefense3D.Tutorials
     [Serializable]
     public sealed class TutorialProgress
     {
-        private readonly HashSet<string> completed = new HashSet<string>(StringComparer.Ordinal);
+        public const string LevelOneTutorialCompleteId = "level_one_tutorial_complete";
 
-        public bool IsCompleted(string id) => !string.IsNullOrEmpty(id) && completed.Contains(id);
+        private readonly HashSet<string> completed = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> sessionCompleted = new HashSet<string>(StringComparer.Ordinal);
+
+        public event Action PermanentProgressChanged;
+
+        public bool HasCompletedLevelOneTutorial => completed.Contains(LevelOneTutorialCompleteId);
+
+        public bool IsCompleted(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return false;
+            }
+
+            return IsLevelOneTutorial(id) && HasCompletedLevelOneTutorial
+                || sessionCompleted.Contains(id);
+        }
 
         public void MarkCompleted(string id)
         {
             if (!string.IsNullOrEmpty(id))
             {
-                completed.Add(id);
+                sessionCompleted.Add(id);
             }
+        }
+
+        public void CompleteLevelOneTutorial()
+        {
+            if (HasCompletedLevelOneTutorial)
+            {
+                return;
+            }
+
+            completed.Add(LevelOneTutorialCompleteId);
+            sessionCompleted.Clear();
+            PermanentProgressChanged?.Invoke();
+        }
+
+        public void ResetLevelOneSession()
+        {
+            sessionCompleted.Clear();
         }
 
         public TutorialSaveRecord[] CreateSnapshot()
@@ -38,8 +71,22 @@ namespace TowerDefense3D.Tutorials
         public void Restore(IEnumerable<TutorialSaveRecord> records)
         {
             completed.Clear();
+            sessionCompleted.Clear();
             if (records == null) return;
-            foreach (TutorialSaveRecord record in records) MarkCompleted(record.TutorialId);
+            foreach (TutorialSaveRecord record in records)
+            {
+                if (record.TutorialId == LevelOneTutorialCompleteId)
+                {
+                    completed.Add(LevelOneTutorialCompleteId);
+                }
+            }
+        }
+
+        private static bool IsLevelOneTutorial(string id)
+        {
+            return id == "first_link_v2"
+                || id == "second_wave_expansion_v1"
+                || id == "fire_tower_v1";
         }
     }
 }

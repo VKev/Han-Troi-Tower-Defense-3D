@@ -7,14 +7,21 @@ namespace TowerDefense3D.GameFlow
     public sealed class TutorialSoftMaskRaycastFilter : MonoBehaviour, ICanvasRaycastFilter
     {
         private Rect[] focuses = System.Array.Empty<Rect>();
+        private bool blockOutsideFocus = true;
 
-        public void SetFocus(Rect[] screenRects)
+        public void SetFocus(Rect[] screenRects, bool shouldBlockOutsideFocus = true)
         {
             focuses = screenRects ?? System.Array.Empty<Rect>();
+            blockOutsideFocus = shouldBlockOutsideFocus;
         }
 
         public bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
         {
+            if (!blockOutsideFocus)
+            {
+                return false;
+            }
+
             for (int index = 0; index < focuses.Length; index++)
             {
                 Rect focus = focuses[index];

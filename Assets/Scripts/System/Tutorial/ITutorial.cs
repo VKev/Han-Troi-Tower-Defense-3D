@@ -13,7 +13,10 @@ namespace TowerDefense3D.Tutorials
 
     public interface ITutorialOverlay
     {
+        event Action<bool> BlackOverlayVisibilityChanged;
+
         bool IsInstructionComplete { get; }
+        bool IsBlackOverlayVisible { get; }
         void CompleteInstruction();
         void Show(TutorialStep step, TutorialContext context);
         void Hide();
@@ -25,7 +28,26 @@ namespace TowerDefense3D.Tutorials
         Full,
         PreviewOnly,
         FrogOnly,
-        StartWaveOnly
+        StartWaveOnly,
+        GeneratorOnly,
+        GeneratorLinkOnly,
+        GeneratorPlacedReady,
+        SinkPlacementOnly,
+        SecondGeneratorPlacementOnly,
+        GeneratorAndSinkReady,
+        EnemyDetailOnly,
+        FirePlacementOnly,
+        GeneratorUnlinkOnly,
+        FireLinkFromGeneratorOnly,
+        FireLinkToSinkOnly,
+        GeneratorSinkAndElementsReady,
+        LevelTwoUpgrade,
+        LevelTwoEnemyDetailOnly,
+        LevelTwoWaterPlacement,
+        LevelTwoSinkPlacement,
+        LevelTwoGeneratorPlacement,
+        LevelTwoLinking,
+        BurnStatusFrozen
     }
 
     public interface ITutorialInputGate

@@ -15,6 +15,8 @@ namespace TowerDefense3D.GameFlow
             if (image == null) return null;
 
             gameObject.SetActive(true);
+            transform.SetAsLastSibling();
+            image.raycastTarget = false;
             RectTransform rect = transform as RectTransform;
             image.preserveAspect = true;
             rect.sizeDelta = Vector2.one * Mathf.Clamp(Screen.height * 0.19f, 150f, 230f);
@@ -28,10 +30,25 @@ namespace TowerDefense3D.GameFlow
             Sequence sequence = DOTween.Sequence().SetTarget(this);
             sequence.AppendInterval(0.34f);
             sequence.Append(rect.DOScale(1f, 0.24f).SetEase(Ease.OutBack));
-            if (step.ActionId == "link_towers" && targets.Length > 1)
+            if ((step.ActionId == "link_towers"
+                    || step.ActionId == "place_generator"
+                    || step.ActionId == "place_sink"
+                    || step.ActionId == "place_water"
+                    || step.ActionId == "place_fire")
+                && targets.Length > 1)
             {
                 Vector2 from = targets[0].center + fingerOffset;
                 Vector2 to = targets[1].center + fingerOffset;
+                if (step.ActionId == "place_generator"
+                    || step.ActionId == "place_sink"
+                    || step.ActionId == "place_water"
+                    || step.ActionId == "place_fire")
+                {
+                    // GridPlacementView samples above and left of a finger. Move the displayed
+                    // hand by the inverse amount so its sampled footprint lands on the lit cells.
+                    to += new Vector2(0.04f, -0.10f) * Screen.height;
+                }
+
                 rect.position = from;
                 sequence.Append(rect.DOScale(0.88f, 0.14f));
                 sequence.AppendInterval(0.12f);

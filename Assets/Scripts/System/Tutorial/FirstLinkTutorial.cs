@@ -52,7 +52,29 @@ namespace TowerDefense3D.Tutorials
                     "start_wave",
                     current => current.IsTrue("wave_running"),
                     0.25f,
-                    gameplayUiMode: TutorialGameplayUiMode.StartWaveOnly)
+                    gameplayUiMode: TutorialGameplayUiMode.StartWaveOnly),
+                new TutorialStep(
+                    "wave_two_warning",
+                    "Có vẻ như phòng thủ chưa đủ,\nhãy đặt thêm Trụ Sinh Đạn",
+                    "generator_card,generator_placement",
+                    "place_generator",
+                    current => current.IsTrue("generator_placed"),
+                    0.1f,
+                    gameplayUiMode: TutorialGameplayUiMode.GeneratorOnly,
+                    requireInstructionComplete: true,
+                    canShow: current => current.IsTrue("wave_two_ready"),
+                    instructionTargetId: "generator_card"),
+                new TutorialStep(
+                    "link_new_generator_to_nexus",
+                    "Hãy nối Trụ sinh đạn vào Trụ thu đạn",
+                    string.Empty,
+                    "link_towers",
+                    current => current.IsTrue("new_generator_linked"),
+                    0.25f,
+                    gameplayUiMode: TutorialGameplayUiMode.GeneratorLinkOnly,
+                    canShow: current => current.IsTrue("generator_placed"),
+                    instructionTargetId: "tower_hud",
+                    completionGameplayUiMode: TutorialGameplayUiMode.GeneratorPlacedReady)
             };
         }
     }
