@@ -175,7 +175,9 @@ namespace TowerDefense3D.GameFlow
                 resolver => new WaveHudPresenter(
                     resolver.Resolve<IWaveSystem>(),
                     resolver.Resolve<IWaveHudView>(),
-                    resolver.Resolve<EnemyDiscoveryProgress>()),
+                    resolver.Resolve<EnemyDiscoveryProgress>(),
+                    resolver.Resolve<TowerCatalog>(),
+                    resolver.Resolve<SaveSystem>()),
                 Lifetime.Scoped);
             builder.Register<LevelSkipCheatPresenter>(Lifetime.Scoped);
             builder.Register<LevelOutcomeHudPresenter>(Lifetime.Scoped);
@@ -253,7 +255,8 @@ namespace TowerDefense3D.GameFlow
                 container.Resolve<IWaveSystem>(),
                 container.Resolve<GameplayInputSystem>(),
                 container.Resolve<EnemyViewPool>(),
-                container.Resolve<TutorialFocusSystem>());
+                container.Resolve<TutorialFocusSystem>(),
+                container.Resolve<BoardCameraGestureSystem>());
             LogToonShaderDiagnostics();
             activeLevelSystems.Attach(systems);
             attachedSystems = systems;
@@ -319,7 +322,8 @@ namespace TowerDefense3D.GameFlow
             IWaveSystem waveSystem,
             GameplayInputSystem inputSystem,
             EnemyViewPool enemyViewPool,
-            TutorialFocusSystem focusSystem)
+            TutorialFocusSystem focusSystem,
+            BoardCameraGestureSystem boardCameraGestureSystem)
         {
             GameplayUIView gameplayView = FindSceneComponent<GameplayUIView>();
             TutorialGameplayUiStageView tutorialUiStage = gameplayView.GetComponent<TutorialGameplayUiStageView>()
@@ -706,6 +710,8 @@ namespace TowerDefense3D.GameFlow
                     : id == "wave_four_ready"
                         ? waveSystem.CreateState().Phase == WavePhase.Preparation
                             && waveSystem.CreateState().CurrentWaveNumber == 4
+                    : id == "level_two_zoomed"
+                        ? boardCameraGestureSystem.HasTutorialZoomed
                     : id == "wave_five_ready"
                         ? waveSystem.CreateState().Phase == WavePhase.Preparation
                             && waveSystem.CreateState().CurrentWaveNumber == 5
@@ -801,6 +807,10 @@ namespace TowerDefense3D.GameFlow
                 mode =>
                 {
                     tutorialUiStage.SetMode(mode);
+                    if (mode == TutorialGameplayUiMode.CameraZoom)
+                    {
+                        boardCameraGestureSystem.BeginTutorialZoomObservation();
+                    }
                     if (levelNumber == 2)
                     {
                         // Done before the level-2 placement rules return, because that early exit

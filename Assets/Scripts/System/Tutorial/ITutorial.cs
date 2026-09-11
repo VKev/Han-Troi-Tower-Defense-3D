@@ -49,6 +49,7 @@ namespace TowerDefense3D.Tutorials
         LevelTwoGeneratorPlacement,
         LevelTwoLinking,
         BurnStatusFrozen,
+        CameraZoom,
 
         /// <summary>
         /// The board runs slowly while a reaction the player is meant to watch lands.

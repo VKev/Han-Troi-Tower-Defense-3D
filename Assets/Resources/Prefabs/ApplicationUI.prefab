@@ -8260,6 +8260,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.GameFlow.TutorialHandView
   image: {fileID: 0}
+  zoomHandSprite: {fileID: 459098931, guid: 6d8623c247b0b614f918a861e796cf2b, type: 3}
+  zoomUpArrowSprite: {fileID: -1873305902, guid: 6d8623c247b0b614f918a861e796cf2b, type: 3}
+  zoomDownArrowSprite: {fileID: 2145696381, guid: 6d8623c247b0b614f918a861e796cf2b, type: 3}
 --- !u!1 &7701268564987198223
 GameObject:
   m_ObjectHideFlags: 0

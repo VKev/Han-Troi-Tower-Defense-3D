@@ -138,7 +138,12 @@ namespace TowerDefense3D.GameFlow
                 || step.ActionId == "place_sink"
                 || step.ActionId == "place_water"
                 || step.ActionId == "place_fire";
-            if (string.IsNullOrWhiteSpace(step.TargetId))
+            if (step.ActionId == "zoom_camera")
+            {
+                ClearSpotlights();
+                dimmer.color = new Color(0f, 0f, 0f, darkness);
+            }
+            else if (string.IsNullOrWhiteSpace(step.TargetId))
             {
                 ClearSpotlights();
                 if (step.Id == "link_new_generator_to_nexus"

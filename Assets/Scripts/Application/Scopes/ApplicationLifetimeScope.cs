@@ -74,6 +74,7 @@ namespace TowerDefense3D.GameFlow
                 system.Register(new LevelTwoUpgradeTutorial());
                 system.Register(new LevelTwoThermalShockTutorial());
                 system.Register(new LevelTwoThermalShockIntroTutorial());
+                system.Register(new LevelTwoCameraZoomTutorial());
                 return system;
             }, Lifetime.Singleton);
 

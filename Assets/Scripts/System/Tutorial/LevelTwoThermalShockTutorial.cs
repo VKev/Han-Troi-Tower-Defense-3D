@@ -107,4 +107,29 @@ namespace TowerDefense3D.Tutorials
             };
         }
     }
+
+    public sealed class LevelTwoCameraZoomTutorial : ITutorial
+    {
+        public string Id => "level_two_camera_zoom_v1";
+        public int Priority => 60;
+
+        public bool CanStart(TutorialContext context)
+        {
+            return context.LevelNumber == 2 && context.IsTrue("wave_four_ready");
+        }
+
+        public IReadOnlyList<TutorialStep> CreateSteps(TutorialContext context)
+        {
+            return new[]
+            {
+                new TutorialStep(
+                    "level_two_camera_zoom",
+                    string.Empty,
+                    string.Empty,
+                    "zoom_camera",
+                    current => current.IsTrue("level_two_zoomed"),
+                    gameplayUiMode: TutorialGameplayUiMode.CameraZoom)
+            };
+        }
+    }
 }

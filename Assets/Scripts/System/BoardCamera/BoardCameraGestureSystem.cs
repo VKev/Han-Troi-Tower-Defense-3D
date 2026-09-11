@@ -47,6 +47,11 @@ namespace TowerDefense3D.GridPlacement
         private Vector2 panPressPosition;
         private Vector2 panPreviousPosition;
         private bool isLockedByOutcome;
+        private float tutorialZoomStart;
+        private bool isObservingTutorialZoom;
+
+        public bool HasTutorialZoomed => isObservingTutorialZoom
+            && Mathf.Abs(appliedZoom01 - tutorialZoomStart) >= 0.08f;
 
         public BoardCameraGestureSystem(
             GameplayInputSystem inputSystem,
@@ -99,6 +104,12 @@ namespace TowerDefense3D.GridPlacement
         public void Dispose()
         {
             waveSystem.StateChanged -= OnWaveStateChanged;
+        }
+
+        public void BeginTutorialZoomObservation()
+        {
+            tutorialZoomStart = appliedZoom01;
+            isObservingTutorialZoom = true;
         }
 
         private void UpdatePinch(GameplayCameraGestureSnapshot gesture)
