@@ -48,7 +48,12 @@ namespace TowerDefense3D.Tutorials
         LevelTwoSinkPlacement,
         LevelTwoGeneratorPlacement,
         LevelTwoLinking,
-        BurnStatusFrozen
+        BurnStatusFrozen,
+
+        /// <summary>
+        /// The board runs slowly while a reaction the player is meant to watch lands.
+        /// </summary>
+        ThermalShockSlowMotion
     }
 
     public interface ITutorialInputGate

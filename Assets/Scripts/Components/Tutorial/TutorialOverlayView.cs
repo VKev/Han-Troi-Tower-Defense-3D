@@ -60,6 +60,8 @@ namespace TowerDefense3D.GameFlow
         private string instructionValue;
         private TutorialStep pendingHandStep;
         private Rect[] pendingHandAreas;
+        private TutorialStep trackedStep;
+        private TutorialContext trackedContext;
         private TutorialSoftMaskRaycastFilter raycastFilter;
         private Canvas cameraCanvas;
         private ISoundPlayer soundPlayer;
@@ -81,9 +83,43 @@ namespace TowerDefense3D.GameFlow
             Hide();
         }
 
+        /// <summary>
+        /// Steps whose spotlight has to keep up with a target that moves on its own.
+        /// </summary>
+        /// <remarks>
+        /// The spotlight is otherwise measured once, when the step opens, which is right for a
+        /// button or a tower standing still. An enemy walking the road would leave its own
+        /// highlight behind within a second.
+        /// </remarks>
+        private static bool ShouldTrackTarget(TutorialStep step)
+        {
+            return step.Id == "thermal_shock_intro" || step.Id == "thermal_shock_hold";
+        }
+
+        private void LateUpdate()
+        {
+            if (trackedStep == null
+                || trackedContext == null
+                || canvasGroup == null
+                || canvasGroup.alpha <= 0.01f)
+            {
+                return;
+            }
+
+            Rect[] areas = GetFocusRects(trackedStep.TargetId, trackedContext);
+            for (int index = 0; index < areas.Length; index++)
+            {
+                areas[index] = Expand(areas[index], focusPadding);
+            }
+
+            ApplySpotlights(areas, 0f, true);
+        }
+
         public void Show(TutorialStep step, TutorialContext context)
         {
             EnsureParts();
+            trackedStep = ShouldTrackTarget(step) ? step : null;
+            trackedContext = trackedStep == null ? null : context;
             Rect[] areas = GetFocusRects(step.TargetId, context);
             float padding = step.Id == "wave_two_warning" || step.Id == "place_generator"
                 || step.Id == "fire_tower_intro"
@@ -150,7 +186,11 @@ namespace TowerDefense3D.GameFlow
                 || step.Id == "link_new_generator_to_nexus"
                 || step.Id == "water_tower_hint"
                 || step.Id == "burn_status_focus"
-                || step.Id == "burn_status_hold";
+                || step.Id == "burn_status_hold"
+                // Nothing to tap in these: they point at something happening on its own.
+                || step.Id == "read_magic_resistant"
+                || step.Id == "thermal_shock_intro"
+                || step.Id == "thermal_shock_hold";
             if (hand != null)
             {
                 hand.gameObject.SetActive(false);
@@ -177,6 +217,8 @@ namespace TowerDefense3D.GameFlow
             handTween = null;
             pendingHandStep = null;
             pendingHandAreas = null;
+            trackedStep = null;
+            trackedContext = null;
             IsInstructionComplete = true;
             StopTypingSound();
             SetBlackOverlayVisible(false);

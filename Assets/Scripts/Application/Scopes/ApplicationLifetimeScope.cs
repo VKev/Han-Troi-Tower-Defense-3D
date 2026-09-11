@@ -73,6 +73,7 @@ namespace TowerDefense3D.GameFlow
                 system.Register(new WaterTowerHintTutorial());
                 system.Register(new LevelTwoUpgradeTutorial());
                 system.Register(new LevelTwoThermalShockTutorial());
+                system.Register(new LevelTwoThermalShockIntroTutorial());
                 return system;
             }, Lifetime.Singleton);
 

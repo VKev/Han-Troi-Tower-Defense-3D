@@ -169,6 +169,16 @@ namespace TowerDefense3D.GameFlow
                 case TutorialGameplayUiMode.LevelTwoLinking:
                     SetLevelTwoFullTowerHud();
                     break;
+                case TutorialGameplayUiMode.ThermalShockSlowMotion:
+                    // Same bargain as the frozen beat: the HUD is left as the player had it, apart
+                    // from the skip cheat, which would end the wave the beat is about.
+                    waveHud?.gameObject.SetActive(true);
+                    waveHud?.SetTutorialPreviewOnly(false);
+                    SetVisible(levelStatus, true);
+                    SetTowerHudVisible(true);
+                    SetVisible(pauseHud, true);
+                    SetVisible(skipCheat, false);
+                    break;
                 case TutorialGameplayUiMode.BurnStatusFrozen:
                     // The board is frozen mid-wave, so the HUD stays as the player left it apart
                     // from the skip cheat, which would end the wave the beat is talking about.

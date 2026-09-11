@@ -198,6 +198,47 @@ namespace TowerDefense3D.Enemies
             return Get(heroAttacksByTick, tick);
         }
 
+        /// <summary>
+        /// Finds the earliest planned reaction of one kind at or after <paramref name="fromTick"/>.
+        /// </summary>
+        /// <remarks>
+        /// Only possible because the whole wave is planned before it is played: a tutorial beat
+        /// can be staged for a reaction that has not happened yet, and know exactly when it will.
+        /// A simulation stepped live could only ever report one after the fact.
+        /// </remarks>
+        public bool TryFindFirstReaction(
+            ElementReactionId reactionId,
+            long fromTick,
+            out long tick,
+            out PlannedReactionEvent reaction)
+        {
+            tick = 0L;
+            reaction = default;
+            bool found = false;
+            foreach (KeyValuePair<long, List<PlannedReactionEvent>> entry in reactionsByTick)
+            {
+                if (entry.Key < fromTick || (found && entry.Key >= tick))
+                {
+                    continue;
+                }
+
+                for (int index = 0; index < entry.Value.Count; index++)
+                {
+                    if (entry.Value[index].ReactionId != reactionId)
+                    {
+                        continue;
+                    }
+
+                    tick = entry.Key;
+                    reaction = entry.Value[index];
+                    found = true;
+                    break;
+                }
+            }
+
+            return found;
+        }
+
         public void Add(long tick, PlannedEnemySpawn spawn)
         {
             GetOrCreate(spawnsByTick, tick).Add(spawn);

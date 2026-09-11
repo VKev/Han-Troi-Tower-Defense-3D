@@ -46,6 +46,32 @@ namespace TowerDefense3D.Enemies
             ApplyFrames(timeline.GetFrames(tick));
         }
 
+        /// <summary>
+        /// How many ticks remain before the next planned reaction of one kind, and which enemy it
+        /// lands on. False when the current wave plan holds no such reaction ahead of now.
+        /// </summary>
+        public bool TryFindUpcomingReaction(
+            ElementReactionId reactionId,
+            out long ticksUntil,
+            out long enemyId,
+            out UnityEngine.Vector3 position)
+        {
+            ticksUntil = 0L;
+            enemyId = 0L;
+            position = default;
+            long currentTick = towerNetworkManager.CurrentTick;
+            if (!timeline.TryFindFirstReaction(reactionId, currentTick, out long tick,
+                    out PlannedReactionEvent reaction))
+            {
+                return false;
+            }
+
+            ticksUntil = tick - currentTick;
+            enemyId = reaction.EnemyId;
+            position = reaction.Position;
+            return true;
+        }
+
         public void Reset()
         {
             timeline = new CombatTimeline();

@@ -640,6 +640,28 @@ namespace TowerDefense3D.GameFlow
                         ?? icon.gameObject.AddComponent<TutorialTargetView>();
             };
 
+            // Level 2 only, and only until the player has been shown the reaction once.
+            focusSystem.SetThermalShockCaptureEnabled(levelNumber == 2);
+            // The enemy itself, not its status icon: it is walking the road while the beat
+            // reads, and the spotlight follows it. No world bounds are set on the target, so the
+            // overlay falls back to the enemy's own renderers and highlights the whole creature.
+            Func<Transform> findThermalShockEnemy = () =>
+            {
+                long enemyId = focusSystem.PendingThermalShockEnemyId;
+                return enemyId != 0L
+                    && enemyViewPool.TryGetActiveView(enemyId, out EnemyView shockedBody)
+                    ? shockedBody.transform
+                    : null;
+            };
+            Func<TutorialTargetView> findThermalShockEnemyTarget = () =>
+            {
+                Transform body = findThermalShockEnemy();
+                return body == null
+                    ? null
+                    : body.GetComponent<TutorialTargetView>()
+                        ?? body.gameObject.AddComponent<TutorialTargetView>();
+            };
+
             tutorialSystem.BindLevel(new TutorialContext(
                 levelNumber,
                 id => GetRuntimeTutorialTarget(
@@ -653,6 +675,7 @@ namespace TowerDefense3D.GameFlow
                     findLevelTwoPlacedFire,
                     findLevelTwoPlacedSink,
                     findBurningEnemyIconTarget,
+                    findThermalShockEnemyTarget,
                     byId) != null,
                 id => GetRuntimeTutorialTarget(
                     id,
@@ -665,6 +688,7 @@ namespace TowerDefense3D.GameFlow
                     findLevelTwoPlacedFire,
                     findLevelTwoPlacedSink,
                     findBurningEnemyIconTarget,
+                    findThermalShockEnemyTarget,
                     byId)?.transform,
                 id => id == "tutorial_acknowledged"
                     ? inputSystem.Current.HasPointerInput && inputSystem.Current.WasPressed
@@ -685,6 +709,11 @@ namespace TowerDefense3D.GameFlow
                     : id == "wave_five_ready"
                         ? waveSystem.CreateState().Phase == WavePhase.Preparation
                             && waveSystem.CreateState().CurrentWaveNumber == 5
+                    : id == "thermal_shock_incoming"
+                        ? focusSystem.TryBeginThermalShockBeat(out _)
+                            || focusSystem.PendingThermalShockEnemyId != 0L
+                    : id == "thermal_shock_resolved"
+                        ? focusSystem.HasSeenThermalShock
                     : id == "first_fire_hit"
                         ? findBurningEnemyIcon() != null
                     : id == "next_enemy_description_open"
@@ -774,6 +803,28 @@ namespace TowerDefense3D.GameFlow
                     tutorialUiStage.SetMode(mode);
                     if (levelNumber == 2)
                     {
+                        // Done before the level-2 placement rules return, because that early exit
+                        // is what has always kept the focus system out of level 2 entirely.
+                        if (mode == TutorialGameplayUiMode.ThermalShockSlowMotion)
+                        {
+                            Transform shockedEnemy = findThermalShockEnemy();
+                            if (TutorialFocusSystem.LogThermalShockDiagnostics)
+                            {
+                                Debug.Log($"[ThermalShock] mode applied,"
+                                    + $" enemyId={focusSystem.PendingThermalShockEnemyId}"
+                                    + $" view={(shockedEnemy == null ? "NULL" : shockedEnemy.name)}");
+                            }
+
+                            if (shockedEnemy != null)
+                            {
+                                focusSystem.Enter(shockedEnemy.position, freezeBoard: false);
+                            }
+                        }
+                        else
+                        {
+                            focusSystem.Exit();
+                        }
+
                         ApplyLevelTwoTutorialPlacementRules(
                             mode,
                             placementSystem,
@@ -931,6 +982,7 @@ namespace TowerDefense3D.GameFlow
             Func<TutorialTargetView> levelTwoFire,
             Func<TutorialTargetView> levelTwoSink,
             Func<TutorialTargetView> burningEnemyIcon,
+            Func<TutorialTargetView> thermalShockEnemy,
             IReadOnlyDictionary<string, TutorialTargetView> targets)
         {
             TutorialTargetView target = id == "tutorial_generator" ? firstGenerator()
@@ -942,6 +994,7 @@ namespace TowerDefense3D.GameFlow
                 : id == "tutorial_level_two_fire" ? levelTwoFire()
                 : id == "tutorial_level_two_sink" ? levelTwoSink()
                 : id == "burning_enemy_icon" ? burningEnemyIcon()
+                : id == "thermal_shock_enemy" ? thermalShockEnemy()
                 : targets.TryGetValue(id, out TutorialTargetView found) ? found : null;
             if (target != null)
             {
