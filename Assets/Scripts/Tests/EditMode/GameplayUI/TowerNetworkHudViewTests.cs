@@ -92,10 +92,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
 
             Assert.That(row, Is.Not.Null);
-            Assert.That(row.enabled, Is.True);
+            Assert.That(row.enabled, Is.False);
             Assert.That(heroes, Is.Not.Null);
             Assert.That(heroes.parent, Is.EqualTo(towerButtons));
             Assert.That(heroes.GetSiblingIndex(), Is.GreaterThan(elements.GetSiblingIndex()));
+            Assert.That(
+                ((RectTransform)heroes).anchoredPosition.x,
+                Is.GreaterThan(((RectTransform)elements).anchoredPosition.x));
         }
 
         [Test]
