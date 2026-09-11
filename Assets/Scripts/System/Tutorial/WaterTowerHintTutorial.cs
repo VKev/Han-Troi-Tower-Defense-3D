@@ -10,7 +10,7 @@ namespace TowerDefense3D.Tutorials
         public bool CanStart(TutorialContext context)
         {
             return context.LevelNumber == 1
-                && context.IsTrue("wave_six_ready");
+                && context.IsTrue("wave_five_ready");
         }
 
         public IReadOnlyList<TutorialStep> CreateSteps(TutorialContext context)

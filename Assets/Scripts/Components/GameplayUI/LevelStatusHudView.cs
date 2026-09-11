@@ -15,12 +15,21 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("The green bar. It is a 9-sliced capsule stretched from its left edge, so its length is driven by the rect rather than by Image.fillAmount - a filled image ignores sprite borders and would flatten the rounded end caps.")]
         [SerializeField] private Image healthFill;
 
-        [Tooltip("Optional shake target for damage feedback. Defaults to this HUD root.")]
+        [Tooltip("The bar's container, hidden while the frog is still untouched. The damage shake plays on the whole status HUD rather than on this, so the portrait and the gold move with the bar.")]
         [SerializeField] private RectTransform healthShakeTarget;
 
         [SerializeField, Min(0f)] private float healthTweenDuration = 0.32f;
         [SerializeField, Min(0f)] private float healthShakeDuration = 0.38f;
         [SerializeField, Min(0f)] private float healthShakeStrength = 9f;
+
+        [Tooltip("The colour the bar blinks while it drains, so a hit reads as damage taken rather than as a quiet slide.")]
+        [SerializeField] private Color healthDamageFlashColor = new Color(0.93f, 0.21f, 0.21f, 1f);
+
+        [Tooltip("Length of one half of a blink. The blink repeats for as long as the bar is still moving.")]
+        [SerializeField, Min(0f)] private float healthFlashHalfCycleDuration = 0.08f;
+
+        [Tooltip("How long the gold counter takes to run down to a new balance. Zero snaps it.")]
+        [SerializeField, Min(0f)] private float goldTweenDuration = 0.35f;
 
         [Header("Wave 3 Retry")]
         [SerializeField] private RectTransform failurePresentationTarget;
@@ -32,10 +41,18 @@ namespace TowerDefense3D.GameFlow
         [SerializeField, Min(0f)] private float failureHealthDuration = 0.55f;
         [SerializeField, Min(0f)] private float failureMessageRetryDelay = 1f;
 
+        private static readonly Color TutorialInstructionColor = new Color(1f, 0.9f, 0.62f, 1f);
+
         private const string FailureMessage = "Không đủ hỏa lực rồi, hãy đặt thêm trụ";
 
         private Tween healthFillTween;
         private Tween healthShakeTween;
+        private Tween healthFlashTween;
+        private Tween goldTween;
+        private Color healthBaseColor;
+        private int previousHealth;
+        private int displayedGold;
+        private bool hasRenderedGold;
         private Tween failureMoveTween;
         private Tween failureHealthTween;
         private Tween failureMessageTween;
@@ -64,24 +81,54 @@ namespace TowerDefense3D.GameFlow
             }
 
             CaptureNormalLayout();
+            healthBaseColor = healthFill.color;
             failureMessageText.gameObject.SetActive(false);
             failureDimmer.gameObject.SetActive(false);
             failurePresentationCanvas.overrideSorting = false;
         }
 
+        /// <summary>
+        /// Runs the counter to the new balance rather than snapping it, so the price of a tower
+        /// is legible as it is spent.
+        /// </summary>
+        /// <remarks>
+        /// A level's first balance snaps: there is no earlier number for it to count from, and
+        /// counting up from zero would read as an award rather than as the starting purse.
+        /// </remarks>
         public void RenderGold(int gold)
         {
+            goldTween?.Kill();
+
+            if (!hasRenderedGold || goldTweenDuration <= 0f || displayedGold == gold)
+            {
+                hasRenderedGold = true;
+                SetDisplayedGold(gold);
+                return;
+            }
+
+            goldTween = DOTween.To(
+                    () => displayedGold,
+                    SetDisplayedGold,
+                    gold,
+                    goldTweenDuration)
+                .SetEase(Ease.OutCubic)
+                .SetTarget(this);
+        }
+
+        private void SetDisplayedGold(int gold)
+        {
+            displayedGold = gold;
             goldText.text = gold.ToString("N0");
         }
 
         public void SetHealthVisible(bool visible)
         {
-            Transform healthRow = healthShakeTarget != null
-                ? healthShakeTarget.parent
-                : transform.Find("Health Row");
-            if (healthRow != null)
+            // Only the bar hides while the frog is untouched. This used to hide the bar's parent,
+            // which is the whole HUD - portrait, gold and all - so entering a level at full health
+            // emptied it, and it came back only if a tutorial step happened to re-show the HUD.
+            if (healthShakeTarget != null)
             {
-                healthRow.gameObject.SetActive(visible);
+                healthShakeTarget.gameObject.SetActive(visible);
             }
         }
 
@@ -96,8 +143,14 @@ namespace TowerDefense3D.GameFlow
                 ? 0f
                 : Mathf.Clamp01((float)currentHealth / maximumHealth);
 
+            // Compared before the guard below so a HUD authored without a fill still tracks the
+            // frog's health, instead of reporting the first drop it sees after one as damage.
+            bool tookDamage = hasRenderedHealth && currentHealth < previousHealth;
+            previousHealth = currentHealth;
+
             if (healthFill == null)
             {
+                hasRenderedHealth = true;
                 return;
             }
 
@@ -121,25 +174,89 @@ namespace TowerDefense3D.GameFlow
                     .SetTarget(this);
             }
 
-            if (hasRenderedHealth && currentHealth < maximumHealth)
+            // Only a real drop plays the damage beat. The old test was "below full", which fired
+            // again on every later render while the frog stayed hurt, so a heal or a plain refresh
+            // shook the HUD as though it had just been hit.
+            if (tookDamage)
             {
-                RectTransform shakeTarget = transform as RectTransform;
-                if (shakeTarget != null && healthShakeDuration > 0f && healthShakeStrength > 0f)
-                {
-                    healthShakeTween?.Kill();
-                    healthShakeTween = shakeTarget
-                        .DOShakePosition(
-                            healthShakeDuration,
-                            new Vector2(healthShakeStrength, healthShakeStrength * 0.55f),
-                            18,
-                            95f,
-                            false,
-                            true)
-                        .SetTarget(this);
-                }
+                PlayDamageShake();
+                PlayDamageFlash();
             }
 
             hasRenderedHealth = true;
+        }
+
+        /// <summary>
+        /// Shakes the whole status HUD - portrait, gold and bar together - so the hit registers
+        /// even while the player is looking at the board rather than at the bar.
+        /// </summary>
+        private void PlayDamageShake()
+        {
+            RectTransform shakeTarget = transform as RectTransform;
+            if (shakeTarget == null || healthShakeDuration <= 0f || healthShakeStrength <= 0f)
+            {
+                return;
+            }
+
+            healthShakeTween?.Kill();
+            healthShakeTween = shakeTarget
+                .DOShakePosition(
+                    healthShakeDuration,
+                    new Vector2(healthShakeStrength, healthShakeStrength * 0.55f),
+                    18,
+                    95f,
+                    false,
+                    true)
+                .SetTarget(this);
+        }
+
+        /// <summary>
+        /// Blinks the bar red for as long as it is still sliding, so the red belongs to the drain
+        /// the player is watching rather than ending before it.
+        /// </summary>
+        /// <remarks>
+        /// The half-cycle count is forced even so the yoyo lands back on the authored colour. The
+        /// kill callback restores it regardless, for the case where a second hit cuts a blink short.
+        /// </remarks>
+        private void PlayDamageFlash()
+        {
+            if (healthFill == null || healthFlashHalfCycleDuration <= 0f)
+            {
+                return;
+            }
+
+            healthFlashTween?.Kill();
+            healthFill.color = healthBaseColor;
+
+            int halfCycles = Mathf.Max(
+                2,
+                Mathf.CeilToInt(healthTweenDuration / healthFlashHalfCycleDuration));
+            if (halfCycles % 2 != 0)
+            {
+                halfCycles++;
+            }
+
+            // Driven through DOTween.To rather than Image.DOColor: the shortcut lives in
+            // DOTweenModuleUI, which this assembly does not reference, and the rest of this HUD
+            // already tweens colour the same way.
+            healthFlashTween = DOTween.To(
+                    () => healthFill.color,
+                    value => healthFill.color = value,
+                    healthDamageFlashColor,
+                    healthFlashHalfCycleDuration)
+                .SetLoops(halfCycles, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine)
+                .SetTarget(this)
+                .OnKill(RestoreHealthBarColor);
+        }
+
+        private void RestoreHealthBarColor()
+        {
+            healthFlashTween = null;
+            if (healthFill != null)
+            {
+                healthFill.color = healthBaseColor;
+            }
         }
 
         public void ShowWaveThreeDefeat()
@@ -161,6 +278,7 @@ namespace TowerDefense3D.GameFlow
             failurePresentationCanvas.sortingOrder = 91;
             healthFillTween?.Kill();
             healthShakeTween?.Kill();
+            healthFlashTween?.Kill();
             failureMoveTween?.Kill();
             failureHealthTween?.Kill();
             failureMessageTween?.Kill();
@@ -194,7 +312,11 @@ namespace TowerDefense3D.GameFlow
         {
             failureMessageTween?.Kill();
             failureMessageText.gameObject.SetActive(true);
-            Color color = failureMessageText.color;
+
+            // The same warm off-gold the tutorial types in. This line is typed out under the same
+            // circumstances and used to be authored near-white, so the two running lines read as
+            // coming from two different voices.
+            Color color = TutorialInstructionColor;
             color.a = 0f;
             failureMessageText.color = color;
             failureMessageText.text = string.Empty;
@@ -229,7 +351,9 @@ namespace TowerDefense3D.GameFlow
             RestoreNormalLayout();
             if (failurePresentationTarget != null) failurePresentationTarget.gameObject.SetActive(false);
 
+            healthFlashTween?.Kill();
             hasRenderedHealth = false;
+            previousHealth = 0;
         }
 
         private void CaptureNormalLayout()
@@ -274,8 +398,12 @@ namespace TowerDefense3D.GameFlow
         {
             healthFillTween?.Kill();
             healthShakeTween?.Kill();
+            healthFlashTween?.Kill();
+            goldTween?.Kill();
             healthFillTween = null;
             healthShakeTween = null;
+            healthFlashTween = null;
+            goldTween = null;
             failureMoveTween?.Kill();
             failureHealthTween?.Kill();
             failureMessageTween?.Kill();

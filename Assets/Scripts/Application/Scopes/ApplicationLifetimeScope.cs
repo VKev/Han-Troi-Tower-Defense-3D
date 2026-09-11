@@ -22,6 +22,7 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private ElementReactionCatalog elementReactionCatalog;
         [SerializeField] private ApplicationUIView applicationUIView;
         [SerializeField] private SoundCatalogDefinition soundCatalog;
+        [SerializeField] private BoardCameraGestureRules boardCameraGestureRules;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -34,6 +35,7 @@ namespace TowerDefense3D.GameFlow
             builder.RegisterInstance(levelCatalog);
             builder.RegisterInstance(towerCatalog);
             builder.RegisterInstance(elementReactionCatalog);
+            builder.RegisterInstance(boardCameraGestureRules);
 
             AudioPlaybackView audioPlayback = GetComponent<AudioPlaybackView>();
             if (audioPlayback == null)

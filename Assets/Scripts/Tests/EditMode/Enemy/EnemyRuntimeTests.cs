@@ -87,6 +87,41 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
         }
 
         [Test]
+        public void HeldLethalFrame_KeepsEnemyAndFireIconStateUntilReleased()
+        {
+            EnemyDefinition basic = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(
+                "Assets/Config/Enemies/Basic.asset");
+            var system = CreateLongRoadSystem();
+            EnemyInstance enemy = system.Spawn(basic);
+            var lethalFrame = new PlannedEnemyFrame(
+                enemy.Id,
+                enemy.Position,
+                enemy.Position,
+                0f,
+                0f,
+                enemy.TargetPointIndex,
+                EnemyElementPhase.Marked,
+                ElementType.Fire,
+                1f,
+                enemy.RemainingThermalShieldHits,
+                0f,
+                0,
+                false,
+                PlannedEnemyRemoval.Killed);
+
+            system.ApplyPlannedFrame(lethalFrame.HoldAlive());
+
+            Assert.That(system.TryGetEnemy(enemy.Id, out EnemyInstance held), Is.True);
+            Assert.That(held.Health, Is.GreaterThan(0f));
+            Assert.That(held.ElementState.Phase, Is.EqualTo(EnemyElementPhase.Marked));
+            Assert.That(held.ElementState.Element, Is.EqualTo(ElementType.Fire));
+
+            system.ApplyPlannedFrame(lethalFrame);
+
+            Assert.That(system.TryGetEnemy(enemy.Id, out _), Is.False);
+        }
+
+        [Test]
         public void ApplyPlannedFrame_IgnoresStaleFrameForMissingEnemy()
         {
             var system = CreateLongRoadSystem();

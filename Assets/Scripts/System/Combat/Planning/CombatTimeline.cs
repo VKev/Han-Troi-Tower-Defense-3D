@@ -83,6 +83,25 @@ namespace TowerDefense3D.Enemies
         public int SkillCastVersion { get; }
         public bool IsSpeedBuffed { get; }
         public PlannedEnemyRemoval Removal { get; }
+
+        public PlannedEnemyFrame HoldAlive()
+        {
+            return new PlannedEnemyFrame(
+                EnemyId,
+                PreviousPosition,
+                Position,
+                Math.Max(0.0001f, Health),
+                RevealRemainingSeconds,
+                TargetPointIndex,
+                ElementPhase,
+                Element,
+                ElementRemainingSeconds,
+                RemainingThermalShieldHits,
+                LiftHeightMeters,
+                SkillCastVersion,
+                IsSpeedBuffed,
+                PlannedEnemyRemoval.None);
+        }
     }
 
     internal readonly struct PlannedReactionEvent
@@ -142,6 +161,8 @@ namespace TowerDefense3D.Enemies
             new Dictionary<long, List<PlannedEnemyFrame>>();
         private readonly Dictionary<long, List<ProjectileImpactEvent>> impactsByTick =
             new Dictionary<long, List<ProjectileImpactEvent>>();
+        private readonly Dictionary<long, List<FireHitEvent>> fireHitsByTick =
+            new Dictionary<long, List<FireHitEvent>>();
         private readonly Dictionary<long, List<PlannedReactionEvent>> reactionsByTick =
             new Dictionary<long, List<PlannedReactionEvent>>();
         private readonly Dictionary<long, List<HeroAttackEvent>> heroAttacksByTick =
@@ -160,6 +181,11 @@ namespace TowerDefense3D.Enemies
         public IReadOnlyList<ProjectileImpactEvent> GetImpacts(long tick)
         {
             return Get(impactsByTick, tick);
+        }
+
+        public IReadOnlyList<FireHitEvent> GetFireHits(long tick)
+        {
+            return Get(fireHitsByTick, tick);
         }
 
         public IReadOnlyList<PlannedReactionEvent> GetReactions(long tick)
@@ -185,6 +211,11 @@ namespace TowerDefense3D.Enemies
         public void Add(long tick, ProjectileImpactEvent impact)
         {
             GetOrCreate(impactsByTick, tick).Add(impact);
+        }
+
+        public void Add(long tick, FireHitEvent hit)
+        {
+            GetOrCreate(fireHitsByTick, tick).Add(hit);
         }
 
         public void Add(long tick, PlannedReactionEvent reaction)

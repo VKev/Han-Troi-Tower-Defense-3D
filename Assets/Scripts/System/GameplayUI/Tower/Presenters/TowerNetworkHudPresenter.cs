@@ -190,6 +190,10 @@ namespace TowerDefense3D.GameFlow
             return AreTowerToolsUnlocked() && (levelNumber != 1 || CurrentWaveNumber >= 6);
         }
 
+        // Water arrives with the first Stealth wave, whose enemies it exists to reveal,
+        // rather than a wave later when the player has already had to cope without it.
+        private const int WaterUnlockWaveNumber = 5;
+
         private bool IsTutorialTowerUnlocked(TowerFamily family)
         {
             if (tutorialProgress?.HasCompletedLevelOneTutorial == true)
@@ -197,13 +201,13 @@ namespace TowerDefense3D.GameFlow
                 return family == TowerFamily.Generator
                     || family == TowerFamily.SoulNexus
                     || family == TowerFamily.Fire
-                    || family == TowerFamily.Water && CurrentWaveNumber >= 6;
+                    || family == TowerFamily.Water && CurrentWaveNumber >= WaterUnlockWaveNumber;
             }
 
             return family == TowerFamily.Generator && CurrentWaveNumber >= 1
                 || family == TowerFamily.SoulNexus && CurrentWaveNumber >= 3
                 || family == TowerFamily.Fire && CurrentWaveNumber >= 4
-                || family == TowerFamily.Water && CurrentWaveNumber >= 6;
+                || family == TowerFamily.Water && CurrentWaveNumber >= WaterUnlockWaveNumber;
         }
 
         private int CurrentWaveNumber => waveSystem?.CreateState().CurrentWaveNumber ?? 0;

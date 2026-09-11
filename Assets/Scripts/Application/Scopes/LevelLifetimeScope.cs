@@ -114,6 +114,7 @@ namespace TowerDefense3D.GameFlow
                 resolver => RoadPathFactory.CreatePaths(resolver.Resolve<BoardSystem>()),
                 Lifetime.Scoped);
             builder.Register<BoardCameraSystem>(Lifetime.Scoped);
+            builder.Register<BoardCameraGestureSystem>(Lifetime.Scoped);
             builder.Register<GameplayInputSystem>(Lifetime.Scoped);
             builder.Register<GridPlacementSystem>(Lifetime.Scoped);
             builder.Register<TowerNetworkSystem>(Lifetime.Scoped)
@@ -156,6 +157,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<HeroAttackPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
+            builder.Register<TowerTierVisualPresentationSystem>(Lifetime.Scoped);
             builder.RegisterInstance<ILinkRangeView>(selectionRangeRing);
             builder.Register(
                 resolver => new TowerNetworkHudPresenter(
@@ -230,7 +232,9 @@ namespace TowerDefense3D.GameFlow
             GridPlacementSystem placementSystem = container.Resolve<GridPlacementSystem>();
             GridPlacementView placementView = container.Resolve<GridPlacementView>();
             placementPresenter.Bind(placementSystem, placementView);
-            container.Resolve<EnemyViewPool>().Configure(placementView.WorldCamera);
+            container.Resolve<EnemyViewPool>().Configure(
+                placementView.WorldCamera,
+                container.Resolve<ISoundPlayer>());
             GameFlowSystem gameFlowSystem = container.Resolve<GameFlowSystem>();
             container.Resolve<GameplayUISystem>()
                 .BindReturnToMenu(gameFlowSystem.RequestReturnToLevelMenu);
@@ -248,7 +252,6 @@ namespace TowerDefense3D.GameFlow
                 placementSystem,
                 container.Resolve<IWaveSystem>(),
                 container.Resolve<GameplayInputSystem>(),
-                container.Resolve<EnemySystem>(),
                 container.Resolve<EnemyViewPool>(),
                 container.Resolve<TutorialFocusSystem>());
             LogToonShaderDiagnostics();
@@ -315,7 +318,6 @@ namespace TowerDefense3D.GameFlow
             GridPlacementSystem placementSystem,
             IWaveSystem waveSystem,
             GameplayInputSystem inputSystem,
-            EnemySystem enemySystem,
             EnemyViewPool enemyViewPool,
             TutorialFocusSystem focusSystem)
         {
@@ -468,26 +470,28 @@ namespace TowerDefense3D.GameFlow
 
             BoardView boardView = FindSceneComponent<BoardView>();
             Transform placementTarget = CreatePlacementTarget(
-                boardView, new GridCell(35, 29, 0), "Generator Tutorial Placement Target",
+                boardView, new GridCell(35, 33, 0), "Generator Tutorial Placement Target",
                 out GridCell placementCell);
             RegisterTutorialTarget(placementTarget, "generator_placement", byId);
             Transform sinkPlacementTarget = CreatePlacementTarget(
-                boardView, new GridCell(32, 28, 0), "Sink Tutorial Placement Target",
+                boardView, new GridCell(32, 33, 0), "Sink Tutorial Placement Target",
                 out GridCell sinkPlacementCell);
             RegisterTutorialTarget(sinkPlacementTarget, "sink_placement", byId);
             Transform secondGeneratorPlacementTarget = CreatePlacementTarget(
-                boardView, new GridCell(40, 29, 0), "Second Generator Tutorial Placement Target",
+                boardView, new GridCell(37, 32, 0), "Second Generator Tutorial Placement Target",
                 out GridCell secondGeneratorPlacementCell);
             RegisterTutorialTarget(secondGeneratorPlacementTarget, "second_generator_placement", byId);
             Transform firePlacementTarget = CreatePlacementTarget(
-                boardView, new GridCell(38, 26, 0), "Fire Tutorial Placement Target",
+                boardView, new GridCell(37, 30, 0), "Fire Tutorial Placement Target",
                 out GridCell firePlacementCell);
             RegisterTutorialTarget(firePlacementTarget, "fire_placement", byId);
 
             Transform levelTwoWaterPlacementTarget = null;
+            Transform levelTwoFirePlacementTarget = null;
             Transform levelTwoSinkPlacementTarget = null;
             Transform levelTwoGeneratorPlacementTarget = null;
             GridCell levelTwoWaterPlacementCell = default;
+            GridCell levelTwoFirePlacementCell = default;
             GridCell levelTwoSinkPlacementCell = default;
             GridCell levelTwoGeneratorPlacementCell = default;
             if (levelNumber == 2)
@@ -499,8 +503,15 @@ namespace TowerDefense3D.GameFlow
                     levelTwoWaterPlacementTarget,
                     "level_two_water_placement",
                     byId);
+                levelTwoFirePlacementTarget = CreatePlacementTarget(
+                    boardView, new GridCell(35, 29, 0), "Level Two Fire Tutorial Placement Target",
+                    out levelTwoFirePlacementCell);
+                RegisterTutorialTarget(
+                    levelTwoFirePlacementTarget,
+                    "level_two_fire_placement",
+                    byId);
                 levelTwoSinkPlacementTarget = CreatePlacementTarget(
-                    boardView, new GridCell(35, 29, 0), "Level Two Sink Tutorial Placement Target",
+                    boardView, new GridCell(38, 24, 0), "Level Two Sink Tutorial Placement Target",
                     out levelTwoSinkPlacementCell);
                 RegisterTutorialTarget(
                     levelTwoSinkPlacementTarget,
@@ -516,6 +527,7 @@ namespace TowerDefense3D.GameFlow
             }
 
             ITowerRuntimeView levelTwoTutorialWater = null;
+            ITowerRuntimeView levelTwoTutorialFire = null;
             ITowerRuntimeView levelTwoTutorialSink = null;
             ITowerRuntimeView levelTwoTutorialGenerator = null;
             if (levelNumber == 2)
@@ -535,6 +547,11 @@ namespace TowerDefense3D.GameFlow
                         && tower.CombatDefinition.Family == TowerFamily.Water)
                     {
                         levelTwoTutorialWater = tower;
+                    }
+                    else if (placement.Anchor == levelTwoFirePlacementCell
+                        && tower.CombatDefinition.Family == TowerFamily.Fire)
+                    {
+                        levelTwoTutorialFire = tower;
                     }
                     else if (placement.Anchor == levelTwoSinkPlacementCell
                         && tower.CombatDefinition.Family == TowerFamily.SoulNexus)
@@ -589,6 +606,8 @@ namespace TowerDefense3D.GameFlow
                     ?? tower.GameObject.AddComponent<TutorialTargetView>();
             Func<TutorialTargetView> findLevelTwoPlacedWater = () =>
                 getTutorialTarget(levelTwoTutorialWater);
+            Func<TutorialTargetView> findLevelTwoPlacedFire = () =>
+                getTutorialTarget(levelTwoTutorialFire);
             Func<TutorialTargetView> findLevelTwoPlacedSink = () =>
                 getTutorialTarget(levelTwoTutorialSink);
             Func<TutorialTargetView> findLevelTwoPlacedGenerator = () =>
@@ -601,35 +620,12 @@ namespace TowerDefense3D.GameFlow
             Func<bool> isNextEnemyDescriptionVisible = () =>
                 waveHud != null && waveHud.IsNextEnemyDescriptionVisible;
 
-            // Nothing announces a projectile landing on an enemy: the combat timeline is planned
-            // ahead and replayed, so the fire mark is found by polling the enemy snapshots. The
-            // buffer is reused because this runs every tutorial tick.
-            var enemySnapshotBuffer = new List<EnemySnapshot>();
-            Func<long> findFireMarkedArmoredId = () =>
-            {
-                if (!waveSystem.IsRunning || waveSystem.CreateState().CurrentWaveNumber < 4)
-                {
-                    return 0L;
-                }
-
-                enemySystem.CopySnapshotsTo(enemySnapshotBuffer);
-                for (int index = 0; index < enemySnapshotBuffer.Count; index++)
-                {
-                    EnemySnapshot snapshot = enemySnapshotBuffer[index];
-                    if (snapshot.Definition != null
-                        && snapshot.Definition.StableId == "armored"
-                        && snapshot.ElementState.Phase == EnemyElementPhase.Marked
-                        && snapshot.ElementState.Element == ElementType.Fire)
-                    {
-                        return snapshot.EnemyId;
-                    }
-                }
-
-                return 0L;
-            };
+            focusSystem.SetFirstFireHitCaptureEnabled(
+                levelNumber == 1 && !tutorialSystem.Progress.HasCompletedLevelOneTutorial);
+            Func<long> findFirstFireHitEnemyId = () => focusSystem.FirstFireHitEnemyId;
             Func<Transform> findBurningEnemyIcon = () =>
             {
-                long enemyId = findFireMarkedArmoredId();
+                long enemyId = findFirstFireHitEnemyId();
                 return enemyId != 0L
                     && enemyViewPool.TryGetActiveView(enemyId, out EnemyView markedView)
                     ? markedView.GetFireMarkIconTransform()
@@ -654,6 +650,7 @@ namespace TowerDefense3D.GameFlow
                     findPlacedFire,
                     findLevelTwoPlacedGenerator,
                     findLevelTwoPlacedWater,
+                    findLevelTwoPlacedFire,
                     findLevelTwoPlacedSink,
                     findBurningEnemyIconTarget,
                     byId) != null,
@@ -665,6 +662,7 @@ namespace TowerDefense3D.GameFlow
                     findPlacedFire,
                     findLevelTwoPlacedGenerator,
                     findLevelTwoPlacedWater,
+                    findLevelTwoPlacedFire,
                     findLevelTwoPlacedSink,
                     findBurningEnemyIconTarget,
                     byId)?.transform,
@@ -684,11 +682,11 @@ namespace TowerDefense3D.GameFlow
                     : id == "wave_four_ready"
                         ? waveSystem.CreateState().Phase == WavePhase.Preparation
                             && waveSystem.CreateState().CurrentWaveNumber == 4
-                    : id == "wave_six_ready"
+                    : id == "wave_five_ready"
                         ? waveSystem.CreateState().Phase == WavePhase.Preparation
-                            && waveSystem.CreateState().CurrentWaveNumber == 6
-                    : id == "armored_fire_marked"
-                        ? findFireMarkedArmoredId() != 0L
+                            && waveSystem.CreateState().CurrentWaveNumber == 5
+                    : id == "first_fire_hit"
+                        ? findBurningEnemyIcon() != null
                     : id == "next_enemy_description_open"
                         ? isNextEnemyDescriptionVisible()
                     : id == "generator_placed"
@@ -736,6 +734,8 @@ namespace TowerDefense3D.GameFlow
                         ? towerNetwork.GetUpgradeLevel(findLevelTwoFire()) > 0
                         : id == "level_two_water_placed"
                         ? findLevelTwoPlacedWater() != null
+                        : id == "level_two_fire_placed"
+                        ? findLevelTwoPlacedFire() != null
                         : id == "level_two_sink_placed"
                         ? findLevelTwoPlacedSink() != null
                         : id == "level_two_generator_placed"
@@ -756,6 +756,18 @@ namespace TowerDefense3D.GameFlow
                                 as ITowerRuntimeView,
                             findLevelTwoPlacedSink()?.GetComponent(typeof(ITowerRuntimeView))
                                 as ITowerRuntimeView)
+                        : id == "level_two_water_linked_to_fire"
+                        ? towerNetwork.HasDirectLink(
+                            findLevelTwoPlacedWater()?.GetComponent(typeof(ITowerRuntimeView))
+                                as ITowerRuntimeView,
+                            findLevelTwoPlacedFire()?.GetComponent(typeof(ITowerRuntimeView))
+                                as ITowerRuntimeView)
+                        : id == "level_two_fire_linked_to_sink"
+                        ? towerNetwork.HasDirectLink(
+                            findLevelTwoPlacedFire()?.GetComponent(typeof(ITowerRuntimeView))
+                                as ITowerRuntimeView,
+                            findLevelTwoPlacedSink()?.GetComponent(typeof(ITowerRuntimeView))
+                                as ITowerRuntimeView)
                         : id == "generator_linked" && towerNetwork.HasValidChain,
                 mode =>
                 {
@@ -769,6 +781,8 @@ namespace TowerDefense3D.GameFlow
                             waveSystem,
                             levelTwoWaterPlacementTarget,
                             levelTwoWaterPlacementCell,
+                            levelTwoFirePlacementTarget,
+                            levelTwoFirePlacementCell,
                             levelTwoSinkPlacementTarget,
                             levelTwoSinkPlacementCell,
                             levelTwoGeneratorPlacementTarget,
@@ -784,7 +798,7 @@ namespace TowerDefense3D.GameFlow
 
                     // Both calls are idempotent, so running them on every mode change is safe.
                     // Freezing with nothing to point at is not, so the beat is skipped when the
-                    // marked enemy's icon cannot be resolved.
+                    // first Fire-hit enemy's icon cannot be resolved.
                     if (mode == TutorialGameplayUiMode.BurnStatusFrozen)
                     {
                         Transform burningIcon = findBurningEnemyIcon();
@@ -847,6 +861,8 @@ namespace TowerDefense3D.GameFlow
             IWaveSystem waveSystem,
             Transform waterTarget,
             GridCell waterCell,
+            Transform fireTarget,
+            GridCell fireCell,
             Transform sinkTarget,
             GridCell sinkCell,
             Transform generatorTarget,
@@ -854,33 +870,42 @@ namespace TowerDefense3D.GameFlow
         {
             var footprint = new TowerFootprint(2, 2, 2);
             GridPlacementConstraint water = new GridPlacementConstraint(waterCell, footprint);
+            GridPlacementConstraint fire = new GridPlacementConstraint(fireCell, footprint);
             GridPlacementConstraint sink = new GridPlacementConstraint(sinkCell, footprint);
             GridPlacementConstraint generator = new GridPlacementConstraint(generatorCell, footprint);
             bool isWaterPlacement = mode == TutorialGameplayUiMode.LevelTwoWaterPlacement;
+            bool isFirePlacement = mode == TutorialGameplayUiMode.LevelTwoFirePlacement;
             bool isSinkPlacement = mode == TutorialGameplayUiMode.LevelTwoSinkPlacement;
             bool isGeneratorPlacement = mode == TutorialGameplayUiMode.LevelTwoGeneratorPlacement;
 
             towerNetwork.SetTutorialPlacementFree(
-                isWaterPlacement || isSinkPlacement || isGeneratorPlacement);
+                isWaterPlacement || isFirePlacement || isSinkPlacement || isGeneratorPlacement);
             placementSystem.ClearRequiredPlacement();
 
             if (isWaterPlacement && waterTarget != null)
             {
-                placementSystem.SetReservedPlacements(sink, generator);
+                placementSystem.SetReservedPlacements(fire, sink, generator);
                 placementSystem.SetRequiredPlacement(waterCell, footprint);
+                return;
+            }
+
+            if (isFirePlacement && fireTarget != null)
+            {
+                placementSystem.SetReservedPlacements(water, sink, generator);
+                placementSystem.SetRequiredPlacement(fireCell, footprint);
                 return;
             }
 
             if (isSinkPlacement && sinkTarget != null)
             {
-                placementSystem.SetReservedPlacements(water, generator);
+                placementSystem.SetReservedPlacements(water, fire, generator);
                 placementSystem.SetRequiredPlacement(sinkCell, footprint);
                 return;
             }
 
             if (isGeneratorPlacement && generatorTarget != null)
             {
-                placementSystem.SetReservedPlacements(water, sink);
+                placementSystem.SetReservedPlacements(water, fire, sink);
                 placementSystem.SetRequiredPlacement(generatorCell, footprint);
                 return;
             }
@@ -888,7 +913,7 @@ namespace TowerDefense3D.GameFlow
             if (mode != TutorialGameplayUiMode.Full
                 || waveSystem.CreateState().CurrentWaveNumber <= 2)
             {
-                placementSystem.SetReservedPlacements(water, sink, generator);
+                placementSystem.SetReservedPlacements(water, fire, sink, generator);
                 return;
             }
 
@@ -903,6 +928,7 @@ namespace TowerDefense3D.GameFlow
             Func<TutorialTargetView> fire,
             Func<TutorialTargetView> levelTwoGenerator,
             Func<TutorialTargetView> levelTwoWater,
+            Func<TutorialTargetView> levelTwoFire,
             Func<TutorialTargetView> levelTwoSink,
             Func<TutorialTargetView> burningEnemyIcon,
             IReadOnlyDictionary<string, TutorialTargetView> targets)
@@ -913,6 +939,7 @@ namespace TowerDefense3D.GameFlow
                 : id == "tutorial_fire" ? fire()
                 : id == "tutorial_level_two_generator" ? levelTwoGenerator()
                 : id == "tutorial_level_two_water" ? levelTwoWater()
+                : id == "tutorial_level_two_fire" ? levelTwoFire()
                 : id == "tutorial_level_two_sink" ? levelTwoSink()
                 : id == "burning_enemy_icon" ? burningEnemyIcon()
                 : targets.TryGetValue(id, out TutorialTargetView found) ? found : null;
@@ -1066,7 +1093,8 @@ namespace TowerDefense3D.GameFlow
                 },
                 () => gameFlowSystem.RequestPlayNextLevel(currentLevelNumber),
                 gameFlowSystem.RequestReturnToLevelMenu,
-                stars => gameFlowSystem.ReportLevelCleared(currentLevelNumber, stars));
+                stars => gameFlowSystem.ReportLevelCleared(currentLevelNumber, stars),
+                LevelStarRating.AwardsFullStars(levelNumber));
         }
 
         /// <summary>

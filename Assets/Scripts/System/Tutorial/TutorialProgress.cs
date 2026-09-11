@@ -55,7 +55,7 @@ namespace TowerDefense3D.Tutorials
             PermanentProgressChanged?.Invoke();
         }
 
-        public void ResetLevelOneSession()
+        public void ResetSession()
         {
             sessionCompleted.Clear();
         }

@@ -12,6 +12,7 @@ namespace TowerDefense3D.Tutorials
             return context.LevelNumber == 2
                 && context.HasTarget("next_enemy")
                 && context.HasTarget("water_card")
+                && context.HasTarget("fire_card")
                 && context.HasTarget("sink_card")
                 && context.HasTarget("generator_card")
                 && context.IsTrue("wave_three_ready");
@@ -48,6 +49,14 @@ namespace TowerDefense3D.Tutorials
                     requireInstructionComplete: true,
                     instructionTargetId: "tower_hud"),
                 new TutorialStep(
+                    "place_level_two_fire",
+                    string.Empty,
+                    "fire_card,level_two_fire_placement",
+                    "place_fire",
+                    current => current.IsTrue("level_two_fire_placed"),
+                    0.1f,
+                    gameplayUiMode: TutorialGameplayUiMode.LevelTwoFirePlacement),
+                new TutorialStep(
                     "place_level_two_sink",
                     string.Empty,
                     "sink_card,level_two_sink_placement",
@@ -80,11 +89,19 @@ namespace TowerDefense3D.Tutorials
                     0.1f,
                     gameplayUiMode: TutorialGameplayUiMode.LevelTwoLinking),
                 new TutorialStep(
-                    "link_level_two_water_to_sink",
+                    "link_level_two_water_to_tutorial_fire",
                     string.Empty,
-                    "tutorial_level_two_water,tutorial_level_two_sink",
+                    "tutorial_level_two_water,tutorial_level_two_fire",
                     "link_towers",
-                    current => current.IsTrue("level_two_water_linked_to_sink"),
+                    current => current.IsTrue("level_two_water_linked_to_fire"),
+                    0.1f,
+                    gameplayUiMode: TutorialGameplayUiMode.LevelTwoLinking),
+                new TutorialStep(
+                    "link_level_two_fire_to_sink",
+                    string.Empty,
+                    "tutorial_level_two_fire,tutorial_level_two_sink",
+                    "link_towers",
+                    current => current.IsTrue("level_two_fire_linked_to_sink"),
                     0.1f,
                     gameplayUiMode: TutorialGameplayUiMode.LevelTwoLinking)
             };

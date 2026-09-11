@@ -44,6 +44,7 @@ namespace TowerDefense3D.Tutorials
         LevelTwoUpgrade,
         LevelTwoEnemyDetailOnly,
         LevelTwoWaterPlacement,
+        LevelTwoFirePlacement,
         LevelTwoSinkPlacement,
         LevelTwoGeneratorPlacement,
         LevelTwoLinking,

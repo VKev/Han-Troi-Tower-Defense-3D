@@ -14,6 +14,7 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly BoardSystem boardSystem;
         private readonly BoardCameraSystem boardCameraSystem;
+        private readonly BoardCameraGestureSystem boardCameraGestureSystem;
         private readonly GameplayInputSystem gameplayInputSystem;
         private readonly GridPlacementSystem gridPlacementSystem;
         private readonly TowerNetworkSystem towerNetworkSystem;
@@ -23,6 +24,7 @@ namespace TowerDefense3D.GameFlow
         private readonly HeroAttackPresentationSystem heroAttackPresentationSystem;
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
+        private readonly TowerTierVisualPresentationSystem towerTierVisualPresentationSystem;
         private readonly GameplayUISystem gameplayUISystem;
         private readonly SoundCueSystem soundCueSystem;
         private readonly LevelPreparationMusicSystem levelPreparationMusicSystem;
@@ -31,6 +33,7 @@ namespace TowerDefense3D.GameFlow
         public LevelSystemGroup(
             BoardSystem boardSystem,
             BoardCameraSystem boardCameraSystem,
+            BoardCameraGestureSystem boardCameraGestureSystem,
             GameplayInputSystem gameplayInputSystem,
             GridPlacementSystem gridPlacementSystem,
             TowerNetworkSystem towerNetworkSystem,
@@ -40,6 +43,7 @@ namespace TowerDefense3D.GameFlow
             HeroAttackPresentationSystem heroAttackPresentationSystem,
             TowerLinkPresentationSystem towerLinkPresentationSystem,
             TowerProjectilePresentationSystem towerProjectilePresentationSystem,
+            TowerTierVisualPresentationSystem towerTierVisualPresentationSystem,
             GameplayUISystem gameplayUISystem,
             SoundCueSystem soundCueSystem,
             LevelPreparationMusicSystem levelPreparationMusicSystem,
@@ -47,6 +51,7 @@ namespace TowerDefense3D.GameFlow
         {
             this.boardSystem = boardSystem;
             this.boardCameraSystem = boardCameraSystem;
+            this.boardCameraGestureSystem = boardCameraGestureSystem;
             this.gameplayInputSystem = gameplayInputSystem;
             this.gridPlacementSystem = gridPlacementSystem;
             this.towerNetworkSystem = towerNetworkSystem;
@@ -56,6 +61,7 @@ namespace TowerDefense3D.GameFlow
             this.heroAttackPresentationSystem = heroAttackPresentationSystem;
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
+            this.towerTierVisualPresentationSystem = towerTierVisualPresentationSystem;
             this.gameplayUISystem = gameplayUISystem;
             this.soundCueSystem = soundCueSystem;
             this.levelPreparationMusicSystem = levelPreparationMusicSystem;
@@ -67,9 +73,11 @@ namespace TowerDefense3D.GameFlow
             boardSystem.Start();
             boardCameraSystem.Start();
             gameplayInputSystem.Start();
+            boardCameraGestureSystem.Start();
             towerNetworkSystem.Start();
             towerLinkPresentationSystem.Start();
             towerProjectilePresentationSystem.Start();
+            towerTierVisualPresentationSystem.Start();
             enemyPresentationSystem.Start();
             heroAttackPresentationSystem.Start();
             soundCueSystem.Start();
@@ -84,6 +92,10 @@ namespace TowerDefense3D.GameFlow
             // Device Simulator swaps device, and the level HUD has to follow it.
             safeAreaSystem.Tick();
             gameplayInputSystem.Tick();
+
+            // Ahead of the other pointer consumers: a pinch or a pan claims the input mode, and
+            // placement and tower picking both stand down for a mode that is not their own.
+            boardCameraGestureSystem.Tick(deltaTime);
             gridPlacementSystem.Tick();
             towerInteractionSystem.Tick();
             gameplaySimulationSystem.Tick(deltaTime);

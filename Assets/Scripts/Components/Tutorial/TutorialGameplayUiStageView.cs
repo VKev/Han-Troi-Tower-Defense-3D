@@ -157,6 +157,9 @@ namespace TowerDefense3D.GameFlow
                 case TutorialGameplayUiMode.LevelTwoWaterPlacement:
                     SetLevelTwoFullTowerHud();
                     break;
+                case TutorialGameplayUiMode.LevelTwoFirePlacement:
+                    SetLevelTwoFullTowerHud();
+                    break;
                 case TutorialGameplayUiMode.LevelTwoSinkPlacement:
                     SetLevelTwoFullTowerHud();
                     break;

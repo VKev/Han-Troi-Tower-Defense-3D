@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using DG.Tweening;
 using TowerDefense3D.Audio;
 using TowerDefense3D.Tutorials;
@@ -20,6 +21,27 @@ namespace TowerDefense3D.GameFlow
         private static readonly int GlowColorId = Shader.PropertyToID("_GlowColor");
         private static readonly int GlowWidthId = Shader.PropertyToID("_GlowWidth");
         private static readonly int GlowEnabledId = Shader.PropertyToID("_GlowEnabled");
+
+        /// <summary>
+        /// Tower names that carry their own colour wherever a tutorial line mentions them, so the
+        /// two towers the player keeps confusing read apart mid-sentence.
+        /// </summary>
+        /// <remarks>
+        /// Matched without regard to case: the lines were authored by several hands and say both
+        /// "Trụ Sinh Đạn" and "Trụ sinh đạn". The colours are stated as six-digit hex and so
+        /// carry no alpha of their own, which is what lets the label keep fading as a whole.
+        /// </remarks>
+        private static readonly (string Keyword, string ColorHex)[] InstructionKeywords =
+        {
+            ("Trụ sinh đạn", "5CE86B"),
+            ("Trụ thu đạn", "FF5A4E")
+        };
+
+        private static readonly Color InstructionColor = new Color(1f, 0.9f, 0.62f, 1f);
+
+        private readonly List<(int Start, int End, string ColorHex)> instructionKeywordSpans =
+            new List<(int, int, string)>();
+        private readonly StringBuilder instructionMarkup = new StringBuilder();
 
         [SerializeField] private Image dimmer;
         [SerializeField] private Text instruction;
@@ -169,7 +191,7 @@ namespace TowerDefense3D.GameFlow
         {
             if (IsInstructionComplete) return;
             instructionTween?.Kill();
-            instruction.text = instructionValue;
+            instruction.text = BuildRevealedInstruction(instructionValue, instructionValue.Length);
             Color color = instruction.color;
             color.a = 1f;
             instruction.color = color;
@@ -252,7 +274,8 @@ namespace TowerDefense3D.GameFlow
             instruction.alignment = placeBesideTarget || isMagicResistanceIntroduction
                 ? TextAnchor.MiddleLeft
                 : TextAnchor.MiddleCenter;
-            instruction.color = new Color(1f, 0.9f, 0.62f, 1f);
+            instruction.color = InstructionColor;
+            instruction.supportRichText = true;
             instruction.horizontalOverflow = HorizontalWrapMode.Wrap;
             instruction.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -349,6 +372,7 @@ namespace TowerDefense3D.GameFlow
             instructionTween?.Kill();
             StopTypingSound();
             instructionValue = value;
+            CollectInstructionKeywordSpans(value);
             IsInstructionComplete = false;
             Color color = instruction.color;
             color.a = 0f;
@@ -375,7 +399,7 @@ namespace TowerDefense3D.GameFlow
                     count =>
                     {
                         visibleCharacters = count;
-                        instruction.text = value.Substring(0, count);
+                        instruction.text = BuildRevealedInstruction(value, count);
                     },
                     value.Length,
                     duration)
@@ -392,6 +416,99 @@ namespace TowerDefense3D.GameFlow
         private void StopTypingSound()
         {
             soundPlayer?.Stop(SoundId.TutorialTyping);
+        }
+
+        private void CollectInstructionKeywordSpans(string value)
+        {
+            instructionKeywordSpans.Clear();
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+
+            for (int index = 0; index < InstructionKeywords.Length; index++)
+            {
+                (string keyword, string colorHex) = InstructionKeywords[index];
+                int from = 0;
+                while (from < value.Length)
+                {
+                    int at = value.IndexOf(keyword, from, StringComparison.OrdinalIgnoreCase);
+                    if (at < 0)
+                    {
+                        break;
+                    }
+
+                    instructionKeywordSpans.Add((at, at + keyword.Length, colorHex));
+                    from = at + keyword.Length;
+                }
+            }
+
+            instructionKeywordSpans.Sort((first, second) => first.Start.CompareTo(second.Start));
+        }
+
+        /// <summary>
+        /// The first <paramref name="visibleCount"/> characters of the line, with every coloured
+        /// tower name wrapped and any tag left open by the cut closed again.
+        /// </summary>
+        /// <remarks>
+        /// Built rather than substringed because the colours are rich-text tags: slicing the
+        /// marked-up string by character count would cut through a tag and print it as the
+        /// literal "&lt;colo" the player would then watch finish itself.
+        /// </remarks>
+        private string BuildRevealedInstruction(string value, int visibleCount)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            visibleCount = Mathf.Clamp(visibleCount, 0, value.Length);
+            if (instructionKeywordSpans.Count == 0)
+            {
+                return value.Substring(0, visibleCount);
+            }
+
+            instructionMarkup.Length = 0;
+            int spanIndex = 0;
+            int openSpanIndex = -1;
+            for (int index = 0; index < visibleCount; index++)
+            {
+                while (spanIndex < instructionKeywordSpans.Count
+                    && instructionKeywordSpans[spanIndex].End <= index)
+                {
+                    spanIndex++;
+                }
+
+                bool isInsideSpan = spanIndex < instructionKeywordSpans.Count
+                    && index >= instructionKeywordSpans[spanIndex].Start;
+                int wantedSpanIndex = isInsideSpan ? spanIndex : -1;
+                if (wantedSpanIndex != openSpanIndex)
+                {
+                    if (openSpanIndex >= 0)
+                    {
+                        instructionMarkup.Append("</color>");
+                    }
+
+                    if (wantedSpanIndex >= 0)
+                    {
+                        instructionMarkup
+                            .Append("<color=#")
+                            .Append(instructionKeywordSpans[wantedSpanIndex].ColorHex)
+                            .Append('>');
+                    }
+
+                    openSpanIndex = wantedSpanIndex;
+                }
+
+                instructionMarkup.Append(value[index]);
+            }
+
+            if (openSpanIndex >= 0)
+            {
+                instructionMarkup.Append("</color>");
+            }
+
+            return instructionMarkup.ToString();
         }
 
         private void PlayPendingHand()

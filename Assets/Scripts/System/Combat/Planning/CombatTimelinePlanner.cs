@@ -758,6 +758,11 @@ namespace TowerDefense3D.Enemies
                 }
 
                 ResolveDirectHit(hit, enemies, timeline, tick);
+                if (hit.Projectile.Payload.Kind == ProjectilePayloadKind.Fire)
+                {
+                    timeline.Add(tick, new FireHitEvent(hit.Enemy.Id));
+                }
+
                 if (ShouldPresentImpact(hit, lastImpacts, tick))
                 {
                     timeline.Add(tick, new ProjectileImpactEvent(

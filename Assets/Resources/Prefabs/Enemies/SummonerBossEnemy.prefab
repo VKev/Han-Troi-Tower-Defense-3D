@@ -210,7 +210,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 898328576160968675, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.690269
+      value: -2.81
       objectReference: {fileID: 0}
     - target: {fileID: 898328576160968675, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -254,27 +254,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: ShapeModule.m_Scale.x
-      value: 0.2
+      value: 0.29
       objectReference: {fileID: 0}
     - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: ShapeModule.m_Scale.y
-      value: 0.21
+      value: 0.69
       objectReference: {fileID: 0}
     - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: ShapeModule.m_Scale.z
       value: 2.11
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 0.08
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: InitialModule.startSpeed.scalar
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: InitialModule.startLifetime.scalar
-      value: 1.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -697,6 +685,7 @@ MonoBehaviour:
   effectPrefab: {fileID: 4762603423507884888, guid: e0742118cf4119a4e80a6aca256ac223, type: 3}
   anchor: {fileID: 7478206738895970961}
   playDelaySeconds: 1
+  skillSoundId: 29
 --- !u!4 &7478206738895970961 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3783106057630668666, guid: 3cc7aa9ad4fae6f478ce8f3e79f0b859, type: 3}

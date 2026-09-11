@@ -1,5 +1,7 @@
 using System;
 using DG.Tweening;
+using TowerDefense3D.Enemies;
+using TowerDefense3D.GameFlow;
 using TowerDefense3D.Simulation;
 using UnityEngine;
 
@@ -20,19 +22,45 @@ namespace TowerDefense3D.Tutorials
 
         private readonly Camera camera;
         private readonly GameplaySimulationSystem simulation;
+        private readonly CombatTimelineSystem combatTimeline;
+        private readonly IGameplayUIView gameplayUi;
 
         private Tween dolly;
         private Vector3 restPosition;
         private bool isEntered;
+        private bool captureFirstFireHit;
 
         // Stays true through the dolly back, so a level torn down mid-beat cannot leave the
         // simulation paused or the camera parked off its framing.
         private bool isHoldingBoard;
 
-        public TutorialFocusSystem(Camera camera, GameplaySimulationSystem simulation)
+        public TutorialFocusSystem(
+            Camera camera,
+            GameplaySimulationSystem simulation,
+            CombatTimelineSystem combatTimeline,
+            IGameplayUIView gameplayUi)
         {
             this.camera = camera ?? throw new ArgumentNullException(nameof(camera));
             this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
+            this.combatTimeline = combatTimeline ?? throw new ArgumentNullException(nameof(combatTimeline));
+            this.gameplayUi = gameplayUi ?? throw new ArgumentNullException(nameof(gameplayUi));
+            combatTimeline.FireHitResolved += HandleFireHitResolved;
+        }
+
+        /// <summary>
+        /// Whether this beat currently owns the camera. Player camera gestures stand down while
+        /// it does: the dolly writes the transform directly and a gesture would reframe it away.
+        /// </summary>
+        public bool IsHoldingBoard => isHoldingBoard;
+        public long FirstFireHitEnemyId { get; private set; }
+
+        public void SetFirstFireHitCaptureEnabled(bool enabled)
+        {
+            captureFirstFireHit = enabled;
+            if (!enabled)
+            {
+                FirstFireHitEnemyId = 0L;
+            }
         }
 
         public void Enter(Vector3 worldFocusPoint)
@@ -46,6 +74,7 @@ namespace TowerDefense3D.Tutorials
             isHoldingBoard = true;
             restPosition = camera.transform.position;
             simulation.SetPaused(true);
+            gameplayUi.SetTutorialFocusVisible(false);
             dolly?.Kill();
             dolly = camera.transform
                 .DOMove(Vector3.Lerp(restPosition, worldFocusPoint, DollyFactor), DollySeconds)
@@ -55,14 +84,18 @@ namespace TowerDefense3D.Tutorials
 
         public void Exit()
         {
-            if (!isEntered)
+            if (!isHoldingBoard)
             {
                 return;
             }
 
+            bool hadCameraFocus = isEntered;
             isEntered = false;
+            captureFirstFireHit = false;
+            combatTimeline.ReleaseHeldEnemyFrame();
+            gameplayUi.SetTutorialFocusVisible(true);
             dolly?.Kill();
-            if (camera == null)
+            if (!hadCameraFocus || camera == null)
             {
                 isHoldingBoard = false;
                 simulation.SetPaused(false);
@@ -84,9 +117,11 @@ namespace TowerDefense3D.Tutorials
 
         public void Dispose()
         {
+            combatTimeline.FireHitResolved -= HandleFireHitResolved;
             dolly?.Kill();
             dolly = null;
             isEntered = false;
+            captureFirstFireHit = false;
             if (!isHoldingBoard)
             {
                 return;
@@ -99,6 +134,19 @@ namespace TowerDefense3D.Tutorials
             }
 
             simulation.SetPaused(false);
+        }
+
+        private void HandleFireHitResolved(FireHitEvent hit)
+        {
+            if (!captureFirstFireHit || FirstFireHitEnemyId != 0L)
+            {
+                return;
+            }
+
+            FirstFireHitEnemyId = hit.EnemyId;
+            isHoldingBoard = true;
+            simulation.SetPaused(true);
+            combatTimeline.HoldLethalFrame(hit.EnemyId);
         }
     }
 }

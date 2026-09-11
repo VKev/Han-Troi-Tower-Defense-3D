@@ -51,10 +51,10 @@ namespace TowerDefense3D.Tutorials
 
         public void UnbindLevel()
         {
-            if (context?.LevelNumber == 1 && !progress.HasCompletedLevelOneTutorial)
-            {
-                progress.ResetLevelOneSession();
-            }
+            // Leaving a level puts its tutorials back on the table. Session completions outlive the
+            // level scope, so without this a replay - or a later return in the same run - silently
+            // skips every tutorial the player had already walked through.
+            progress.ResetSession();
 
             Stop();
             context = null;

@@ -10,7 +10,7 @@ namespace TowerDefense3D.Tutorials
         public bool CanStart(TutorialContext context)
         {
             return context.LevelNumber == 1
-                && context.IsTrue("armored_fire_marked");
+                && context.IsTrue("first_fire_hit");
         }
 
         public IReadOnlyList<TutorialStep> CreateSteps(TutorialContext context)

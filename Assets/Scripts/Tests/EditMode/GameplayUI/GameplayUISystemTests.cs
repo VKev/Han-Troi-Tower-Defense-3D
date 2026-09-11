@@ -512,6 +512,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             {
                 ShowCount++;
             }
+
+            public void SetTutorialFocusVisible(bool visible)
+            {
+                _ = visible;
+            }
         }
 
         private sealed class LevelStatusHudViewStub : ILevelStatusHudView
@@ -690,6 +695,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private sealed class GameplayInputSourceStub : IGameplayInputSource
         {
             public GameplayInputSnapshot Capture()
+            {
+                return default;
+            }
+
+            public GameplayCameraGestureSnapshot CaptureCameraGesture()
             {
                 return default;
             }

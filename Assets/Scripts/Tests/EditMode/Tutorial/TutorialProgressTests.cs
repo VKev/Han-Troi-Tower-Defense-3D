@@ -17,7 +17,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(progress.IsCompleted("first_link_v2"), Is.True);
             Assert.That(progress.CreateSnapshot(), Is.Empty);
 
-            progress.ResetLevelOneSession();
+            progress.ResetSession();
 
             Assert.That(progress.IsCompleted("first_link_v2"), Is.False);
             Assert.That(progress.IsCompleted("second_wave_expansion_v1"), Is.False);

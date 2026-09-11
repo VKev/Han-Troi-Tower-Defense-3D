@@ -222,7 +222,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 898328576160968675, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.5485187
+      value: -5.74
       objectReference: {fileID: 0}
     - target: {fileID: 898328576160968675, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: m_LocalPosition.z
@@ -263,30 +263,6 @@ PrefabInstance:
     - target: {fileID: 7957833072274404953, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
       propertyPath: m_IsActive
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: ShapeModule.m_Scale.x
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: ShapeModule.m_Scale.y
-      value: 0.21
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: ShapeModule.m_Scale.z
-      value: 2.11
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 0.08
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: InitialModule.startSpeed.scalar
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8176230078092200170, guid: 3355f6bfa6db8b24281b827de929694c, type: 3}
-      propertyPath: InitialModule.startLifetime.scalar
-      value: 1.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -767,6 +743,7 @@ MonoBehaviour:
   effectPrefab: {fileID: 1339262175069690375, guid: 367535971f7474e489f29f20bec81a02, type: 3}
   anchor: {fileID: 2866312956743985419}
   playDelaySeconds: 1
+  skillSoundId: 28
 --- !u!114 &8933163882635629333
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -12,6 +12,8 @@ namespace TowerDefense3D.Enemies
         private readonly WaveSystem waveSystem;
         private readonly CombatTimelinePlanner planner;
         private CombatTimeline timeline = new CombatTimeline();
+        private long heldFrameRequestEnemyId;
+        private PlannedEnemyFrame? heldEnemyFrame;
         private bool isDisposed;
 
         public CombatTimelineSystem(
@@ -29,6 +31,7 @@ namespace TowerDefense3D.Enemies
         }
 
         internal event Action<ProjectileImpactEvent> ProjectileImpacted;
+        internal event Action<FireHitEvent> FireHitResolved;
         public event Action<ElementReactionEvent> ReactionTriggered;
         public event Action<HeroAttackEvent> HeroAttackStarted;
 
@@ -37,6 +40,7 @@ namespace TowerDefense3D.Enemies
             long tick = towerNetworkManager.CurrentTick;
             ApplySpawns(timeline.GetSpawns(tick));
             PublishHeroAttacks(timeline.GetHeroAttacks(tick));
+            PublishFireHits(timeline.GetFireHits(tick));
             PublishImpacts(timeline.GetImpacts(tick));
             PublishReactions(timeline.GetReactions(tick));
             ApplyFrames(timeline.GetFrames(tick));
@@ -45,6 +49,30 @@ namespace TowerDefense3D.Enemies
         public void Reset()
         {
             timeline = new CombatTimeline();
+            heldFrameRequestEnemyId = 0L;
+            heldEnemyFrame = null;
+        }
+
+        internal void HoldLethalFrame(long enemyId)
+        {
+            if (enemyId > 0L && !heldEnemyFrame.HasValue)
+            {
+                heldFrameRequestEnemyId = enemyId;
+            }
+        }
+
+        internal void ReleaseHeldEnemyFrame()
+        {
+            if (!heldEnemyFrame.HasValue)
+            {
+                heldFrameRequestEnemyId = 0L;
+                return;
+            }
+
+            PlannedEnemyFrame frame = heldEnemyFrame.Value;
+            heldEnemyFrame = null;
+            heldFrameRequestEnemyId = 0L;
+            enemySystem.ApplyPlannedFrame(frame);
         }
 
         public void Dispose()
@@ -76,7 +104,27 @@ namespace TowerDefense3D.Enemies
         {
             for (int index = 0; index < frames.Count; index++)
             {
-                enemySystem.ApplyPlannedFrame(frames[index]);
+                PlannedEnemyFrame frame = frames[index];
+                if (frame.EnemyId == heldFrameRequestEnemyId
+                    && frame.Removal == PlannedEnemyRemoval.Killed)
+                {
+                    heldEnemyFrame = frame;
+                    heldFrameRequestEnemyId = 0L;
+                    enemySystem.ApplyPlannedFrame(frame.HoldAlive());
+                    continue;
+                }
+
+                enemySystem.ApplyPlannedFrame(frame);
+            }
+
+            heldFrameRequestEnemyId = 0L;
+        }
+
+        private void PublishFireHits(IReadOnlyList<FireHitEvent> hits)
+        {
+            for (int index = 0; index < hits.Count; index++)
+            {
+                FireHitResolved?.Invoke(hits[index]);
             }
         }
 

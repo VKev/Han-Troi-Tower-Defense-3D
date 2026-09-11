@@ -97,6 +97,11 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             {
                 return default;
             }
+
+            public GameplayCameraGestureSnapshot CaptureCameraGesture()
+            {
+                return default;
+            }
         }
 
         private sealed class StubTowerInstanceFactory : ITowerInstanceFactory

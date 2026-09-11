@@ -6770,7 +6770,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3956274820727327133, guid: ec1c7fe04146caa48ac0a17a9d5939b6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 32
+      value: 33
       objectReference: {fileID: 0}
     - target: {fileID: 3956274820727327133, guid: ec1c7fe04146caa48ac0a17a9d5939b6, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6810,7 +6810,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4444017437502214951, guid: ec1c7fe04146caa48ac0a17a9d5939b6, type: 3}
       propertyPath: m_Name
-      value: Soul Nexus Cell (31, 0, 35)
+      value: Soul Nexus Cell (32, 0, 35)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6845,7 +6845,7 @@ MonoBehaviour:
   definition: {fileID: 11400000, guid: 461cbd58630b0f1419259bf6b2bbe434, type: 2}
   hasBoardAnchor: 1
   boardAnchor:
-    x: 31
+    x: 32
     z: 35
     y: 0
 --- !u!4 &1398809754 stripped
@@ -7829,7 +7829,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2855971349495787443, guid: 7b3181c1cd51eed4590d231670cf81a0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 35
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 2855971349495787443, guid: 7b3181c1cd51eed4590d231670cf81a0, type: 3}
       propertyPath: m_LocalPosition.y
@@ -7837,7 +7837,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2855971349495787443, guid: 7b3181c1cd51eed4590d231670cf81a0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 27
+      value: 31
       objectReference: {fileID: 0}
     - target: {fileID: 2855971349495787443, guid: 7b3181c1cd51eed4590d231670cf81a0, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7869,7 +7869,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3236296353694086409, guid: 7b3181c1cd51eed4590d231670cf81a0, type: 3}
       propertyPath: m_Name
-      value: Generator Cell (34, 0, 26)
+      value: Generator Cell (35, 0, 30)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7904,8 +7904,8 @@ MonoBehaviour:
   definition: {fileID: 11400000, guid: 37378dec03550a34c958d9a7bc3edbe9, type: 2}
   hasBoardAnchor: 1
   boardAnchor:
-    x: 34
-    z: 26
+    x: 35
+    z: 30
     y: 0
 --- !u!1001 &1568209007
 PrefabInstance:

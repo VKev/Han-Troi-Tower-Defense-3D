@@ -270,6 +270,7 @@ MonoBehaviour:
   elementReactionCatalog: {fileID: 11400000, guid: 10b92111702120c40bd09173ae469ebd, type: 2}
   applicationUIView: {fileID: 2997823818241270888}
   soundCatalog: {fileID: 11400000, guid: 5f3e538c4d5741ad96b681e9d823bf0a, type: 2}
+  boardCameraGestureRules: {fileID: 11400000, guid: ba6df70da26a9ae488ac1999f224b7c9, type: 2}
 --- !u!81 &527752831
 AudioListener:
   m_ObjectHideFlags: 0
