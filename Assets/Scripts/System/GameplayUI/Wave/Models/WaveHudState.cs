@@ -16,7 +16,8 @@ namespace TowerDefense3D.GameFlow
             IReadOnlyList<Sprite> previewIcons,
             bool startWaveEnabled,
             IReadOnlyList<EnemyDefinition> previewEnemies = null,
-            IReadOnlyList<bool> previewEnemiesAreNew = null)
+            IReadOnlyList<bool> previewEnemiesAreNew = null,
+            bool showStartWaveBlockedHint = false)
         {
             WaveCounterText = waveCounterText;
             StatusText = statusText;
@@ -28,6 +29,7 @@ namespace TowerDefense3D.GameFlow
             StartWaveEnabled = startWaveEnabled;
             PreviewEnemies = previewEnemies;
             PreviewEnemiesAreNew = previewEnemiesAreNew;
+            ShowStartWaveBlockedHint = showStartWaveBlockedHint;
         }
 
         public string WaveCounterText { get; }
@@ -50,5 +52,15 @@ namespace TowerDefense3D.GameFlow
         public IReadOnlyList<bool> PreviewEnemiesAreNew { get; }
 
         public bool StartWaveEnabled { get; }
+
+        /// <summary>
+        /// Whether to stand the "link a chain first" line above the build bar.
+        /// </summary>
+        /// <remarks>
+        /// Narrower than the negation of <see cref="StartWaveEnabled"/>, which is also false
+        /// while a wave runs and after the level is decided. Those are not states the player can
+        /// fix by linking anything, so a line telling them to link would be wrong there.
+        /// </remarks>
+        public bool ShowStartWaveBlockedHint { get; }
     }
 }

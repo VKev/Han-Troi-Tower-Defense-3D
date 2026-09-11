@@ -51,7 +51,17 @@ namespace TowerDefense3D.GameFlow
                 CreatePreviewIcons(previewEnemies),
                 state.CanStartWave,
                 previewEnemies,
-                CreatePreviewEnemyDiscovery(previewEnemies)));
+                CreatePreviewEnemyDiscovery(previewEnemies),
+                ShouldShowStartWaveBlockedHint(state)));
+        }
+
+        /// <summary>
+        /// The wave is waiting on the player and the only thing missing is a chain, which is the
+        /// one reason for a refusal they can act on from here.
+        /// </summary>
+        private static bool ShouldShowStartWaveBlockedHint(WaveState state)
+        {
+            return state.Phase == WavePhase.Preparation && !state.CanStartWave;
         }
 
         private void HandleStartWaveRequested()

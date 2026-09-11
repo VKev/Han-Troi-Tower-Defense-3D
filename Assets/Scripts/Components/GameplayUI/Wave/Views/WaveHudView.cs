@@ -42,11 +42,22 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private Text enemyDescriptionText;
         [SerializeField] private CanvasGroup startWaveCanvasGroup;
 
+        [Header("Chain hint")]
+        [Tooltip("The red line above the build bar. It stands there for as long as no chain feeds a Soul Nexus, and goes away the moment one does.")]
+        [SerializeField] private Text startWaveBlockedHintText;
+
+        [Tooltip("Sits on the Start Wave button and reports the taps the button drops while it is greyed out.")]
+        [SerializeField] private StartWavePressRelay startWavePressRelay;
+
+        [SerializeField, Min(0f)] private float blockedHintPunchDuration = 0.45f;
+        [SerializeField, Min(0f)] private float blockedHintPunchScale = 0.22f;
+
         private bool isInitialized;
         private bool isPreviewExpanded;
         private bool isTutorialPreviewOnly;
         private Tween startWaveRevealTween;
         private Tween startWavePressTween;
+        private Tween blockedHintTween;
         private Tween previewGridTween;
         private Tween enemyDescriptionTween;
         private Tween[] previewAttentionTweens = Array.Empty<Tween>();
@@ -85,6 +96,11 @@ namespace TowerDefense3D.GameFlow
             }
 
             startWaveButton.onClick.AddListener(HandleStartWaveRequested);
+            if (startWavePressRelay != null)
+            {
+                startWavePressRelay.Pressed += HandleStartWavePressed;
+            }
+
             if (previewToggleButton != null)
             {
                 previewToggleButton.onClick.AddListener(HandlePreviewToggled);
@@ -122,6 +138,11 @@ namespace TowerDefense3D.GameFlow
                 startWaveButton.gameObject.SetActive(false);
             }
 
+            // Gated on the button still being on screen as well. A tutorial step that takes Start
+            // Wave away has its own instruction running, and a line explaining how to un-grey a
+            // button the player cannot see would only argue with it.
+            RenderBlockedHint(
+                state.ShowStartWaveBlockedHint && startWaveButton.gameObject.activeSelf);
             startWaveText.text = state.StartWaveText;
             startWaveBonusText.text = state.StartWaveBonusText;
             waveCounterText.text = state.WaveCounterText;
@@ -484,6 +505,7 @@ namespace TowerDefense3D.GameFlow
             startWaveRevealTween?.Kill();
             startWaveRevealTween = null;
             startWavePressTween?.Kill();
+            blockedHintTween?.Kill();
             previewGridTween?.Kill();
             enemyDescriptionTween?.Kill();
             for (int index = 0; index < previewAttentionTweens.Length; index++)
@@ -496,12 +518,71 @@ namespace TowerDefense3D.GameFlow
             }
 
             startWaveButton.onClick.RemoveListener(HandleStartWaveRequested);
+            if (startWavePressRelay != null)
+            {
+                startWavePressRelay.Pressed -= HandleStartWavePressed;
+            }
+
             if (previewToggleButton != null)
             {
                 previewToggleButton.onClick.RemoveListener(HandlePreviewToggled);
             }
 
             isInitialized = false;
+        }
+
+        private void RenderBlockedHint(bool visible)
+        {
+            if (startWaveBlockedHintText == null
+                || startWaveBlockedHintText.gameObject.activeSelf == visible)
+            {
+                return;
+            }
+
+            // Any punch still running belongs to a question the player has just had answered, so
+            // it is dropped rather than left to finish on a line that is on its way out.
+            blockedHintTween?.Kill();
+            startWaveBlockedHintText.gameObject.SetActive(visible);
+        }
+
+        /// <summary>
+        /// A refused tap on Start Wave nudges the line that explains the refusal, then leaves it
+        /// static again.
+        /// </summary>
+        private void HandleStartWavePressed()
+        {
+            if (startWaveButton.interactable
+                || startWaveBlockedHintText == null
+                || !startWaveBlockedHintText.gameObject.activeInHierarchy
+                || blockedHintPunchDuration <= 0f
+                || blockedHintPunchScale <= 0f)
+            {
+                return;
+            }
+
+            // Restarted rather than stacked, and the scale is put back by hand first: a punch
+            // reads its rest pose when it starts, so punching mid-punch would settle the line on
+            // whatever half-scaled value the previous one happened to be passing through.
+            blockedHintTween?.Kill();
+            RectTransform hint = startWaveBlockedHintText.rectTransform;
+            hint.localScale = Vector3.one;
+            blockedHintTween = hint
+                .DOPunchScale(
+                    Vector3.one * blockedHintPunchScale,
+                    blockedHintPunchDuration,
+                    8,
+                    0.7f)
+                .SetTarget(this)
+                .OnKill(ResetBlockedHintScale);
+        }
+
+        private void ResetBlockedHintScale()
+        {
+            blockedHintTween = null;
+            if (startWaveBlockedHintText != null)
+            {
+                startWaveBlockedHintText.rectTransform.localScale = Vector3.one;
+            }
         }
 
         private void RevealStartWave()
