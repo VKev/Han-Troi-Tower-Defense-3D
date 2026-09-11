@@ -22,10 +22,12 @@ namespace TowerDefense3D.Enemies
             new Dictionary<EnemyDefinition, ComponentPool<EnemyView>>();
         private readonly List<ActiveEnemyView> pendingDeathSnapshot = new List<ActiveEnemyView>();
         private Camera worldCamera;
+        private Audio.ISoundPlayer soundPlayer;
 
-        public void Configure(Camera camera)
+        public void Configure(Camera camera, Audio.ISoundPlayer player = null)
         {
             worldCamera = camera;
+            soundPlayer = player;
             if (reactionEffectEmitter == null)
             {
                 throw new MissingReferenceException("EnemyViewPool requires an authored reaction effect emitter.");
@@ -188,7 +190,7 @@ namespace TowerDefense3D.Enemies
                     $"Enemy View Prefab '{definition.ViewPrefab.name}' must have an EnemyView on its root.");
             }
 
-            view.Configure(worldCamera, reactionEffectEmitter);
+            view.Configure(worldCamera, reactionEffectEmitter, soundPlayer);
             view.Release();
             return view;
         }

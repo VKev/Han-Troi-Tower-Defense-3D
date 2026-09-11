@@ -65,11 +65,14 @@ namespace TowerDefense3D.Enemies
             spawnLocalScale = transform.localScale;
         }
 
-        public void Configure(Camera worldCamera, Vfx.GlobalEffectEmitterView reactionEffectEmitter)
+        public void Configure(
+            Camera worldCamera,
+            Vfx.GlobalEffectEmitterView reactionEffectEmitter,
+            Audio.ISoundPlayer soundPlayer = null)
         {
             GetElementStatusView().Configure(worldCamera);
             GetElementEffectView().ConfigureReactionEmitter(reactionEffectEmitter);
-            GetSkillEffectView()?.ConfigureEmitter(reactionEffectEmitter);
+            GetSkillEffectView()?.ConfigureEmitter(reactionEffectEmitter, soundPlayer);
         }
 
         /// <summary>

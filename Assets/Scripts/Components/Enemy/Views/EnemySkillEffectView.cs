@@ -1,3 +1,4 @@
+using TowerDefense3D.Audio;
 using UnityEngine;
 
 namespace TowerDefense3D.Enemies
@@ -13,14 +14,21 @@ namespace TowerDefense3D.Enemies
         [SerializeField] private Transform anchor;
         [SerializeField, Min(0f)] private float playDelaySeconds;
 
+        [Tooltip("Cue raised with the effect, so the skill is heard at the instant it is seen rather than at the instant it was decided. Leave as None for a silent skill.")]
+        [SerializeField] private SoundId skillSoundId = SoundId.None;
+
         private Vfx.GlobalEffectEmitterView emitter;
+        private ISoundPlayer soundPlayer;
         private int renderedCastVersion;
         private float pendingDelaySeconds;
         private bool hasPendingEffect;
 
-        public void ConfigureEmitter(Vfx.GlobalEffectEmitterView sharedEmitter)
+        public void ConfigureEmitter(
+            Vfx.GlobalEffectEmitterView sharedEmitter,
+            ISoundPlayer sharedSoundPlayer = null)
         {
             emitter = sharedEmitter;
+            soundPlayer = sharedSoundPlayer;
         }
 
         public void Bind(int skillCastVersion)
@@ -44,7 +52,7 @@ namespace TowerDefense3D.Enemies
 
             if (playDelaySeconds <= 0f)
             {
-                emitter.Play(effectPrefab, anchor.position);
+                PlayEffect();
                 return;
             }
 
@@ -68,7 +76,20 @@ namespace TowerDefense3D.Enemies
             hasPendingEffect = false;
             if (emitter != null && effectPrefab != null && anchor != null)
             {
-                emitter.Play(effectPrefab, anchor.position);
+                PlayEffect();
+            }
+        }
+
+        /// <summary>
+        /// Puts the effect on screen and its cue in the air in the same frame, including after
+        /// the authored delay, so a skill that is seen late is also heard late.
+        /// </summary>
+        private void PlayEffect()
+        {
+            emitter.Play(effectPrefab, anchor.position);
+            if (skillSoundId != SoundId.None)
+            {
+                soundPlayer?.Play(skillSoundId);
             }
         }
 
