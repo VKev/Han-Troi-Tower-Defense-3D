@@ -53,6 +53,27 @@ namespace TowerDefense3D.Tutorials
                     current => current.IsTrue("wave_running"),
                     0.25f,
                     gameplayUiMode: TutorialGameplayUiMode.StartWaveOnly),
+                // Wave 2 is the wave the boar first walks in on, so it is introduced here rather
+                // than at wave 3 where it used to be - by then the player has already fought one.
+                // The portrait it points at is the preview's first slot, which is the boar because
+                // the wave authors its batch before the rats.
+                new TutorialStep(
+                    "inspect_next_enemy",
+                    "Kẻ địch kế tiếp là heo rừng, bấm để xem chi tiết",
+                    "next_enemy",
+                    "inspect_enemy",
+                    current => current.IsTrue("next_enemy_description_open"),
+                    0.1f,
+                    gameplayUiMode: TutorialGameplayUiMode.EnemyDetailOnly,
+                    canShow: current => current.IsTrue("wave_two_ready")),
+                new TutorialStep(
+                    "read_enemy_description",
+                    string.Empty,
+                    "next_enemy_description",
+                    string.Empty,
+                    _ => true,
+                    2f,
+                    gameplayUiMode: TutorialGameplayUiMode.EnemyDetailOnly),
                 new TutorialStep(
                     "wave_two_warning",
                     "Có vẻ như phòng thủ chưa đủ,\nhãy đặt thêm Trụ Sinh Đạn",

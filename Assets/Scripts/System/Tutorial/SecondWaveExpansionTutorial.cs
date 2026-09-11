@@ -19,22 +19,9 @@ namespace TowerDefense3D.Tutorials
         {
             return new[]
             {
-                new TutorialStep(
-                    "inspect_next_enemy",
-                    "Kẻ địch kế tiếp là heo rừng, bấm để xem chi tiết",
-                    "next_enemy",
-                    "inspect_enemy",
-                    current => current.IsTrue("next_enemy_description_open"),
-                    0.1f,
-                    gameplayUiMode: TutorialGameplayUiMode.EnemyDetailOnly),
-                new TutorialStep(
-                    "read_enemy_description",
-                    string.Empty,
-                    "next_enemy_description",
-                    string.Empty,
-                    _ => true,
-                    2f,
-                    gameplayUiMode: TutorialGameplayUiMode.EnemyDetailOnly),
+                // The boar is not introduced here any more. Wave 2 is the wave it first walks in
+                // on, so meeting it at wave 3 would have been a wave late - see FirstLinkTutorial,
+                // which now carries the introduction.
                 new TutorialStep(
                     "enemy_strength_warning",
                     "Kẻ địch mạnh hơn rồi, hãy đặt thêm Trụ thu đạn và Trụ sinh đạn",
