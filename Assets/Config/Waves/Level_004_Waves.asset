@@ -21,7 +21,7 @@ MonoBehaviour:
       startTimeSeconds: 0
       spawnWindowSeconds: 4
       spawnPointIndex: -1
-  - clearGoldReward: 0
+  - clearGoldReward: 220
     spawnBatches:
     - enemy: {fileID: 11400000, guid: 264438c3591d2b34c8726ca96d7f1249, type: 2}
       count: 1
@@ -169,3 +169,9 @@ MonoBehaviour:
       startTimeSeconds: 9
       spawnWindowSeconds: 2
       spawnPointIndex: -1
+  stationaryBoss:
+    boss: {fileID: 0}
+    firstStandingWaveNumber: 1
+    standDistanceMeters: 12
+    spawnPointIndex: 0
+    waves: []
