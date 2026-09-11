@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using TowerDefense3D.Enemies;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -37,14 +38,23 @@ namespace TowerDefense3D.GameFlow
 
         [Tooltip("Whether the grid starts rolled out. It does: the roster is what the player is deciding against, so it is the resting state rather than something to go looking for. After that it is theirs - nothing closes it but another tap.")]
         [SerializeField] private bool previewStartsExpanded = true;
+        [SerializeField] private GameObject enemyDescriptionPanel;
+        [SerializeField] private Text enemyDescriptionText;
+        [SerializeField] private CanvasGroup startWaveCanvasGroup;
 
         private bool isInitialized;
         private bool isPreviewExpanded;
         private bool isTutorialPreviewOnly;
-        private CanvasGroup startWaveCanvasGroup;
         private Tween startWaveRevealTween;
+        private Tween startWavePressTween;
+        private Tween previewGridTween;
+        private Tween enemyDescriptionTween;
+        private Tween[] previewAttentionTweens = Array.Empty<Tween>();
+        private EnemyDefinition[] previewEnemies = Array.Empty<EnemyDefinition>();
+        private int describedEnemyIndex = -1;
 
         public event Action StartWaveRequested;
+        public event Action<EnemyDefinition> EnemyDescriptionOpened;
         public Transform NextWaveToggleTransform => previewToggleButton != null
             ? previewToggleButton.transform
             : null;
@@ -53,6 +63,12 @@ namespace TowerDefense3D.GameFlow
             && previewSlots[0] != null
                 ? previewSlots[0].transform
                 : previewGrid != null ? previewGrid.transform : null;
+        public Transform NextEnemyDescriptionTransform => enemyDescriptionPanel != null
+            ? enemyDescriptionPanel.transform
+            : null;
+        public bool IsNextEnemyDescriptionVisible => describedEnemyIndex == 0
+            && enemyDescriptionPanel != null
+            && enemyDescriptionPanel.activeSelf;
 
         public void Initialize()
         {
@@ -61,10 +77,37 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
+            if (startWaveCanvasGroup == null
+                || startWaveCanvasGroup.gameObject != startWaveButton.gameObject)
+            {
+                throw new MissingReferenceException(
+                    "WaveHudView requires Start Wave to own its authored CanvasGroup.");
+            }
+
             startWaveButton.onClick.AddListener(HandleStartWaveRequested);
             if (previewToggleButton != null)
             {
                 previewToggleButton.onClick.AddListener(HandlePreviewToggled);
+            }
+
+            for (int index = 0; index < previewSlots.Length; index++)
+            {
+                int slotIndex = index;
+                Image slot = previewSlots[index];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                Button button = slot.GetComponent<Button>();
+                if (button == null)
+                {
+                    throw new InvalidOperationException($"Preview slot {index + 1} requires an authored Button.");
+                }
+                button.targetGraphic = slot;
+                slot.raycastTarget = true;
+                button.interactable = true;
+                button.onClick.AddListener(() => ToggleEnemyDescription(slotIndex));
             }
 
             SetPreviewExpanded(previewStartsExpanded);
@@ -74,6 +117,11 @@ namespace TowerDefense3D.GameFlow
         public void Render(WaveHudState state)
         {
             startWaveButton.interactable = state.StartWaveEnabled;
+            if (isTutorialPreviewOnly && !state.StartWaveEnabled)
+            {
+                startWaveButton.gameObject.SetActive(false);
+            }
+
             startWaveText.text = state.StartWaveText;
             startWaveBonusText.text = state.StartWaveBonusText;
             waveCounterText.text = state.WaveCounterText;
@@ -89,7 +137,10 @@ namespace TowerDefense3D.GameFlow
             }
 
             enemiesLeftText.text = state.EnemiesLeftText;
-            RenderPreviewSlots(state.PreviewIcons);
+            RenderPreviewSlots(
+                state.PreviewIcons,
+                state.PreviewEnemies,
+                state.PreviewEnemiesAreNew);
         }
 
         /// <summary>
@@ -100,9 +151,22 @@ namespace TowerDefense3D.GameFlow
         /// an eight-slot grid showing three enemies would read as five enemies the game had failed
         /// to name.
         /// </remarks>
-        private void RenderPreviewSlots(IReadOnlyList<Sprite> icons)
+        private void RenderPreviewSlots(
+            IReadOnlyList<Sprite> icons,
+            IReadOnlyList<EnemyDefinition> enemies,
+            IReadOnlyList<bool> enemiesAreNew)
         {
             int count = icons == null ? 0 : icons.Count;
+            EnemyDefinition[] nextPreviewEnemies = enemies == null
+                ? Array.Empty<EnemyDefinition>()
+                : ToArray(enemies);
+            if (!HasSamePreviewEnemies(nextPreviewEnemies))
+            {
+                HideEnemyDescription();
+            }
+
+            previewEnemies = nextPreviewEnemies;
+            EnsurePreviewAttentionCapacity();
             for (int index = 0; index < previewSlots.Length; index++)
             {
                 Image slot = previewSlots[index];
@@ -114,6 +178,16 @@ namespace TowerDefense3D.GameFlow
                 bool filled = index < count;
                 slot.sprite = filled ? icons[index] : null;
                 slot.enabled = filled;
+                bool shouldAnimate = filled
+                    && enemiesAreNew != null
+                    && index < enemiesAreNew.Count
+                    && enemiesAreNew[index];
+                SetPreviewAttention(index, shouldAnimate);
+            }
+
+            if (describedEnemyIndex >= previewEnemies.Length)
+            {
+                HideEnemyDescription();
             }
         }
 
@@ -128,15 +202,199 @@ namespace TowerDefense3D.GameFlow
         private void HandlePreviewToggled()
         {
             SetPreviewExpanded(!isPreviewExpanded);
+            if (!isPreviewExpanded)
+            {
+                HideEnemyDescription();
+            }
+        }
+
+        private void ToggleEnemyDescription(int index)
+        {
+            if (index < 0 || index >= previewEnemies.Length || previewEnemies[index] == null)
+            {
+                return;
+            }
+
+            if (describedEnemyIndex == index && enemyDescriptionPanel != null && enemyDescriptionPanel.activeSelf)
+            {
+                HideEnemyDescription();
+                return;
+            }
+
+            if (!EnsureEnemyDescriptionPanel())
+            {
+                return;
+            }
+
+            describedEnemyIndex = index;
+            StopPreviewAttention(index);
+            EnemyDescriptionOpened?.Invoke(previewEnemies[index]);
+            enemyDescriptionText.text = previewEnemies[index].Description;
+            RectTransform panel = enemyDescriptionPanel.transform as RectTransform;
+            RectTransform slot = previewSlots[index].rectTransform;
+            float panelHeight = Mathf.Max(
+                112f,
+                LayoutUtility.GetPreferredHeight(enemyDescriptionText.rectTransform) + 36f);
+            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, panelHeight);
+            float gap = 12f;
+            float offset = (slot.rect.width + panel.rect.width) * 0.5f + gap;
+            RectTransform parent = panel.parent as RectTransform;
+            if (parent == null)
+            {
+                return;
+            }
+
+            Vector2 slotPosition = parent.InverseTransformPoint(slot.position);
+            float x = slotPosition.x + offset;
+            if (x + panel.rect.width * 0.5f > parent.rect.xMax)
+            {
+                x = slotPosition.x - offset;
+            }
+
+            float y = Mathf.Clamp(
+                slotPosition.y,
+                parent.rect.yMin + panel.rect.height * 0.5f,
+                parent.rect.yMax - panel.rect.height * 0.5f);
+            panel.anchoredPosition = new Vector2(x, y);
+            ShowEnemyDescription(panel);
+        }
+
+        public bool ShowNextEnemyDescription()
+        {
+            if (!IsNextEnemyDescriptionVisible)
+            {
+                ToggleEnemyDescription(0);
+            }
+
+            return IsNextEnemyDescriptionVisible;
+        }
+
+        private void HideEnemyDescription()
+        {
+            describedEnemyIndex = -1;
+            if (enemyDescriptionPanel == null)
+            {
+                return;
+            }
+
+            enemyDescriptionTween?.Kill();
+            enemyDescriptionTween = null;
+            if (!enemyDescriptionPanel.activeSelf)
+            {
+                return;
+            }
+
+            RectTransform panel = enemyDescriptionPanel.transform as RectTransform;
+            enemyDescriptionTween = DOTween.Sequence()
+                .Join(panel.DOScale(0.92f, 0.16f).SetEase(Ease.InSine))
+                .OnComplete(() => enemyDescriptionPanel.SetActive(false))
+                .SetUpdate(true)
+                .SetTarget(this);
+        }
+
+        private bool EnsureEnemyDescriptionPanel()
+        {
+            return enemyDescriptionPanel != null && enemyDescriptionText != null;
+        }
+
+        private void ShowEnemyDescription(RectTransform panel)
+        {
+            enemyDescriptionTween?.Kill();
+            enemyDescriptionTween = null;
+            enemyDescriptionPanel.SetActive(true);
+            panel.localScale = Vector3.one * 0.92f;
+            enemyDescriptionTween = DOTween.Sequence()
+                .Join(panel.DOScale(1f, 0.24f).SetEase(Ease.OutBack))
+                .SetUpdate(true)
+                .SetTarget(this);
+        }
+
+        private static EnemyDefinition[] ToArray(IReadOnlyList<EnemyDefinition> source)
+        {
+            var result = new EnemyDefinition[source.Count];
+            for (int index = 0; index < source.Count; index++) result[index] = source[index];
+            return result;
+        }
+
+        private void EnsurePreviewAttentionCapacity()
+        {
+            if (previewAttentionTweens.Length == previewSlots.Length)
+            {
+                return;
+            }
+
+            for (int index = 0; index < previewAttentionTweens.Length; index++)
+            {
+                previewAttentionTweens[index]?.Kill();
+            }
+
+            previewAttentionTweens = new Tween[previewSlots.Length];
+        }
+
+        private void SetPreviewAttention(int index, bool enabled)
+        {
+            if (!enabled)
+            {
+                StopPreviewAttention(index);
+                return;
+            }
+
+            if (previewAttentionTweens[index] != null && previewAttentionTweens[index].active)
+            {
+                return;
+            }
+
+            RectTransform slot = previewSlots[index].rectTransform;
+            slot.localScale = Vector3.one;
+            previewAttentionTweens[index] = slot
+                .DOScale(1.11f, 0.48f)
+                .SetEase(Ease.InOutSine)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetUpdate(true)
+                .SetTarget(this);
+        }
+
+        private void StopPreviewAttention(int index)
+        {
+            if (index < 0 || index >= previewAttentionTweens.Length)
+            {
+                return;
+            }
+
+            previewAttentionTweens[index]?.Kill();
+            previewAttentionTweens[index] = null;
+            if (index < previewSlots.Length && previewSlots[index] != null)
+            {
+                previewSlots[index].rectTransform.localScale = Vector3.one;
+            }
+        }
+
+        private bool HasSamePreviewEnemies(IReadOnlyList<EnemyDefinition> nextPreviewEnemies)
+        {
+            if (previewEnemies.Length != nextPreviewEnemies.Count)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < previewEnemies.Length; index++)
+            {
+                if (previewEnemies[index] != nextPreviewEnemies[index])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void SetPreviewExpanded(bool expanded)
         {
+            bool changed = isPreviewExpanded != expanded;
             isPreviewExpanded = expanded;
 
             if (previewGrid != null)
             {
-                previewGrid.SetActive(expanded);
+                AnimatePreviewGrid(expanded, changed);
             }
 
             if (previewChevron != null)
@@ -148,6 +406,35 @@ namespace TowerDefense3D.GameFlow
                 scale.y = expanded ? -Mathf.Abs(scale.y) : Mathf.Abs(scale.y);
                 previewChevron.localScale = scale;
             }
+        }
+
+        private void AnimatePreviewGrid(bool expanded, bool changed)
+        {
+            previewGridTween?.Kill();
+            previewGridTween = null;
+            if (!changed)
+            {
+                previewGrid.SetActive(expanded);
+                return;
+            }
+
+            RectTransform rect = previewGrid.transform as RectTransform;
+            if (expanded)
+            {
+                previewGrid.SetActive(true);
+                rect.localScale = Vector3.one * 0.92f;
+                previewGridTween = DOTween.Sequence()
+                    .Join(rect.DOScale(1f, 0.24f).SetEase(Ease.OutBack))
+                    .SetUpdate(true)
+                    .SetTarget(this);
+                return;
+            }
+
+            previewGridTween = DOTween.Sequence()
+                .Join(rect.DOScale(0.92f, 0.16f).SetEase(Ease.InSine))
+                .OnComplete(() => previewGrid.SetActive(false))
+                .SetUpdate(true)
+                .SetTarget(this);
         }
 
         public void Show()
@@ -196,6 +483,13 @@ namespace TowerDefense3D.GameFlow
         {
             startWaveRevealTween?.Kill();
             startWaveRevealTween = null;
+            startWavePressTween?.Kill();
+            previewGridTween?.Kill();
+            enemyDescriptionTween?.Kill();
+            for (int index = 0; index < previewAttentionTweens.Length; index++)
+            {
+                previewAttentionTweens[index]?.Kill();
+            }
             if (!isInitialized)
             {
                 return;
@@ -221,11 +515,7 @@ namespace TowerDefense3D.GameFlow
 
             if (startWaveCanvasGroup == null)
             {
-                startWaveCanvasGroup = startWaveButton.GetComponent<CanvasGroup>();
-                if (startWaveCanvasGroup == null)
-                {
-                    startWaveCanvasGroup = startWaveButton.gameObject.AddComponent<CanvasGroup>();
-                }
+                throw new InvalidOperationException("Start Wave requires an authored CanvasGroup.");
             }
             startWaveCanvasGroup.alpha = 0f;
             rect.localScale = Vector3.one * 0.82f;
@@ -244,6 +534,7 @@ namespace TowerDefense3D.GameFlow
         {
             startWaveRevealTween?.Kill();
             startWaveRevealTween = null;
+            startWavePressTween?.Kill();
             startWaveButton.gameObject.SetActive(visible);
             startWaveButton.transform.localScale = Vector3.one;
             if (startWaveCanvasGroup != null) startWaveCanvasGroup.alpha = 1f;
@@ -253,10 +544,22 @@ namespace TowerDefense3D.GameFlow
         {
             startWaveRevealTween?.Kill();
             startWaveRevealTween = null;
+            startWavePressTween?.Kill();
+            previewGridTween?.Kill();
+            enemyDescriptionTween?.Kill();
+            for (int index = 0; index < previewAttentionTweens.Length; index++)
+            {
+                previewAttentionTweens[index]?.Kill();
+            }
         }
 
         private void HandleStartWaveRequested()
         {
+            startWavePressTween?.Kill();
+            startWavePressTween = startWaveButton.transform
+                .DOPunchScale(Vector3.one * 0.08f, 0.2f, 1, 0.5f)
+                .SetUpdate(true)
+                .SetTarget(this);
             StartWaveRequested?.Invoke();
         }
     }

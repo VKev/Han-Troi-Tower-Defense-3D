@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TowerDefense3D.Enemies;
 using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
@@ -13,7 +14,9 @@ namespace TowerDefense3D.GameFlow
             string startWaveText,
             string startWaveBonusText,
             IReadOnlyList<Sprite> previewIcons,
-            bool startWaveEnabled)
+            bool startWaveEnabled,
+            IReadOnlyList<EnemyDefinition> previewEnemies = null,
+            IReadOnlyList<bool> previewEnemiesAreNew = null)
         {
             WaveCounterText = waveCounterText;
             StatusText = statusText;
@@ -23,6 +26,8 @@ namespace TowerDefense3D.GameFlow
             StartWaveBonusText = startWaveBonusText;
             PreviewIcons = previewIcons;
             StartWaveEnabled = startWaveEnabled;
+            PreviewEnemies = previewEnemies;
+            PreviewEnemiesAreNew = previewEnemiesAreNew;
         }
 
         public string WaveCounterText { get; }
@@ -41,6 +46,8 @@ namespace TowerDefense3D.GameFlow
         /// something to show whenever they choose to open it.
         /// </remarks>
         public IReadOnlyList<Sprite> PreviewIcons { get; }
+        public IReadOnlyList<EnemyDefinition> PreviewEnemies { get; }
+        public IReadOnlyList<bool> PreviewEnemiesAreNew { get; }
 
         public bool StartWaveEnabled { get; }
     }

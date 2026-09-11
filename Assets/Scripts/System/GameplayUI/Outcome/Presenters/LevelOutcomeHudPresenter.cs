@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Audio;
 using TowerDefense3D.Economy;
 using TowerDefense3D.Waves;
 
@@ -19,6 +20,8 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelBaseHealthSystem healthSystem;
         private readonly ILevelOutcomeHudView view;
         private readonly ILevelVictoryEscapeView victoryEscapeView;
+        private readonly ISoundPlayer soundPlayer;
+        private readonly LevelPreparationMusicSystem levelMusicSystem;
 
         private bool hasNextLevel;
         private Action requestReplayLevel;
@@ -28,6 +31,7 @@ namespace TowerDefense3D.GameFlow
         private bool hasReportedLevelCleared;
         private bool hasStartedVictoryEscape;
         private bool hasCompletedVictoryEscape;
+        private bool hasPlayedOutcomeSound;
 
         public LevelOutcomeHudPresenter(
             IWaveSystem waveSystem,
@@ -39,6 +43,7 @@ namespace TowerDefense3D.GameFlow
             this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
             this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
             this.view = view ?? throw new ArgumentNullException(nameof(view));
+            soundPlayer = null;
         }
 
         public LevelOutcomeHudPresenter(
@@ -46,11 +51,15 @@ namespace TowerDefense3D.GameFlow
             LevelGoldSystem goldSystem,
             LevelBaseHealthSystem healthSystem,
             ILevelOutcomeHudView view,
-            ILevelVictoryEscapeView victoryEscapeView)
+            ILevelVictoryEscapeView victoryEscapeView,
+            ISoundPlayer soundPlayer = null,
+            LevelPreparationMusicSystem levelMusicSystem = null)
             : this(waveSystem, goldSystem, healthSystem, view)
         {
             this.victoryEscapeView = victoryEscapeView
                 ?? throw new ArgumentNullException(nameof(victoryEscapeView));
+            this.soundPlayer = soundPlayer;
+            this.levelMusicSystem = levelMusicSystem;
         }
 
         public void BindLevel(
@@ -87,6 +96,8 @@ namespace TowerDefense3D.GameFlow
             hasReportedLevelCleared = false;
             hasStartedVictoryEscape = false;
             hasCompletedVictoryEscape = false;
+            hasPlayedOutcomeSound = false;
+            levelMusicSystem?.SetOutcomeVisible(false);
             this.requestReplayLevel = requestReplayLevel
                 ?? throw new ArgumentNullException(nameof(requestReplayLevel));
             this.requestNextLevel = requestNextLevel
@@ -125,6 +136,12 @@ namespace TowerDefense3D.GameFlow
         public void Refresh()
         {
             WavePhase phase = waveSystem.CreateState().Phase;
+            if (phase == WavePhase.Defeat && waveSystem.IsCurrentWaveRetryAvailable)
+            {
+                view.Render(Hidden());
+                return;
+            }
+
             if (phase != WavePhase.Victory && phase != WavePhase.Defeat)
             {
                 view.Render(Hidden());
@@ -155,6 +172,12 @@ namespace TowerDefense3D.GameFlow
                     healthSystem.MaximumHealth));
             }
 
+            if (!hasPlayedOutcomeSound)
+            {
+                soundPlayer?.Play(isVictory ? SoundId.LevelWon : SoundId.LevelLost);
+                hasPlayedOutcomeSound = true;
+            }
+
             view.Render(new LevelOutcomeHudState(
                 true,
                 isVictory ? LevelOutcome.Victory : LevelOutcome.Defeat,
@@ -172,6 +195,7 @@ namespace TowerDefense3D.GameFlow
                 healthSystem.MaximumHealth,
                 goldSystem.Balance,
                 isVictory && hasNextLevel));
+            levelMusicSystem?.SetOutcomeVisible(true);
         }
 
         private static LevelOutcomeHudState Hidden()

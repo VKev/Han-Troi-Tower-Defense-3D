@@ -154,6 +154,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             public WavePhase Phase { get; set; } = WavePhase.Preparation;
             public bool IsRunning => Phase == WavePhase.Running;
+            public bool IsCurrentWaveRetryAvailable => false;
+            public bool HasRetriedCurrentWave => false;
             public int ForceVictoryCount { get; private set; }
 
             public WaveState CreateState()
@@ -171,6 +173,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 error = string.Empty;
                 return true;
             }
+
+            public bool RetryCurrentWave() => false;
 
             public void ForceVictory()
             {

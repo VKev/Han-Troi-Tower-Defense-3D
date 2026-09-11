@@ -6,6 +6,7 @@ using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
+using TowerDefense3D.Tutorials;
 using TowerDefense3D.Towers;
 using TowerDefense3D.Waves;
 using UnityEditor;
@@ -189,6 +190,179 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             }
         }
 
+        [Test]
+        public void LevelOnePreparation_UnlocksTutorialCardsAtTheirAssignedWaves()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var towerHudView = new TowerNetworkHudViewStub();
+            var waveSystem = new WaveSystemStub();
+            var presenter = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                towerHudView,
+                null,
+                towerCatalog,
+                CreateSaveSystem(),
+                new TutorialProgress(),
+                levelNumber: 1,
+                waveSystem: waveSystem);
+
+            presenter.Connect();
+            AssertCardUnlocks(towerHudView, towerCatalog, expectSink: false, expectFire: false);
+
+            waveSystem.CurrentWaveNumber = 3;
+            presenter.Refresh();
+            AssertCardUnlocks(towerHudView, towerCatalog, expectSink: true, expectFire: false);
+
+            waveSystem.CurrentWaveNumber = 4;
+            presenter.Refresh();
+            AssertCardUnlocks(towerHudView, towerCatalog, expectSink: true, expectFire: true);
+        }
+
+        [Test]
+        public void WaveThreePreparation_ReservesGoldForFireBeforeAllowingAnotherGenerator()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var tutorialProgress = new TutorialProgress();
+            tutorialProgress.MarkCompleted("second_wave_expansion_v1");
+            var waveSystem = new WaveSystemStub { CurrentWaveNumber = 3 };
+            var goldSystem = new LevelGoldSystem(300);
+            var towerHudView = new TowerNetworkHudViewStub();
+            var presenter = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                towerHudView,
+                null,
+                towerCatalog,
+                CreateSaveSystem(),
+                tutorialProgress,
+                levelNumber: 1,
+                waveSystem: waveSystem,
+                goldSystem: goldSystem);
+
+            presenter.Connect();
+
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Generator)), Is.True);
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.SoulNexus)), Is.True);
+
+            goldSystem.Add(200);
+            presenter.Refresh();
+
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Generator)), Is.False);
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.SoulNexus)), Is.False);
+        }
+
+        [Test]
+        public void WaveSixPreparation_UnlocksWaterAfterLevelOneTutorial()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var tutorialProgress = new TutorialProgress();
+            tutorialProgress.CompleteLevelOneTutorial();
+            var towerHudView = new TowerNetworkHudViewStub();
+            var presenter = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                towerHudView,
+                null,
+                towerCatalog,
+                CreateSaveSystem(),
+                tutorialProgress,
+                levelNumber: 1,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 6 });
+
+            presenter.Connect();
+
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Water)), Is.False);
+        }
+
+        private static void AssertCardUnlocks(
+            TowerNetworkHudViewStub view,
+            TowerCatalog catalog,
+            bool expectSink,
+            bool expectFire)
+        {
+            Assert.That(IsLocked(view, FindDefinition(catalog, TowerFamily.Generator)), Is.False);
+            Assert.That(IsLocked(view, FindDefinition(catalog, TowerFamily.SoulNexus)), Is.EqualTo(!expectSink));
+            Assert.That(IsLocked(view, FindDefinition(catalog, TowerFamily.Fire)), Is.EqualTo(!expectFire));
+        }
+
+        private static bool IsLocked(TowerNetworkHudViewStub view, TowerCombatDefinition definition)
+        {
+            for (int index = 0; index < view.LastLockedDefinitions.Count; index++)
+            {
+                if (view.LastLockedDefinitions[index] == definition) return true;
+            }
+
+            return false;
+        }
+
+        private static TowerCombatDefinition FindDefinition(TowerCatalog catalog, TowerFamily family)
+        {
+            for (int index = 0; index < catalog.Definitions.Count; index++)
+            {
+                TowerCombatDefinition definition = catalog.Definitions[index];
+                if (definition.Family == family) return definition;
+            }
+
+            return null;
+        }
+
+        [Test]
+        public void WaveSystem_WaveThreeLeak_DefeatsAndRetriesOnlyCurrentWave()
+        {
+            TowerNetworkSystem towerNetworkSystem = CreateTowerNetworkSystem();
+            var enemyDefinition = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(EnemyPath);
+            var schedule = ScriptableObject.CreateInstance<WaveScheduleDefinition>();
+            var towerOwner = new GameObject("Wave Three Retry Towers");
+            try
+            {
+                ConfigureSchedule(schedule, enemyDefinition, 3);
+                var goldSystem = new LevelGoldSystem(1000);
+                var healthSystem = new LevelBaseHealthSystem(10);
+                var enemySystem = new EnemySystem(
+                    new RoadPath(new[] { Vector3.zero, Vector3.forward }),
+                    goldSystem,
+                    healthSystem);
+                var waveSystem = new WaveSystem(
+                    schedule,
+                    enemySystem,
+                    towerNetworkSystem,
+                    new WaveSpawnPlanner(),
+                    goldSystem,
+                    healthSystem,
+                    instantDefeatWaveNumber: 3);
+                towerNetworkSystem.Start();
+                BuildValidTowerChain(towerNetworkSystem, towerOwner);
+                waveSystem.ForceSkipWave();
+                waveSystem.ForceSkipWave();
+                int checkpointGold = goldSystem.Balance;
+                int checkpointHealth = healthSystem.CurrentHealth;
+
+                Assert.That(waveSystem.CurrentWaveNumber, Is.EqualTo(3));
+                Assert.That(waveSystem.TryStartWave(out string error), Is.True, error);
+                waveSystem.StepSpawning(2f);
+                enemySystem.Step(100f);
+
+                Assert.That(waveSystem.CreateState().Phase, Is.EqualTo(WavePhase.Defeat));
+                Assert.That(waveSystem.CanRetryCurrentWave, Is.True);
+                Assert.That(
+                    healthSystem.CurrentHealth,
+                    Is.EqualTo(checkpointHealth - enemyDefinition.LeakDamage),
+                    "Only the first Wave 3 leak may damage the Cóc before defeat freezes the wave.");
+                goldSystem.Add(25);
+
+                Assert.That(waveSystem.RetryCurrentWave(), Is.True);
+                Assert.That(waveSystem.CreateState().Phase, Is.EqualTo(WavePhase.Preparation));
+                Assert.That(waveSystem.CurrentWaveNumber, Is.EqualTo(3));
+                Assert.That(waveSystem.CreateState().LivingEnemyCount, Is.Zero);
+                Assert.That(healthSystem.CurrentHealth, Is.EqualTo(checkpointHealth));
+                Assert.That(goldSystem.Balance, Is.EqualTo(checkpointGold));
+            }
+            finally
+            {
+                towerNetworkSystem.Dispose();
+                UnityEngine.Object.DestroyImmediate(towerOwner);
+                UnityEngine.Object.DestroyImmediate(schedule);
+            }
+        }
+
         /// <summary>
         /// The smallest network a wave will start on: one Generator wired to one Soul Nexus.
         /// Placement is driven through the system's own placement callback because that is the
@@ -253,12 +427,13 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
         private static void ConfigureSchedule(
             WaveScheduleDefinition schedule,
-            EnemyDefinition enemy)
+            EnemyDefinition enemy,
+            int waveCount = 2)
         {
             var serialized = new SerializedObject(schedule);
             serialized.FindProperty("randomSeed").intValue = 1234;
             SerializedProperty waves = serialized.FindProperty("waves");
-            waves.arraySize = 2;
+            waves.arraySize = waveCount;
             for (int index = 0; index < waves.arraySize; index++)
             {
                 SerializedProperty batches = waves.GetArrayElementAtIndex(index)
@@ -355,6 +530,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 LastHealth = currentHealth;
                 LastMaximumHealth = maximumHealth;
             }
+
+            public void SetHealthVisible(bool visible)
+            {
+            }
         }
 
 #pragma warning disable CS0067 // Interface events are intentionally unused by this focused stub.
@@ -386,6 +565,10 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 LastLockedDefinitions = lockedDefinitions;
             }
 
+            public void SetTowerActionsAvailable(bool available)
+            {
+            }
+
             public void Render(TowerNetworkHudState state)
             {
                 LastState = state;
@@ -409,13 +592,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             public event Action StateChanged;
 
             public bool IsRunning => false;
+            public bool IsCurrentWaveRetryAvailable => false;
+            public bool HasRetriedCurrentWave => false;
+            public int CurrentWaveNumber { get; set; } = 1;
             public WavePhase Phase { get; private set; } = WavePhase.Preparation;
 
             public WaveState CreateState()
             {
                 return new WaveState(
                     Phase,
-                    currentWaveNumber: 1,
+                    currentWaveNumber: CurrentWaveNumber,
                     waveCount: 1,
                     livingEnemyCount: 0,
                     canStartWave: false);
@@ -431,6 +617,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 error = "Not configured.";
                 return false;
             }
+
+            public bool RetryCurrentWave() => false;
 
             public void ForceVictory()
             {
@@ -453,6 +641,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private sealed class WaveHudViewStub : IWaveHudView
         {
             public event Action StartWaveRequested
+            {
+                add { }
+                remove { }
+            }
+
+            public event Action<EnemyDefinition> EnemyDescriptionOpened
             {
                 add { }
                 remove { }

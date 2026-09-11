@@ -37,6 +37,7 @@ namespace TowerDefense3D.GameFlow
         /// build bar, greyed out, so its existence reads as a goal rather than a missing button.
         /// </summary>
         void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions);
+        void SetTowerActionsAvailable(bool available);
 
         void Render(TowerNetworkHudState state);
         void Show();

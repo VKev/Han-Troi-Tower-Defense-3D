@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Economy;
+using TowerDefense3D.Tutorials;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Waves;
 using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
@@ -20,6 +23,10 @@ namespace TowerDefense3D.GameFlow
         private readonly Camera worldCamera;
         private readonly TowerCatalog towerCatalog;
         private readonly SaveSystem saveSystem;
+        private readonly TutorialProgress tutorialProgress;
+        private readonly int levelNumber;
+        private readonly IWaveSystem waveSystem;
+        private readonly LevelGoldSystem goldSystem;
         private Action requestReturnToMenu;
 
         public TowerNetworkHudPresenter(
@@ -27,11 +34,19 @@ namespace TowerDefense3D.GameFlow
             ITowerNetworkHudView towerNetworkHud,
             Camera worldCamera,
             TowerCatalog towerCatalog,
-            SaveSystem saveSystem)
+            SaveSystem saveSystem,
+            TutorialProgress tutorialProgress = null,
+            int levelNumber = 0,
+            IWaveSystem waveSystem = null,
+            LevelGoldSystem goldSystem = null)
         {
             this.worldCamera = worldCamera;
             this.towerCatalog = towerCatalog ?? throw new ArgumentNullException(nameof(towerCatalog));
             this.saveSystem = saveSystem ?? throw new ArgumentNullException(nameof(saveSystem));
+            this.tutorialProgress = tutorialProgress;
+            this.levelNumber = levelNumber;
+            this.waveSystem = waveSystem;
+            this.goldSystem = goldSystem;
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
             this.towerNetworkHud = towerNetworkHud
@@ -72,6 +87,8 @@ namespace TowerDefense3D.GameFlow
 
         public void Refresh()
         {
+            towerNetworkHud.ApplyTowerLocks(CollectLockedDefinitions());
+            towerNetworkHud.SetTowerActionsAvailable(AreTowerActionsAvailable());
             ITowerRuntimeView selectedTower = towerNetworkSystem.SelectedTower;
             string selectedText = selectedTower == null
                 ? "Đã chọn: Chưa có"
@@ -84,7 +101,7 @@ namespace TowerDefense3D.GameFlow
             bool towerActionsVisible = TryGetTowerActionsPosition(
                 selectedTower,
                 out Vector2 towerActionsScreenPosition);
-            bool canEdit = towerNetworkSystem.CanEditTopology;
+            bool canEdit = towerNetworkSystem.CanEditTopology && AreTowerToolsUnlocked();
             bool hasUpgrade = towerNetworkSystem.TryDescribeSelectedUpgrade(
                 out int upgradeCost,
                 out bool affordable,
@@ -94,16 +111,17 @@ namespace TowerDefense3D.GameFlow
                 selectedText,
                 feedbackText,
                 !simulationRunning,
-                selectedTower != null && towerNetworkSystem.CanEditTopology,
-                towerNetworkSystem.CanSellSelected,
+                selectedTower != null && canEdit,
+                canEdit && towerNetworkSystem.CanSellSelected,
                 towerActionsVisible,
                 towerActionsScreenPosition,
                 canEdit && hasUpgrade && !atMaxLevel && affordable,
                 CreateUpgradeCostText(hasUpgrade, atMaxLevel, upgradeCost),
-                towerNetworkSystem.CanSellSelected
+                canEdit && towerNetworkSystem.CanSellSelected
                     ? towerNetworkSystem.DescribeSelectedSellRefund().ToString()
                     : string.Empty,
-                hasUpgrade && !atMaxLevel));
+                hasUpgrade && !atMaxLevel,
+                selectedTower?.CombatDefinition?.Family));
         }
 
         private static string LocalizeRole(TowerNetworkRole role)
@@ -130,13 +148,94 @@ namespace TowerDefense3D.GameFlow
             {
                 TowerCombatDefinition definition = definitions[index];
                 int requiredLevel = definition == null ? 0 : definition.UnlockAfterClearingLevelNumber;
-                if (requiredLevel > 0 && !saveSystem.Progress.IsCleared(requiredLevel))
+                bool tutorialUnlocked = levelNumber == 1
+                    && definition != null
+                    && IsTutorialTowerUnlocked(definition.Family);
+                if (requiredLevel > 0
+                    && !saveSystem.Progress.IsCleared(requiredLevel)
+                    && !tutorialUnlocked)
+                {
+                    locked.Add(definition);
+                }
+
+                if (levelNumber == 1 && definition != null && !tutorialUnlocked)
+                {
+                    locked.Add(definition);
+                }
+
+                if (definition != null
+                    && ShouldReserveFireGold()
+                    && (definition.Family == TowerFamily.Generator
+                        || definition.Family == TowerFamily.SoulNexus))
+                {
+                    locked.Add(definition);
+                }
+
+                if (definition?.Family == TowerFamily.Wind && levelNumber == 2)
                 {
                     locked.Add(definition);
                 }
             }
 
             return locked;
+        }
+
+        private bool AreTowerToolsUnlocked()
+        {
+            return levelNumber != 1 || tutorialProgress?.HasCompletedLevelOneTutorial == true;
+        }
+
+        private bool AreTowerActionsAvailable()
+        {
+            return AreTowerToolsUnlocked() && (levelNumber != 1 || CurrentWaveNumber >= 6);
+        }
+
+        private bool IsTutorialTowerUnlocked(TowerFamily family)
+        {
+            if (tutorialProgress?.HasCompletedLevelOneTutorial == true)
+            {
+                return family == TowerFamily.Generator
+                    || family == TowerFamily.SoulNexus
+                    || family == TowerFamily.Fire
+                    || family == TowerFamily.Water && CurrentWaveNumber >= 6;
+            }
+
+            return family == TowerFamily.Generator && CurrentWaveNumber >= 1
+                || family == TowerFamily.SoulNexus && CurrentWaveNumber >= 3
+                || family == TowerFamily.Fire && CurrentWaveNumber >= 4
+                || family == TowerFamily.Water && CurrentWaveNumber >= 6;
+        }
+
+        private int CurrentWaveNumber => waveSystem?.CreateState().CurrentWaveNumber ?? 0;
+
+        private bool ShouldReserveFireGold()
+        {
+            // A retried wave 3 has already been through this nudge, and the player is being told to
+            // build more towers - locking the cards again would refuse the instruction on screen.
+            if (levelNumber != 1
+                || tutorialProgress?.HasCompletedLevelOneTutorial == true
+                || tutorialProgress?.IsCompleted("second_wave_expansion_v1") != true
+                || CurrentWaveNumber != 3
+                || waveSystem?.CreateState().Phase != WavePhase.Preparation
+                || waveSystem?.HasRetriedCurrentWave == true
+                || goldSystem == null)
+            {
+                return false;
+            }
+
+            TowerCombatDefinition generator = FindDefinition(TowerFamily.Generator);
+            return generator != null && goldSystem.Balance - generator.Core.Economy.BuildCost < 200;
+        }
+
+        private TowerCombatDefinition FindDefinition(TowerFamily family)
+        {
+            IReadOnlyList<TowerCombatDefinition> definitions = towerCatalog.Definitions;
+            for (int index = 0; index < definitions.Count; index++)
+            {
+                if (definitions[index]?.Family == family) return definitions[index];
+            }
+
+            return null;
         }
 
         private void HandleTowerDragBegan(

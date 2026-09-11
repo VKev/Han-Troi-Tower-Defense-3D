@@ -10,28 +10,36 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly IWaveSystem waveSystem;
         private readonly IWaveHudView view;
+        private readonly EnemyDiscoveryProgress enemyDiscoveryProgress;
 
-        public WaveHudPresenter(IWaveSystem waveSystem, IWaveHudView view)
+        public WaveHudPresenter(
+            IWaveSystem waveSystem,
+            IWaveHudView view,
+            EnemyDiscoveryProgress enemyDiscoveryProgress = null)
         {
             this.waveSystem = waveSystem ?? throw new ArgumentNullException(nameof(waveSystem));
             this.view = view ?? throw new ArgumentNullException(nameof(view));
+            this.enemyDiscoveryProgress = enemyDiscoveryProgress;
         }
 
         public void Connect()
         {
             view.Initialize();
             view.StartWaveRequested += HandleStartWaveRequested;
+            view.EnemyDescriptionOpened += HandleEnemyDescriptionOpened;
             view.Show();
         }
 
         public void Disconnect()
         {
             view.StartWaveRequested -= HandleStartWaveRequested;
+            view.EnemyDescriptionOpened -= HandleEnemyDescriptionOpened;
         }
 
         public void Refresh()
         {
             WaveState state = waveSystem.CreateState();
+            IReadOnlyList<EnemyDefinition> previewEnemies = CreatePreviewEnemies();
 
             view.Render(new WaveHudState(
                 CreateWaveCounterText(state),
@@ -40,8 +48,10 @@ namespace TowerDefense3D.GameFlow
                 state.RemainingEnemyCount.ToString("00"),
                 CreateStartWaveText(state),
                 CreateStartWaveBonusText(state),
-                CreatePreviewIcons(),
-                state.CanStartWave));
+                CreatePreviewIcons(previewEnemies),
+                state.CanStartWave,
+                previewEnemies,
+                CreatePreviewEnemyDiscovery(previewEnemies)));
         }
 
         private void HandleStartWaveRequested()
@@ -131,22 +141,49 @@ namespace TowerDefense3D.GameFlow
         /// Filled in every phase, including mid-wave. The grid belongs to the player now: they
         /// open and shut it when they like, so it must never be open over nothing.
         /// </remarks>
-        private IReadOnlyList<Sprite> CreatePreviewIcons()
+        private IReadOnlyList<EnemyDefinition> CreatePreviewEnemies()
         {
             IReadOnlyList<EnemySpawnBatchDefinition> batches = waveSystem.GetNextWavePreview();
-            var icons = new List<Sprite>(batches.Count);
+            var enemies = new List<EnemyDefinition>(batches.Count);
             for (int index = 0; index < batches.Count; index++)
             {
                 EnemyDefinition enemy = batches[index].Enemy;
-                if (enemy == null || enemy.Icon == null || icons.Contains(enemy.Icon))
+                if (enemy == null || enemy.Icon == null || enemies.Contains(enemy))
                 {
                     continue;
                 }
 
-                icons.Add(enemy.Icon);
+                enemies.Add(enemy);
+            }
+
+            return enemies;
+        }
+
+        private void HandleEnemyDescriptionOpened(EnemyDefinition enemy)
+        {
+            enemyDiscoveryProgress?.MarkDiscovered(enemy?.StableId);
+        }
+
+        private static IReadOnlyList<Sprite> CreatePreviewIcons(IReadOnlyList<EnemyDefinition> enemies)
+        {
+            var icons = new List<Sprite>(enemies.Count);
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                icons.Add(enemies[index].Icon);
             }
 
             return icons;
+        }
+
+        private IReadOnlyList<bool> CreatePreviewEnemyDiscovery(IReadOnlyList<EnemyDefinition> enemies)
+        {
+            var result = new List<bool>(enemies.Count);
+            for (int index = 0; index < enemies.Count; index++)
+            {
+                result.Add(!enemyDiscoveryProgress?.IsDiscovered(enemies[index].StableId) ?? false);
+            }
+
+            return result;
         }
     }
 }

@@ -9,6 +9,7 @@ namespace TowerDefense3D.GameFlow
         void Initialize();
         void Render(bool isPaused);
         void Show();
+        void Hide();
         void Shutdown();
     }
 }

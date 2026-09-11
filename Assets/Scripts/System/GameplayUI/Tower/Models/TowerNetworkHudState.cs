@@ -1,4 +1,5 @@
 using UnityEngine;
+using TowerDefense3D.Towers;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -15,7 +16,8 @@ namespace TowerDefense3D.GameFlow
             bool upgradeEnabled = false,
             string upgradeCostText = "",
             string sellRefundText = "",
-            bool upgradeShowsPrice = false)
+            bool upgradeShowsPrice = false,
+            TowerFamily? selectedTowerFamily = null)
         {
             SelectedText = selectedText;
             FeedbackText = feedbackText;
@@ -28,6 +30,7 @@ namespace TowerDefense3D.GameFlow
             UpgradeCostText = upgradeCostText;
             SellRefundText = sellRefundText;
             UpgradeShowsPrice = upgradeShowsPrice;
+            SelectedTowerFamily = selectedTowerFamily;
         }
 
         public string SelectedText { get; }
@@ -64,5 +67,6 @@ namespace TowerDefense3D.GameFlow
         /// not a price, and a coin beside it would read as one.
         /// </remarks>
         public bool UpgradeShowsPrice { get; }
+        public TowerFamily? SelectedTowerFamily { get; }
     }
 }

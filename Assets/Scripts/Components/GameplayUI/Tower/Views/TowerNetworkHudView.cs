@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using TowerDefense3D.Towers;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,6 +36,24 @@ namespace TowerDefense3D.GameFlow
         private Canvas rootCanvas;
         private GameObject buildBar;
         private GameObject towerButtons;
+        [SerializeField] private LayoutElement tutorialGeneratorLayoutElement;
+        [SerializeField] private CanvasGroup tutorialGeneratorCanvasGroup;
+        private Tween tutorialGeneratorRevealTween;
+        private bool tutorialGeneratorCardShown;
+        private bool tutorialGeneratorLocked;
+        [SerializeField] private CanvasGroup tutorialSinkCanvasGroup;
+        private Tween tutorialSinkRevealTween;
+        private bool tutorialSinkCardShown;
+        private bool tutorialSoulNexusLocked;
+        private Tween tutorialElementsRevealTween;
+        private bool tutorialElementsShown;
+        private bool tutorialFireLocked;
+        private bool tutorialUnlinkOnly;
+        private bool towerActionsAvailable;
+        private bool heroLocked;
+        private Transform heroCard;
+        private bool waterWasLocked = true;
+        private Tween waterUnlockTween;
 
         public event Action<TowerCombatDefinition, TowerPlacementPointerEvent> TowerDragBegan;
         public event Action<TowerPlacementPointerEvent> TowerDragMoved;
@@ -74,6 +93,7 @@ namespace TowerDefense3D.GameFlow
             }
 
             rootCanvas = GetComponentInParent<Canvas>();
+            ValidateTutorialHelpers();
             unlinkButton.onClick.AddListener(HandleUnlinkRequested);
             sellButton.onClick.AddListener(HandleSellRequested);
             if (upgradeButton != null)
@@ -89,12 +109,61 @@ namespace TowerDefense3D.GameFlow
             isInitialized = true;
         }
 
+        private void ValidateTutorialHelpers()
+        {
+            Transform generatorCard = GetTowerButtonTransform(TowerFamily.Generator);
+            Transform sinkCard = GetTowerButtonTransform(TowerFamily.SoulNexus);
+            Transform generatorButton = GetTowerDragButtonTransform(TowerFamily.Generator);
+            if (tutorialGeneratorCanvasGroup == null
+                || generatorCard == null
+                || tutorialGeneratorCanvasGroup.gameObject != generatorCard.gameObject)
+            {
+                throw new MissingReferenceException(
+                    "TowerNetworkHudView requires Group Sources to own the Generator tutorial CanvasGroup.");
+            }
+
+            if (tutorialSinkCanvasGroup == null
+                || sinkCard == null
+                || tutorialSinkCanvasGroup.gameObject != sinkCard.gameObject)
+            {
+                throw new MissingReferenceException(
+                    "TowerNetworkHudView requires Group Sinks to own the Sink tutorial CanvasGroup.");
+            }
+
+            if (tutorialGeneratorLayoutElement == null
+                || generatorButton == null
+                || tutorialGeneratorLayoutElement.gameObject != generatorButton.gameObject)
+            {
+                throw new MissingReferenceException(
+                    "TowerNetworkHudView requires an authored Generator tutorial LayoutElement.");
+            }
+        }
+
         public void ApplyTowerLocks(IReadOnlyList<TowerCombatDefinition> lockedDefinitions)
         {
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
                 TowerPlacementDragButtonView dragButton = towerDragButtons[index];
-                dragButton.SetLocked(Contains(lockedDefinitions, dragButton.Definition));
+                bool locked = Contains(lockedDefinitions, dragButton.Definition);
+                dragButton.SetLocked(locked);
+                if (dragButton.Definition?.Family == TowerFamily.Hero)
+                {
+                    heroLocked = locked;
+                    heroCard ??= GetTowerButtonTransform(TowerFamily.Hero);
+                    if (heroCard != null)
+                    {
+                        heroCard.gameObject.SetActive(!locked);
+                    }
+                }
+                if (dragButton.Definition?.Family == TowerFamily.Water)
+                {
+                    if (waterWasLocked && !locked)
+                    {
+                        PlayWaterUnlock(dragButton.transform as RectTransform);
+                    }
+
+                    waterWasLocked = locked;
+                }
             }
         }
 
@@ -118,9 +187,37 @@ namespace TowerDefense3D.GameFlow
             return false;
         }
 
+        public void SetTowerActionsAvailable(bool available)
+        {
+            towerActionsAvailable = available;
+            if (!available && towerActionsPanel != null)
+            {
+                towerActionsPanel.gameObject.SetActive(false);
+            }
+        }
+
+        private void PlayWaterUnlock(RectTransform card)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            waterUnlockTween?.Kill();
+            card.localScale = Vector3.one * 0.72f;
+            waterUnlockTween = card
+                .DOScale(1f, 0.42f)
+                .SetEase(Ease.OutBack)
+                .SetUpdate(true)
+                .SetTarget(this);
+        }
+
         public void Render(TowerNetworkHudState state)
         {
-            unlinkButton.interactable = state.UnlinkEnabled;
+            bool tutorialUnlinkEnabled = tutorialUnlinkOnly
+                && state.SelectedTowerFamily == TowerFamily.Generator;
+            bool unlinkEnabled = state.UnlinkEnabled || tutorialUnlinkEnabled;
+            unlinkButton.interactable = unlinkEnabled;
             sellButton.interactable = state.SellEnabled;
             if (upgradeButton != null)
             {
@@ -130,7 +227,7 @@ namespace TowerDefense3D.GameFlow
             // Unity's ColorTint reaches only the one graphic a Button targets - its plate - so the
             // arrow, the coin and the price stayed at full brightness on a greyed button and read
             // as a control that was still live.
-            TintButtonContents(unlinkButton, state.UnlinkEnabled);
+            TintButtonContents(unlinkButton, unlinkEnabled);
             TintButtonContents(sellButton, state.SellEnabled);
             TintButtonContents(upgradeButton, state.UpgradeEnabled);
 
@@ -153,7 +250,13 @@ namespace TowerDefense3D.GameFlow
 
             for (int index = 0; index < towerDragButtons.Length; index++)
             {
-                towerDragButtons[index].SetInteractable(state.TowerSelectionEnabled);
+                bool isTutorialLocked = tutorialGeneratorLocked
+                    && towerDragButtons[index]?.Definition?.Family == TowerFamily.Generator
+                    || tutorialSoulNexusLocked
+                    && towerDragButtons[index]?.Definition?.Family == TowerFamily.SoulNexus
+                    || tutorialFireLocked
+                    && towerDragButtons[index]?.Definition?.Family == TowerFamily.Fire;
+                towerDragButtons[index].SetInteractable(state.TowerSelectionEnabled && !isTutorialLocked);
             }
         }
 
@@ -169,7 +272,12 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
-            if (!tutorialControlsVisible || !state.TowerActionsVisible)
+            bool canShowUnlinkOnly = tutorialUnlinkOnly
+                && state.SelectedTowerFamily == TowerFamily.Generator;
+            if (!tutorialControlsVisible
+                && !towerActionsAvailable
+                || !state.TowerActionsVisible
+                || tutorialUnlinkOnly && !canShowUnlinkOnly)
             {
                 if (towerActionsPanel.gameObject.activeSelf)
                 {
@@ -183,6 +291,10 @@ namespace TowerDefense3D.GameFlow
             {
                 towerActionsPanel.gameObject.SetActive(true);
             }
+
+            unlinkButton.gameObject.SetActive(!tutorialUnlinkOnly || canShowUnlinkOnly);
+            sellButton.gameObject.SetActive(!tutorialUnlinkOnly);
+            if (upgradeButton != null) upgradeButton.gameObject.SetActive(!tutorialUnlinkOnly);
 
             if (!(towerActionsPanel.parent is RectTransform parent))
             {
@@ -211,6 +323,18 @@ namespace TowerDefense3D.GameFlow
         public void SetTutorialControlsVisible(bool visible)
         {
             tutorialControlsVisible = visible;
+            tutorialUnlinkOnly = false;
+            towerActionsAvailable = visible;
+            if (visible)
+            {
+                tutorialGeneratorLocked = false;
+                tutorialSoulNexusLocked = false;
+                tutorialFireLocked = false;
+                unlinkButton.gameObject.SetActive(true);
+                sellButton.gameObject.SetActive(true);
+                if (upgradeButton != null) upgradeButton.gameObject.SetActive(true);
+            }
+
             buildBar ??= transform.Find("Build Bar")?.gameObject;
             towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
             if (buildBar != null) buildBar.SetActive(visible);
@@ -225,6 +349,480 @@ namespace TowerDefense3D.GameFlow
             {
                 towerActionsPanel.gameObject.SetActive(false);
             }
+
+            if (!visible)
+            {
+                tutorialGeneratorCardShown = false;
+                tutorialGeneratorRevealTween?.Kill();
+                tutorialGeneratorRevealTween = null;
+                tutorialElementsShown = false;
+                tutorialElementsRevealTween?.Kill();
+                tutorialElementsRevealTween = null;
+            }
+
+            if (visible && towerButtons != null)
+            {
+                for (int index = 0; index < towerButtons.transform.childCount; index++)
+                {
+                    Transform child = towerButtons.transform.GetChild(index);
+                    child.gameObject.SetActive(child != heroCard || !heroLocked);
+                }
+
+                HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
+                if (row != null)
+                {
+                    row.childControlWidth = true;
+                    row.childForceExpandWidth = true;
+                    row.childAlignment = TextAnchor.MiddleCenter;
+                }
+
+                if (tutorialGeneratorLayoutElement != null)
+                {
+                    tutorialGeneratorLayoutElement.enabled = false;
+                }
+            }
+        }
+
+        public Transform GetTowerButtonTransform(TowerFamily family)
+        {
+            Transform buttonsRoot = GetTowerButtonsTransform();
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView button = towerDragButtons[index];
+                if (button?.Definition?.Family == family)
+                {
+                    for (Transform current = button.transform;
+                         current != null && current.parent != null;
+                         current = current.parent)
+                    {
+                        if (current.parent == buttonsRoot)
+                        {
+                            return current;
+                        }
+                    }
+
+                    return button.transform;
+                }
+            }
+
+            return null;
+        }
+
+        public Transform GetTowerDragButtonTransform(TowerFamily family)
+        {
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView button = towerDragButtons[index];
+                if (button?.Definition?.Family == family)
+                {
+                    return button.transform;
+                }
+            }
+
+            return null;
+        }
+
+        public Transform GetUnlinkButtonTransform()
+        {
+            return unlinkButton != null ? unlinkButton.transform : null;
+        }
+
+        public Transform GetUpgradeButtonTransform()
+        {
+            return upgradeButton != null ? upgradeButton.transform : null;
+        }
+
+        public void SetTutorialLevelTwoPlacement(TowerFamily family)
+        {
+            tutorialControlsVisible = false;
+            tutorialUnlinkOnly = false;
+            towerActionsAvailable = false;
+            buildBar ??= transform.Find("Build Bar")?.gameObject;
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            gameObject.SetActive(true);
+            if (buildBar != null) buildBar.SetActive(false);
+            if (towerButtons != null)
+            {
+                towerButtons.SetActive(true);
+                Transform selectedCard = GetTowerButtonTransform(family);
+                for (int index = 0; index < towerButtons.transform.childCount; index++)
+                {
+                    Transform child = towerButtons.transform.GetChild(index);
+                    child.gameObject.SetActive(child == selectedCard);
+                }
+
+                HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
+                if (row != null)
+                {
+                    row.childControlWidth = true;
+                    row.childForceExpandWidth = false;
+                    row.childAlignment = TextAnchor.MiddleCenter;
+                }
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(towerButtons.transform as RectTransform);
+            }
+
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView button = towerDragButtons[index];
+                bool selected = button?.Definition?.Family == family;
+                if (button != null)
+                {
+                    button.gameObject.SetActive(selected);
+                    button.SetLocked(!selected);
+                    button.SetInteractable(selected);
+                }
+            }
+
+            if (towerActionsPanel != null) towerActionsPanel.gameObject.SetActive(false);
+        }
+
+        public void SetTutorialLevelTwoLinking()
+        {
+            tutorialControlsVisible = false;
+            tutorialUnlinkOnly = false;
+            towerActionsAvailable = false;
+            buildBar ??= transform.Find("Build Bar")?.gameObject;
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            gameObject.SetActive(true);
+            if (buildBar != null) buildBar.SetActive(false);
+            if (towerButtons != null) towerButtons.SetActive(false);
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                if (towerDragButtons[index] != null) towerDragButtons[index].gameObject.SetActive(false);
+            }
+
+            if (towerActionsPanel != null) towerActionsPanel.gameObject.SetActive(false);
+        }
+
+        public Transform GetTutorialHudTargetTransform()
+        {
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            return towerButtons != null ? towerButtons.transform : transform;
+        }
+
+        public void SetTutorialGeneratorOnly()
+        {
+            tutorialControlsVisible = false;
+            buildBar ??= transform.Find("Build Bar")?.gameObject;
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            gameObject.SetActive(true);
+            if (buildBar != null) buildBar.SetActive(false);
+            if (towerButtons != null)
+            {
+                towerButtons.SetActive(true);
+                Transform generatorButton = GetTowerButtonTransform(TowerFamily.Generator);
+                for (int index = 0; index < towerButtons.transform.childCount; index++)
+                {
+                    Transform child = towerButtons.transform.GetChild(index);
+                    child.gameObject.SetActive(child == generatorButton);
+                }
+
+                HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
+                if (row != null)
+                {
+                    row.childControlWidth = true;
+                    row.childForceExpandWidth = false;
+                    row.childAlignment = TextAnchor.MiddleCenter;
+                }
+
+            }
+
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView button = towerDragButtons[index];
+                bool isGenerator = button?.Definition?.Family == TowerFamily.Generator;
+                if (button != null)
+                {
+                    button.gameObject.SetActive(isGenerator);
+                    button.SetLocked(!isGenerator);
+                    button.SetInteractable(isGenerator && !tutorialGeneratorLocked);
+                    if (isGenerator && tutorialGeneratorLayoutElement != null)
+                    {
+                        tutorialGeneratorLayoutElement.enabled = true;
+                        RectTransform buttonRect = button.transform as RectTransform;
+                        float authoredWidth = buttonRect == null ? 0f : buttonRect.rect.width;
+                        tutorialGeneratorLayoutElement.minWidth = authoredWidth > 1f ? authoredWidth : 180f;
+                        tutorialGeneratorLayoutElement.preferredWidth =
+                            tutorialGeneratorLayoutElement.minWidth;
+                        tutorialGeneratorLayoutElement.flexibleWidth = 0f;
+                    }
+                }
+            }
+
+            if (towerButtons != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(towerButtons.transform as RectTransform);
+                Transform generatorButton = GetTowerButtonTransform(TowerFamily.Generator);
+                if (generatorButton != null && !tutorialGeneratorCardShown)
+                {
+                    RevealTutorialGeneratorCard(generatorButton as RectTransform);
+                    tutorialGeneratorCardShown = true;
+                }
+            }
+
+            if (towerActionsPanel != null)
+            {
+                towerActionsPanel.gameObject.SetActive(false);
+            }
+        }
+
+        public void SetTutorialGeneratorPlaced()
+        {
+            tutorialGeneratorLocked = true;
+            SetTutorialGeneratorOnly();
+        }
+
+        public void SetTutorialSinkPlacement()
+        {
+            SetTutorialGeneratorAndSink(false, true);
+        }
+
+        public void SetTutorialSecondGeneratorPlacement()
+        {
+            SetTutorialGeneratorAndSink(true, false);
+        }
+
+        public void SetTutorialGeneratorAndSinkReady()
+        {
+            SetTutorialGeneratorAndSink(true, true);
+        }
+
+        public void SetTutorialFirePlacement()
+        {
+            SetTutorialGeneratorSinkAndFire(true, true, true, true);
+        }
+
+        public void SetTutorialFireLink()
+        {
+            SetTutorialGeneratorSinkAndFire(false, false, false, true);
+        }
+
+        public void SetTutorialGeneratorUnlinkOnly()
+        {
+            if (tutorialUnlinkOnly)
+            {
+                return;
+            }
+
+            SetTutorialGeneratorSinkAndFire(false, false, false, true);
+            tutorialControlsVisible = true;
+            towerActionsAvailable = true;
+            tutorialUnlinkOnly = true;
+        }
+
+        public void SetTutorialGeneratorSinkAndElementsReady()
+        {
+            SetTutorialGeneratorSinkAndFire(true, true, true, true);
+        }
+
+        private void SetTutorialGeneratorSinkAndFire(
+            bool generatorInteractable,
+            bool sinkInteractable,
+            bool fireInteractable,
+            bool showLockedElements)
+        {
+            tutorialControlsVisible = false;
+            tutorialUnlinkOnly = false;
+            towerActionsAvailable = false;
+            tutorialGeneratorLocked = false;
+            tutorialSoulNexusLocked = false;
+            tutorialFireLocked = !fireInteractable;
+            buildBar ??= transform.Find("Build Bar")?.gameObject;
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            gameObject.SetActive(true);
+            if (buildBar != null) buildBar.SetActive(false);
+            if (towerButtons == null)
+            {
+                return;
+            }
+
+            towerButtons.SetActive(true);
+            Transform generatorCard = GetTowerButtonTransform(TowerFamily.Generator);
+            Transform sinkCard = GetTowerButtonTransform(TowerFamily.SoulNexus);
+            Transform elementsCard = GetTowerButtonTransform(TowerFamily.Fire);
+            for (int index = 0; index < towerButtons.transform.childCount; index++)
+            {
+                Transform child = towerButtons.transform.GetChild(index);
+                child.gameObject.SetActive(
+                    child == generatorCard || child == sinkCard || child == elementsCard);
+            }
+
+            if (elementsCard != null && sinkCard != null)
+            {
+                elementsCard.SetSiblingIndex(Mathf.Min(
+                    sinkCard.GetSiblingIndex() + 1,
+                    towerButtons.transform.childCount - 1));
+            }
+
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView button = towerDragButtons[index];
+                if (button == null)
+                {
+                    continue;
+                }
+
+                TowerFamily? family = button.Definition?.Family;
+                bool isGenerator = family == TowerFamily.Generator;
+                bool isSink = family == TowerFamily.SoulNexus;
+                bool isFire = family == TowerFamily.Fire;
+                bool isLockedElement = family == TowerFamily.Water || family == TowerFamily.Wind;
+                bool isVisible = isGenerator || isSink || isFire
+                    || (showLockedElements && isLockedElement);
+                button.gameObject.SetActive(isVisible);
+                button.SetLocked(isLockedElement || !isGenerator && !isSink && !isFire);
+                button.SetInteractable(
+                    isGenerator && generatorInteractable
+                    || isSink && sinkInteractable
+                    || isFire && fireInteractable);
+            }
+
+            HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
+            if (row != null)
+            {
+                row.childControlWidth = true;
+                row.childForceExpandWidth = false;
+                row.childAlignment = TextAnchor.MiddleCenter;
+            }
+
+            if (tutorialGeneratorLayoutElement != null)
+            {
+                tutorialGeneratorLayoutElement.enabled = false;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(towerButtons.transform as RectTransform);
+            RevealTutorialCards(generatorCard as RectTransform, sinkCard as RectTransform);
+            RevealTutorialElements(elementsCard as RectTransform);
+            if (towerActionsPanel != null) towerActionsPanel.gameObject.SetActive(false);
+        }
+
+        private void SetTutorialGeneratorAndSink(bool generatorInteractable, bool sinkInteractable)
+        {
+            tutorialControlsVisible = false;
+            tutorialUnlinkOnly = false;
+            towerActionsAvailable = false;
+            tutorialGeneratorLocked = !generatorInteractable;
+            tutorialSoulNexusLocked = !sinkInteractable;
+            buildBar ??= transform.Find("Build Bar")?.gameObject;
+            towerButtons ??= transform.Find("Tower Buttons")?.gameObject;
+            gameObject.SetActive(true);
+            if (buildBar != null) buildBar.SetActive(false);
+            if (towerButtons == null)
+            {
+                return;
+            }
+
+            towerButtons.SetActive(true);
+            Transform generatorCard = GetTowerButtonTransform(TowerFamily.Generator);
+            Transform sinkCard = GetTowerButtonTransform(TowerFamily.SoulNexus);
+            for (int index = 0; index < towerButtons.transform.childCount; index++)
+            {
+                Transform child = towerButtons.transform.GetChild(index);
+                child.gameObject.SetActive(child == generatorCard || child == sinkCard);
+            }
+
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView button = towerDragButtons[index];
+                if (button == null)
+                {
+                    continue;
+                }
+
+                bool isGenerator = button.Definition?.Family == TowerFamily.Generator;
+                bool isSink = button.Definition?.Family == TowerFamily.SoulNexus;
+                button.gameObject.SetActive(isGenerator || isSink);
+                button.SetLocked(!isGenerator && !isSink);
+                button.SetInteractable(isGenerator && generatorInteractable || isSink && sinkInteractable);
+            }
+
+            HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
+            if (row != null)
+            {
+                row.childControlWidth = true;
+                row.childForceExpandWidth = false;
+                row.childAlignment = TextAnchor.MiddleCenter;
+            }
+
+            if (tutorialGeneratorLayoutElement != null)
+            {
+                tutorialGeneratorLayoutElement.enabled = false;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(towerButtons.transform as RectTransform);
+            RevealTutorialCards(generatorCard as RectTransform, sinkCard as RectTransform);
+            if (towerActionsPanel != null) towerActionsPanel.gameObject.SetActive(false);
+        }
+
+        private void RevealTutorialCards(RectTransform generatorCard, RectTransform sinkCard)
+        {
+            if (generatorCard != null && !tutorialGeneratorCardShown)
+            {
+                RevealTutorialGeneratorCard(generatorCard);
+                tutorialGeneratorCardShown = true;
+            }
+
+            if (sinkCard == null || tutorialSinkCardShown)
+            {
+                return;
+            }
+
+            tutorialSinkRevealTween?.Kill();
+            tutorialSinkCanvasGroup.alpha = 0f;
+            sinkCard.localScale = Vector3.one * 0.82f;
+            tutorialSinkRevealTween = DOTween.Sequence()
+                .Append(sinkCard.DOScale(1f, 0.36f).SetEase(Ease.OutBack))
+                .Join(DOTween.To(
+                        () => tutorialSinkCanvasGroup.alpha,
+                        value => tutorialSinkCanvasGroup.alpha = value,
+                        1f,
+                        0.22f)
+                    .SetEase(Ease.OutSine))
+                .SetTarget(this);
+            tutorialSinkCardShown = true;
+        }
+
+        private void RevealTutorialElements(RectTransform elementsCard)
+        {
+            if (elementsCard == null || tutorialElementsShown)
+            {
+                return;
+            }
+
+            tutorialElementsRevealTween?.Kill();
+            elementsCard.localScale = Vector3.one * 0.82f;
+            tutorialElementsRevealTween = elementsCard.DOScale(1f, 0.36f)
+                .SetEase(Ease.OutBack)
+                .SetTarget(this);
+            tutorialElementsShown = true;
+        }
+
+        private Transform GetTowerButtonsTransform()
+        {
+            return towerButtons != null ? towerButtons.transform : transform.Find("Tower Buttons");
+        }
+
+
+        private void RevealTutorialGeneratorCard(RectTransform generatorCard)
+        {
+            if (generatorCard == null)
+            {
+                return;
+            }
+
+            tutorialGeneratorRevealTween?.Kill();
+            tutorialGeneratorCanvasGroup.alpha = 0f;
+            generatorCard.localScale = Vector3.one * 0.82f;
+            tutorialGeneratorRevealTween = DOTween.Sequence()
+                .Append(generatorCard.DOScale(1f, 0.36f).SetEase(Ease.OutBack))
+                .Join(DOTween.To(
+                        () => tutorialGeneratorCanvasGroup.alpha,
+                        value => tutorialGeneratorCanvasGroup.alpha = value,
+                        1f,
+                        0.22f)
+                    .SetEase(Ease.OutSine))
+                .SetTarget(this);
         }
 
         public void Hide()
@@ -234,6 +832,10 @@ namespace TowerDefense3D.GameFlow
 
         public void Shutdown()
         {
+            tutorialGeneratorRevealTween?.Kill();
+            tutorialGeneratorRevealTween = null;
+            waterUnlockTween?.Kill();
+            waterUnlockTween = null;
             if (!isInitialized)
             {
                 return;
@@ -261,6 +863,14 @@ namespace TowerDefense3D.GameFlow
             }
 
             isInitialized = false;
+        }
+
+        private void OnDisable()
+        {
+            tutorialGeneratorRevealTween?.Kill();
+            tutorialGeneratorRevealTween = null;
+            waterUnlockTween?.Kill();
+            waterUnlockTween = null;
         }
 
         private void HandleTowerDragBegan(

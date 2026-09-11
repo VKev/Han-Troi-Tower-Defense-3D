@@ -3,6 +3,7 @@ using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Simulation;
 using TowerDefense3D.Towers;
+using TowerDefense3D.Tutorials;
 using TowerDefense3D.Waves;
 
 namespace TowerDefense3D.GameFlow
@@ -23,8 +24,10 @@ namespace TowerDefense3D.GameFlow
         private readonly ILevelStatusHudView statusHudView;
         private readonly GameplaySimulationSystem simulationSystem;
         private readonly IPauseHudView pauseHudView;
+        private readonly ITutorialOverlay tutorialOverlay;
         private readonly LevelSkipCheatPresenter skipCheatPresenter;
         private readonly LevelOutcomeHudPresenter levelOutcomeHudPresenter;
+        private readonly WaveThreeDefeatHudPresenter waveThreeDefeatHudPresenter;
         private readonly PauseMenuHudPresenter pauseMenuHudPresenter;
 
         private bool isDirty;
@@ -69,7 +72,9 @@ namespace TowerDefense3D.GameFlow
             IPauseHudView pauseHudView,
             LevelSkipCheatPresenter skipCheatPresenter,
             LevelOutcomeHudPresenter levelOutcomeHudPresenter,
-            PauseMenuHudPresenter pauseMenuHudPresenter)
+            WaveThreeDefeatHudPresenter waveThreeDefeatHudPresenter,
+            PauseMenuHudPresenter pauseMenuHudPresenter,
+            ITutorialOverlay tutorialOverlay)
             : this(
                 gameplayView,
                 towerNetworkSystem,
@@ -84,10 +89,13 @@ namespace TowerDefense3D.GameFlow
             this.simulationSystem = simulationSystem
                 ?? throw new ArgumentNullException(nameof(simulationSystem));
             this.pauseHudView = pauseHudView ?? throw new ArgumentNullException(nameof(pauseHudView));
+            this.tutorialOverlay = tutorialOverlay ?? throw new ArgumentNullException(nameof(tutorialOverlay));
             this.skipCheatPresenter = skipCheatPresenter
                 ?? throw new ArgumentNullException(nameof(skipCheatPresenter));
             this.levelOutcomeHudPresenter = levelOutcomeHudPresenter
                 ?? throw new ArgumentNullException(nameof(levelOutcomeHudPresenter));
+            this.waveThreeDefeatHudPresenter = waveThreeDefeatHudPresenter
+                ?? throw new ArgumentNullException(nameof(waveThreeDefeatHudPresenter));
             this.pauseMenuHudPresenter = pauseMenuHudPresenter
                 ?? throw new ArgumentNullException(nameof(pauseMenuHudPresenter));
         }
@@ -111,16 +119,20 @@ namespace TowerDefense3D.GameFlow
             healthSystem.HealthChanged += HandleHealthChanged;
             statusHudView.RenderGold(goldSystem.Balance);
             statusHudView.RenderHealth(healthSystem.CurrentHealth, healthSystem.MaximumHealth);
+            statusHudView.SetHealthVisible(healthSystem.CurrentHealth < healthSystem.MaximumHealth);
             if (simulationSystem != null && pauseHudView != null)
             {
                 pauseHudView.Initialize();
                 pauseHudView.Render(simulationSystem.IsPaused);
                 pauseHudView.Show();
                 pauseHudView.PauseToggleRequested += HandlePauseToggleRequested;
+                tutorialOverlay.BlackOverlayVisibilityChanged += HandleTutorialBlackOverlayVisibilityChanged;
+                HandleTutorialBlackOverlayVisibilityChanged(tutorialOverlay.IsBlackOverlayVisible);
             }
 
             skipCheatPresenter?.Connect();
             levelOutcomeHudPresenter?.Connect();
+            waveThreeDefeatHudPresenter?.Connect();
             pauseMenuHudPresenter?.Connect();
             if (pauseMenuHudPresenter != null)
             {
@@ -142,6 +154,7 @@ namespace TowerDefense3D.GameFlow
             waveHudPresenter.Refresh();
             skipCheatPresenter?.Refresh();
             levelOutcomeHudPresenter?.Refresh();
+            waveThreeDefeatHudPresenter?.Refresh();
         }
 
         public void Dispose()
@@ -162,11 +175,13 @@ namespace TowerDefense3D.GameFlow
             if (simulationSystem != null && pauseHudView != null)
             {
                 pauseHudView.PauseToggleRequested -= HandlePauseToggleRequested;
+                tutorialOverlay.BlackOverlayVisibilityChanged -= HandleTutorialBlackOverlayVisibilityChanged;
                 pauseHudView.Shutdown();
             }
 
             skipCheatPresenter?.Disconnect();
             levelOutcomeHudPresenter?.Disconnect();
+            waveThreeDefeatHudPresenter?.Disconnect();
             if (pauseMenuHudPresenter != null)
             {
                 pauseMenuHudPresenter.ResumeRequested -= HandleResumeRequested;
@@ -194,6 +209,11 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleHealthChanged(int currentHealth, int maximumHealth)
         {
+            if (currentHealth < maximumHealth)
+            {
+                statusHudView.SetHealthVisible(true);
+            }
+
             statusHudView.RenderHealth(currentHealth, maximumHealth);
         }
 
@@ -205,6 +225,13 @@ namespace TowerDefense3D.GameFlow
             }
 
             SetPaused(!simulationSystem.IsPaused);
+        }
+
+        private void HandleTutorialBlackOverlayVisibilityChanged(bool visible)
+        {
+            if (pauseHudView == null) return;
+            if (visible) pauseHudView.Hide();
+            else pauseHudView.Show();
         }
 
         private void HandleResumeRequested()

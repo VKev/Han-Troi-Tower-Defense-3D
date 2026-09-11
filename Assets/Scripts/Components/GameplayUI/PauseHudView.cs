@@ -49,6 +49,11 @@ namespace TowerDefense3D.GameFlow
             gameObject.SetActive(true);
         }
 
+        public void Hide()
+        {
+            gameObject.SetActive(false);
+        }
+
         public void Shutdown()
         {
             if (!isInitialized)
