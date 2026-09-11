@@ -25,6 +25,13 @@ namespace TowerDefense3D.Audio
         WaveMusic,
         LevelWon,
         LevelLost,
-        FrogDamaged
+        FrogDamaged,
+        TowerUpgraded,
+        TowerSold,
+        PausePressed,
+        ButtonPressed,
+        SpeedSupportSkill,
+        SummonerBossSkill,
+        WaveEnded
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Audio;
 using TowerDefense3D.Economy;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Simulation;
@@ -29,6 +30,7 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelOutcomeHudPresenter levelOutcomeHudPresenter;
         private readonly WaveThreeDefeatHudPresenter waveThreeDefeatHudPresenter;
         private readonly PauseMenuHudPresenter pauseMenuHudPresenter;
+        private readonly ISoundPlayer soundPlayer;
 
         private bool isDirty;
         private bool isStarted;
@@ -74,7 +76,8 @@ namespace TowerDefense3D.GameFlow
             LevelOutcomeHudPresenter levelOutcomeHudPresenter,
             WaveThreeDefeatHudPresenter waveThreeDefeatHudPresenter,
             PauseMenuHudPresenter pauseMenuHudPresenter,
-            ITutorialOverlay tutorialOverlay)
+            ITutorialOverlay tutorialOverlay,
+            ISoundPlayer soundPlayer = null)
             : this(
                 gameplayView,
                 towerNetworkSystem,
@@ -98,6 +101,10 @@ namespace TowerDefense3D.GameFlow
                 ?? throw new ArgumentNullException(nameof(waveThreeDefeatHudPresenter));
             this.pauseMenuHudPresenter = pauseMenuHudPresenter
                 ?? throw new ArgumentNullException(nameof(pauseMenuHudPresenter));
+
+            // Optional, unlike its neighbours: the edit-mode tests build this system without an
+            // audio stack, and a missing player only costs the pause button its click.
+            this.soundPlayer = soundPlayer;
         }
 
         public void BindReturnToMenu(Action requestReturnToMenu)
@@ -119,7 +126,7 @@ namespace TowerDefense3D.GameFlow
             healthSystem.HealthChanged += HandleHealthChanged;
             statusHudView.RenderGold(goldSystem.Balance);
             statusHudView.RenderHealth(healthSystem.CurrentHealth, healthSystem.MaximumHealth);
-            statusHudView.SetHealthVisible(healthSystem.CurrentHealth < healthSystem.MaximumHealth);
+            statusHudView.SetHealthVisible(true);
             if (simulationSystem != null && pauseHudView != null)
             {
                 pauseHudView.Initialize();
@@ -209,11 +216,6 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleHealthChanged(int currentHealth, int maximumHealth)
         {
-            if (currentHealth < maximumHealth)
-            {
-                statusHudView.SetHealthVisible(true);
-            }
-
             statusHudView.RenderHealth(currentHealth, maximumHealth);
         }
 
@@ -224,6 +226,7 @@ namespace TowerDefense3D.GameFlow
                 return;
             }
 
+            soundPlayer?.Play(SoundId.PausePressed);
             SetPaused(!simulationSystem.IsPaused);
         }
 

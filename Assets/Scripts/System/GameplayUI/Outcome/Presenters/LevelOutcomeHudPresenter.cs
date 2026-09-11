@@ -24,6 +24,7 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelPreparationMusicSystem levelMusicSystem;
 
         private bool hasNextLevel;
+        private bool awardsFullStars;
         private Action requestReplayLevel;
         private Action requestNextLevel;
         private Action requestReturnToLevelMenu;
@@ -89,10 +90,12 @@ namespace TowerDefense3D.GameFlow
             Action requestReplayLevel,
             Action requestNextLevel,
             Action requestReturnToLevelMenu,
-            Action<int> reportLevelCleared)
+            Action<int> reportLevelCleared,
+            bool awardsFullStars = false)
         {
             this.hasNextLevel = hasNextLevel;
             this.reportLevelCleared = reportLevelCleared;
+            this.awardsFullStars = awardsFullStars;
             hasReportedLevelCleared = false;
             hasStartedVictoryEscape = false;
             hasCompletedVictoryEscape = false;
@@ -187,9 +190,11 @@ namespace TowerDefense3D.GameFlow
                 // says so for a run with none; asking it keeps the two in step even if a defeat
                 // ever becomes possible with health to spare.
                 isVictory
-                    ? LevelStarRating.FromRemainingHealth(
-                        healthSystem.CurrentHealth,
-                        healthSystem.MaximumHealth)
+                    ? awardsFullStars
+                        ? LevelStarRating.MaximumStars
+                        : LevelStarRating.FromRemainingHealth(
+                            healthSystem.CurrentHealth,
+                            healthSystem.MaximumHealth)
                     : LevelStarRating.NoStars,
                 healthSystem.CurrentHealth,
                 healthSystem.MaximumHealth,
@@ -206,11 +211,15 @@ namespace TowerDefense3D.GameFlow
 
         private void HandlePlayAgainRequested()
         {
+            soundPlayer?.Play(SoundId.ButtonPressed);
             requestReplayLevel?.Invoke();
         }
 
         private void HandleNextLevelRequested()
         {
+            // Sounded before the guard, not inside it: the button is on screen and was pressed,
+            // so a silent press would read as a dead button rather than as a refusal.
+            soundPlayer?.Play(SoundId.ButtonPressed);
             if (hasNextLevel && waveSystem.CreateState().Phase == WavePhase.Victory)
             {
                 requestNextLevel?.Invoke();
@@ -219,6 +228,7 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleReturnToLevelMenuRequested()
         {
+            soundPlayer?.Play(SoundId.ButtonPressed);
             requestReturnToLevelMenu?.Invoke();
         }
 

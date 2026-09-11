@@ -1,4 +1,5 @@
 using System;
+using TowerDefense3D.Audio;
 using TowerDefense3D.Simulation;
 
 namespace TowerDefense3D.GameFlow
@@ -19,17 +20,23 @@ namespace TowerDefense3D.GameFlow
     {
         private readonly GameplaySimulationSystem simulationSystem;
         private readonly IPauseMenuHudView view;
+        private readonly ISoundPlayer soundPlayer;
 
         private Action requestReplayLevel;
         private Action requestReturnToLevelMenu;
 
         public PauseMenuHudPresenter(
             GameplaySimulationSystem simulationSystem,
-            IPauseMenuHudView view)
+            IPauseMenuHudView view,
+            ISoundPlayer soundPlayer = null)
         {
             this.simulationSystem = simulationSystem
                 ?? throw new ArgumentNullException(nameof(simulationSystem));
             this.view = view ?? throw new ArgumentNullException(nameof(view));
+
+            // Optional so the edit-mode tests can build a presenter without an audio stack; a
+            // missing player costs the click its sound and nothing else.
+            this.soundPlayer = soundPlayer;
         }
 
         public event Action ResumeRequested;
@@ -66,16 +73,19 @@ namespace TowerDefense3D.GameFlow
 
         private void HandleResumeRequested()
         {
+            soundPlayer?.Play(SoundId.ButtonPressed);
             ResumeRequested?.Invoke();
         }
 
         private void HandleRestartRequested()
         {
+            soundPlayer?.Play(SoundId.ButtonPressed);
             requestReplayLevel?.Invoke();
         }
 
         private void HandleReturnToLevelMenuRequested()
         {
+            soundPlayer?.Play(SoundId.ButtonPressed);
             requestReturnToLevelMenu?.Invoke();
         }
     }

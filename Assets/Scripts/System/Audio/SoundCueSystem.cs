@@ -50,6 +50,8 @@ namespace TowerDefense3D.Audio
             observedHealth = healthSystem.CurrentHealth;
             gridPlacementSystem.TowerPlaced += HandleTowerPlaced;
             towerNetworkSystem.ProjectileCreated += HandleProjectileCreated;
+            towerNetworkSystem.TowerUpgraded += HandleTowerUpgraded;
+            towerNetworkSystem.TowerSold += HandleTowerSold;
             waveSystem.StateChanged += HandleWaveStateChanged;
             combatTimelineSystem.ProjectileImpacted += HandleProjectileImpacted;
             combatTimelineSystem.HeroAttackStarted += HandleHeroAttackStarted;
@@ -68,6 +70,8 @@ namespace TowerDefense3D.Audio
             isStarted = false;
             gridPlacementSystem.TowerPlaced -= HandleTowerPlaced;
             towerNetworkSystem.ProjectileCreated -= HandleProjectileCreated;
+            towerNetworkSystem.TowerUpgraded -= HandleTowerUpgraded;
+            towerNetworkSystem.TowerSold -= HandleTowerSold;
             waveSystem.StateChanged -= HandleWaveStateChanged;
             combatTimelineSystem.ProjectileImpacted -= HandleProjectileImpacted;
             combatTimelineSystem.HeroAttackStarted -= HandleHeroAttackStarted;
@@ -79,6 +83,17 @@ namespace TowerDefense3D.Audio
         {
             _ = placement;
             soundPlayer.Play(SoundId.TowerPlaced);
+        }
+
+        private void HandleTowerUpgraded(ITowerRuntimeView tower)
+        {
+            _ = tower;
+            soundPlayer.Play(SoundId.TowerUpgraded);
+        }
+
+        private void HandleTowerSold()
+        {
+            soundPlayer.Play(SoundId.TowerSold);
         }
 
         private void HandleProjectileCreated(TowerFamily family)
@@ -99,6 +114,13 @@ namespace TowerDefense3D.Audio
             if (!wasWaveRunning && isWaveRunning)
             {
                 soundPlayer.Play(SoundId.WaveStarted);
+            }
+            else if (wasWaveRunning && !isWaveRunning)
+            {
+                // Once, on the edge, rather than off the wave state itself: the state is
+                // republished several times as a wave winds down, and every one of those would
+                // otherwise be another copy of the same fanfare.
+                soundPlayer.Play(SoundId.WaveEnded);
             }
 
             wasWaveRunning = isWaveRunning;

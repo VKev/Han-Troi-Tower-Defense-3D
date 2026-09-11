@@ -69,7 +69,7 @@ MonoBehaviour:
     loop: 0
   - id: 5
     clip: {fileID: 8300000, guid: 5ef9244a948a4a18ae3dd5ba4e9059d3, type: 3}
-    volume: 0.8
+    volume: 0.577
     pitch: 1
     maxConcurrent: 2
     cooldownSeconds: 0
@@ -182,5 +182,68 @@ MonoBehaviour:
     maxConcurrent: 2
     cooldownSeconds: 0.08
     priority: 80
+    isProtected: 0
+    loop: 0
+  - id: 24
+    clip: {fileID: 8300000, guid: 1b544a9bbee3554468d671598adc0cd0, type: 3}
+    volume: 0.75
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0
+    priority: 60
+    isProtected: 0
+    loop: 0
+  - id: 25
+    clip: {fileID: 8300000, guid: 376c644d8d250f84fb304b2de78675c7, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0
+    priority: 60
+    isProtected: 0
+    loop: 0
+  - id: 26
+    clip: {fileID: 8300000, guid: 18cca414a4147ea4898641fd61475900, type: 3}
+    volume: 0.7
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0.05
+    priority: 70
+    isProtected: 0
+    loop: 0
+  - id: 27
+    clip: {fileID: 8300000, guid: ca4d35dc650e811499d788177df2f5c7, type: 3}
+    volume: 0.7
+    pitch: 1
+    maxConcurrent: 3
+    cooldownSeconds: 0.05
+    priority: 70
+    isProtected: 0
+    loop: 0
+  - id: 28
+    clip: {fileID: 8300000, guid: cd843c7a86640394080d61cc7423f4aa, type: 3}
+    volume: 0.7
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0
+    priority: 70
+    isProtected: 0
+    loop: 0
+  - id: 29
+    clip: {fileID: 8300000, guid: 5f6964c86307c8c4fa7dc41b63dbde10, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 2
+    cooldownSeconds: 0
+    priority: 80
+    isProtected: 0
+    loop: 0
+  - id: 30
+    clip: {fileID: 8300000, guid: 9019d6f7de0847146bb829f4476e28eb, type: 3}
+    volume: 0.8
+    pitch: 1
+    maxConcurrent: 1
+    cooldownSeconds: 0
+    priority: 85
     isProtected: 0
     loop: 0
