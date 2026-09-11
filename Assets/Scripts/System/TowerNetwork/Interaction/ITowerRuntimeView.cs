@@ -63,6 +63,17 @@ namespace TowerDefense3D.Towers
         /// </summary>
         void Despawn();
 
+        /// <summary>
+        /// Swaps the tower's model for an instance of <paramref name="visualPrefab"/>, keeping the
+        /// tower instance itself - the node binding, the view registry entry and every cached
+        /// reference to this view survive the swap.
+        /// </summary>
+        /// <remarks>
+        /// The replacement model may be a different size, so the anchors derived from the old one
+        /// are re-derived and the tower is re-seated on the surface it was standing on.
+        /// </remarks>
+        void ReplaceVisual(GameObject visualPrefab);
+
         void Configure(TowerCombatDefinition definition);
         void BindNode(TowerNodeId nodeId);
         void ClearNodeBinding();

@@ -11,6 +11,8 @@ namespace TowerDefense3D.Towers
     /// </summary>
     public sealed class TowerProjectilePresentationSystem : IDisposable
     {
+        private const string UpgradeEffectPath = "Prefabs/VFX/Upgrade";
+
         private readonly Dictionary<long, TowerProjectilePresentationTrack> presentationTracks =
             new Dictionary<long, TowerProjectilePresentationTrack>();
         private readonly HashSet<long> activeProjectileIds = new HashSet<long>();
@@ -21,6 +23,8 @@ namespace TowerDefense3D.Towers
         private readonly CombatTimelineSystem combatTimelineSystem;
         private readonly GameplaySimulationSystem simulationSystem;
         private readonly ITowerProjectileViewPool viewPool;
+        private readonly TowerNetworkSystem towerNetworkSystem;
+        private readonly GameObject upgradeEffectPrefab;
 
         private bool isStarted;
 
@@ -28,13 +32,17 @@ namespace TowerDefense3D.Towers
             TowerNetworkManager manager,
             CombatTimelineSystem combatTimelineSystem,
             GameplaySimulationSystem simulationSystem,
-            ITowerProjectileViewPool viewPool)
+            ITowerProjectileViewPool viewPool,
+            TowerNetworkSystem towerNetworkSystem)
         {
             this.manager = manager ?? throw new ArgumentNullException(nameof(manager));
             this.combatTimelineSystem = combatTimelineSystem
                 ?? throw new ArgumentNullException(nameof(combatTimelineSystem));
             this.simulationSystem = simulationSystem ?? throw new ArgumentNullException(nameof(simulationSystem));
             this.viewPool = viewPool ?? throw new ArgumentNullException(nameof(viewPool));
+            this.towerNetworkSystem = towerNetworkSystem
+                ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
+            upgradeEffectPrefab = Resources.Load<GameObject>(UpgradeEffectPath);
         }
 
         public int ActiveViewCount => viewPool.ActiveViewCount;
@@ -42,8 +50,15 @@ namespace TowerDefense3D.Towers
 
         public void Start()
         {
+            if (upgradeEffectPrefab == null)
+            {
+                throw new MissingReferenceException(
+                    $"Missing upgrade VFX at Resources/{UpgradeEffectPath}.prefab.");
+            }
+
             viewPool.Initialize();
             manager.StateChanged += HandleManagerStateChanged;
+            towerNetworkSystem.TowerUpgraded += HandleTowerUpgraded;
             combatTimelineSystem.ProjectileImpacted += HandleProjectileImpacted;
             simulationSystem.StepCompleted += HandleStepCompleted;
             isStarted = true;
@@ -53,7 +68,6 @@ namespace TowerDefense3D.Towers
         {
             if (!manager.IsRunning)
             {
-                ClearPresentation();
                 return;
             }
 
@@ -66,6 +80,7 @@ namespace TowerDefense3D.Towers
             if (isStarted)
             {
                 manager.StateChanged -= HandleManagerStateChanged;
+                towerNetworkSystem.TowerUpgraded -= HandleTowerUpgraded;
                 combatTimelineSystem.ProjectileImpacted -= HandleProjectileImpacted;
                 simulationSystem.StepCompleted -= HandleStepCompleted;
                 isStarted = false;
@@ -224,6 +239,14 @@ namespace TowerDefense3D.Towers
             viewPool.PlayHitEffect(
                 ResolveHitEffectPrefab(track.Source),
                 impact.Position);
+        }
+
+        private void HandleTowerUpgraded(ITowerRuntimeView tower)
+        {
+            if (tower != null)
+            {
+                viewPool.PlayHitEffect(upgradeEffectPrefab, tower.GroundCentre);
+            }
         }
 
         private void HandleStepCompleted(long completedStep)

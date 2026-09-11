@@ -195,18 +195,16 @@ namespace TowerDefense3D.Towers
             candidate = new Dictionary<TowerNodeId, LinkState>(outgoingLinks);
             candidate.Remove(source.Id);
 
-            int targetInputPort;
-            if (target.Spec.InputPortCount == 1)
+            int targetInputPort = FindFirstFreeInputPort(candidate, target.Id, target.Spec.InputPortCount);
+            if (targetInputPort < 0)
             {
-                targetInputPort = PrepareSingleInputTarget(candidate, target.Id);
-            }
-            else
-            {
-                targetInputPort = FindFirstFreeInputPort(candidate, target.Id, target.Spec.InputPortCount);
-                if (targetInputPort < 0)
+                // Every input is taken, so the new link displaces the one holding the first port
+                // instead of being turned away. The drag preview cannot see port pressure, so
+                // refusing here would reject a line the player was already shown as attachable.
+                targetInputPort = 0;
+                if (TryFindIncomingSource(candidate, target.Id, targetInputPort, out TowerNodeId displaced))
                 {
-                    error = "Tất cả cổng đầu vào của trụ đích đã được dùng.";
-                    return false;
+                    candidate.Remove(displaced);
                 }
             }
 
@@ -256,16 +254,6 @@ namespace TowerDefense3D.Towers
             }
 
             return true;
-        }
-
-        private static int PrepareSingleInputTarget(IDictionary<TowerNodeId, LinkState> candidate, TowerNodeId targetId)
-        {
-            if (TryFindIncomingSource(candidate, targetId, 0, out TowerNodeId sourceId))
-            {
-                candidate.Remove(sourceId);
-            }
-
-            return 0;
         }
 
         private static int FindFirstFreeInputPort(

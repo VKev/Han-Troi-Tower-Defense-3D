@@ -348,6 +348,8 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         private sealed class GameplayInputSourceStub : IGameplayInputSource
         {
             public GameplayInputSnapshot Capture() => default;
+
+            public GameplayCameraGestureSnapshot CaptureCameraGesture() => default;
         }
 
         private sealed class GridPlacementViewStub : IGridPlacementView

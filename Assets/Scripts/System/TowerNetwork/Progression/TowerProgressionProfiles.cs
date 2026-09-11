@@ -18,6 +18,9 @@ namespace TowerDefense3D.Towers
         [SerializeField, Min(0f)] private float burnTickIntervalSeconds;
         [SerializeField, Min(0f)] private float burnDurationSeconds;
 
+        [Tooltip("Model shown once the tower reaches this tier. Empty leaves the current model in place.")]
+        [SerializeField] private GameObject visualPrefab;
+
         public int Cost => cost;
         public float AttackIntervalSeconds => attackIntervalSeconds;
         public float ProjectileSpeedMetersPerSecond => projectileSpeedMetersPerSecond;
@@ -29,6 +32,7 @@ namespace TowerDefense3D.Towers
         public float BurnDamagePerTick => burnDamagePerTick;
         public float BurnTickIntervalSeconds => burnTickIntervalSeconds;
         public float BurnDurationSeconds => burnDurationSeconds;
+        public GameObject VisualPrefab => visualPrefab;
     }
 
     [Serializable]

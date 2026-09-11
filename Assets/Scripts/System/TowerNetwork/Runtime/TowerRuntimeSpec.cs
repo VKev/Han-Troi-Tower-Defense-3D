@@ -9,7 +9,7 @@ namespace TowerDefense3D.Towers
             TowerFamily family, TowerNetworkRole networkRole, string stableId, int inputPortCount, int outputPortCount,
             int queueCapacityPerInput, int cycleTicks, int outputProjectileCount,
             int requiredDownstreamReservationCount, int sequenceSpacingTicks, ProjectilePayload outputPayload,
-            float rangeMeters = 12f)
+            float rangeMeters = 8f)
         {
             if (string.IsNullOrWhiteSpace(stableId))
             {

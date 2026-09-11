@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.GridPlacement.Runtime::TowerDefense3D.Towers.TowerCombatRules
   minimumProcessorCountInValidChain: 0
   minimumElementCountInValidChain: 0
-  maximumLinkRangeMeters: 12
+  maximumLinkRangeMeters: 8
   normalQueueCapacity: 3
   minimumProcessIntervalSeconds: 0.15
   projectileSpeedMetersPerSecond: 10

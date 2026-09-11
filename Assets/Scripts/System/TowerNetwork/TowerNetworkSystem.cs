@@ -46,6 +46,17 @@ namespace TowerDefense3D.Towers
 
         public event Action StateChanged;
         public event Action<TowerFamily> ProjectileCreated;
+        public event Action<ITowerRuntimeView> TowerUpgraded;
+
+        /// <summary>
+        /// Raised once a sale has gone through, after the refund has landed.
+        /// </summary>
+        /// <remarks>
+        /// Carries no view: by the time a sale is final the tower has been despawned, so there is
+        /// nothing left for a listener to read off it. Subscribers that want the tower's details
+        /// have to take them before this, not from it.
+        /// </remarks>
+        public event Action TowerSold;
 
         public TowerNetworkManager Manager => manager;
         public ITowerRuntimeView SelectedTower => selectedTower;
@@ -552,6 +563,7 @@ namespace TowerDefense3D.Towers
             ClearSelection();
             tower.Despawn();
             goldSystem.Add(refund);
+            TowerSold?.Invoke();
             ReportFeedback($"Đã bán {displayName} với giá {refund} vàng.");
             error = string.Empty;
             return true;
@@ -656,6 +668,7 @@ namespace TowerDefense3D.Towers
             }
 
             goldSystem.TrySpend(cost);
+            TowerUpgraded?.Invoke(selectedTower);
             ReportFeedback(
                 $"Đã nâng cấp {GetDisplayName(selectedTower)} lên cấp {manager.GetUpgradeLevel(nodeId)}.");
             error = string.Empty;

@@ -16,7 +16,7 @@ namespace TowerDefense3D.Towers
         [Header("Network")]
         [SerializeField, Min(0)] private int minimumProcessorCountInValidChain;
         [SerializeField, Min(0)] private int minimumElementCountInValidChain;
-        [SerializeField, Min(0f)] private float maximumLinkRangeMeters = 12f;
+        [SerializeField, Min(0f)] private float maximumLinkRangeMeters = 8f;
         [SerializeField, Min(1)] private int normalQueueCapacity = 3;
         [SerializeField, Min(0.01f)] private float minimumProcessIntervalSeconds = 0.15f;
 

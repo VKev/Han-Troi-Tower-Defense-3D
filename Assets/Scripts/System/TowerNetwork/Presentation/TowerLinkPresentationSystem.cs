@@ -24,6 +24,22 @@ namespace TowerDefense3D.Towers
         /// </remarks>
         private const float SelectionClearanceMeters = 0.22f;
 
+        /// <summary>
+        /// A tower that carries a link-slot indicator, paired with the node whose incoming links
+        /// the indicator counts.
+        /// </summary>
+        private readonly struct LinkSlotBinding
+        {
+            public LinkSlotBinding(TowerNodeId nodeId, ITowerLinkSlotsView slots)
+            {
+                NodeId = nodeId;
+                Slots = slots;
+            }
+
+            public TowerNodeId NodeId { get; }
+            public ITowerLinkSlotsView Slots { get; }
+        }
+
         private readonly TowerNetworkManager manager;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly TowerInteractionSystem interactionSystem;
@@ -33,6 +49,9 @@ namespace TowerDefense3D.Towers
         private readonly List<TowerLinkViewItem> visibleLinks = new List<TowerLinkViewItem>();
         private readonly Dictionary<TowerNodeId, TowerNodeId> previewValidLinks =
             new Dictionary<TowerNodeId, TowerNodeId>();
+        private readonly Dictionary<TowerNodeId, int> incomingLinkCounts = new Dictionary<TowerNodeId, int>();
+        private readonly List<LinkSlotBinding> linkSlotBindings = new List<LinkSlotBinding>();
+        private bool linkSlotBindingsDirty = true;
         private TowerNodeId previewSourceId;
         private TowerNodeId previewTargetId;
         private bool previewTopologyDirty = true;
@@ -72,7 +91,7 @@ namespace TowerDefense3D.Towers
 
         public void Start()
         {
-            manager.StateChanged += InvalidatePreviewTopology;
+            manager.StateChanged += InvalidateTopologyCaches;
             view.Initialize();
         }
 
@@ -85,6 +104,80 @@ namespace TowerDefense3D.Towers
             RefreshSelection();
             RefreshPreview();
             RefreshRangeRing();
+            RefreshLinkSlots(links);
+        }
+
+        /// <summary>
+        /// Tells every tower that shows link slots how many of its input ports are taken.
+        /// </summary>
+        /// <remarks>
+        /// Driven off every tower rather than off the link list, because a tower with no links at
+        /// all appears in no snapshot and is precisely the one that has to show every slot free.
+        ///
+        /// Unlike the link lines this keeps running while a wave is in flight. The lines are hidden
+        /// then to clear the board for the fight, but "how much of this sink is still open" is the
+        /// question the player is asking while watching a wave fail, so hiding the answer would
+        /// remove it exactly when it is wanted. The squares also sit above the tower rather than
+        /// across the board, so they cost none of the clarity the lines were hidden to buy.
+        /// </remarks>
+        private void RefreshLinkSlots(IReadOnlyList<TowerLinkSnapshot> links)
+        {
+            RefreshLinkSlotBindings();
+            if (linkSlotBindings.Count == 0)
+            {
+                return;
+            }
+
+            incomingLinkCounts.Clear();
+            for (int index = 0; index < links.Count; index++)
+            {
+                TowerNodeId target = links[index].Target;
+                incomingLinkCounts.TryGetValue(target, out int count);
+                incomingLinkCounts[target] = count + 1;
+            }
+
+            for (int index = 0; index < linkSlotBindings.Count; index++)
+            {
+                LinkSlotBinding binding = linkSlotBindings[index];
+                incomingLinkCounts.TryGetValue(binding.NodeId, out int occupied);
+                binding.Slots.Render(occupied);
+            }
+        }
+
+        /// <summary>
+        /// Rebuilt on the tick after the topology changed, not inside the change notification: a
+        /// tower raises the change as it registers its node, and its view is not in the registry
+        /// to be found until that registration has finished.
+        /// </summary>
+        /// <remarks>
+        /// Towers that carry no indicator are dropped here rather than cached as a miss, so the
+        /// per-frame pass walks only the handful of towers that actually draw slots and the
+        /// component search does not run again until the topology moves.
+        /// </remarks>
+        private void RefreshLinkSlotBindings()
+        {
+            if (!linkSlotBindingsDirty)
+            {
+                return;
+            }
+
+            linkSlotBindingsDirty = false;
+            linkSlotBindings.Clear();
+            IReadOnlyList<ITowerRuntimeView> towers = towerNetworkSystem.CreateTowerViewSnapshot();
+            for (int index = 0; index < towers.Count; index++)
+            {
+                ITowerRuntimeView tower = towers[index];
+                if (tower.GameObject == null)
+                {
+                    continue;
+                }
+
+                ITowerLinkSlotsView slots = tower.GameObject.GetComponentInChildren<ITowerLinkSlotsView>(true);
+                if (slots != null)
+                {
+                    linkSlotBindings.Add(new LinkSlotBinding(tower.NodeId, slots));
+                }
+            }
         }
 
         /// <summary>
@@ -155,8 +248,11 @@ namespace TowerDefense3D.Towers
 
         public void Dispose()
         {
-            manager.StateChanged -= InvalidatePreviewTopology;
+            manager.StateChanged -= InvalidateTopologyCaches;
             previewValidLinks.Clear();
+            incomingLinkCounts.Clear();
+            linkSlotBindings.Clear();
+            linkSlotBindingsDirty = true;
             visibleLinks.Clear();
             view.Clear();
             rangeRing?.Hide();
@@ -226,9 +322,10 @@ namespace TowerDefense3D.Towers
                     && target.Equals(previewTargetId));
         }
 
-        private void InvalidatePreviewTopology()
+        private void InvalidateTopologyCaches()
         {
             previewTopologyDirty = true;
+            linkSlotBindingsDirty = true;
         }
 
         private void RefreshPreviewTopology()

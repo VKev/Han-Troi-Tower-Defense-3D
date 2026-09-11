@@ -17,7 +17,7 @@ MonoBehaviour:
       cost: 0
       attackIntervalSeconds: 0.75
       projectileSpeedMetersPerSecond: 10
-      rangeMeters: 12
+      rangeMeters: 8
       damageMultiplier: 1.35
       pushDistanceMeters: 0
       slowStrengthFraction: 0
@@ -29,7 +29,7 @@ MonoBehaviour:
       cost: 0
       attackIntervalSeconds: 0.75
       projectileSpeedMetersPerSecond: 10
-      rangeMeters: 12
+      rangeMeters: 8
       damageMultiplier: 1.7
       pushDistanceMeters: 0
       slowStrengthFraction: 0

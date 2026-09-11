@@ -23,6 +23,7 @@ namespace TowerDefense3D.Towers
         private Vector3 localProjectileOrigin;
         private Vector3 localGroundCentre;
         private float groundRadiusMeters = DefaultGroundRadiusMeters;
+        private GameObject tierVisual;
 
         public event Action<ITowerRuntimeView> Destroyed;
 
@@ -108,6 +109,86 @@ namespace TowerDefense3D.Towers
             CalculateLocalAnchors();
         }
 
+        public void ReplaceVisual(GameObject visualPrefab)
+        {
+            if (visualPrefab == null)
+            {
+                throw new ArgumentNullException(nameof(visualPrefab));
+            }
+
+            // Read the ground contact off the model standing here rather than off the placement
+            // surface: the factory seated the tower on the board when it spawned, and matching
+            // whatever it rests on now keeps a taller or shorter tier from floating or sinking.
+            bool wasSeated = TryMeasureVisualBounds(out Bounds seatedBounds);
+
+            HideCurrentVisual();
+            tierVisual = Instantiate(visualPrefab);
+            Transform tierTransform = tierVisual.transform;
+
+            // Each tier model was exported at its own unit scale and carries it on its prefab
+            // root, so nesting it under a tower root that is itself scaled would multiply the
+            // two. Dividing the tower's scale back out leaves the model at its authored size.
+            Vector3 authoredScale = tierTransform.localScale;
+            tierTransform.SetParent(transform, false);
+            tierTransform.localPosition = Vector3.zero;
+            tierTransform.localRotation = Quaternion.identity;
+            tierTransform.localScale = DivideScale(authoredScale, transform.localScale);
+
+            if (wasSeated && TryMeasureVisualBounds(out Bounds tierBounds))
+            {
+                transform.position += Vector3.up * (seatedBounds.min.y - tierBounds.min.y);
+            }
+
+            CalculateLocalAnchors();
+        }
+
+        private void HideCurrentVisual()
+        {
+            if (tierVisual != null)
+            {
+                // Detached before being destroyed: Destroy only takes effect at the end of the
+                // frame, so the bounds measured right after this call would otherwise still find
+                // the outgoing tier model hanging under the tower.
+                tierVisual.transform.SetParent(null, true);
+                if (Application.isPlaying)
+                {
+                    Destroy(tierVisual);
+                }
+                else
+                {
+                    DestroyImmediate(tierVisual);
+                }
+
+                tierVisual = null;
+                return;
+            }
+
+            // The authored model is a renderer on the tower root itself, which cannot be removed
+            // without taking the tower and its node binding with it. Disabling it hides it and
+            // drops it out of the silhouette, which the bounds measurement already keys off.
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            Transform linkSlotsRoot = ResolveLinkSlotsRoot();
+
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Renderer renderer = renderers[index];
+                if (linkSlotsRoot != null && renderer.transform.IsChildOf(linkSlotsRoot))
+                {
+                    continue;
+                }
+
+                renderer.enabled = false;
+            }
+        }
+
+        private static Vector3 DivideScale(Vector3 scale, Vector3 divisor)
+        {
+            return new Vector3(
+                divisor.x != 0f ? scale.x / divisor.x : scale.x,
+                divisor.y != 0f ? scale.y / divisor.y : scale.y,
+                divisor.z != 0f ? scale.z / divisor.z : scale.z);
+        }
+
         public void BindNode(TowerNodeId registeredNodeId)
         {
             if (!IsConfigured)
@@ -133,16 +214,32 @@ namespace TowerDefense3D.Towers
             nodeId = default;
         }
 
-        private void CalculateLocalAnchors()
+        // The link-slot squares float above the tower and are not part of its silhouette.
+        // Measuring them would push the presentation anchor and projectile origin up to the
+        // squares' own height, moving where link lines land and where projectiles fly.
+        private Transform ResolveLinkSlotsRoot()
+        {
+            TowerLinkSlotsView linkSlots = GetComponentInChildren<TowerLinkSlotsView>(true);
+            return linkSlots != null ? linkSlots.BillboardRoot : null;
+        }
+
+        private bool TryMeasureVisualBounds(out Bounds bounds)
         {
             Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
             bool hasBounds = false;
             Bounds combinedBounds = default;
 
+            Transform linkSlotsRoot = ResolveLinkSlotsRoot();
+
             for (int index = 0; index < renderers.Length; index++)
             {
                 Renderer renderer = renderers[index];
                 if (!renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (linkSlotsRoot != null && renderer.transform.IsChildOf(linkSlotsRoot))
                 {
                     continue;
                 }
@@ -157,6 +254,14 @@ namespace TowerDefense3D.Towers
                     combinedBounds.Encapsulate(renderer.bounds);
                 }
             }
+
+            bounds = combinedBounds;
+            return hasBounds;
+        }
+
+        private void CalculateLocalAnchors()
+        {
+            bool hasBounds = TryMeasureVisualBounds(out Bounds combinedBounds);
 
             Vector3 worldPresentationAnchor = hasBounds
                 ? new Vector3(combinedBounds.center.x, combinedBounds.max.y + 0.2f, combinedBounds.center.z)

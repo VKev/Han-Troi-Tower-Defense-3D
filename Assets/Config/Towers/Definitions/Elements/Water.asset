@@ -17,7 +17,7 @@ MonoBehaviour:
       cost: 280
       attackIntervalSeconds: 0.85
       projectileSpeedMetersPerSecond: 10
-      rangeMeters: 12
+      rangeMeters: 8
       damageMultiplier: 1
       pushDistanceMeters: 0
       slowStrengthFraction: 0.402
@@ -25,11 +25,12 @@ MonoBehaviour:
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
+      visualPrefab: {fileID: 8707204848975691423, guid: f51c4848a689f8d4ba18de2199517a04, type: 3}
     tierTwo:
       cost: 420
       attackIntervalSeconds: 0.85
       projectileSpeedMetersPerSecond: 10
-      rangeMeters: 12
+      rangeMeters: 8
       damageMultiplier: 0
       pushDistanceMeters: 0
       slowStrengthFraction: 0.503
@@ -37,6 +38,7 @@ MonoBehaviour:
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
+      visualPrefab: {fileID: 7163857492279136583, guid: 0d957688fa4ca8040b9fc44605d95def, type: 3}
   core:
     stableId: water
     displayName: Water

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TowerDefense3D.Audio;
 using TowerDefense3D.GameplayInput;
+using TowerDefense3D.Tutorials;
 using UnityEngine;
 
 namespace TowerDefense3D.Towers
@@ -18,6 +19,7 @@ namespace TowerDefense3D.Towers
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly Camera worldCamera;
         private readonly ISoundPlayer soundPlayer;
+        private readonly ITutorialInputGate tutorialInputGate;
 
         private int pointerId;
         private Vector2 pressPosition;
@@ -29,9 +31,11 @@ namespace TowerDefense3D.Towers
             GameplayInputSystem inputSystem,
             TowerNetworkSystem towerNetworkSystem,
             Camera worldCamera,
-            ISoundPlayer soundPlayer = null)
+            ISoundPlayer soundPlayer = null,
+            ITutorialInputGate tutorialInputGate = null)
         {
             this.soundPlayer = soundPlayer;
+            this.tutorialInputGate = tutorialInputGate;
             this.inputSystem = inputSystem ?? throw new ArgumentNullException(nameof(inputSystem));
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
@@ -122,6 +126,7 @@ namespace TowerDefense3D.Towers
             // already running, or a hero under the finger, used to let the player drag a line
             // right across the board and only find out on release that nothing would attach.
             if (!IsDraggingLink
+                && (tutorialInputGate == null || tutorialInputGate.Allows("link_towers"))
                 && towerNetworkSystem.CanStartLinkFrom(pressedTower)
                 && (screenPosition - pressPosition).sqrMagnitude >= dragThresholdSquared)
             {
@@ -173,6 +178,14 @@ namespace TowerDefense3D.Towers
                 towerNetworkSystem.ReportFeedback(error);
             }
         }
+
+        /// <summary>
+        /// Whether a press here would land on a tower. Towers are picked by screen-space
+        /// proximity and carry no colliders, so a camera gesture cannot ask physics whether it
+        /// started on empty ground and has to consult the same radius the picker uses.
+        /// </summary>
+        internal bool IsOverTower(Vector2 screenPosition) =>
+            TryPickTower(screenPosition, out _);
 
         private bool TryPickTower(Vector2 screenPosition, out ITowerRuntimeView closestTower)
         {

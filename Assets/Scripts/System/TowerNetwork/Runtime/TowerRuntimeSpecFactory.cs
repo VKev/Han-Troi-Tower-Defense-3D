@@ -19,7 +19,7 @@ namespace TowerDefense3D.Towers
             float tickSeconds,
             int upgradeLevel = 0,
             float defaultProjectileSpeedMetersPerSecond = 10f,
-            float defaultRangeMeters = 12f)
+            float defaultRangeMeters = 8f)
         {
             ValidateInput(definition, tickSeconds);
 

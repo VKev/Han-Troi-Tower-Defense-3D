@@ -17,7 +17,7 @@ MonoBehaviour:
       cost: 110
       attackIntervalSeconds: 0.65
       projectileSpeedMetersPerSecond: 10
-      rangeMeters: 12
+      rangeMeters: 8
       damageMultiplier: 1.35
       pushDistanceMeters: 0
       slowStrengthFraction: 0
@@ -25,11 +25,12 @@ MonoBehaviour:
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
+      visualPrefab: {fileID: 5044005882882913602, guid: fa5d95fb1d7ff9f49b3364c72ec38ccb, type: 3}
     tierTwo:
       cost: 220
       attackIntervalSeconds: 0.65
       projectileSpeedMetersPerSecond: 10
-      rangeMeters: 12
+      rangeMeters: 8
       damageMultiplier: 1.7
       pushDistanceMeters: 0
       slowStrengthFraction: 0
@@ -37,6 +38,7 @@ MonoBehaviour:
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
+      visualPrefab: {fileID: 6480059431355758152, guid: 70b014d33ec065d4b9ff1f5783eb9c63, type: 3}
   core:
     stableId: generator
     displayName: Generator
