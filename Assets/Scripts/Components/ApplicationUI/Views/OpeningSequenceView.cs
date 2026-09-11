@@ -1,4 +1,5 @@
 using System.Collections;
+using TowerDefense3D.Audio;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -38,6 +39,13 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("The black curtain every handover happens behind. Shared with the level transitions.")]
         [SerializeField] private ScreenFadeView screenFade;
 
+        private ISoundPlayer soundPlayer;
+
+        public void Initialize(ISoundPlayer player)
+        {
+            soundPlayer = player;
+        }
+
         private void Awake()
         {
             if (gameStart != null)
@@ -59,6 +67,7 @@ namespace TowerDefense3D.GameFlow
             // so the opening starts by lifting it off the title.
             yield return Uncover();
             yield return AwaitTap();
+            soundPlayer?.Play(SoundId.GameStarted);
 
             // The title is only taken down once the curtain is fully up, and the journey only
             // uncovered once it is gone: the whole point of a cover is that the handover happens

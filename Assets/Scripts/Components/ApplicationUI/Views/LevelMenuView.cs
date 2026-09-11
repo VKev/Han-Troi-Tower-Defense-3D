@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TMPro;
+using TowerDefense3D.Audio;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,7 +48,13 @@ namespace TowerDefense3D.GameFlow
 
         private readonly List<LevelMenuItemState> levels = new();
         private Action<int> onLevelSelected;
+        private ISoundPlayer soundPlayer;
         private int selectedLevelNumber;
+
+        public void Initialize(ISoundPlayer player)
+        {
+            soundPlayer = player;
+        }
 
         private void Awake()
         {
@@ -169,71 +176,11 @@ namespace TowerDefense3D.GameFlow
 
         private void EnsureAuthoredCapacity(int requiredCount)
         {
-            if (requiredCount <= levelButtons.Length)
+            if (requiredCount > levelButtons.Length)
             {
-                return;
+                throw new InvalidOperationException(
+                    $"LevelMenuView has {levelButtons.Length} authored buttons but requires {requiredCount}.");
             }
-
-            LevelButtonView template = FindTemplate();
-            int authoredCount = levelButtons.Length;
-            Vector2 step = ReadJourneyStep();
-            Array.Resize(ref levelButtons, requiredCount);
-            for (int index = authoredCount; index < requiredCount; index++)
-            {
-                LevelButtonView copy = Instantiate(
-                    template,
-                    template.transform.parent,
-                    false);
-                copy.name = $"{template.name} {index + 1}";
-                PlaceAlongJourney(copy, levelButtons[index - 1], step, index - authoredCount);
-                levelButtons[index] = copy;
-            }
-        }
-
-        /// <summary>
-        /// How far apart the authored nodes sit, so a level the catalog gained carries the trail on
-        /// instead of landing on top of the last node.
-        /// </summary>
-        private Vector2 ReadJourneyStep()
-        {
-            if (levelButtons.Length < 2)
-            {
-                return new Vector2(300f, 0f);
-            }
-
-            var last = (RectTransform)levelButtons[levelButtons.Length - 1].transform;
-            var previous = (RectTransform)levelButtons[levelButtons.Length - 2].transform;
-            return last.anchoredPosition - previous.anchoredPosition;
-        }
-
-        private static void PlaceAlongJourney(
-            LevelButtonView copy,
-            LevelButtonView previous,
-            Vector2 step,
-            int stepIndex)
-        {
-            var placed = (RectTransform)copy.transform;
-            var from = (RectTransform)previous.transform;
-
-            // The authored trail zig-zags, so the vertical half of the step flips each time and the
-            // added nodes keep weaving instead of climbing off the top of the map.
-            float verticalSign = stepIndex % 2 == 0 ? 1f : -1f;
-            placed.anchoredPosition = from.anchoredPosition
-                + new Vector2(Mathf.Abs(step.x), step.y * verticalSign);
-        }
-
-        private LevelButtonView FindTemplate()
-        {
-            for (int index = levelButtons.Length - 1; index >= 0; index--)
-            {
-                if (levelButtons[index] != null)
-                {
-                    return levelButtons[index];
-                }
-            }
-
-            throw new InvalidOperationException(
-                "LevelMenuView requires at least one authored LevelButtonView template.");
         }
 
         private void UnbindButtons()
@@ -283,6 +230,7 @@ namespace TowerDefense3D.GameFlow
 
                 if (state.IsUnlocked)
                 {
+                    soundPlayer?.Play(SoundId.LevelSelected);
                     SelectLevel(levelNumber);
                 }
                 else
@@ -333,6 +281,7 @@ namespace TowerDefense3D.GameFlow
         {
             if (selectedLevelNumber > 0)
             {
+                soundPlayer?.Play(SoundId.EnterLevel);
                 onLevelSelected?.Invoke(selectedLevelNumber);
             }
         }
