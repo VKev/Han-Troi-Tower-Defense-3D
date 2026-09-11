@@ -8,10 +8,18 @@ namespace TowerDefense3D.Waves
         event Action StateChanged;
 
         bool IsRunning { get; }
+        bool IsCurrentWaveRetryAvailable { get; }
+
+        /// <summary>
+        /// Whether the wave now being prepared has already been attempted and retried, so nudges
+        /// meant for a first attempt do not fire again on the replay.
+        /// </summary>
+        bool HasRetriedCurrentWave { get; }
 
         WaveState CreateState();
         IReadOnlyList<EnemySpawnBatchDefinition> GetNextWavePreview();
         bool TryStartWave(out string error);
+        bool RetryCurrentWave();
 
         /// <summary>
         /// Development cheat: clears the board and declares every remaining wave beaten, so the

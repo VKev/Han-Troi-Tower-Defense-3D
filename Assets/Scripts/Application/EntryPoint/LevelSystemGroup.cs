@@ -1,4 +1,5 @@
 using TowerDefense3D.Enemies;
+using TowerDefense3D.Audio;
 using TowerDefense3D.GameplayInput;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Simulation;
@@ -23,6 +24,8 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
         private readonly GameplayUISystem gameplayUISystem;
+        private readonly SoundCueSystem soundCueSystem;
+        private readonly LevelPreparationMusicSystem levelPreparationMusicSystem;
         private readonly SafeAreaSystem safeAreaSystem;
 
         public LevelSystemGroup(
@@ -38,6 +41,8 @@ namespace TowerDefense3D.GameFlow
             TowerLinkPresentationSystem towerLinkPresentationSystem,
             TowerProjectilePresentationSystem towerProjectilePresentationSystem,
             GameplayUISystem gameplayUISystem,
+            SoundCueSystem soundCueSystem,
+            LevelPreparationMusicSystem levelPreparationMusicSystem,
             SafeAreaSystem safeAreaSystem)
         {
             this.boardSystem = boardSystem;
@@ -52,6 +57,8 @@ namespace TowerDefense3D.GameFlow
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
             this.gameplayUISystem = gameplayUISystem;
+            this.soundCueSystem = soundCueSystem;
+            this.levelPreparationMusicSystem = levelPreparationMusicSystem;
             this.safeAreaSystem = safeAreaSystem;
         }
 
@@ -65,6 +72,8 @@ namespace TowerDefense3D.GameFlow
             towerProjectilePresentationSystem.Start();
             enemyPresentationSystem.Start();
             heroAttackPresentationSystem.Start();
+            soundCueSystem.Start();
+            levelPreparationMusicSystem.Start();
             gameplayUISystem.Start();
             safeAreaSystem.Start();
         }

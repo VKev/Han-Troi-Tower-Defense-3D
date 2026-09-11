@@ -21,7 +21,7 @@ MonoBehaviour:
   visualizeInScene: 0
   maxCameraGridXSpan: 15
   maxCameraGridYSpan: 15
-  cameraPositionOffset: {x: 0, y: -0.8, z: 0}
+  cameraPositionOffset: {x: 0, y: -2.43, z: 0}
   cameraRotationOffsetEuler: {x: -15, y: 0, z: 0}
   cells:
   - coordinate:
@@ -2819,8 +2819,8 @@ MonoBehaviour:
       y: 0
     definition: {fileID: 11400000, guid: 461cbd58630b0f1419259bf6b2bbe434, type: 2}
   - coordinate:
-      x: 35
-      z: 31
+      x: 34
+      z: 26
       y: 0
     definition: {fileID: 11400000, guid: 37378dec03550a34c958d9a7bc3edbe9, type: 2}
   routes: []

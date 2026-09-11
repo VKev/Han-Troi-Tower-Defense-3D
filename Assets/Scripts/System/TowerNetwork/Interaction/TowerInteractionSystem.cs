@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TowerDefense3D.Audio;
 using TowerDefense3D.GameplayInput;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ namespace TowerDefense3D.Towers
         private readonly GameplayInputSystem inputSystem;
         private readonly TowerNetworkSystem towerNetworkSystem;
         private readonly Camera worldCamera;
+        private readonly ISoundPlayer soundPlayer;
 
         private int pointerId;
         private Vector2 pressPosition;
@@ -26,8 +28,10 @@ namespace TowerDefense3D.Towers
         public TowerInteractionSystem(
             GameplayInputSystem inputSystem,
             TowerNetworkSystem towerNetworkSystem,
-            Camera worldCamera)
+            Camera worldCamera,
+            ISoundPlayer soundPlayer = null)
         {
+            this.soundPlayer = soundPlayer;
             this.inputSystem = inputSystem ?? throw new ArgumentNullException(nameof(inputSystem));
             this.towerNetworkSystem = towerNetworkSystem
                 ?? throw new ArgumentNullException(nameof(towerNetworkSystem));
@@ -102,6 +106,7 @@ namespace TowerDefense3D.Towers
             pressPosition = screenPosition;
             currentPosition = screenPosition;
             pressedTower = tower;
+            soundPlayer?.Play(SoundId.TowerTouched);
             previewTarget = null;
             IsDraggingLink = false;
             inputSystem.SetMode(GameplayInputMode.TowerInteraction);
@@ -159,6 +164,7 @@ namespace TowerDefense3D.Towers
 
             if (towerNetworkSystem.TryRewire(pressedTower, previewTarget, out string error))
             {
+                soundPlayer?.Play(SoundId.LinkConnected);
                 towerNetworkSystem.ReportFeedback(
                     $"Linked {GetDisplayName(pressedTower)} to {GetDisplayName(previewTarget)}.");
             }

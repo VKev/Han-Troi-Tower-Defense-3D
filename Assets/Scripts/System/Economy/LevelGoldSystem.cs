@@ -50,6 +50,12 @@ namespace TowerDefense3D.Economy
             SetBalance(startingGold);
         }
 
+        internal void Restore(int value)
+        {
+            ValidateNonNegative(value, nameof(value));
+            SetBalance(value);
+        }
+
         private void SetBalance(int nextBalance)
         {
             if (balance == nextBalance)

@@ -1,9 +1,22 @@
 using System;
+using System.Collections.Generic;
 using TowerDefense3D.GameplayInput;
 using UnityEngine;
 
 namespace TowerDefense3D.GridPlacement
 {
+    public readonly struct GridPlacementConstraint
+    {
+        public GridPlacementConstraint(GridCell cell, TowerFootprint footprint)
+        {
+            Cell = cell;
+            Footprint = footprint;
+        }
+
+        public GridCell Cell { get; }
+        public TowerFootprint Footprint { get; }
+    }
+
     /// <summary>
     /// Owns level placement selection, pointer state, candidates, and placement transactions.
     /// </summary>
@@ -36,6 +49,11 @@ namespace TowerDefense3D.GridPlacement
         private bool hasCandidate;
         private bool candidateIsValid;
         private GridCell candidateCell;
+        private bool hasRequiredPlacement;
+        private GridCell requiredPlacementCell;
+        private TowerFootprint requiredPlacementFootprint;
+        private readonly List<GridPlacementConstraint> reservedPlacements =
+            new List<GridPlacementConstraint>();
 
         public GridPlacementSystem(
             BoardSystem boardSystem,
@@ -62,6 +80,57 @@ namespace TowerDefense3D.GridPlacement
         public GridOccupancy Occupancy => model.Occupancy;
 
         public event Action<GridPlacementCommit> TowerPlaced;
+
+        public void SetRequiredPlacement(GridCell cell, TowerFootprint footprint)
+        {
+            requiredPlacementCell = cell;
+            requiredPlacementFootprint = footprint;
+            hasRequiredPlacement = true;
+            if (hasCandidate && selectedTower != null)
+            {
+                RefreshCandidate(candidateCell);
+            }
+        }
+
+        public void ClearRequiredPlacement()
+        {
+            hasRequiredPlacement = false;
+            if (hasCandidate && selectedTower != null)
+            {
+                RefreshCandidate(candidateCell);
+            }
+        }
+
+        public void SetReservedPlacement(GridCell cell, TowerFootprint footprint)
+        {
+            SetReservedPlacements(new GridPlacementConstraint(cell, footprint));
+        }
+
+        public void SetReservedPlacements(params GridPlacementConstraint[] constraints)
+        {
+            reservedPlacements.Clear();
+            if (constraints != null)
+            {
+                for (int index = 0; index < constraints.Length; index++)
+                {
+                    reservedPlacements.Add(constraints[index]);
+                }
+            }
+
+            if (hasCandidate && selectedTower != null)
+            {
+                RefreshCandidate(candidateCell);
+            }
+        }
+
+        public void ClearReservedPlacement()
+        {
+            reservedPlacements.Clear();
+            if (hasCandidate && selectedTower != null)
+            {
+                RefreshCandidate(candidateCell);
+            }
+        }
 
         public void Tick()
         {
@@ -294,7 +363,11 @@ namespace TowerDefense3D.GridPlacement
             candidateCell = cell;
             hasCandidate = true;
             candidateIsValid = selectedTower.Prefab != null
-                && model.Evaluate(cell, selectedTower.Footprint).Succeeded;
+                && model.Evaluate(cell, selectedTower.Footprint).Succeeded
+                && !OverlapsReservedPlacement(cell, selectedTower.Footprint)
+                && (!hasRequiredPlacement
+                    || (cell == requiredPlacementCell
+                        && selectedTower.Footprint == requiredPlacementFootprint));
             view.Show(
                 selectedTower.Footprint,
                 model.GetFootprintBottomCenter(cell, selectedTower.Footprint),
@@ -332,9 +405,44 @@ namespace TowerDefense3D.GridPlacement
                 instance,
                 candidateCell,
                 ownerId);
+            if (hasRequiredPlacement
+                && candidateCell == requiredPlacementCell
+                && selectedTower.Footprint == requiredPlacementFootprint)
+            {
+                hasRequiredPlacement = false;
+            }
+
             RefreshCandidate(candidateCell);
             PublishTowerPlaced(placement);
             return true;
+        }
+
+        private static bool FootprintsOverlap(
+            GridCell firstCell,
+            TowerFootprint firstFootprint,
+            GridCell secondCell,
+            TowerFootprint secondFootprint)
+        {
+            return firstCell.X < secondCell.X + secondFootprint.Width
+                && secondCell.X < firstCell.X + firstFootprint.Width
+                && firstCell.Y < secondCell.Y + secondFootprint.Height
+                && secondCell.Y < firstCell.Y + firstFootprint.Height
+                && firstCell.Z < secondCell.Z + secondFootprint.Depth
+                && secondCell.Z < firstCell.Z + firstFootprint.Depth;
+        }
+
+        private bool OverlapsReservedPlacement(GridCell cell, TowerFootprint footprint)
+        {
+            for (int index = 0; index < reservedPlacements.Count; index++)
+            {
+                GridPlacementConstraint reserved = reservedPlacements[index];
+                if (FootprintsOverlap(cell, footprint, reserved.Cell, reserved.Footprint))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void PublishTowerPlaced(GridPlacementCommit placement)

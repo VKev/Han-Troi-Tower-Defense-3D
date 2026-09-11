@@ -35,10 +35,10 @@ MonoBehaviour:
       spawnPointIndex: -1
   - clearGoldReward: 0
     spawnBatches:
-    - enemy: {fileID: 11400000, guid: fb112bb1c5220624fab5d95386a59940, type: 2}
+    - enemy: {fileID: 11400000, guid: 3f7c2a91b5e8d4649a1c0f83d75b62ae, type: 2}
       count: 1
-      startTimeSeconds: 1
-      spawnWindowSeconds: 2
+      startTimeSeconds: 2
+      spawnWindowSeconds: 1
       spawnPointIndex: -1
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 2
@@ -100,3 +100,9 @@ MonoBehaviour:
       startTimeSeconds: 1
       spawnWindowSeconds: 0
       spawnPointIndex: -1
+  stationaryBoss:
+    boss: {fileID: 0}
+    firstStandingWaveNumber: 1
+    standDistanceMeters: 12
+    spawnPointIndex: 0
+    waves: []

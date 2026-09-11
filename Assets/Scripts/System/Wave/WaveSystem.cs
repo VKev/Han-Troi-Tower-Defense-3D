@@ -22,6 +22,11 @@ namespace TowerDefense3D.Waves
         private int nextWaveIndex;
         private int nextSpawnIndex;
         private float elapsedSeconds;
+        private readonly int instantDefeatWaveNumber;
+        private int waveStartGold;
+        private int waveStartHealth;
+        private bool canRetryCurrentWave;
+        private bool hasRetriedCurrentWave;
 
         public WaveSystem(
             WaveScheduleDefinition schedule,
@@ -30,7 +35,8 @@ namespace TowerDefense3D.Waves
             WaveSpawnPlanner spawnPlanner,
             LevelGoldSystem goldSystem,
             LevelBaseHealthSystem healthSystem,
-            IStandingBossAnchor standingBossAnchor = null)
+            IStandingBossAnchor standingBossAnchor = null,
+            int instantDefeatWaveNumber = 0)
         {
             this.standingBossAnchor = standingBossAnchor;
             this.schedule = schedule ?? throw new ArgumentNullException(nameof(schedule));
@@ -40,12 +46,15 @@ namespace TowerDefense3D.Waves
             this.spawnPlanner = spawnPlanner ?? throw new ArgumentNullException(nameof(spawnPlanner));
             this.goldSystem = goldSystem ?? throw new ArgumentNullException(nameof(goldSystem));
             this.healthSystem = healthSystem ?? throw new ArgumentNullException(nameof(healthSystem));
+            this.instantDefeatWaveNumber = instantDefeatWaveNumber;
 
             IReadOnlyList<string> errors = schedule.CollectValidationErrors();
             if (errors.Count > 0)
             {
                 throw new InvalidOperationException(string.Join("\n", errors));
             }
+
+            enemySystem.EnemyLeaked += HandleEnemyLeaked;
         }
 
         public event Action StateChanged;
@@ -55,6 +64,9 @@ namespace TowerDefense3D.Waves
         public bool IsRunning => Phase == WavePhase.Running;
         public int WaveCount => schedule.Waves.Count;
         public int CurrentWaveNumber => Math.Min(nextWaveIndex + 1, WaveCount);
+        public bool CanRetryCurrentWave => canRetryCurrentWave && Phase == WavePhase.Defeat;
+        public bool IsCurrentWaveRetryAvailable => CanRetryCurrentWave;
+        public bool HasRetriedCurrentWave => hasRetriedCurrentWave;
 
         public WaveState CreateState()
         {
@@ -167,6 +179,11 @@ namespace TowerDefense3D.Waves
                 return false;
             }
 
+            waveStartGold = goldSystem.Balance;
+            waveStartHealth = healthSystem.CurrentHealth;
+            healthSystem.SetDamageEnabled(true);
+            canRetryCurrentWave = false;
+
             RefreshStandingBoss();
             currentPlan = AssignEnemyIds(
                 spawnPlanner.CreatePlan(schedule, nextWaveIndex, ResolveStandDistance()));
@@ -216,6 +233,7 @@ namespace TowerDefense3D.Waves
             if (healthSystem.IsDepleted)
             {
                 towerNetworkSystem.StopSimulation();
+                canRetryCurrentWave = false;
                 stateMachine.TransitionTo(WavePhase.Defeat);
                 StateChanged?.Invoke();
                 return;
@@ -229,6 +247,7 @@ namespace TowerDefense3D.Waves
             towerNetworkSystem.StopSimulation();
             goldSystem.Add(schedule.Waves[nextWaveIndex].ClearGoldReward);
             nextWaveIndex++;
+            hasRetriedCurrentWave = false;
             stateMachine.TransitionTo(
                 nextWaveIndex >= schedule.Waves.Count
                     ? WavePhase.Victory
@@ -325,7 +344,46 @@ namespace TowerDefense3D.Waves
             nextWaveIndex = 0;
             nextSpawnIndex = 0;
             elapsedSeconds = 0f;
+            healthSystem.SetDamageEnabled(true);
+            canRetryCurrentWave = false;
+            hasRetriedCurrentWave = false;
             stateMachine.TransitionTo(WavePhase.Preparation);
+            StateChanged?.Invoke();
+        }
+
+        public bool RetryCurrentWave()
+        {
+            if (!CanRetryCurrentWave)
+            {
+                return false;
+            }
+
+            towerNetworkSystem.StopSimulation();
+            enemySystem.Reset();
+            currentPlan = Array.Empty<WaveSpawnOrder>();
+            nextSpawnIndex = 0;
+            elapsedSeconds = 0f;
+            goldSystem.Restore(waveStartGold);
+            healthSystem.Restore(waveStartHealth);
+            healthSystem.SetDamageEnabled(true);
+            canRetryCurrentWave = false;
+            hasRetriedCurrentWave = true;
+            stateMachine.TransitionTo(WavePhase.Preparation);
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        private void HandleEnemyLeaked(EnemySnapshot _)
+        {
+            if (!IsRunning || CurrentWaveNumber != instantDefeatWaveNumber)
+            {
+                return;
+            }
+
+            towerNetworkSystem.StopSimulation();
+            healthSystem.SetDamageEnabled(false);
+            canRetryCurrentWave = true;
+            stateMachine.TransitionTo(WavePhase.Defeat);
             StateChanged?.Invoke();
         }
 

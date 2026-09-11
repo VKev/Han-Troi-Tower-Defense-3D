@@ -9,6 +9,7 @@ namespace TowerDefense3D.Economy
     {
         private readonly int startingHealth;
         private int currentHealth;
+        private bool acceptsDamage = true;
 
         public LevelBaseHealthSystem(int startingHealth)
         {
@@ -34,12 +35,30 @@ namespace TowerDefense3D.Economy
                 throw new ArgumentOutOfRangeException(nameof(amount));
             }
 
-            SetCurrentHealth(Math.Max(0, currentHealth - amount));
+            if (acceptsDamage)
+            {
+                SetCurrentHealth(Math.Max(0, currentHealth - amount));
+            }
         }
 
         public void Reset()
         {
             SetCurrentHealth(startingHealth);
+        }
+
+        internal void Restore(int value)
+        {
+            if (value < 0 || value > startingHealth)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value));
+            }
+
+            SetCurrentHealth(value);
+        }
+
+        internal void SetDamageEnabled(bool enabled)
+        {
+            acceptsDamage = enabled;
         }
 
         private void SetCurrentHealth(int nextHealth)

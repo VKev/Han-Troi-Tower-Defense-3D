@@ -23,6 +23,7 @@ namespace TowerDefense3D.Towers
         private TowerCombatDefinition placementCombatDefinition;
         private ITowerRuntimeView selectedTower;
         private string lastFeedback = string.Empty;
+        private bool tutorialPlacementIsFree;
         private bool isStarted;
 
         public TowerNetworkSystem(
@@ -44,6 +45,7 @@ namespace TowerDefense3D.Towers
         }
 
         public event Action StateChanged;
+        public event Action<TowerFamily> ProjectileCreated;
 
         public TowerNetworkManager Manager => manager;
         public ITowerRuntimeView SelectedTower => selectedTower;
@@ -58,10 +60,23 @@ namespace TowerDefense3D.Towers
             && !authoredTowerIds.Contains(viewRegistry.GetNodeId(selectedTower))
             && selectedTower.CombatDefinition?.Core?.Economy?.Sellable == true;
 
+        public void SetTutorialPlacementFree(bool isFree)
+        {
+            tutorialPlacementIsFree = isFree;
+        }
+
+        public int GetUpgradeLevel(ITowerRuntimeView tower)
+        {
+            return tower != null && viewRegistry.TryGetNodeId(tower, out TowerNodeId nodeId)
+                ? manager.GetUpgradeLevel(nodeId)
+                : 0;
+        }
+
         public void Start()
         {
             manager.BeginLevelSession(levelNumber);
             manager.StateChanged += HandleManagerStateChanged;
+            manager.ProjectileCreated += HandleProjectileCreated;
             placementSystem.TowerPlaced += HandleTowerPlaced;
             isStarted = true;
             PublishStateChanged();
@@ -77,6 +92,7 @@ namespace TowerDefense3D.Towers
             isStarted = false;
             placementSystem.TowerPlaced -= HandleTowerPlaced;
             manager.StateChanged -= HandleManagerStateChanged;
+            manager.ProjectileCreated -= HandleProjectileCreated;
             placementSystem.CancelPlacement();
             placementCombatDefinition = null;
             selectedTower = null;
@@ -188,6 +204,15 @@ namespace TowerDefense3D.Towers
             return viewRegistry.TryGetView(nodeId, out view);
         }
 
+        private void HandleProjectileCreated(TowerProjectileSnapshot projectile)
+        {
+            if (viewRegistry.TryGetView(projectile.Source, out ITowerRuntimeView source)
+                && source.CombatDefinition != null)
+            {
+                ProjectileCreated?.Invoke(source.CombatDefinition.Family);
+            }
+        }
+
         public bool TryRewire(ITowerRuntimeView source, ITowerRuntimeView target, out string error)
         {
             if (source == null || target == null
@@ -233,6 +258,23 @@ namespace TowerDefense3D.Towers
                 && manager.CanLink(sourceId, targetId);
         }
 
+        public bool IsInValidChain(ITowerRuntimeView tower)
+        {
+            return tower != null
+                && viewRegistry.TryGetNodeId(tower, out TowerNodeId nodeId)
+                && manager.IsNodeInValidChain(nodeId);
+        }
+
+        public bool HasDirectLink(ITowerRuntimeView source, ITowerRuntimeView target)
+        {
+            return source != null
+                && target != null
+                && viewRegistry.TryGetNodeId(source, out TowerNodeId sourceId)
+                && viewRegistry.TryGetNodeId(target, out TowerNodeId targetId)
+                && manager.TryGetOutgoingLink(sourceId, out TowerLinkSnapshot link)
+                && link.Target.Equals(targetId);
+        }
+
         public bool BeginTowerPlacementDrag(TowerCombatDefinition definition, int pointerId)
         {
             if (!CanEditTopology)
@@ -246,7 +288,7 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
-            if (!goldSystem.CanAfford(GetBuildCost(definition)))
+            if (!tutorialPlacementIsFree && !goldSystem.CanAfford(GetBuildCost(definition)))
             {
                 ReportFeedback("Không đủ vàng.");
                 return false;
@@ -291,7 +333,8 @@ namespace TowerDefense3D.Towers
             }
 
             TowerCombatDefinition definition = placementCombatDefinition;
-            if (definition == null || !goldSystem.TrySpend(GetBuildCost(definition)))
+            if (definition == null
+                || !tutorialPlacementIsFree && !goldSystem.TrySpend(GetBuildCost(definition)))
             {
                 placementSystem.CancelPlacementDrag(pointerId);
                 placementCombatDefinition = null;
@@ -303,7 +346,10 @@ namespace TowerDefense3D.Towers
             placementCombatDefinition = null;
             if (!placed)
             {
-                goldSystem.Add(GetBuildCost(definition));
+                if (!tutorialPlacementIsFree)
+                {
+                    goldSystem.Add(GetBuildCost(definition));
+                }
                 ReportFeedback("Đã hủy đặt trụ.");
             }
 
