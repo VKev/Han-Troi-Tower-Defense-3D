@@ -4,6 +4,12 @@ namespace TowerDefense3D.GameplayInput
     {
         None,
         GridPlacement,
-        TowerInteraction
+        TowerInteraction,
+
+        /// <summary>
+        /// A camera pinch or pan owns the pointer. Placement and tower picking already stand down
+        /// for any mode that is not their own, so claiming this suppresses both.
+        /// </summary>
+        CameraGesture
     }
 }

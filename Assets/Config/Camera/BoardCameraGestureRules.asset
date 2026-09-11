@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04f78ed21c04c7e4686b467c7d2dbc4a, type: 3}
+  m_Name: BoardCameraGestureRules
+  m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.GridPlacement.BoardCameraGestureRules
+  maxZoomInDistanceMeters: 7
+  maxPanDistanceMeters: 4
+  pinchZoomPerScreenHeight: 2
+  scrollZoomPerNotch: 0.1
+  zoomSmoothingPerSecond: 14
+  panMetersPerScreenHeight: 8
+  panDragThresholdPixels: 24

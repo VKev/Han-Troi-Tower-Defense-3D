@@ -17,6 +17,10 @@ namespace TowerDefense3D.GridPlacement
         [SerializeField, HideInInspector] private Vector3 authoredBaseRotationEuler;
         [SerializeField, HideInInspector] private bool hasAuthoredBaseRotation;
 
+        // Runtime only: the player's zoom and pan are not authored state and must not survive a
+        // level reload.
+        private Vector3 viewerPositionOffset;
+
         public Camera TargetCamera => targetCamera;
         public BoardView BoardView => boardView;
         public BoardDefinition Board => boardView != null ? boardView.Board : null;
@@ -28,6 +32,12 @@ namespace TowerDefense3D.GridPlacement
         public bool UseRuntimeSafeArea => Application.isPlaying;
         public Rect ScreenSafeArea => Screen.safeArea;
         public Object LogContext => this;
+        public Vector3 ViewerPositionOffset => viewerPositionOffset;
+
+        public void SetViewerPositionOffset(Vector3 offset)
+        {
+            viewerPositionOffset = IsFinite(offset) ? offset : Vector3.zero;
+        }
 
         private void Reset()
         {

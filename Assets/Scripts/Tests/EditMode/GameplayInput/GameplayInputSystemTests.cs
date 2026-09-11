@@ -53,6 +53,11 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
                 CaptureCount++;
                 return snapshot;
             }
+
+            public GameplayCameraGestureSnapshot CaptureCameraGesture()
+            {
+                return default;
+            }
         }
     }
 }

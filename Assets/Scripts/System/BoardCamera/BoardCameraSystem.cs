@@ -27,6 +27,7 @@ namespace TowerDefense3D.GridPlacement
         private float observedPadding;
         private bool observedOrthographic;
         private Vector3 observedCameraPositionOffset;
+        private Vector3 observedViewerPositionOffset;
         private Vector3 observedCameraRotationOffsetEuler;
         private Vector3 observedAuthoredBaseRotationEuler;
         private Vector3 observedBoardPosition;
@@ -135,7 +136,8 @@ namespace TowerDefense3D.GridPlacement
                 return false;
             }
 
-            position = fittedPosition + rotation * board.CameraPositionOffset;
+            position = fittedPosition
+                + rotation * (board.CameraPositionOffset + view.ViewerPositionOffset);
             return IsFinite(position);
         }
 
@@ -188,7 +190,8 @@ namespace TowerDefense3D.GridPlacement
             if (!hasObservedInputs
                 || observedPadding != view.EdgePaddingCells
                 || observedCompositionRect != view.CompositionRectInSafeArea
-                || observedAuthoredBaseRotationEuler != view.AuthoredBaseRotationEuler)
+                || observedAuthoredBaseRotationEuler != view.AuthoredBaseRotationEuler
+                || observedViewerPositionOffset != view.ViewerPositionOffset)
             {
                 return true;
             }
@@ -236,6 +239,7 @@ namespace TowerDefense3D.GridPlacement
                 ? observedBoard.CameraRotationOffsetEuler
                 : Vector3.zero;
             observedAuthoredBaseRotationEuler = view.AuthoredBaseRotationEuler;
+            observedViewerPositionOffset = view.ViewerPositionOffset;
             observedSafeArea = view.ScreenSafeArea;
 
             Camera camera = view.TargetCamera;

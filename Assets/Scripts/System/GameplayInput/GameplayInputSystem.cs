@@ -15,21 +15,28 @@ namespace TowerDefense3D.GameplayInput
         }
 
         public GameplayInputSnapshot Current { get; private set; }
+        public GameplayCameraGestureSnapshot CameraGesture { get; private set; }
         public GameplayInputMode Mode { get; private set; }
 
         public void Start()
         {
-            Current = source.Capture();
+            Capture();
         }
 
         public void Tick()
         {
-            Current = source.Capture();
+            Capture();
         }
 
         public void SetMode(GameplayInputMode mode)
         {
             Mode = mode;
+        }
+
+        private void Capture()
+        {
+            Current = source.Capture();
+            CameraGesture = source.CaptureCameraGesture();
         }
 
         public void ClearMode(GameplayInputMode mode)

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.Utilities;
 
 namespace TowerDefense3D.GameplayInput
 {
@@ -12,11 +14,16 @@ namespace TowerDefense3D.GameplayInput
     {
         private const int MousePointerId = -1;
 
+        // The Input System numbers touches from 1, so 0 can stand for "no finger tracked".
+        private const int UntrackedTouchId = 0;
+
         // Reused so the per-frame hit test does not allocate.
         private static readonly List<RaycastResult> UiHits = new List<RaycastResult>();
         private static PointerEventData uiProbe;
 
         private bool wasInterrupted;
+        private int pinchTouchIdA = UntrackedTouchId;
+        private int pinchTouchIdB = UntrackedTouchId;
 
         public GameplayInputSnapshot Capture()
         {
@@ -76,6 +83,92 @@ namespace TowerDefense3D.GameplayInput
                 pointerId: 0,
                 screenPosition: default,
                 isPointerOverUi: false);
+        }
+
+        /// <summary>
+        /// Captures the two-finger pinch and the mouse wheel, which the single-pointer snapshot
+        /// cannot express.
+        /// </summary>
+        /// <remarks>
+        /// The two fingers are held by touchId rather than read off primaryTouch: primaryTouch
+        /// retargets to whichever finger remains when the first one lifts, which would teleport
+        /// one end of the pinch mid-gesture and jump the zoom.
+        /// </remarks>
+        public GameplayCameraGestureSnapshot CaptureCameraGesture()
+        {
+            Vector2 scrollDelta = Mouse.current != null
+                ? Mouse.current.scroll.ReadValue()
+                : Vector2.zero;
+
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null
+                && TryReadTrackedTouch(touchscreen, pinchTouchIdA, out Vector2 trackedA)
+                && TryReadTrackedTouch(touchscreen, pinchTouchIdB, out Vector2 trackedB))
+            {
+                return new GameplayCameraGestureSnapshot(true, trackedA, trackedB, scrollDelta);
+            }
+
+            pinchTouchIdA = UntrackedTouchId;
+            pinchTouchIdB = UntrackedTouchId;
+            if (touchscreen == null)
+            {
+                return new GameplayCameraGestureSnapshot(false, default, default, scrollDelta);
+            }
+
+            var firstPosition = Vector2.zero;
+            ReadOnlyArray<TouchControl> touches = touchscreen.touches;
+            for (int index = 0; index < touches.Count; index++)
+            {
+                TouchControl touch = touches[index];
+                if (!touch.press.isPressed)
+                {
+                    continue;
+                }
+
+                if (pinchTouchIdA == UntrackedTouchId)
+                {
+                    pinchTouchIdA = touch.touchId.ReadValue();
+                    firstPosition = touch.position.ReadValue();
+                    continue;
+                }
+
+                pinchTouchIdB = touch.touchId.ReadValue();
+                return new GameplayCameraGestureSnapshot(
+                    true,
+                    firstPosition,
+                    touch.position.ReadValue(),
+                    scrollDelta);
+            }
+
+            pinchTouchIdA = UntrackedTouchId;
+            return new GameplayCameraGestureSnapshot(false, default, default, scrollDelta);
+        }
+
+        private static bool TryReadTrackedTouch(
+            Touchscreen touchscreen,
+            int touchId,
+            out Vector2 position)
+        {
+            position = default;
+            if (touchId == UntrackedTouchId)
+            {
+                return false;
+            }
+
+            ReadOnlyArray<TouchControl> touches = touchscreen.touches;
+            for (int index = 0; index < touches.Count; index++)
+            {
+                TouchControl touch = touches[index];
+                if (!touch.press.isPressed || touch.touchId.ReadValue() != touchId)
+                {
+                    continue;
+                }
+
+                position = touch.position.ReadValue();
+                return true;
+            }
+
+            return false;
         }
 
         private static GameplayInputSnapshot CreatePointerSnapshot(
