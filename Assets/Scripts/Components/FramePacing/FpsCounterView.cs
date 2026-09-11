@@ -13,6 +13,9 @@ namespace TowerDefense3D.Mobile
     [DisallowMultipleComponent]
     public sealed class FpsCounterView : MonoBehaviour
     {
+        [Tooltip("Whether the readout is drawn at all. Off by default: the frame rate and the graphics diagnostic beside it are profiling aids, not part of the game, so they are opted into for a session rather than shipped on.")]
+        [SerializeField] private bool showOverlay;
+
         [SerializeField] private Text label;
         private Text diagnosticLabel;
 
@@ -28,15 +31,34 @@ namespace TowerDefense3D.Mobile
         private void OnEnable()
         {
             sampler = new FrameRateSampler(sampleWindowSeconds);
+            ApplyOverlayVisibility();
             if (label != null)
             {
                 label.text = "-- FPS";
             }
         }
 
+        /// <summary>
+        /// Hides the two labels by disabling the graphics rather than the GameObjects, so this
+        /// component keeps ticking and the readout can be switched back on from the inspector
+        /// mid-session without anything having to be re-created.
+        /// </summary>
+        private void ApplyOverlayVisibility()
+        {
+            if (label != null)
+            {
+                label.enabled = showOverlay;
+            }
+
+            if (diagnosticLabel != null)
+            {
+                diagnosticLabel.enabled = showOverlay;
+            }
+        }
+
         private void Update()
         {
-            if (label == null)
+            if (label == null || !showOverlay)
             {
                 return;
             }
@@ -56,7 +78,10 @@ namespace TowerDefense3D.Mobile
 
         public void SetDiagnostic(string value)
         {
-            if (string.IsNullOrWhiteSpace(value) || label == null)
+            // Refused outright while the overlay is off, so the label is never even built: the
+            // diagnostic is parented next to the frame rate rather than under it, and a hidden
+            // parent would not have covered for it.
+            if (!showOverlay || string.IsNullOrWhiteSpace(value) || label == null)
             {
                 return;
             }
