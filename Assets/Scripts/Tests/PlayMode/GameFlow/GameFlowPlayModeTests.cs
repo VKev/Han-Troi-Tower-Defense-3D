@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
+using TMPro;
 using TowerDefense3D.GridPlacement;
 using TowerDefense3D.Towers;
 using TowerDefense3D.Waves;
@@ -421,7 +422,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
                 return;
             }
 
-            Text message = GetPrivateField<Text>(error, "messageLabel");
+            TMP_Text message = GetPrivateField<TMP_Text>(error, "messageLabel");
             Assert.Fail(
                 "Entered BlockingError while waiting for "
                 + expected
@@ -538,7 +539,7 @@ namespace TowerDefense3D.GameFlow.Tests.PlayMode
         private static string GetLevelButtonLabel(int levelNumber)
         {
             LevelButtonView view = FindLevelButton(levelNumber);
-            Text label = view != null ? GetPrivateField<Text>(view, "label") : null;
+            TMP_Text label = view != null ? GetPrivateField<TMP_Text>(view, "label") : null;
             return label != null ? label.text : string.Empty;
         }
 

@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -60,16 +61,16 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             Assert.That(button.interactable, Is.True);
             Assert.That(
-                button.transform.Find("Label").GetComponent<Text>().text,
+                button.transform.Find("Label").GetComponent<TMP_Text>().text,
                 Is.EqualTo("START WAVE"));
             Assert.That(
-                button.transform.Find("Bonus").GetComponent<Text>().text,
+                button.transform.Find("Bonus").GetComponent<TMP_Text>().text,
                 Is.EqualTo("+40 CLEAR BONUS"));
             Assert.That(
-                plaque.Find("Wave Counter").GetComponent<Text>().text,
+                plaque.Find("Wave Counter").GetComponent<TMP_Text>().text,
                 Is.EqualTo("02 / 08"));
             Assert.That(
-                plaque.Find("Enemies Left").GetComponent<Text>().text,
+                plaque.Find("Enemies Left").GetComponent<TMP_Text>().text,
                 Is.EqualTo("07"));
             Assert.That(panel.Find("Wave Panel"), Is.Null);
 

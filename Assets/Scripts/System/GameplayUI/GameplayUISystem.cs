@@ -154,7 +154,13 @@ namespace TowerDefense3D.GameFlow
 
         public void RefreshIfDirty()
         {
-            if (!isDirty)
+            // Guarded on isStarted as well as on the flag. A change can land after the last
+            // refresh and before disposal - gold moving is the usual one, because the build
+            // cards dim by what the balance can reach - and that leaves the flag raised with
+            // nothing left to draw. Acting on it afterwards drives presenters this system has
+            // already disconnected, which at best redraws a HUD that is being torn down and at
+            // worst reaches through a presenter that has let go of what it was driving.
+            if (!isStarted || !isDirty)
             {
                 return;
             }

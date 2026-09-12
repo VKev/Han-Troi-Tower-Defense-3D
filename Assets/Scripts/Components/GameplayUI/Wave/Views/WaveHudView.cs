@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TowerDefense3D.Enemies;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,17 +12,17 @@ namespace TowerDefense3D.GameFlow
     public sealed class WaveHudView : MonoBehaviour, IWaveHudView
     {
         [SerializeField] private Button startWaveButton;
-        [SerializeField] private Text startWaveText;
-        [SerializeField] private Text startWaveBonusText;
-        [SerializeField] private Text waveCounterText;
+        [SerializeField] private TMP_Text startWaveText;
+        [SerializeField] private TMP_Text startWaveBonusText;
+        [SerializeField] private TMP_Text waveCounterText;
 
         [Tooltip("Optional. The plaque carries the wave numbers and nothing else, so there is nowhere for a status line; wire a Text here and it comes back.")]
-        [SerializeField] private Text statusText;
+        [SerializeField] private TMP_Text statusText;
 
         [Tooltip("Optional. Same story as the status line: the plaque has no progress bar. Wire an Image here and it fills again.")]
         [SerializeField] private Image waveProgressFill;
 
-        [SerializeField] private Text enemiesLeftText;
+        [SerializeField] private TMP_Text enemiesLeftText;
 
         [Header("Next wave preview")]
         [Tooltip("The NEXT WAVE plaque. Tapping it rolls the portrait grid out and back in.")]
@@ -39,12 +40,12 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("Whether the grid starts rolled out. It does: the roster is what the player is deciding against, so it is the resting state rather than something to go looking for. After that it is theirs - nothing closes it but another tap.")]
         [SerializeField] private bool previewStartsExpanded = true;
         [SerializeField] private GameObject enemyDescriptionPanel;
-        [SerializeField] private Text enemyDescriptionText;
+        [SerializeField] private TMP_Text enemyDescriptionText;
         [SerializeField] private CanvasGroup startWaveCanvasGroup;
 
         [Header("Chain hint")]
         [Tooltip("The red line above the build bar. It stands there for as long as no chain feeds a Soul Nexus, and goes away the moment one does.")]
-        [SerializeField] private Text startWaveBlockedHintText;
+        [SerializeField] private TMP_Text startWaveBlockedHintText;
 
         [Tooltip("Sits on the Start Wave button and reports the taps the button drops while it is greyed out.")]
         [SerializeField] private StartWavePressRelay startWavePressRelay;

@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +9,7 @@ namespace TowerDefense3D.GameFlow
     public sealed class SaveWarningView : MonoBehaviour
     {
         [SerializeField] private GameObject root;
-        [SerializeField] private Text messageLabel;
+        [SerializeField] private TMP_Text messageLabel;
         [SerializeField] private Button retryButton;
 
         private Action retrySave;

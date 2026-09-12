@@ -9,12 +9,13 @@ namespace TowerDefense3D.GameFlow
     {
         [SerializeField] private Image image;
         [SerializeField] private Sprite zoomHandSprite;
-        [SerializeField] private Sprite zoomUpArrowSprite;
-        [SerializeField] private Sprite zoomDownArrowSprite;
+
+        [Tooltip("The two arrows that pulse away from the pinching hand. Authored as children of this view and left inactive; only the zoom step ever switches them on.")]
+        [SerializeField] private Image zoomUpArrow;
+
+        [SerializeField] private Image zoomDownArrow;
 
         private Sprite defaultSprite;
-        private Image zoomUpArrow;
-        private Image zoomDownArrow;
 
         public Tween Play(TutorialStep step, Rect[] targets)
         {
@@ -80,7 +81,7 @@ namespace TowerDefense3D.GameFlow
 
         private Tween PlayZoomGuide()
         {
-            if (zoomHandSprite == null || zoomUpArrowSprite == null || zoomDownArrowSprite == null)
+            if (zoomHandSprite == null || zoomUpArrow == null || zoomDownArrow == null)
             {
                 return null;
             }
@@ -95,7 +96,6 @@ namespace TowerDefense3D.GameFlow
             rect.position = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
             rect.sizeDelta = Vector2.one * Mathf.Clamp(Screen.height * 0.25f, 220f, 340f);
             rect.localScale = Vector3.one;
-            EnsureZoomArrows();
             float arrowX = rect.sizeDelta.x * 0.55f;
             Vector2 upBase = new Vector2(arrowX, rect.sizeDelta.y * 0.22f);
             Vector2 downBase = new Vector2(arrowX, -rect.sizeDelta.y * 0.22f);
@@ -123,24 +123,6 @@ namespace TowerDefense3D.GameFlow
                 value => target.anchoredPosition = value,
                 end,
                 0.45f);
-        }
-
-        private void EnsureZoomArrows()
-        {
-            zoomUpArrow ??= CreateZoomArrow("Zoom Up Arrow", zoomUpArrowSprite);
-            zoomDownArrow ??= CreateZoomArrow("Zoom Down Arrow", zoomDownArrowSprite);
-        }
-
-        private Image CreateZoomArrow(string name, Sprite sprite)
-        {
-            var owner = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            owner.transform.SetParent(transform, false);
-            var arrow = owner.GetComponent<Image>();
-            arrow.sprite = sprite;
-            arrow.preserveAspect = true;
-            arrow.raycastTarget = false;
-            arrow.rectTransform.sizeDelta = new Vector2(58f, 76f);
-            return arrow;
         }
 
         private void ResetZoomGuide()

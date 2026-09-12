@@ -112,7 +112,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         [Test]
         public void Show_FillsTheCurrentStarStandingWithoutLegacyProgressFields()
         {
-            menu.Show(states, _ => { });
+            menu.Show(states, 0, LevelMenuRewardState.None, _ => { });
 
             Assert.That(
                 ReadText(menu, "starTotalLabel"),
@@ -127,7 +127,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         [Test]
         public void Show_DrawsBeatenOpenAndShutNodesWithDifferentArt()
         {
-            menu.Show(states, _ => { });
+            menu.Show(states, 0, LevelMenuRewardState.None, _ => { });
 
             // Show opens on the level the player is up to, so that node already wears its ring.
             // The plain open look therefore has to be read after putting the node back.
@@ -198,7 +198,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         public void Show_SelectsTheCurrentLevelForTheAuthoredEnterButton()
         {
             int enteredLevel = 0;
-            menu.Show(states, levelNumber => enteredLevel = levelNumber);
+            menu.Show(states, 0, LevelMenuRewardState.None, levelNumber => enteredLevel = levelNumber);
 
             // The menu opens on the level the player is up to. Only the chapter line numbers
             // it - the title carries the level's authored name, read back off the catalog so
@@ -215,7 +215,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         [Test]
         public void EveryAuthoredLabelSaysSomething()
         {
-            menu.Show(states, _ => { });
+            menu.Show(states, 0, LevelMenuRewardState.None, _ => { });
 
             GameObject backdrop = GetPrivateField<GameObject>(menu, "backdrop");
 
@@ -286,7 +286,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
         private static bool IsShowingLabel(LevelButtonView node, string fieldName)
         {
-            Text part = GetPrivateField<Text>(node, fieldName);
+            TMP_Text part = GetPrivateField<TMP_Text>(node, fieldName);
             Assert.That(part, Is.Not.Null, "Node is missing its " + fieldName + ".");
             return part.gameObject.activeSelf;
         }

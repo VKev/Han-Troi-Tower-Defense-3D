@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,8 +17,10 @@ namespace TowerDefense3D.Mobile
         [Tooltip("Whether the readout is drawn at all. Off by default: the frame rate and the graphics diagnostic beside it are profiling aids, not part of the game, so they are opted into for a session rather than shipped on.")]
         [SerializeField] private bool showOverlay;
 
-        [SerializeField] private Text label;
-        private Text diagnosticLabel;
+        [SerializeField] private TMP_Text label;
+
+        [Tooltip("The graphics diagnostic printed beside the frame rate. A sibling of the readout rather than a child, so it is hidden by its own graphic along with it.")]
+        [SerializeField] private TMP_Text diagnosticLabel;
 
         [Tooltip("How long each average is measured over. Longer is steadier but slower to react.")]
         [SerializeField] private float sampleWindowSeconds = 0.25f;
@@ -78,39 +81,11 @@ namespace TowerDefense3D.Mobile
 
         public void SetDiagnostic(string value)
         {
-            // Refused outright while the overlay is off, so the label is never even built: the
-            // diagnostic is parented next to the frame rate rather than under it, and a hidden
-            // parent would not have covered for it.
-            if (!showOverlay || string.IsNullOrWhiteSpace(value) || label == null)
+            // Refused outright while the overlay is off: the diagnostic sits next to the frame
+            // rate rather than under it, so a hidden parent would not have covered for it.
+            if (!showOverlay || string.IsNullOrWhiteSpace(value) || diagnosticLabel == null)
             {
                 return;
-            }
-
-            if (diagnosticLabel == null)
-            {
-                var diagnosticObject = new GameObject(
-                    "Graphics Diagnostic",
-                    typeof(RectTransform),
-                    typeof(CanvasRenderer),
-                    typeof(Text));
-                diagnosticObject.transform.SetParent(label.transform.parent, false);
-                diagnosticLabel = diagnosticObject.GetComponent<Text>();
-                diagnosticLabel.font = label.font;
-                diagnosticLabel.fontSize = 13;
-                diagnosticLabel.fontStyle = FontStyle.Bold;
-                diagnosticLabel.alignment = TextAnchor.MiddleLeft;
-                diagnosticLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
-                diagnosticLabel.verticalOverflow = VerticalWrapMode.Overflow;
-                diagnosticLabel.raycastTarget = false;
-                diagnosticLabel.color = new Color(1f, 0.85f, 0.34f, 1f);
-
-                RectTransform rect = diagnosticLabel.rectTransform;
-                RectTransform fpsRect = label.rectTransform;
-                rect.anchorMin = Vector2.zero;
-                rect.anchorMax = Vector2.zero;
-                rect.pivot = Vector2.zero;
-                rect.anchoredPosition = fpsRect.anchoredPosition + new Vector2(85f, 0f);
-                rect.sizeDelta = new Vector2(620f, 58f);
             }
 
             diagnosticLabel.text = value;

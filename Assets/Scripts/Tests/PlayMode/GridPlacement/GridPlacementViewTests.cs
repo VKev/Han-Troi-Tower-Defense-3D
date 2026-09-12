@@ -7,11 +7,31 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
 {
     public sealed class GridPlacementViewTests
     {
+        /// <summary>
+        /// The preview is authored, not built: it comes from PlacementPreview.prefab.
+        /// </summary>
+        /// <remarks>
+        /// This test used to bolt the view onto a bare GameObject and let it construct its own
+        /// Footprint and GhostVolume children. It does not construct them any more - they are
+        /// authored in the prefab and the view refuses to run without them - so the bare-object
+        /// setup got the refusal it asks for, as an unhandled MissingReferenceException.
+        ///
+        /// What is still worth holding is unchanged: the two meshes are built once and reused
+        /// across moves rather than rebuilt per frame, the ghost is kept but never drawn, and
+        /// hiding switches the footprint off.
+        /// </remarks>
         [UnityTest]
         public IEnumerator View_ReusesCombinedRenderersAndHidesCleanly()
         {
-            var root = new GameObject("View Test");
-            GridPlacementView view = root.AddComponent<GridPlacementView>();
+            var prefab = Resources.Load<GameObject>("Prefabs/PlacementPreview");
+            Assert.That(prefab, Is.Not.Null, "PlacementPreview.prefab is missing from Resources.");
+            GameObject root = Object.Instantiate(prefab);
+            GridPlacementView view = root.GetComponent<GridPlacementView>();
+            Assert.That(view, Is.Not.Null, "PlacementPreview must author a GridPlacementView.");
+
+            // Counted before anything is shown, so the assertion below is about what Show adds
+            // rather than about how many pieces the preview happens to be authored from.
+            int authoredRendererCount = root.GetComponentsInChildren<MeshRenderer>(true).Length;
             yield return null;
 
             view.Show(
@@ -24,13 +44,17 @@ namespace TowerDefense3D.GridPlacement.Tests.PlayMode
             yield return null;
 
             MeshFilter footprint = root.transform.Find("Footprint").GetComponent<MeshFilter>();
-            MeshFilter ghost = root.transform.Find("GhostVolume").GetComponent<MeshFilter>();
+            MeshFilter ghost = root.transform.Find("Ghost Volume").GetComponent<MeshFilter>();
             MeshRenderer footprintRenderer = footprint.GetComponent<MeshRenderer>();
             MeshRenderer ghostRenderer = ghost.GetComponent<MeshRenderer>();
             Mesh footprintMesh = footprint.sharedMesh;
             Mesh ghostMesh = ghost.sharedMesh;
 
-            Assert.That(root.GetComponentsInChildren<MeshRenderer>(true), Has.Length.EqualTo(2));
+            Assert.That(
+                root.GetComponentsInChildren<MeshRenderer>(true),
+                Has.Length.EqualTo(authoredRendererCount),
+                "A footprint is one combined mesh, not a renderer per cell - showing one must "
+                + "add no renderers at all.");
             Assert.That(footprintMesh.vertexCount, Is.EqualTo(24));
             Assert.That(ghostMesh.vertexCount, Is.EqualTo(8));
 

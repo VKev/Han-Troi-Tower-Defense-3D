@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -35,7 +36,7 @@ namespace TowerDefense3D.GameFlow
     public sealed class LevelButtonView : MonoBehaviour
     {
         [SerializeField] private Button button;
-        [SerializeField] private Text label;
+        [SerializeField] private TMP_Text label;
 
         [Header("Node states - exactly one is shown at a time")]
         [Tooltip("Grey body with the padlock: the level is not reachable yet.")]

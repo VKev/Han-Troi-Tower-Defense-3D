@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +8,7 @@ namespace TowerDefense3D.GameFlow
     public sealed class LoadingView : MonoBehaviour
     {
         [SerializeField] private GameObject root;
-        [SerializeField] private Text messageLabel;
+        [SerializeField] private TMP_Text messageLabel;
 
         public void Show(string message)
         {

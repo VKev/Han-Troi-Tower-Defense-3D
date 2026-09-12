@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 5326c142790b5c94cb685bc3aca148a0
+guid: 9c99ab295b233964ebd35fd6cef6c8ac
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -95,9 +95,9 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
-    textureFormat: 4
+    textureFormat: 50
     textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
@@ -136,35 +136,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Pause_0
+      name: Victory_0
       rect:
         serializedVersion: 2
-        x: 55
-        y: 293
-        width: 707
-        height: 660
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 95, y: 95, z: 95, w: 95}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 888ebc85676da1947bd4014106c469f5
-      internalID: -2025606627
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Pause_1
-      rect:
-        serializedVersion: 2
-        x: 797
-        y: 859
-        width: 583
-        height: 160
+        x: 315
+        y: 676
+        width: 410
+        height: 383
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -173,20 +151,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: da1cf35a0c1713c4baf1da092dfc54e9
-      internalID: -921603948
+      spriteID: 956e5c3bbcdf51a4fbeec800503095fa
+      internalID: -724529488
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pause_2
+      name: Victory_1
       rect:
         serializedVersion: 2
-        x: 815
-        y: 711
-        width: 123
-        height: 128
+        x: 294
+        y: 344
+        width: 403
+        height: 313
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -195,86 +173,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 44d81b6c165256c49b877ca0c7deeea6
-      internalID: 576477300
+      spriteID: 9063dcd1c652686469814ba38a9c495e
+      internalID: 1974464415
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pause_3
+      name: Victory_2
       rect:
         serializedVersion: 2
-        x: 804
-        y: 547
-        width: 575
-        height: 147
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 66, y: 0, z: 60, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 73597778349423b41ba56767b4b1a62c
-      internalID: -1989535026
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Pause_4
-      rect:
-        serializedVersion: 2
-        x: 804
-        y: 388
-        width: 575
-        height: 147
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 66, y: 0, z: 60, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 2f0dfa38e3722a74b8c871ed01c33c22
-      internalID: 355287859
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Pause_5
-      rect:
-        serializedVersion: 2
-        x: 805
-        y: 230
-        width: 575
-        height: 147
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 63, y: 0, z: 58, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 16fda45a83b00c745a000a9411eb6283
-      internalID: -1578093835
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Pause_6
-      rect:
-        serializedVersion: 2
-        x: 305
-        y: 47
-        width: 158
-        height: 162
+        x: 756
+        y: 342
+        width: 333
+        height: 328
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -283,20 +195,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b1bdebf072a18b345affe094212556c2
-      internalID: 536477067
+      spriteID: dcdf77cce97b2334bb29a1b60212f293
+      internalID: 773387344
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pause_7
+      name: Victory_3
       rect:
         serializedVersion: 2
-        x: 629
-        y: 47
-        width: 166
-        height: 162
+        x: 1086
+        y: 153
+        width: 57
+        height: 135
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -305,20 +217,64 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e6042e61c8b71154ebd02aab4b385e8c
-      internalID: -431663544
+      spriteID: aeef76dfbec4131459753dcf3ce0b8a9
+      internalID: 1902371875
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Pause_8
+      name: Victory_4
       rect:
         serializedVersion: 2
-        x: 950
-        y: 47
-        width: 144
-        height: 162
+        x: 189
+        y: 215
+        width: 876
+        height: 113
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 56, y: 0, z: 61, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d51018f199171c48b71f6a78daa994c
+      internalID: -1398408698
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Victory_5
+      rect:
+        serializedVersion: 2
+        x: 231
+        y: 134
+        width: 792
+        height: 77
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 38, y: 0, z: 35, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a54bf59e8c5ec9040a0cc3cedbf36a18
+      internalID: 627427639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Victory_6
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 638
+        width: 415
+        height: 419
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -327,8 +283,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e952aeecc07cad644a6a29ebc6cda245
-      internalID: 1150558338
+      spriteID: 7516ed0b74b41c145ab8dacfbc4d1f9a
+      internalID: 1563078414
       vertices: []
       indices: 
       edges: []
@@ -337,7 +293,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 2e83d7cb7a18a884da221e87507850ed
+    spriteID: 4bf8407cc9806dd4ea099b098628f153
     internalID: 0
     vertices: []
     indices: 
@@ -347,15 +303,13 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Pause_0: -2025606627
-      Pause_1: -921603948
-      Pause_2: 576477300
-      Pause_3: -1989535026
-      Pause_4: 355287859
-      Pause_5: -1578093835
-      Pause_6: 536477067
-      Pause_7: -431663544
-      Pause_8: 1150558338
+      Victory_0: -724529488
+      Victory_1: 1974464415
+      Victory_2: 773387344
+      Victory_3: 1902371875
+      Victory_4: -1398408698
+      Victory_5: 627427639
+      Victory_6: 1563078414
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
