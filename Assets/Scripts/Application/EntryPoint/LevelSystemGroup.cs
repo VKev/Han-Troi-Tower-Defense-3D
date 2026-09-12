@@ -25,6 +25,7 @@ namespace TowerDefense3D.GameFlow
         private readonly TowerLinkPresentationSystem towerLinkPresentationSystem;
         private readonly TowerProjectilePresentationSystem towerProjectilePresentationSystem;
         private readonly TowerTierVisualPresentationSystem towerTierVisualPresentationSystem;
+        private readonly TowerChainStatePresentationSystem towerChainStatePresentationSystem;
         private readonly GameplayUISystem gameplayUISystem;
         private readonly SoundCueSystem soundCueSystem;
         private readonly LevelPreparationMusicSystem levelPreparationMusicSystem;
@@ -44,6 +45,7 @@ namespace TowerDefense3D.GameFlow
             TowerLinkPresentationSystem towerLinkPresentationSystem,
             TowerProjectilePresentationSystem towerProjectilePresentationSystem,
             TowerTierVisualPresentationSystem towerTierVisualPresentationSystem,
+            TowerChainStatePresentationSystem towerChainStatePresentationSystem,
             GameplayUISystem gameplayUISystem,
             SoundCueSystem soundCueSystem,
             LevelPreparationMusicSystem levelPreparationMusicSystem,
@@ -62,6 +64,7 @@ namespace TowerDefense3D.GameFlow
             this.towerLinkPresentationSystem = towerLinkPresentationSystem;
             this.towerProjectilePresentationSystem = towerProjectilePresentationSystem;
             this.towerTierVisualPresentationSystem = towerTierVisualPresentationSystem;
+            this.towerChainStatePresentationSystem = towerChainStatePresentationSystem;
             this.gameplayUISystem = gameplayUISystem;
             this.soundCueSystem = soundCueSystem;
             this.levelPreparationMusicSystem = levelPreparationMusicSystem;
@@ -78,6 +81,7 @@ namespace TowerDefense3D.GameFlow
             towerLinkPresentationSystem.Start();
             towerProjectilePresentationSystem.Start();
             towerTierVisualPresentationSystem.Start();
+            towerChainStatePresentationSystem.Start();
             enemyPresentationSystem.Start();
             heroAttackPresentationSystem.Start();
             soundCueSystem.Start();

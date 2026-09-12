@@ -138,7 +138,7 @@ namespace TowerDefense3D.GameFlow
                     // Optional on purpose: a level without a standing boss has no marker, and
                     // asking the container for one that is not there would fail the whole scope.
                     standingBossAnchor,
-                    instantDefeatWaveNumber: levelNumber == 1 || levelNumber == 2 ? 3 : 0),
+                    instantDefeatWaveNumber: ResolveInstantDefeatWave(resolver)),
                 Lifetime.Scoped)
                 .AsSelf()
                 .As<IWaveSystem>();
@@ -158,6 +158,7 @@ namespace TowerDefense3D.GameFlow
             builder.Register<TowerLinkPresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerProjectilePresentationSystem>(Lifetime.Scoped);
             builder.Register<TowerTierVisualPresentationSystem>(Lifetime.Scoped);
+            builder.Register<TowerChainStatePresentationSystem>(Lifetime.Scoped);
             builder.RegisterInstance<ILinkRangeView>(selectionRangeRing);
             builder.Register(
                 resolver => new TowerNetworkHudPresenter(
@@ -1156,8 +1157,7 @@ namespace TowerDefense3D.GameFlow
                 },
                 () => gameFlowSystem.RequestPlayNextLevel(currentLevelNumber),
                 gameFlowSystem.RequestReturnToLevelMenu,
-                stars => gameFlowSystem.ReportLevelCleared(currentLevelNumber, stars),
-                LevelStarRating.AwardsFullStars(levelNumber));
+                stars => gameFlowSystem.ReportLevelCleared(currentLevelNumber, stars));
         }
 
         /// <summary>
@@ -1185,6 +1185,36 @@ namespace TowerDefense3D.GameFlow
             }
 
             throw new InvalidOperationException($"Level scene requires {typeof(T).Name}.");
+        }
+
+        /// <summary>
+        /// The wave whose first leak ends the run on the spot and offers it again, or zero for a
+        /// level that has no such wave.
+        /// </summary>
+        /// <remarks>
+        /// Losing wave 3 outright is a lesson, not a rule of the game: it is how the player is
+        /// shown that a wave can be taken again. Once they have been through it the wave goes back
+        /// to being an ordinary one, where a leak costs health and the run carries on - which is
+        /// what it has always been on every later level.
+        ///
+        /// What counts as having been through it differs per level only because that is where the
+        /// evidence is. Level 1 has a tutorial that says so outright. Level 2's beats are only
+        /// remembered for the session, so a clear is the lasting record that the player has met
+        /// the level before.
+        /// </remarks>
+        private int ResolveInstantDefeatWave(IObjectResolver resolver)
+        {
+            const int scriptedDefeatWave = 3;
+            if (levelNumber != 1 && levelNumber != 2)
+            {
+                return 0;
+            }
+
+            bool alreadyTaught = levelNumber == 1
+                ? resolver.Resolve<TutorialProgress>().HasCompletedLevelOneTutorial
+                : resolver.Resolve<SaveSystem>().Progress?.IsCleared(levelNumber) == true;
+
+            return alreadyTaught ? 0 : scriptedDefeatWave;
         }
 
         private LevelCatalogEntry GetLevelEntry(IObjectResolver resolver)
