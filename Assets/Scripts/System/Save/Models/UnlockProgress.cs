@@ -28,6 +28,8 @@ namespace TowerDefense3D.GameFlow
         private readonly HashSet<int> unlockedLevels = new HashSet<int>();
         private readonly HashSet<int> clearedLevels = new HashSet<int>();
         private readonly Dictionary<int, int> levelStars = new Dictionary<int, int>();
+        private readonly HashSet<string> unlockedTowers = new HashSet<string>();
+        private int gold;
 
         public UnlockProgress()
             : this(null, null, null)
@@ -48,15 +50,98 @@ namespace TowerDefense3D.GameFlow
             IEnumerable<int> restoredLevels,
             IEnumerable<int> restoredClearedLevels,
             IEnumerable<LevelStarRecord> restoredStars)
+            : this(restoredLevels, restoredClearedLevels, restoredStars, 0)
         {
+        }
+
+        public UnlockProgress(
+            IEnumerable<int> restoredLevels,
+            IEnumerable<int> restoredClearedLevels,
+            IEnumerable<LevelStarRecord> restoredStars,
+            int restoredGold)
+            : this(restoredLevels, restoredClearedLevels, restoredStars, restoredGold, null)
+        {
+        }
+
+        public UnlockProgress(
+            IEnumerable<int> restoredLevels,
+            IEnumerable<int> restoredClearedLevels,
+            IEnumerable<LevelStarRecord> restoredStars,
+            int restoredGold,
+            IEnumerable<string> restoredTowers)
+        {
+            AddTowers(restoredTowers);
             unlockedLevels.Add(InitiallyUnlockedLevel);
             AddPositiveLevels(restoredLevels, unlockedLevels);
             AddPositiveLevels(restoredClearedLevels, clearedLevels);
             AddStars(restoredStars);
+
+            // A negative purse can only come from a hand-edited or corrupted save, and starting
+            // the player in debt is a worse answer than starting them at nothing.
+            gold = restoredGold > 0 ? restoredGold : 0;
         }
 
         public int Count => unlockedLevels.Count;
         public int ClearedCount => clearedLevels.Count;
+
+        /// <summary>
+        /// The player's wallet, carried between levels and across sessions.
+        /// </summary>
+        /// <remarks>
+        /// Distinct from <see cref="TowerDefense3D.Economy.LevelGoldSystem"/>, which is the
+        /// spending money inside one run and is thrown away when the run ends. This is what
+        /// clearing levels pays out, and the journey screen counts it in the top bar.
+        /// </remarks>
+        public int Gold => gold;
+
+        /// <summary>
+        /// Pays <paramref name="amount"/> into the wallet.
+        /// </summary>
+        /// <returns>Whether anything was actually added, which is what decides a save write.</returns>
+        public bool TryAddGold(int amount)
+        {
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            gold = checked(gold + amount);
+            return true;
+        }
+
+        /// <summary>
+        /// Whether the player has earned the right to build this tower.
+        /// </summary>
+        /// <remarks>
+        /// Owning a tower is progression in its own right, recorded the moment it is earned and
+        /// carried from then on. It used to be re-derived from whichever level was loaded, which
+        /// meant the same save answered the question differently depending on where it was
+        /// asked: a player who had only ever met fire and water would find wind waiting for them
+        /// on a Level 1 replay, because Level 1 happens not to be the level that withholds it.
+        /// What the player owns cannot depend on where they are standing.
+        /// </remarks>
+        public bool IsTowerUnlocked(string towerId)
+        {
+            return !string.IsNullOrWhiteSpace(towerId) && unlockedTowers.Contains(towerId);
+        }
+
+        /// <summary>
+        /// Records one tower as earned.
+        /// </summary>
+        /// <returns>Whether this call changed anything, which is what decides a save write.</returns>
+        public bool TryUnlockTower(string towerId)
+        {
+            return !string.IsNullOrWhiteSpace(towerId) && unlockedTowers.Add(towerId);
+        }
+
+        /// <summary>Every tower earned, in a stable order so two saves of the same progress are the same bytes.</summary>
+        public string[] CreateSortedTowerSnapshot()
+        {
+            var snapshot = new string[unlockedTowers.Count];
+            unlockedTowers.CopyTo(snapshot);
+            System.Array.Sort(snapshot, System.StringComparer.Ordinal);
+            return snapshot;
+        }
 
         /// <summary>Every star earned across the journey, which is what the top bar counts.</summary>
         public int TotalStars
@@ -172,6 +257,22 @@ namespace TowerDefense3D.GameFlow
             levels.CopyTo(snapshot);
             System.Array.Sort(snapshot);
             return snapshot;
+        }
+
+        private void AddTowers(IEnumerable<string> source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            foreach (string towerId in source)
+            {
+                if (!string.IsNullOrWhiteSpace(towerId))
+                {
+                    unlockedTowers.Add(towerId);
+                }
+            }
         }
 
         private static void AddPositiveLevels(IEnumerable<int> source, HashSet<int> destination)

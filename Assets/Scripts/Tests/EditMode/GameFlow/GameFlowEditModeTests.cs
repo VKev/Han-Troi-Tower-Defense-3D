@@ -390,9 +390,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             {
             }
 
-            public void ShowLevelMenu(IReadOnlyList<LevelMenuItemState> levels, Action<int> onLevelSelected)
+            public void ShowLevelMenu(
+                IReadOnlyList<LevelMenuItemState> levels,
+                int goldTotal,
+                LevelMenuRewardState reward,
+                Action<int> onLevelSelected)
             {
+                LastGoldTotal = goldTotal;
+                LastReward = reward;
             }
+
+            public int LastGoldTotal { get; private set; }
+            public LevelMenuRewardState LastReward { get; private set; }
 
             public void HideLevelMenu()
             {

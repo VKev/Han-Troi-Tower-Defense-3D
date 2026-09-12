@@ -10,6 +10,8 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
     public sealed class EnemyDataDefinitionTests
     {
         private const string CatalogPath = "Assets/Config/Enemies/EnemyCatalog.asset";
+        private const string EarthTrailPrefabPath =
+            "Assets/Resources/Prefabs/VFX/VFX_Trail_Earth.prefab";
         private const string LocomotionControllerPath =
             "Assets/Resources/Animations/Enemies/EnemyLocomotion.controller";
         private const string BasicOverrideControllerPath =
@@ -97,12 +99,29 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
             Assert.That(anchor.IsChildOf(prefab.transform), Is.True);
         }
 
+        /// <summary>
+        /// Every approved enemy carries the same earth trail for its speed buff.
+        /// </summary>
+        /// <remarks>
+        /// Read through <c>trailRoot</c>, which is where the trail lives now: the view stopped
+        /// instantiating a prefab and the trail is nested into each enemy prefab instead, so it
+        /// is pooled with the enemy rather than spawned and destroyed on every buff. This test
+        /// still asked for the <c>trailPrefab</c> field that change removed - and since
+        /// <c>FindProperty</c> answers a missing field with null rather than an error, it did not
+        /// fail with "no such field", it fell over with a NullReferenceException.
+        ///
+        /// What is asserted is the same thing it always was: the trail on each enemy is the one
+        /// shared earth trail, checked through the nested instance's source asset so a copy
+        /// pasted in by hand does not pass.
+        /// </remarks>
         [Test]
         public void ApprovedEnemyViews_UseEarthTrailForSpeedBuffs()
         {
             EnemyCatalog catalog = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(CatalogPath);
-            GameObject trail = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/Resources/Prefabs/VFX/VFX_Trail_Earth.prefab");
+            Assert.That(
+                AssetDatabase.LoadAssetAtPath<GameObject>(EarthTrailPrefabPath),
+                Is.Not.Null,
+                "The shared earth trail is missing.");
 
             foreach (EnemyDefinition definition in catalog.Definitions)
             {
@@ -110,9 +129,14 @@ namespace TowerDefense3D.Enemies.Tests.EditMode
                 Assert.That(trailView, Is.Not.Null, definition.StableId);
 
                 SerializedObject serialized = new SerializedObject(trailView);
+                var trailRoot = serialized.FindProperty("trailRoot").objectReferenceValue as GameObject;
+                Assert.That(trailRoot, Is.Not.Null, definition.StableId);
+
+                UnityEngine.Object source =
+                    PrefabUtility.GetCorrespondingObjectFromOriginalSource(trailRoot);
                 Assert.That(
-                    serialized.FindProperty("trailPrefab").objectReferenceValue,
-                    Is.SameAs(trail),
+                    AssetDatabase.GetAssetPath(source),
+                    Is.EqualTo(EarthTrailPrefabPath),
                     definition.StableId);
             }
         }

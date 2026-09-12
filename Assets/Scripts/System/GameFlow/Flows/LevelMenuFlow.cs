@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TowerDefense3D.GameFlow
 {
@@ -12,6 +13,13 @@ namespace TowerDefense3D.GameFlow
         private readonly ApplicationUISystem applicationUiSystem;
 
         private GameFlowSystem gameFlowSystem;
+
+        /// <summary>
+        /// What the levels beaten since the menu was last open paid out, waiting to be shown
+        /// arriving. Consumed by <see cref="Show"/>, so it is spent the first time the player
+        /// actually looks at the screen it belongs to and never replayed after that.
+        /// </summary>
+        private LevelMenuRewardState pendingReward = LevelMenuRewardState.None;
 
         public LevelMenuFlow(LevelCatalog levelCatalog, SaveSystem saveSystem,
             ApplicationUISystem applicationUiSystem)
@@ -49,11 +57,18 @@ namespace TowerDefense3D.GameFlow
                     false));
             }
 
+            LevelMenuRewardState reward = pendingReward;
+            pendingReward = LevelMenuRewardState.None;
+
             gameFlowSystem.SetState(GameFlowState.LevelMenu);
             applicationUiSystem.HideLoading();
             applicationUiSystem.HideBlockingError();
             applicationUiSystem.SetInputBlocked(false);
-            applicationUiSystem.ShowLevelMenu(items, HandleLevelSelected);
+            applicationUiSystem.ShowLevelMenu(
+                items,
+                saveSystem.Progress.Gold,
+                reward,
+                HandleLevelSelected);
         }
 
         /// <summary>
@@ -90,7 +105,22 @@ namespace TowerDefense3D.GameFlow
         /// </remarks>
         public void MarkLevelCleared(int levelNumber, int stars)
         {
-            saveSystem.TryMarkClearedAndSave(levelNumber, stars, out SaveWriteResult writeResult);
+            int previousStars = saveSystem.Progress.GetStars(levelNumber);
+            int goldAward = CalculateGoldAward(levelNumber, previousStars, stars);
+            int starsGained = Mathf.Max(0, stars - previousStars);
+
+            saveSystem.TryMarkClearedAndSave(
+                levelNumber,
+                stars,
+                goldAward,
+                out SaveWriteResult writeResult);
+
+            // Recorded whatever the write did. The payout has already landed in the in-memory
+            // wallet, so refusing to show it because the disk write failed would leave the
+            // player looking at a total that does not match the one they were just given.
+            pendingReward = pendingReward.Add(
+                new LevelMenuRewardState(levelNumber, starsGained, goldAward));
+
             if (!writeResult.IsSuccess)
             {
                 gameFlowSystem.ShowSaveWarning(writeResult.Error);
@@ -98,6 +128,27 @@ namespace TowerDefense3D.GameFlow
             }
 
             UnlockNextLevel(levelNumber);
+        }
+
+        /// <summary>
+        /// What this run is owed: what its score is worth, less what the level had already paid.
+        /// </summary>
+        /// <remarks>
+        /// A level already at three stars owes nothing however well it is replayed, and a level
+        /// at two stars replayed to three owes exactly the last third. A worse replay owes
+        /// nothing rather than clawing anything back - the score on record does not drop either.
+        /// </remarks>
+        private int CalculateGoldAward(int levelNumber, int previousStars, int stars)
+        {
+            if (stars <= previousStars
+                || !levelCatalog.TryGetLevel(levelNumber, out LevelCatalogEntry entry))
+            {
+                return 0;
+            }
+
+            int earned = LevelStarRating.GoldForStars(entry.FullStarGoldReward, stars);
+            int alreadyPaid = LevelStarRating.GoldForStars(entry.FullStarGoldReward, previousStars);
+            return Mathf.Max(0, earned - alreadyPaid);
         }
 
         /// <summary>

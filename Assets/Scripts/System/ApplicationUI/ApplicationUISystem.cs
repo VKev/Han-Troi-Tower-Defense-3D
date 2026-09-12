@@ -29,9 +29,13 @@ namespace TowerDefense3D.GameFlow
             IsStarted = false;
         }
 
-        public void ShowLevelMenu(IReadOnlyList<LevelMenuItemState> levels, Action<int> onLevelSelected)
+        public void ShowLevelMenu(
+            IReadOnlyList<LevelMenuItemState> levels,
+            int goldTotal,
+            LevelMenuRewardState reward,
+            Action<int> onLevelSelected)
         {
-            view.ShowLevelMenu(levels, onLevelSelected);
+            view.ShowLevelMenu(levels, goldTotal, reward, onLevelSelected);
         }
 
         public void HideLevelMenu()

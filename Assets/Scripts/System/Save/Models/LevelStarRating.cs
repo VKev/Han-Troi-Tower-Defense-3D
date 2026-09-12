@@ -18,17 +18,36 @@ namespace TowerDefense3D.GameFlow
         /// <summary>What an attempt that was not won scores.</summary>
         public const int NoStars = 0;
 
-        private const int TutorialLevelCount = 2;
+        // Levels 1 and 2 used to score full marks whatever health the run ended with, because
+        // the wave 3 tutorial leaked on purpose and scoring those levels on health would have
+        // docked the player for following the script. That leak is gone, so the exemption went
+        // with it: every level is scored on the health it ends with, and the gold a level pays
+        // follows that same score.
 
         /// <summary>
-        /// Whether clearing this level scores full marks regardless of what the C\u00f3c had left.
+        /// What <paramref name="stars"/> on a level worth <paramref name="fullStarGoldReward"/>
+        /// is cumulatively worth: a third of the purse per star.
         /// </summary>
         /// <remarks>
-        /// Levels 1 and 2 are the tutorial, and they damage the C\u00f3c on purpose: the wave 3 leak
-        /// is the lesson. Rating them on surviving health would dock the player for following
-        /// the script, so finishing them at all is worth three stars.
+        /// Cumulative rather than per-star on purpose. A replay is paid the difference between
+        /// what its new score is worth and what the old score already earned, so a player who
+        /// takes three runs to reach three stars is paid exactly what a player who managed it
+        /// first time was - no more, and no less.
+        ///
+        /// Scaled before dividing, so a purse that does not divide by three - 250, say - still
+        /// pays out to exactly 250 at three stars instead of losing change at every step.
         /// </remarks>
-        public static bool AwardsFullStars(int levelNumber) => levelNumber <= TutorialLevelCount;
+        public static int GoldForStars(int fullStarGoldReward, int stars)
+        {
+            if (fullStarGoldReward <= 0 || stars <= NoStars)
+            {
+                return 0;
+            }
+
+            return stars >= MaximumStars
+                ? fullStarGoldReward
+                : fullStarGoldReward * stars / MaximumStars;
+        }
 
         public static int FromRemainingHealth(int currentHealth, int maximumHealth)
         {

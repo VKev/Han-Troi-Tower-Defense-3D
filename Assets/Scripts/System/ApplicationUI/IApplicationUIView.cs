@@ -9,7 +9,11 @@ namespace TowerDefense3D.GameFlow
     public interface IApplicationUIView
     {
         void Reset();
-        void ShowLevelMenu(IReadOnlyList<LevelMenuItemState> levels, Action<int> onLevelSelected);
+        void ShowLevelMenu(
+            IReadOnlyList<LevelMenuItemState> levels,
+            int goldTotal,
+            LevelMenuRewardState reward,
+            Action<int> onLevelSelected);
         void HideLevelMenu();
         void ShowLoading(string message);
         void HideLoading();

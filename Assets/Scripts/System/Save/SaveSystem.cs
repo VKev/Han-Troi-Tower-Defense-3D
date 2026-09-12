@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TowerDefense3D.Enemies;
 using TowerDefense3D.Tutorials;
 
@@ -46,7 +47,9 @@ namespace TowerDefense3D.GameFlow
                 Progress = new UnlockProgress(
                     loadResult.Data.UnlockedLevelNumbers,
                     loadResult.Data.ClearedLevelNumbers,
-                    loadResult.Data.LevelStars);
+                    loadResult.Data.LevelStars,
+                    loadResult.Data.Gold,
+                    loadResult.Data.UnlockedTowerIds);
                 tutorialProgress?.Restore(loadResult.Data.Tutorials);
                 enemyDiscoveryProgress?.Restore(loadResult.Data.DiscoveredEnemyIds);
                 LastWriteResult = new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
@@ -85,11 +88,67 @@ namespace TowerDefense3D.GameFlow
             int stars,
             out SaveWriteResult writeResult)
         {
+            return TryMarkClearedAndSave(levelNumber, stars, 0, out writeResult);
+        }
+
+        /// <summary>
+        /// Records the clear and pays <paramref name="goldAward"/> into the wallet in one write.
+        /// </summary>
+        /// <remarks>
+        /// The two travel together rather than as two calls because they are one event: a run
+        /// that earned a star earned the gold behind it, and a write that landed one without the
+        /// other would leave a save that contradicts itself. The award is asked whether it
+        /// changed anything in its own right, so a payout can force a write even in the case -
+        /// which should not arise - where the score on record did not move.
+        /// </remarks>
+        public UnlockAttemptResult TryMarkClearedAndSave(
+            int levelNumber,
+            int stars,
+            int goldAward,
+            out SaveWriteResult writeResult)
+        {
             UnlockAttemptResult clearResult = Progress.TryMarkCleared(levelNumber, stars);
-            writeResult = clearResult == UnlockAttemptResult.Unlocked
+            bool paid = Progress.TryAddGold(goldAward);
+            writeResult = clearResult == UnlockAttemptResult.Unlocked || paid
                 ? SaveCurrent()
                 : new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
             return clearResult;
+        }
+
+        /// <summary>
+        /// Records towers as earned and persists them, at the moment the player earns them.
+        /// </summary>
+        /// <remarks>
+        /// Takes the whole batch rather than one tower at a time, and writes once for all of
+        /// them: entering a level can earn several at once - four of them on the first level
+        /// past the tutorial - and that is one event, not four.
+        ///
+        /// Called from the level HUD every time it refreshes, so the no-change path has to cost
+        /// nothing: towers already on record add nothing to the set and write nothing.
+        /// </remarks>
+        public bool TryUnlockTowersAndSave(
+            IReadOnlyList<string> towerIds,
+            out SaveWriteResult writeResult)
+        {
+            writeResult = new SaveWriteResult(SaveWriteStatus.Success, string.Empty);
+            if (Progress == null || towerIds == null)
+            {
+                return false;
+            }
+
+            bool changed = false;
+            for (int index = 0; index < towerIds.Count; index++)
+            {
+                changed |= Progress.TryUnlockTower(towerIds[index]);
+            }
+
+            if (!changed)
+            {
+                return false;
+            }
+
+            writeResult = SaveCurrent();
+            return true;
         }
 
         public SaveWriteResult RetrySave()
@@ -129,6 +188,8 @@ namespace TowerDefense3D.GameFlow
                 Progress.CreateSortedStarSnapshot(),
                 tutorialProgress?.CreateSnapshot() ?? Array.Empty<TutorialSaveRecord>(),
                 enemyDiscoveryProgress?.CreateSnapshot() ?? Array.Empty<string>(),
+                Progress.Gold,
+                Progress.CreateSortedTowerSnapshot(),
                 DateTime.UtcNow.ToString("O"),
                 applicationVersion);
             LastWriteResult = repository.Save(snapshot);

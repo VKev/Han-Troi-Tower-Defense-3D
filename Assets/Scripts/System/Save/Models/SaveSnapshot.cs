@@ -26,6 +26,15 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private TutorialSaveRecord[] tutorials = Array.Empty<TutorialSaveRecord>();
         [SerializeField] private string[] discoveredEnemyIds = Array.Empty<string>();
 
+        // Same story again: a save written before the wallet existed deserializes this as zero,
+        // which is exactly what such a save means - nothing earned yet. Schema stays at 1.
+        [SerializeField] private int gold;
+
+        // And again for the towers the player has earned. A save written before tower ownership
+        // was recorded deserializes this as null, reporting nothing owned; the towers a player
+        // has actually met are re-earned the first time they load a level that grants them.
+        [SerializeField] private string[] unlockedTowerIds = Array.Empty<string>();
+
         public int SchemaVersion => schemaVersion;
         public string SlotId => slotId;
         public string SavedAtUtc => savedAtUtc;
@@ -35,6 +44,12 @@ namespace TowerDefense3D.GameFlow
         public LevelStarRecord[] LevelStars => levelStars ?? Array.Empty<LevelStarRecord>();
         public TutorialSaveRecord[] Tutorials => tutorials ?? Array.Empty<TutorialSaveRecord>();
         public string[] DiscoveredEnemyIds => discoveredEnemyIds ?? Array.Empty<string>();
+
+        /// <summary>The player's wallet, paid out by clearing levels.</summary>
+        public int Gold => gold;
+
+        /// <summary>The towers the player has earned the right to build.</summary>
+        public string[] UnlockedTowerIds => unlockedTowerIds ?? Array.Empty<string>();
 
         public static SaveSnapshot Create(int[] unlockedLevelNumbers, string savedAtUtc, string appVersion)
         {
@@ -99,6 +114,50 @@ namespace TowerDefense3D.GameFlow
             string savedAtUtc,
             string appVersion)
         {
+            return Create(
+                unlockedLevelNumbers,
+                clearedLevelNumbers,
+                levelStars,
+                tutorials,
+                discoveredEnemyIds,
+                0,
+                savedAtUtc,
+                appVersion);
+        }
+
+        public static SaveSnapshot Create(
+            int[] unlockedLevelNumbers,
+            int[] clearedLevelNumbers,
+            LevelStarRecord[] levelStars,
+            TutorialSaveRecord[] tutorials,
+            string[] discoveredEnemyIds,
+            int gold,
+            string savedAtUtc,
+            string appVersion)
+        {
+            return Create(
+                unlockedLevelNumbers,
+                clearedLevelNumbers,
+                levelStars,
+                tutorials,
+                discoveredEnemyIds,
+                gold,
+                Array.Empty<string>(),
+                savedAtUtc,
+                appVersion);
+        }
+
+        public static SaveSnapshot Create(
+            int[] unlockedLevelNumbers,
+            int[] clearedLevelNumbers,
+            LevelStarRecord[] levelStars,
+            TutorialSaveRecord[] tutorials,
+            string[] discoveredEnemyIds,
+            int gold,
+            string[] unlockedTowerIds,
+            string savedAtUtc,
+            string appVersion)
+        {
             return new SaveSnapshot
             {
                 schemaVersion = CurrentSchemaVersion,
@@ -109,7 +168,9 @@ namespace TowerDefense3D.GameFlow
                 clearedLevelNumbers = clearedLevelNumbers ?? Array.Empty<int>(),
                 levelStars = levelStars ?? Array.Empty<LevelStarRecord>(),
                 tutorials = tutorials ?? Array.Empty<TutorialSaveRecord>(),
-                discoveredEnemyIds = discoveredEnemyIds ?? Array.Empty<string>()
+                discoveredEnemyIds = discoveredEnemyIds ?? Array.Empty<string>(),
+                gold = gold,
+                unlockedTowerIds = unlockedTowerIds ?? Array.Empty<string>()
             };
         }
 
@@ -177,6 +238,12 @@ namespace TowerDefense3D.GameFlow
                     error = $"Star record at index {index} is outside 0..{LevelStarRating.MaximumStars}.";
                     return false;
                 }
+            }
+
+            if (gold < 0)
+            {
+                error = "Save carries a negative gold balance.";
+                return false;
             }
 
             error = string.Empty;

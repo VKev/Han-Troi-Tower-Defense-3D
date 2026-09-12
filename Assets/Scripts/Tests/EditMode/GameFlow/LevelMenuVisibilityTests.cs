@@ -61,7 +61,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         {
             var view = instance.GetComponent<ApplicationUIView>();
             view.HideLevelMenu();
-            view.ShowLevelMenu(OneUnlockedLevel(), _ => { });
+            view.ShowLevelMenu(OneUnlockedLevel(), 0, LevelMenuRewardState.None, _ => { });
 
             Assert.That(Part("Safe Area/Level Menu").activeSelf, Is.True);
             Assert.That(
