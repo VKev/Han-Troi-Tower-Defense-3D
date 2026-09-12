@@ -269,8 +269,12 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.SoulNexus)), Is.False);
         }
 
+        /// <summary>
+        /// A Level 1 replay is an ordinary run: the tutorial's wave-by-wave drip-feed is over, so
+        /// everything the player owns is on the bar from the first wave.
+        /// </summary>
         [Test]
-        public void WaveSixPreparation_UnlocksWaterAfterLevelOneTutorial()
+        public void LevelOneReplayAfterTutorial_CarriesEveryTowerTheTutorialTaught()
         {
             TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
             var tutorialProgress = new TutorialProgress();
@@ -284,11 +288,204 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 CreateSaveSystem(),
                 tutorialProgress,
                 levelNumber: 1,
-                waveSystem: new WaveSystemStub { CurrentWaveNumber = 6 });
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
 
             presenter.Connect();
 
-            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Water)), Is.False);
+            Assert.That(
+                IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Generator)),
+                Is.False);
+            Assert.That(
+                IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.SoulNexus)),
+                Is.False);
+            Assert.That(
+                IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Fire)),
+                Is.False);
+            Assert.That(
+                IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Water)),
+                Is.False,
+                "Water no longer waits for the wave the tutorial introduced it on.");
+        }
+
+        /// <summary>
+        /// The bug this rule exists for: a player who has only ever met fire and water must not
+        /// find wind waiting for them on a Level 1 replay. Owning a tower cannot depend on which
+        /// level the question is asked in.
+        /// </summary>
+        [Test]
+        public void LevelOneReplay_WithholdsWindUntilTheLevelThatTeachesItHasBeenPlayed()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var tutorialProgress = new TutorialProgress();
+            tutorialProgress.CompleteLevelOneTutorial();
+            SaveSystem saveSystem = CreateSaveSystem();
+
+            // Level 2 is fire and water only, so playing it earns the player no wind.
+            var levelTwoHud = new TowerNetworkHudViewStub();
+            var levelTwo = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                levelTwoHud,
+                null,
+                towerCatalog,
+                saveSystem,
+                tutorialProgress,
+                levelNumber: 2,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+            levelTwo.Connect();
+            Assert.That(IsLocked(levelTwoHud, FindDefinition(towerCatalog, TowerFamily.Wind)), Is.True);
+
+            var replayHud = new TowerNetworkHudViewStub();
+            var replay = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                replayHud,
+                null,
+                towerCatalog,
+                saveSystem,
+                tutorialProgress,
+                levelNumber: 1,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+            replay.Connect();
+
+            Assert.That(
+                IsLocked(replayHud, FindDefinition(towerCatalog, TowerFamily.Wind)),
+                Is.True,
+                "Going back to Level 1 must not hand over a tower the player has never met.");
+            Assert.That(
+                IsLocked(replayHud, FindDefinition(towerCatalog, TowerFamily.Fire)),
+                Is.False,
+                "What the player does own still has to be there.");
+        }
+
+        /// <summary>
+        /// Wind is earned by reaching the level that teaches it, and is the player's from then
+        /// on - including back on Level 1.
+        /// </summary>
+        [Test]
+        public void PlayingTheLevelThatTeachesWind_EarnsItForEveryLaterRun()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var tutorialProgress = new TutorialProgress();
+            tutorialProgress.CompleteLevelOneTutorial();
+            SaveSystem saveSystem = CreateSaveSystem();
+
+            var levelThree = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                new TowerNetworkHudViewStub(),
+                null,
+                towerCatalog,
+                saveSystem,
+                tutorialProgress,
+                levelNumber: 3,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+            levelThree.Connect();
+
+            var replayHud = new TowerNetworkHudViewStub();
+            var replay = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                replayHud,
+                null,
+                towerCatalog,
+                saveSystem,
+                tutorialProgress,
+                levelNumber: 1,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+            replay.Connect();
+
+            Assert.That(IsLocked(replayHud, FindDefinition(towerCatalog, TowerFamily.Wind)), Is.False);
+        }
+
+        /// <summary>
+        /// Ownership outlives the session: it is written to the save as it is earned.
+        /// </summary>
+        [Test]
+        public void TowersEarnedInARun_SurviveASaveRoundTrip()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var repository = new SaveRepositoryStub();
+            var saveSystem = new SaveSystem(repository, "test");
+            saveSystem.Initialize();
+
+            var tutorialProgress = new TutorialProgress();
+            tutorialProgress.CompleteLevelOneTutorial();
+            var presenter = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                new TowerNetworkHudViewStub(),
+                null,
+                towerCatalog,
+                saveSystem,
+                tutorialProgress,
+                levelNumber: 3,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+            presenter.Connect();
+
+            var reloaded = new SaveSystem(repository, "test");
+            reloaded.Initialize();
+
+            Assert.That(reloaded.Progress.IsTowerUnlocked(TowerFamily.Wind.ToString()), Is.True);
+            Assert.That(reloaded.Progress.IsTowerUnlocked(TowerFamily.Fire.ToString()), Is.True);
+            Assert.That(
+                reloaded.Progress.IsTowerUnlocked(TowerFamily.Hero.ToString()),
+                Is.False,
+                "The Crab is still gated on clearing its own level.");
+        }
+
+        /// <summary>
+        /// The replay still respects what the save has <em>not</em> earned: the Crab hero is gated
+        /// on clearing Level 7 and stays locked until that is on record.
+        /// </summary>
+        [Test]
+        public void LevelOneReplayAfterTutorial_StillLocksTheCrabUntilItsLevelIsCleared()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var tutorialProgress = new TutorialProgress();
+            tutorialProgress.CompleteLevelOneTutorial();
+            SaveSystem saveSystem = CreateSaveSystem();
+            var towerHudView = new TowerNetworkHudViewStub();
+            var presenter = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                towerHudView,
+                null,
+                towerCatalog,
+                saveSystem,
+                tutorialProgress,
+                levelNumber: 1,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+
+            presenter.Connect();
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Hero)), Is.True);
+
+            Assert.That(
+                saveSystem.Progress.TryMarkCleared(7, 1),
+                Is.EqualTo(UnlockAttemptResult.Unlocked));
+            presenter.Refresh();
+
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Hero)), Is.False);
+        }
+
+        /// <summary>
+        /// The tutorial itself is untouched: a first run of Level 1 still withholds everything it
+        /// has not taught yet.
+        /// </summary>
+        [Test]
+        public void LevelOneTutorialRun_StillWithholdsTheCardsItHasNotTaught()
+        {
+            TowerCatalog towerCatalog = AssetDatabase.LoadAssetAtPath<TowerCatalog>(TowerCatalogPath);
+            var towerHudView = new TowerNetworkHudViewStub();
+            var presenter = new TowerNetworkHudPresenter(
+                CreateTowerNetworkSystem(),
+                towerHudView,
+                null,
+                towerCatalog,
+                CreateSaveSystem(),
+                new TutorialProgress(),
+                levelNumber: 1,
+                waveSystem: new WaveSystemStub { CurrentWaveNumber = 1 });
+
+            presenter.Connect();
+
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Water)), Is.True);
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Wind)), Is.True);
+            Assert.That(IsLocked(towerHudView, FindDefinition(towerCatalog, TowerFamily.Hero)), Is.True);
         }
 
         private static void AssertCardUnlocks(
@@ -603,7 +800,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 LastUnaffordableDefinitions = unaffordableDefinitions;
             }
 
+            public IReadOnlyList<TowerCombatDefinition> LastMaxedDefinitions { get; private set; }
+
+            public void ApplyTowerBuildLimits(IReadOnlyList<TowerCombatDefinition> maxedDefinitions)
+            {
+                LastMaxedDefinitions = maxedDefinitions;
+            }
+
             public void SetTowerActionsAvailable(bool available)
+            {
+            }
+
+            public void SetUpgradeAvailable(bool available)
             {
             }
 

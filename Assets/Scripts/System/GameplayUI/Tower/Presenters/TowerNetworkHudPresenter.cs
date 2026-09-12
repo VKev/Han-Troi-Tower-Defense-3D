@@ -61,8 +61,10 @@ namespace TowerDefense3D.GameFlow
         public void Connect()
         {
             towerNetworkHud.Initialize();
+            GrantEarnedTowers();
             towerNetworkHud.ApplyTowerLocks(CollectLockedDefinitions());
-            towerNetworkHud.ApplyTowerAffordability(CollectUnaffordableDefinitions());
+            towerNetworkHud.ApplyTowerAffordability(CollectUnbuildableDefinitions());
+            towerNetworkHud.ApplyTowerBuildLimits(CollectMaxedDefinitions());
             towerNetworkHud.TowerDragBegan += HandleTowerDragBegan;
             towerNetworkHud.TowerDragMoved += HandleTowerDragMoved;
             towerNetworkHud.TowerDragEnded += HandleTowerDragEnded;
@@ -88,9 +90,12 @@ namespace TowerDefense3D.GameFlow
 
         public void Refresh()
         {
+            GrantEarnedTowers();
             towerNetworkHud.ApplyTowerLocks(CollectLockedDefinitions());
-            towerNetworkHud.ApplyTowerAffordability(CollectUnaffordableDefinitions());
-            towerNetworkHud.SetTowerActionsAvailable(AreTowerActionsAvailable());
+            towerNetworkHud.ApplyTowerAffordability(CollectUnbuildableDefinitions());
+            towerNetworkHud.ApplyTowerBuildLimits(CollectMaxedDefinitions());
+            towerNetworkHud.SetTowerActionsAvailable(AreTowerToolsUnlocked());
+            towerNetworkHud.SetUpgradeAvailable(IsUpgradeUnlocked());
             ITowerRuntimeView selectedTower = towerNetworkSystem.SelectedTower;
             string selectedText = selectedTower == null
                 ? "Đã chọn: Chưa có"
@@ -108,6 +113,7 @@ namespace TowerDefense3D.GameFlow
                 out int upgradeCost,
                 out bool affordable,
                 out bool atMaxLevel);
+            int currentUpgradeLevel = towerNetworkSystem.GetUpgradeLevel(selectedTower);
 
             towerNetworkHud.Render(new TowerNetworkHudState(
                 selectedText,
@@ -123,7 +129,8 @@ namespace TowerDefense3D.GameFlow
                     ? towerNetworkSystem.DescribeSelectedSellRefund().ToString()
                     : string.Empty,
                 hasUpgrade && !atMaxLevel,
-                selectedTower?.CombatDefinition?.Family));
+                selectedTower?.CombatDefinition?.Family,
+                CreateUpgradeTierText(hasUpgrade, atMaxLevel, currentUpgradeLevel)));
         }
 
         private static string LocalizeRole(TowerNetworkRole role)
@@ -138,39 +145,84 @@ namespace TowerDefense3D.GameFlow
         }
 
         /// <summary>
-        /// The towers whose build cost is past the current balance.
+        /// The towers the bar dims: the ones whose build cost is past the current balance, plus
+        /// the ones the level already has as many of as it allows.
         /// </summary>
         /// <remarks>
-        /// Empty while a tutorial step is paying, so a card being handed over for free is never
-        /// dimmed as though it were out of reach.
+        /// The price half is empty while a tutorial step is paying, so a card being handed over
+        /// for free is never dimmed as though it were out of reach. The limit half still counts,
+        /// because a hero already standing leaves no room whoever is paying.
+        ///
+        /// Dimmed rather than locked, and so still pressable: the tap is what tells the player
+        /// why - either that they are short of gold, or that they have to sell the hero they
+        /// already placed. A card that went dead would swallow the tap and say nothing.
         /// </remarks>
-        private IReadOnlyList<TowerCombatDefinition> CollectUnaffordableDefinitions()
+        /// <summary>
+        /// The towers the level already has its fill of, whose cards quote "Tối đa" in place of a
+        /// price until one of them is sold.
+        /// </summary>
+        private IReadOnlyList<TowerCombatDefinition> CollectMaxedDefinitions()
         {
-            var unaffordable = new List<TowerCombatDefinition>();
-            if (goldSystem == null || towerNetworkSystem.IsPlacementFree)
+            var maxed = new List<TowerCombatDefinition>();
+            IReadOnlyList<TowerCombatDefinition> definitions = towerCatalog.Definitions;
+            for (int index = 0; index < definitions.Count; index++)
             {
-                return unaffordable;
+                TowerCombatDefinition definition = definitions[index];
+                if (towerNetworkSystem.IsFamilyBuildLimitReached(definition))
+                {
+                    maxed.Add(definition);
+                }
             }
+
+            return maxed;
+        }
+
+        private IReadOnlyList<TowerCombatDefinition> CollectUnbuildableDefinitions()
+        {
+            var unbuildable = new List<TowerCombatDefinition>();
+            bool priceApplies = goldSystem != null && !towerNetworkSystem.IsPlacementFree;
 
             IReadOnlyList<TowerCombatDefinition> definitions = towerCatalog.Definitions;
             for (int index = 0; index < definitions.Count; index++)
             {
                 TowerCombatDefinition definition = definitions[index];
-                TowerEconomyProfile economy = definition?.Core?.Economy;
-                if (economy != null && !goldSystem.CanAfford(economy.BuildCost))
+                if (definition == null)
                 {
-                    unaffordable.Add(definition);
+                    continue;
+                }
+
+                if (towerNetworkSystem.IsFamilyBuildLimitReached(definition))
+                {
+                    unbuildable.Add(definition);
+                    continue;
+                }
+
+                TowerEconomyProfile economy = definition.Core?.Economy;
+                if (priceApplies && economy != null && !goldSystem.CanAfford(economy.BuildCost))
+                {
+                    unbuildable.Add(definition);
                 }
             }
 
-            return unaffordable;
+            return unbuildable;
         }
 
         /// <summary>
-        /// A tower stays locked until the player has actually beaten the level it is gated on.
-        /// Unlocking is evaluated once per level entry: progress cannot change mid-level, and a
-        /// tower unlocked here would otherwise appear the instant its own level is won.
+        /// The towers the bar draws as unavailable.
         /// </summary>
+        /// <remarks>
+        /// A tower is buildable because the player owns it, full stop - not because the level
+        /// they happen to be standing in would have granted it. The two used to be the same
+        /// question, and the answer moved with the player: someone who had only ever met fire
+        /// and water found wind waiting on a Level 1 replay, because Level 1 is not the level
+        /// that withholds wind. Ownership is now recorded when it is earned (see
+        /// <see cref="GrantEarnedTowers"/>) and read back here.
+        ///
+        /// On top of ownership sit two restrictions that belong to a run rather than to the
+        /// player, and so are not recorded anywhere: Level 2 is authored around fire and water
+        /// alone, and the wave 3 nudge holds back the gold the player is being told to spend on
+        /// fire.
+        /// </remarks>
         private IReadOnlyList<TowerCombatDefinition> CollectLockedDefinitions()
         {
             var locked = new List<TowerCombatDefinition>();
@@ -178,31 +230,25 @@ namespace TowerDefense3D.GameFlow
             for (int index = 0; index < definitions.Count; index++)
             {
                 TowerCombatDefinition definition = definitions[index];
-                int requiredLevel = definition == null ? 0 : definition.UnlockAfterClearingLevelNumber;
-                bool tutorialUnlocked = levelNumber == 1
-                    && definition != null
-                    && IsTutorialTowerUnlocked(definition.Family);
-                if (requiredLevel > 0
-                    && !saveSystem.Progress.IsCleared(requiredLevel)
-                    && !tutorialUnlocked)
+                if (definition == null)
                 {
-                    locked.Add(definition);
+                    continue;
                 }
 
-                if (levelNumber == 1 && definition != null && !tutorialUnlocked)
+                if (!saveSystem.Progress.IsTowerUnlocked(TowerUnlockId(definition)))
                 {
                     locked.Add(definition);
+                    continue;
                 }
 
-                if (definition != null
-                    && ShouldReserveFireGold()
+                if (ShouldReserveFireGold()
                     && (definition.Family == TowerFamily.Generator
                         || definition.Family == TowerFamily.SoulNexus))
                 {
                     locked.Add(definition);
                 }
 
-                if (definition?.Family == TowerFamily.Wind && levelNumber == 2)
+                if (definition.Family == TowerFamily.Wind && levelNumber == 2)
                 {
                     locked.Add(definition);
                 }
@@ -211,14 +257,118 @@ namespace TowerDefense3D.GameFlow
             return locked;
         }
 
+        /// <summary>
+        /// Records every tower this run has earned the player, so they are theirs from now on.
+        /// </summary>
+        /// <remarks>
+        /// Run on every refresh rather than once on entry, because the Level 1 tutorial earns
+        /// its four towers wave by wave and the player owns each one the moment it is handed
+        /// over. Towers already on record cost nothing: the set does not change, so nothing is
+        /// written. The buffer is reused for the same reason - this runs every frame.
+        /// </remarks>
+        private void GrantEarnedTowers()
+        {
+            earnedTowerBuffer.Clear();
+            IReadOnlyList<TowerCombatDefinition> definitions = towerCatalog.Definitions;
+            for (int index = 0; index < definitions.Count; index++)
+            {
+                TowerCombatDefinition definition = definitions[index];
+                if (definition != null && IsEarnedHere(definition))
+                {
+                    earnedTowerBuffer.Add(TowerUnlockId(definition));
+                }
+            }
+
+            if (saveSystem.TryUnlockTowersAndSave(earnedTowerBuffer, out SaveWriteResult write)
+                && !write.IsSuccess)
+            {
+                // Worth saying out loud but not worth refusing the towers over: the player has
+                // earned them, and taking them back because the disk is unhappy would make a
+                // storage fault look like a gameplay rule.
+                Debug.LogWarning("Could not save a tower unlock: " + write.Error);
+            }
+        }
+
+        private readonly List<string> earnedTowerBuffer = new List<string>();
+
+        /// <summary>
+        /// Whether this run is what earns <paramref name="definition"/> for the player.
+        /// </summary>
+        /// <remarks>
+        /// This is the progression table, and the only place a tower is ever granted:
+        /// <list type="bullet">
+        /// <item>The Crab hero is earned by clearing the level it is gated on.</item>
+        /// <item>Wind is earned by reaching Level 3, the level authored to teach it. Level 2 is
+        /// fire and water only, so playing it must not hand wind over.</item>
+        /// <item>The starter four are earned across the Level 1 tutorial, wave by wave. Any
+        /// other level means that tutorial is behind the player, so all four are theirs - which
+        /// is also what re-earns them for a save written before ownership was recorded.</item>
+        /// </list>
+        /// </remarks>
+        private bool IsEarnedHere(TowerCombatDefinition definition)
+        {
+            int requiredLevel = definition.UnlockAfterClearingLevelNumber;
+            if (requiredLevel > 0)
+            {
+                return saveSystem.Progress.IsCleared(requiredLevel);
+            }
+
+            if (definition.Family == TowerFamily.Wind)
+            {
+                return levelNumber >= WindUnlockLevelNumber;
+            }
+
+            return !IsLevelOneTutorialRun || IsTutorialTowerUnlocked(definition.Family);
+        }
+
+        /// <summary>
+        /// How a tower is named in the save. The family, because the catalog carries exactly one
+        /// definition per family and a family outlives any asset rename.
+        /// </summary>
+        private static string TowerUnlockId(TowerCombatDefinition definition)
+        {
+            return definition.Family.ToString();
+        }
+
+        /// <summary>
+        /// Whether this run of Level 1 is still the tutorial, which hands the towers out one at
+        /// a time at the waves that teach them.
+        /// </summary>
+        /// <remarks>
+        /// A replay of Level 1 after the tutorial is an ordinary run: the drip-feed has nothing
+        /// left to teach, so everything the player owns is on the bar from the first wave.
+        /// </remarks>
+        private bool IsLevelOneTutorialRun =>
+            levelNumber == 1 && tutorialProgress?.HasCompletedLevelOneTutorial != true;
+
+        /// <summary>
+        /// The level that teaches wind, and so the level that earns it.
+        /// </summary>
+        private const int WindUnlockLevelNumber = 3;
+
+        /// <summary>
+        /// Whether the player owns the tower tools - unlink, sell and upgrade - and so whether
+        /// tapping a tower may open the actions panel over it.
+        /// </summary>
+        /// <remarks>
+        /// Level 1 holds them back until its tutorial has run, because the tutorial drives those
+        /// same controls itself while it is teaching them. The moment it ends - on wave 4, having
+        /// just walked the player through tapping a tower and unlinking it - they are the
+        /// player's to use.
+        /// </remarks>
         private bool AreTowerToolsUnlocked()
         {
             return levelNumber != 1 || tutorialProgress?.HasCompletedLevelOneTutorial == true;
         }
 
-        private bool AreTowerActionsAvailable()
+        /// <summary>
+        /// Whether the upgrade button belongs on the actions panel. Level 1 teaches linking and
+        /// unlinking and nothing else; upgrading has its own beat at Level 2, and until the player
+        /// has met it the button is one they have no reason to press.
+        /// </summary>
+        private bool IsUpgradeUnlocked()
         {
-            return AreTowerToolsUnlocked() && (levelNumber != 1 || CurrentWaveNumber >= 6);
+            return levelNumber != 1;
         }
 
         // Water unlocks one wave ahead of the Stealth enemies it exists to reveal, which first
@@ -229,14 +379,6 @@ namespace TowerDefense3D.GameFlow
 
         private bool IsTutorialTowerUnlocked(TowerFamily family)
         {
-            if (tutorialProgress?.HasCompletedLevelOneTutorial == true)
-            {
-                return family == TowerFamily.Generator
-                    || family == TowerFamily.SoulNexus
-                    || family == TowerFamily.Fire
-                    || family == TowerFamily.Water && CurrentWaveNumber >= WaterUnlockWaveNumber;
-            }
-
             return family == TowerFamily.Generator && CurrentWaveNumber >= 1
                 || family == TowerFamily.SoulNexus && CurrentWaveNumber >= 3
                 || family == TowerFamily.Fire && CurrentWaveNumber >= 4
@@ -341,20 +483,26 @@ namespace TowerDefense3D.GameFlow
         /// so a refusal is at least diagnosable instead of invisible.
         /// </remarks>
         /// <summary>
-        /// What the upgrade button says: a price, or MAX once the tower has no level left to buy.
+        /// Price printed below the upgrade glyph while another level can be bought.
         /// </summary>
         /// <remarks>
         /// Printing the price of a level that cannot be bought would read as a purchase the
         /// player merely cannot afford, which is a different problem with a different fix.
         /// </remarks>
-        private static string CreateUpgradeCostText(bool hasUpgrade, bool atMaxLevel, int cost)
+        private static string CreateUpgradeCostText(
+            bool hasUpgrade,
+            bool atMaxLevel,
+            int cost)
         {
-            if (!hasUpgrade)
-            {
-                return string.Empty;
-            }
+            return hasUpgrade && !atMaxLevel ? cost.ToString() : string.Empty;
+        }
 
-            return atMaxLevel ? "TỐI ĐA" : cost.ToString();
+        private static string CreateUpgradeTierText(
+            bool hasUpgrade,
+            bool atMaxLevel,
+            int currentLevel)
+        {
+            return !hasUpgrade ? string.Empty : atMaxLevel ? "MAX" : (currentLevel + 1).ToString();
         }
 
         private void HandleUpgradeRequested()

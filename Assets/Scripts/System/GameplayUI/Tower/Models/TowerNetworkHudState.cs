@@ -17,7 +17,8 @@ namespace TowerDefense3D.GameFlow
             string upgradeCostText = "",
             string sellRefundText = "",
             bool upgradeShowsPrice = false,
-            TowerFamily? selectedTowerFamily = null)
+            TowerFamily? selectedTowerFamily = null,
+            string upgradeTierText = "")
         {
             SelectedText = selectedText;
             FeedbackText = feedbackText;
@@ -31,6 +32,7 @@ namespace TowerDefense3D.GameFlow
             SellRefundText = sellRefundText;
             UpgradeShowsPrice = upgradeShowsPrice;
             SelectedTowerFamily = selectedTowerFamily;
+            UpgradeTierText = upgradeTierText;
         }
 
         public string SelectedText { get; }
@@ -52,8 +54,11 @@ namespace TowerDefense3D.GameFlow
         /// </summary>
         public bool UpgradeEnabled { get; }
 
-        /// <summary>Price on the upgrade button, or "MAX" when there is nothing left to buy.</summary>
+        /// <summary>Price on the upgrade button. Empty when there is nothing left to buy.</summary>
         public string UpgradeCostText { get; }
+
+        /// <summary>Next tier on the upgrade button, or "MAX" at the final tier.</summary>
+        public string UpgradeTierText { get; }
 
         /// <summary>What selling hands back, printed on the sell button.</summary>
         public string SellRefundText { get; }

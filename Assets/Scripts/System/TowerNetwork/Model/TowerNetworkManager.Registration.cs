@@ -195,20 +195,29 @@ namespace TowerDefense3D.Towers
             return snapshot;
         }
 
-        private bool HasHeroTower
+        /// <summary>Whether the board currently carries a tower of that family.</summary>
+        public bool HasTowerOfFamily(TowerFamily family)
         {
-            get
-            {
-                for (int index = 0; index < orderedNodeIds.Count; index++)
-                {
-                    if (nodes[orderedNodeIds[index]].Spec.Family == TowerFamily.Hero)
-                    {
-                        return true;
-                    }
-                }
+            return CountTowersOfFamily(family) > 0;
+        }
 
-                return false;
+        /// <summary>
+        /// How many towers of that family stand on the board, authored ones included. Read by the
+        /// per-family build limits, which count what is standing now rather than what has ever
+        /// been built, so selling a tower gives its slot back.
+        /// </summary>
+        public int CountTowersOfFamily(TowerFamily family)
+        {
+            int count = 0;
+            for (int index = 0; index < orderedNodeIds.Count; index++)
+            {
+                if (nodes[orderedNodeIds[index]].Spec.Family == family)
+                {
+                    count++;
+                }
             }
+
+            return count;
         }
 
         public bool TryPeekInputProjectile(TowerNodeId nodeId, int inputPort, out ProjectileQueueEntry entry)

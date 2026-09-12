@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using TMPro;
 using TowerDefense3D.Towers;
 using UnityEditor;
 using UnityEngine;
@@ -66,7 +67,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Transform panel = safeArea.Find("Tower Network HUD");
             Assert.That(panel, Is.Not.Null);
             Assert.That(panel.parent, Is.EqualTo(safeArea));
-            Assert.That(panel.GetComponentsInChildren<Button>(true).Length, Is.EqualTo(catalog.Definitions.Count + 5));
+            // Counted by naming the parts rather than as one magic total. The panel carries a
+            // card per catalog entry, the five controls asserted by name below, and the
+            // next-wave preview's own slots - and the preview's size is the preview's business,
+            // so it is read rather than hard-coded. A total written as a single number goes
+            // stale the first time any of the three grows, which is exactly what it did.
+            Transform previewGrid = panel.Find("Next Wave Grid");
+            Assert.That(previewGrid, Is.Not.Null, "The panel authors a next-wave preview.");
+            int previewSlotCount = previewGrid.GetComponentsInChildren<Button>(true).Length;
+            Assert.That(previewSlotCount, Is.GreaterThan(0), "Each preview slot is its own button.");
+            Assert.That(
+                panel.GetComponentsInChildren<Button>(true).Length,
+                Is.EqualTo(catalog.Definitions.Count + previewSlotCount + 5));
             Assert.That(panel.Find("Tower Buttons"), Is.Not.Null);
             Assert.That(
                 panel.GetComponentsInChildren<TowerPlacementDragButtonView>(true).Length,
@@ -91,14 +103,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Transform heroes = towerButtons.Find("Group Heroes");
             HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
 
+            // The row is laid out by its group rather than by baked positions, so that the card
+            // strip keeps its proportions on every screen. That makes the sibling order - not
+            // the authored anchoredPosition - what puts the hero card after the element cards.
             Assert.That(row, Is.Not.Null);
-            Assert.That(row.enabled, Is.False);
+            Assert.That(row.enabled, Is.True);
+            Assert.That(
+                row.reverseArrangement,
+                Is.False,
+                "A reversed row would draw the hero card before the elements.");
             Assert.That(heroes, Is.Not.Null);
             Assert.That(heroes.parent, Is.EqualTo(towerButtons));
             Assert.That(heroes.GetSiblingIndex(), Is.GreaterThan(elements.GetSiblingIndex()));
-            Assert.That(
-                ((RectTransform)heroes).anchoredPosition.x,
-                Is.GreaterThan(((RectTransform)elements).anchoredPosition.x));
         }
 
         [Test]
@@ -128,7 +144,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 towerActionsScreenPosition: new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
                 upgradeEnabled: true,
                 upgradeCostText: "110",
-                sellRefundText: "154");
+                sellRefundText: "154",
+                upgradeShowsPrice: true,
+                upgradeTierText: "1");
 
             view.Render(state);
 
@@ -139,10 +157,15 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
 
             // The prices ride in the dark strip the button art already has.
             Assert.That(
-                upgradeButton.transform.Find("Cost").GetComponent<Text>().text,
+                upgradeButton.transform.Find("Cost").GetComponent<TMP_Text>().text,
                 Is.EqualTo("110"));
+            TMP_Text tierText = upgradeButton.transform.Find("Tier").GetComponent<TMP_Text>();
+            RectTransform glyphRect = upgradeButton.transform.Find("Glyph") as RectTransform;
+            Assert.That(tierText.text, Is.EqualTo("1"));
+            Assert.That(tierText.rectTransform.anchoredPosition.x, Is.GreaterThan(glyphRect.anchoredPosition.x));
+            Assert.That(tierText.rectTransform.sizeDelta.y, Is.EqualTo(glyphRect.sizeDelta.y));
             Assert.That(
-                sellButton.transform.Find("Cost").GetComponent<Text>().text,
+                sellButton.transform.Find("Cost").GetComponent<TMP_Text>().text,
                 Is.EqualTo("154"));
 
             firstTowerButton.onClick.Invoke();

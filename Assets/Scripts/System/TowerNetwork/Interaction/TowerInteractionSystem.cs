@@ -196,7 +196,19 @@ namespace TowerDefense3D.Towers
             for (int index = 0; index < towers.Count; index++)
             {
                 ITowerRuntimeView tower = towers[index];
-                Vector3 towerScreenPosition = worldCamera.WorldToScreenPoint(tower.PresentationAnchor);
+
+                // Picked against the body, not against PresentationAnchor. That anchor is the
+                // top of the model plus a little, authored to hang the action panel clear of the
+                // tower's own silhouette - so using it here put the grab circle in the air above
+                // the tower's head, a metre or more up on the taller ones, and the player had to
+                // reach past the thing they were trying to grab. ProjectileOrigin is the middle
+                // of the silhouette and is already the point the network registers a tower at,
+                // so grabbing here is grabbing exactly the point the link rule measures from.
+                //
+                // The link itself still runs head to head: the preview and the finished link are
+                // both drawn between PresentationAnchors. Where a tower is held and where its
+                // rope is tied are different questions.
+                Vector3 towerScreenPosition = worldCamera.WorldToScreenPoint(tower.ProjectileOrigin);
                 if (towerScreenPosition.z <= 0f)
                 {
                     continue;

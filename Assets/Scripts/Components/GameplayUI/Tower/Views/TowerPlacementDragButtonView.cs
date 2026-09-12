@@ -1,5 +1,6 @@
 using System;
 using TowerDefense3D.Towers;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -11,8 +12,8 @@ namespace TowerDefense3D.GameFlow
     {
         [SerializeField] private Button button;
         [SerializeField] private TowerCombatDefinition definition;
-        [SerializeField] private Text nameText;
-        [SerializeField] private Text costText;
+        [SerializeField] private TMP_Text nameText;
+        [SerializeField] private TMP_Text costText;
 
         [Tooltip("The tower's element icon. The padlock replaces it outright while locked.")]
         [SerializeField] private Image iconImage;
@@ -31,10 +32,14 @@ namespace TowerDefense3D.GameFlow
 
         [SerializeField, Range(0.1f, 1f)] private float unaffordableAlpha = 0.45f;
 
+        /// <summary>What the cost row says instead of a price once the level is full of this tower.</summary>
+        private const string BuildLimitLabel = "Tối đa";
+
         private int activePointerId;
         private bool isDragging;
         private bool isLocked;
         private bool isAffordable = true;
+        private bool isAtBuildLimit;
 
         public event Action<TowerCombatDefinition, TowerPlacementPointerEvent> DragBegan;
         public event Action<TowerPlacementPointerEvent> DragMoved;
@@ -57,11 +62,53 @@ namespace TowerDefense3D.GameFlow
                 nameText.text = definition.Core.DisplayName.ToUpperInvariant();
             }
 
-            // The word "LOCKED" used to live here; the padlock says it now, and the whole
-            // cost row is hidden while locked, so the text only ever carries the price.
+            ApplyCostRow();
+        }
+
+        /// <summary>
+        /// Says the level already has as many of this tower as it allows, so the card quotes no
+        /// price until one is sold.
+        /// </summary>
+        /// <remarks>
+        /// Only the hero is capped today. The card stays where it is and stays pressable - it is
+        /// the same tower, just not one that can be bought right now - so the cost row is what
+        /// carries the news: the price and its coin give way to "Tối đa", and come back on the sale.
+        /// </remarks>
+        public void SetAtBuildLimit(bool atBuildLimit)
+        {
+            isAtBuildLimit = atBuildLimit;
+            ApplyCostRow();
+        }
+
+        /// <summary>
+        /// The price, the coin beside it, and what replaces them.
+        /// </summary>
+        /// <remarks>
+        /// The coin is switched off as a GameObject rather than merely hidden. It carries a
+        /// LayoutElement, and the row that centres them is a layout group: an invisible coin that
+        /// was still there would hold its slot open and leave the label sitting off to one side
+        /// of the space the pair used to share.
+        ///
+        /// The word "LOCKED" used to live in this text; the padlock says it now, and the whole
+        /// cost row is hidden while locked.
+        /// </remarks>
+        private void ApplyCostRow()
+        {
             if (costText != null)
             {
-                costText.text = definition.Core.Economy.BuildCost.ToString("N0");
+                costText.enabled = !isLocked;
+                if (definition != null)
+                {
+                    costText.text = isAtBuildLimit
+                        ? BuildLimitLabel
+                        : definition.Core.Economy.BuildCost.ToString("N0");
+                }
+            }
+
+            if (coinImage != null)
+            {
+                coinImage.enabled = !isLocked;
+                coinImage.gameObject.SetActive(!isAtBuildLimit);
             }
         }
 
@@ -142,15 +189,7 @@ namespace TowerDefense3D.GameFlow
                 nameText.enabled = !isLocked;
             }
 
-            if (costText != null)
-            {
-                costText.enabled = !isLocked;
-            }
-
-            if (coinImage != null)
-            {
-                coinImage.enabled = !isLocked;
-            }
+            ApplyCostRow();
 
             if (costShade != null)
             {

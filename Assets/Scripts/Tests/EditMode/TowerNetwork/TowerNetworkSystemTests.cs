@@ -154,7 +154,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(system.DescribeSelectedSellRefund(), Is.Zero);
             Assert.That(system.TryDescribeSelectedUpgrade(out _, out _, out _), Is.True);
             Assert.That(system.TrySellSelected(out string sellError), Is.False);
-            StringAssert.Contains("part of the level", sellError);
+            StringAssert.Contains("có sẵn và không thể bán", sellError);
             Assert.That(view.IsRegistered, Is.True);
         }
 
@@ -180,7 +180,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             TowerRuntimeView nexusView = RegisterTower(TowerFamily.SoulNexus, Vector3.right, 2);
 
             Assert.That(system.TryStartSimulation(out string missingChainError), Is.False);
-            StringAssert.Contains("valid Generator", missingChainError);
+            StringAssert.Contains("chuỗi Generator đến Soul Nexus hợp lệ", missingChainError);
             Assert.That(system.TryRewire(generatorView, nexusView, out string linkError), Is.True, linkError);
 
             system.Select(generatorView);
@@ -237,7 +237,52 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             goldSystem.TrySpend(goldSystem.Balance);
 
             Assert.That(system.BeginTowerPlacementDrag(generator, 1), Is.False);
-            Assert.That(system.LastFeedback, Is.EqualTo("Not enough Gold."));
+            Assert.That(system.LastFeedback, Is.EqualTo("Không đủ vàng."));
+        }
+
+        /// <summary>
+        /// A level gets one hero, and gets it back when the one it has is sold.
+        /// </summary>
+        /// <remarks>
+        /// Stated in terms of what is standing rather than what has been built, which is the
+        /// whole reason selling frees the slot: the player is meant to be able to move the hero,
+        /// just not to field two.
+        /// </remarks>
+        [Test]
+        public void Hero_IsLimitedToOnePerLevel_AndTheSlotComesBackWhenItIsSold()
+        {
+            system.Start();
+            Assert.That(towerCatalog.TryGet(TowerFamily.Hero, out TowerCombatDefinition hero), Is.True);
+            Assert.That(
+                system.IsFamilyBuildLimitReached(hero),
+                Is.False,
+                "An empty board has room for the hero.");
+
+            TowerRuntimeView heroView = RegisterTower(TowerFamily.Hero, Vector3.zero, 1);
+
+            Assert.That(system.IsFamilyBuildLimitReached(hero), Is.True);
+            Assert.That(
+                system.BeginTowerPlacementDrag(hero, 2),
+                Is.False,
+                "The second hero has to be refused before it is ever dragged.");
+            Assert.That(system.LastFeedback, Does.Contain("chỉ đặt được 1"));
+            Assert.That(
+                goldSystem.Balance,
+                Is.EqualTo(1000),
+                "A refused drag must not charge for the tower it refused.");
+
+            // Every other family is untouched by the cap.
+            Assert.That(towerCatalog.TryGet(TowerFamily.Generator, out TowerCombatDefinition generator), Is.True);
+            Assert.That(system.IsFamilyBuildLimitReached(generator), Is.False);
+
+            system.Select(heroView);
+            Assert.That(system.TrySellSelected(out string sellError), Is.True, sellError);
+
+            Assert.That(
+                system.IsFamilyBuildLimitReached(hero),
+                Is.False,
+                "Selling the hero has to hand its slot back.");
+            Assert.That(system.BeginTowerPlacementDrag(hero, 3), Is.True);
         }
 
         /// <summary>

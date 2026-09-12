@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TowerDefense3D.Towers;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,17 +16,20 @@ namespace TowerDefense3D.GameFlow
         [SerializeField] private Button unlinkButton;
         [SerializeField] private Button sellButton;
 
-        [Tooltip("Buys the selected tower a level. Its label is the price, or MAX when the tower has no level left.")]
+        [Tooltip("Buys the selected tower a level. Its labels show the next tier and price.")]
         [SerializeField] private Button upgradeButton;
 
+        [Tooltip("Next tier printed beside the upgrade glyph, or MAX at the final tier.")]
+        [SerializeField] private TMP_Text upgradeTierText;
+
         [Tooltip("Price printed on the upgrade button.")]
-        [SerializeField] private Text upgradeCostText;
+        [SerializeField] private TMP_Text upgradeCostText;
 
         [Tooltip("Coin beside that price. Hidden along with it, because a coin next to nothing - or next to MAX - reads as a price that is missing rather than one that does not exist.")]
         [SerializeField] private GameObject upgradeCostIcon;
 
         [Tooltip("Refund printed on the sell button.")]
-        [SerializeField] private Text sellRefundText;
+        [SerializeField] private TMP_Text sellRefundText;
         [Tooltip("Panel holding the per-tower actions, moved over the selected tower each frame.")]
         [SerializeField] private RectTransform towerActionsPanel;
         [Tooltip("Optional. The HUD's own menu button is gone - the pause modal carries that command now - so this is left unwired unless a screen puts one back.")]
@@ -50,6 +54,7 @@ namespace TowerDefense3D.GameFlow
         private bool tutorialFireLocked;
         private bool tutorialUnlinkOnly;
         private bool towerActionsAvailable;
+        private bool upgradeAvailable = true;
         private bool heroLocked;
         private Transform heroCard;
         private bool waterWasLocked = true;
@@ -181,6 +186,20 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        public void ApplyTowerBuildLimits(IReadOnlyList<TowerCombatDefinition> maxedDefinitions)
+        {
+            for (int index = 0; index < towerDragButtons.Length; index++)
+            {
+                TowerPlacementDragButtonView dragButton = towerDragButtons[index];
+                if (dragButton == null)
+                {
+                    continue;
+                }
+
+                dragButton.SetAtBuildLimit(Contains(maxedDefinitions, dragButton.Definition));
+            }
+        }
+
         private static bool Contains(
             IReadOnlyList<TowerCombatDefinition> definitions,
             TowerCombatDefinition definition)
@@ -210,6 +229,15 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        public void SetUpgradeAvailable(bool available)
+        {
+            upgradeAvailable = available;
+            if (!available && upgradeButton != null)
+            {
+                upgradeButton.gameObject.SetActive(false);
+            }
+        }
+
         private void PlayWaterUnlock(RectTransform card)
         {
             if (card == null)
@@ -231,8 +259,12 @@ namespace TowerDefense3D.GameFlow
             bool tutorialUnlinkEnabled = tutorialUnlinkOnly
                 && state.SelectedTowerFamily == TowerFamily.Generator;
             bool unlinkEnabled = state.UnlinkEnabled || tutorialUnlinkEnabled;
+
+            // The unlink beat asks for one thing, so it is the only thing that answers. Sell is on
+            // the panel beside it but dead until the beat is over.
+            bool sellEnabled = state.SellEnabled && !tutorialUnlinkOnly;
             unlinkButton.interactable = unlinkEnabled;
-            sellButton.interactable = state.SellEnabled;
+            sellButton.interactable = sellEnabled;
             if (upgradeButton != null)
             {
                 upgradeButton.interactable = state.UpgradeEnabled;
@@ -242,12 +274,17 @@ namespace TowerDefense3D.GameFlow
             // arrow, the coin and the price stayed at full brightness on a greyed button and read
             // as a control that was still live.
             TintButtonContents(unlinkButton, unlinkEnabled);
-            TintButtonContents(sellButton, state.SellEnabled);
+            TintButtonContents(sellButton, sellEnabled);
             TintButtonContents(upgradeButton, state.UpgradeEnabled);
 
             if (upgradeCostText != null)
             {
                 upgradeCostText.text = state.UpgradeCostText;
+            }
+
+            if (upgradeTierText != null)
+            {
+                upgradeTierText.text = state.UpgradeTierText;
             }
 
             if (upgradeCostIcon != null)
@@ -307,8 +344,13 @@ namespace TowerDefense3D.GameFlow
             }
 
             unlinkButton.gameObject.SetActive(!tutorialUnlinkOnly || canShowUnlinkOnly);
-            sellButton.gameObject.SetActive(!tutorialUnlinkOnly);
-            if (upgradeButton != null) upgradeButton.gameObject.SetActive(!tutorialUnlinkOnly);
+
+            // Sell stays on the panel through the unlink beat rather than being taken off it. The
+            // panel the tutorial points at is then the same panel the player meets afterwards, and
+            // the button it is not asking for is dimmed instead of missing - Render leaves it
+            // uninteractable for as long as the beat runs.
+            sellButton.gameObject.SetActive(true);
+            if (upgradeButton != null) upgradeButton.gameObject.SetActive(upgradeAvailable);
 
             if (!(towerActionsPanel.parent is RectTransform parent))
             {
@@ -346,7 +388,7 @@ namespace TowerDefense3D.GameFlow
                 tutorialFireLocked = false;
                 unlinkButton.gameObject.SetActive(true);
                 sellButton.gameObject.SetActive(true);
-                if (upgradeButton != null) upgradeButton.gameObject.SetActive(true);
+                if (upgradeButton != null) upgradeButton.gameObject.SetActive(upgradeAvailable);
             }
 
             buildBar ??= transform.Find("Build Bar")?.gameObject;
@@ -385,8 +427,12 @@ namespace TowerDefense3D.GameFlow
                 HorizontalLayoutGroup row = towerButtons.GetComponent<HorizontalLayoutGroup>();
                 if (row != null)
                 {
+                    // Not force-expanded, unlike every other arrangement here used to be: the row
+                    // spans the width of the bar, so expanding the cards into it stretched each
+                    // card as wide as its share of the screen. They keep their authored width and
+                    // the row centres them instead.
                     row.childControlWidth = true;
-                    row.childForceExpandWidth = true;
+                    row.childForceExpandWidth = false;
                     row.childAlignment = TextAnchor.MiddleCenter;
                 }
 

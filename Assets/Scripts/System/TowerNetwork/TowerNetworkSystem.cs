@@ -11,6 +11,9 @@ namespace TowerDefense3D.Towers
     /// </summary>
     public sealed class TowerNetworkSystem : IDisposable
     {
+        /// <summary>Heroes a level may have standing at once. See <see cref="IsFamilyBuildLimitReached"/>.</summary>
+        private const int HeroTowerLimit = 1;
+
         private readonly TowerNetworkManager manager;
         private readonly GridPlacementSystem placementSystem;
         private readonly LevelGoldSystem goldSystem;
@@ -90,6 +93,24 @@ namespace TowerDefense3D.Towers
             && CanEditTopology
             && !authoredTowerIds.Contains(viewRegistry.GetNodeId(selectedTower))
             && selectedTower.CombatDefinition?.Core?.Economy?.Sellable == true;
+
+        /// <summary>
+        /// Whether the board already carries as many towers of this one's family as a level is
+        /// allowed to have at once.
+        /// </summary>
+        /// <remarks>
+        /// Only the hero is capped, and at one. It is the one tower that fights by itself instead
+        /// of feeding a chain, so a second one would not be a bigger network - it would just be a
+        /// second champion, and the level is balanced around a single one. The count is of what is
+        /// standing right now, never of what has been built, so selling the hero hands the slot
+        /// back and it can be placed somewhere else.
+        /// </remarks>
+        public bool IsFamilyBuildLimitReached(TowerCombatDefinition definition)
+        {
+            return definition != null
+                && definition.Family == TowerFamily.Hero
+                && manager.CountTowersOfFamily(TowerFamily.Hero) >= HeroTowerLimit;
+        }
 
         public void SetTutorialPlacementFree(bool isFree)
         {
@@ -221,6 +242,13 @@ namespace TowerDefense3D.Towers
                 throw;
             }
 
+            // Announced again, now that the view is in the registry. RegisterTower above already
+            // raised a change, but it did so before this view was bound to the node - so anything
+            // that answers a change by walking the views saw a node with no view and skipped this
+            // tower, and nothing raised a change for it again. A tower the level authored into its
+            // scene stayed invisible to every such listener for the rest of the level.
+            PublishStateChanged();
+
             error = string.Empty;
             return true;
         }
@@ -316,6 +344,16 @@ namespace TowerDefense3D.Towers
 
             if (definition == null)
             {
+                return false;
+            }
+
+            // Ahead of the price: a hero the level has no room for cannot be bought at any
+            // amount of gold, so "không đủ vàng" would send the player off to earn gold they
+            // already have enough of.
+            if (IsFamilyBuildLimitReached(definition))
+            {
+                ReportFeedback(
+                    $"Mỗi màn chỉ đặt được 1 {definition.Core.DisplayName}. Bán trụ cũ để đặt lại.");
                 return false;
             }
 
@@ -589,6 +627,13 @@ namespace TowerDefense3D.Towers
             }
 
             ClearSelection();
+
+            // The sold tower leaves the network here rather than on the view's OnDestroy, which
+            // in play mode does not run until the end of the frame. Until this was explicit, a
+            // sold tower stayed a live node for the rest of the frame - still counted by the
+            // per-family build limits, and still handed to the hero attack snapshot.
+            viewRegistry.Unregister(tower);
+            manager.UnregisterTower(nodeId);
             tower.Despawn();
             goldSystem.Add(refund);
             TowerSold?.Invoke();
