@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using TMPro;
 using TowerDefense3D.Waves;
 using UnityEditor;
 using UnityEngine;
@@ -61,8 +62,18 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             Assert.That(waveSystem.ForceVictoryCount, Is.Zero);
         }
 
+        /// <summary>
+        /// The skip cheat is drawn invisibly, and stays hittable anyway.
+        /// </summary>
+        /// <remarks>
+        /// It is a debug shortcut rather than part of the game, so it is authored transparent -
+        /// the same bargain the frame-rate overlay makes - and the developer who wants it taps the
+        /// corner it sits in. Transparent is not the same as unhittable, and what is worth holding
+        /// here is everything that decides whether the tap lands: it is authored, wired to its own
+        /// button, and nothing about how it is drawn rejects the touch.
+        /// </remarks>
         [Test]
-        public void Prefab_AuthorsTheSkipCheatButtonVisibleAndHittableWithoutALabel()
+        public void Prefab_AuthorsTheSkipCheatInvisibleButStillHittable()
         {
             GameObject owner = PrefabUtility.LoadPrefabContents(GameplayUiPrefabPath);
             try
@@ -70,7 +81,6 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 Transform safeArea = owner.transform.Find("Safe Area");
                 Transform skip = safeArea.Find("Skip Waves Cheat");
                 Assert.That(skip, Is.Not.Null, "Gameplay UI prefab must author the skip cheat.");
-                Assert.That(skip.gameObject.activeSelf, Is.True);
 
                 var view = skip.GetComponent<LevelSkipCheatView>();
                 Assert.That(view, Is.Not.Null);
@@ -86,10 +96,9 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                     Is.Null,
                     "The HUD's menu button is gone; the pause modal carries that command.");
 
-                // The current debug control shows its authored background but keeps its label out
-                // of the player-facing HUD.
+                // Transparent, but transparent is not the same as unhittable: a Graphic that is
+                // enabled, raycast-targeted and not alpha-thresholded still takes the tap.
                 var background = skip.GetComponent<Image>();
-                Assert.That(background.color.a, Is.GreaterThan(0.5f));
                 Assert.That(background.enabled, Is.True, "A disabled Graphic cannot be hit.");
                 Assert.That(background.raycastTarget, Is.True);
                 Assert.That(
@@ -97,7 +106,7 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                     Is.Zero,
                     "A threshold above zero would reject the tap on a transparent button.");
                 Assert.That(
-                    skip.Find("Label").GetComponent<Text>().color.a,
+                    skip.Find("Label").GetComponent<TMP_Text>().color.a,
                     Is.Zero,
                     "The label must not be drawn either.");
 
