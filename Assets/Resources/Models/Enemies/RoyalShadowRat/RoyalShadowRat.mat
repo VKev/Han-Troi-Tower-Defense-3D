@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RoyalShadowRat
-  m_Shader: {fileID: 4800000, guid: 52a77c8eebffe8842b782146f3c526a2, type: 3}
+  m_Shader: {fileID: 4800000, guid: a553a76e71d995c46b8a25b3b23ca429, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -29,12 +29,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _DamageFlashAmount: 0
     - _GlossSoftness: 0
     - _GlossThreshold: 0
     - _ShadeSoftness: 0.08
     - _ShadeThreshold: 0.55
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _DamageFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _GlossTint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
