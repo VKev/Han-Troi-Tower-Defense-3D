@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TowerDefense3D.System.Runtime::TowerDefense3D.Waves.WaveScheduleDefinition
   randomSeed: 22002
   waves:
-  - clearGoldReward: 0
+  - clearGoldReward: 300
     spawnBatches:
     - enemy: {fileID: 11400000, guid: a7bddcea592b3184c9e8f57b6f0ca512, type: 2}
       count: 4

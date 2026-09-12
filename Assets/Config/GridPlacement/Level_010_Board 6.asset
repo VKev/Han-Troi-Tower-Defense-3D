@@ -865,18 +865,6 @@ MonoBehaviour:
     flags: 11
     roadExitDirection: 0
   - coordinate:
-      x: 30
-      z: 31
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
-      x: 31
-      z: 31
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 32
       z: 31
       y: 0
@@ -1009,58 +997,52 @@ MonoBehaviour:
     flags: 3
     roadExitDirection: 0
   - coordinate:
-      x: 31
-      z: 32
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 32
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 33
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 34
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 35
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 36
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 37
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 38
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 39
       z: 32
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 40
@@ -1147,64 +1129,52 @@ MonoBehaviour:
     flags: 3
     roadExitDirection: 0
   - coordinate:
-      x: 30
-      z: 33
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
-      x: 31
-      z: 33
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 32
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 33
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 34
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 35
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 36
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 37
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 38
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 39
       z: 33
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 40
@@ -1291,28 +1261,16 @@ MonoBehaviour:
     flags: 3
     roadExitDirection: 0
   - coordinate:
-      x: 30
-      z: 34
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
-      x: 31
-      z: 34
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 32
       z: 34
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 33
       z: 34
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 34
@@ -1435,28 +1393,16 @@ MonoBehaviour:
     flags: 3
     roadExitDirection: 0
   - coordinate:
-      x: 30
-      z: 35
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
-      x: 31
-      z: 35
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 32
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 33
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 34
@@ -1468,31 +1414,31 @@ MonoBehaviour:
       x: 35
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 36
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 37
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 38
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 39
       z: 35
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 40
@@ -1579,28 +1525,16 @@ MonoBehaviour:
     flags: 3
     roadExitDirection: 0
   - coordinate:
-      x: 30
-      z: 36
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
-      x: 31
-      z: 36
-      y: 0
-    flags: 3
-    roadExitDirection: 0
-  - coordinate:
       x: 32
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 33
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 34
@@ -1612,31 +1546,31 @@ MonoBehaviour:
       x: 35
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 36
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 37
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 38
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 39
       z: 36
       y: 0
-    flags: 11
+    flags: 8
     roadExitDirection: 0
   - coordinate:
       x: 40
@@ -2432,6 +2366,7 @@ MonoBehaviour:
       z: 40
       y: 0
     prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  authoredTowers: []
   routes:
   - cells:
     - x: 49
