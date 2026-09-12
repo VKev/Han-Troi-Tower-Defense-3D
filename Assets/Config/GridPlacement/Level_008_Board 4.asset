@@ -3166,4 +3166,10 @@ MonoBehaviour:
       z: 41
       y: 0
     prefab: {fileID: 4306607985694372870, guid: e96c69763c0735b4c94f9f40bf1983f8, type: 3}
+  authoredTowers:
+  - coordinate:
+      x: 43
+      z: 31
+      y: 0
+    definition: {fileID: 11400000, guid: 6a81cd6e635c8674bbbcdd4075884621, type: 2}
   routes: []

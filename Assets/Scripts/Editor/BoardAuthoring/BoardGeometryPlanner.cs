@@ -326,11 +326,18 @@ namespace TowerDefense3D.GridPlacement.Editor
                 AuthoredTowerPlacement placement = ordered[index];
                 TowerDefinition tower = placement.Definition.Core.PlacementDefinition;
                 GameObject prefab = tower.Prefab;
+                Vector3 localPosition =
+                    mapper.FootprintBottomCenter(placement.Coordinate, tower.Footprint);
+                if (TowerSurfaceAlignment.TryResolveSurfaceLift(prefab, out float lift))
+                {
+                    localPosition.y += lift;
+                }
+
                 visuals.Add(new BoardAuthoredTowerVisual(
                     placement.Coordinate,
                     placement.Definition,
                     prefab,
-                    mapper.FootprintBottomCenter(placement.Coordinate, tower.Footprint),
+                    localPosition,
                     prefab.transform.localRotation,
                     prefab.transform.localScale));
             }

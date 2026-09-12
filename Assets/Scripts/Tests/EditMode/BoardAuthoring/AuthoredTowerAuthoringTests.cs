@@ -14,6 +14,9 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
         private const string FireDefinitionPath =
             "Assets/Config/Towers/Definitions/Elements/Fire.asset";
 
+        private const string WaterDefinitionPath =
+            "Assets/Config/Towers/Definitions/Elements/Water.asset";
+
         private readonly List<UnityEngine.Object> created = new List<UnityEngine.Object>();
         private TowerCombatDefinition fire;
 
@@ -103,11 +106,85 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
 
             var mapper = new GridCoordinateMapper(board.Dimensions, board.CellSize, board.HeightUnit, Vector3.zero);
             Vector3 expected = mapper.FootprintBottomCenter(anchor, fire.Core.PlacementDefinition.Footprint);
+            TowerSurfaceAlignment.TryResolveSurfaceLift(
+                fire.Core.PlacementDefinition.Prefab, out float fireLift);
+            expected.y += fireLift;
             Assert.That(Vector3.Distance(tower.localPosition, expected), Is.LessThan(0.0001f));
 
             int instanceId = tower.gameObject.GetInstanceID();
             BoardSceneSynchronizer.Synchronize(board);
             Assert.That(root.GetChild(0).gameObject.GetInstanceID(), Is.EqualTo(instanceId));
+        }
+
+        /// <summary>
+        /// A tower whose mesh is authored around its pivot instead of on top of it used to sink
+        /// half its height into the board, because only runtime placement seated it against the
+        /// surface. Authoring has to seat it the same way, and has to keep recognizing the seated
+        /// instance as up to date so the synchronizer does not rebuild it on every pass.
+        /// </summary>
+        [Test]
+        public void Synchronizer_SeatsATowerWhoseMeshStraddlesItsPivotOnTheSurface()
+        {
+            TowerCombatDefinition water =
+                AssetDatabase.LoadAssetAtPath<TowerCombatDefinition>(WaterDefinitionPath);
+            Assert.That(water, Is.Not.Null);
+            GameObject prefab = water.Core.PlacementDefinition.Prefab;
+            Assert.That(
+                TowerSurfaceAlignment.TryResolveSurfaceLift(prefab, out float lift),
+                Is.True);
+            Assert.That(
+                lift,
+                Is.GreaterThan(0.01f),
+                "This fixture only proves anything while the water mesh straddles its pivot.");
+
+            BoardDefinition board = CreateBoard();
+            var anchor = new GridCell(2, 2, 0);
+            SetField(board, "authoredTowers", new[] { new AuthoredTowerPlacement(anchor, water) });
+            var presenterObject = Track(new GameObject("Sunken Tower Board"));
+            BoardView presenter = presenterObject.AddComponent<BoardView>();
+            SetField(presenter, "board", board);
+
+            BoardSceneSynchronizer.Synchronize(board);
+
+            Transform tower = presenter.GeneratedAuthoredTowerRoot.GetChild(0);
+            var mapper = new GridCoordinateMapper(
+                board.Dimensions, board.CellSize, board.HeightUnit, Vector3.zero);
+            float surfaceY = mapper
+                .FootprintBottomCenter(anchor, water.Core.PlacementDefinition.Footprint).y;
+            Assert.That(tower.localPosition.y, Is.EqualTo(surfaceY + lift).Within(0.0001f));
+            Assert.That(
+                MeasureDrawnBottom(tower.gameObject),
+                Is.EqualTo(surfaceY).Within(0.0001f),
+                "The seated instance's renderer bottom has to rest on the surface.");
+
+            int instanceId = tower.gameObject.GetInstanceID();
+            BoardSceneSynchronizer.Synchronize(board);
+            Assert.That(
+                presenter.GeneratedAuthoredTowerRoot.GetChild(0).gameObject.GetInstanceID(),
+                Is.EqualTo(instanceId));
+        }
+
+        /// <summary>
+        /// Lowest point the tower actually draws, counting only renderers that are switched on
+        /// inside objects that are switched on.
+        /// </summary>
+        private static float MeasureDrawnBottom(GameObject instance)
+        {
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
+            float bottom = float.MaxValue;
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Renderer renderer = renderers[index];
+                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                bottom = Mathf.Min(bottom, renderer.bounds.min.y);
+            }
+
+            Assert.That(bottom, Is.LessThan(float.MaxValue), "A tower has to draw something.");
+            return bottom;
         }
 
         private BoardDefinition CreateBoard()

@@ -267,19 +267,55 @@ namespace TowerDefense3D.GridPlacement.Tests.EditMode
             }
         }
 
+        /// <summary>
+        /// The tower's silhouette, measured the way <c>TowerRuntimeView</c> measures it.
+        /// </summary>
+        /// <remarks>
+        /// The link sockets are left out, exactly as the view leaves them out. They are
+        /// billboards that mark where a link attaches, authored clear of the model so they can be
+        /// seen and grabbed - the Soul Nexus hangs its pair a good half metre above the body. A
+        /// silhouette that counted them would pull the tower's middle up into empty air, and this
+        /// helper counting them while the view did not is the whole of why this test failed on
+        /// the Nexus and on no other tower.
+        ///
+        /// Disabled renderers are skipped outright rather than from the second one on: seeding
+        /// the bounds from a renderer that is switched off measures a tower part that is not
+        /// being drawn. Renderers inside a switched-off object are skipped for the same reason -
+        /// the invalid-chain warning sign hangs a few millimetres below some towers while it
+        /// waits to be shown, and it used to be the thing that decided where they were grounded.
+        /// </remarks>
         private static Bounds CalculateCombinedBounds(GameObject instance)
         {
+            var linkSlots = instance.GetComponentInChildren<TowerLinkSlotsView>(true);
+            Transform linkSlotsRoot = linkSlots != null ? linkSlots.BillboardRoot : null;
+
             Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
             Assert.That(renderers, Is.Not.Empty);
-            Bounds bounds = renderers[0].bounds;
-            for (int index = 1; index < renderers.Length; index++)
+
+            bool hasBounds = false;
+            Bounds bounds = default;
+            for (int index = 0; index < renderers.Length; index++)
             {
-                if (renderers[index].enabled)
+                Renderer renderer = renderers[index];
+                if (!renderer.enabled
+                    || !renderer.gameObject.activeInHierarchy
+                    || (linkSlotsRoot != null && renderer.transform.IsChildOf(linkSlotsRoot)))
                 {
-                    bounds.Encapsulate(renderers[index].bounds);
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
                 }
             }
 
+            Assert.That(hasBounds, Is.True, "A tower has to draw something.");
             return bounds;
         }
 
