@@ -4,6 +4,7 @@ using System.Text;
 using DG.Tweening;
 using TowerDefense3D.Audio;
 using TowerDefense3D.Tutorials;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -44,8 +45,8 @@ namespace TowerDefense3D.GameFlow
         private readonly StringBuilder instructionMarkup = new StringBuilder();
 
         [SerializeField] private Image dimmer;
-        [SerializeField] private Text instruction;
-        [SerializeField] private Font instructionFont;
+        [SerializeField] private TMP_Text instruction;
+        [SerializeField] private TMP_FontAsset instructionFont;
         [SerializeField] private TutorialHandView hand;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField, Range(0f, 1f)] private float darkness = 0.72f;
@@ -317,14 +318,14 @@ namespace TowerDefense3D.GameFlow
             label.sizeDelta = isFrogInstruction
                 ? new Vector2(Mathf.Min(480f, Screen.width * 0.42f), 120f)
                 : new Vector2(Mathf.Min(Mathf.Min(620f, Screen.width * 0.72f), safeTextWidth), 84f);
-            instruction.fontStyle = FontStyle.Bold;
+            instruction.fontStyle = FontStyles.Bold;
             instruction.alignment = placeBesideTarget || isMagicResistanceIntroduction
-                ? TextAnchor.MiddleLeft
-                : TextAnchor.MiddleCenter;
+                ? TextAlignmentOptions.Left
+                : TextAlignmentOptions.Center;
             instruction.color = InstructionColor;
-            instruction.supportRichText = true;
-            instruction.horizontalOverflow = HorizontalWrapMode.Wrap;
-            instruction.verticalOverflow = VerticalWrapMode.Overflow;
+            instruction.richText = true;
+            instruction.textWrappingMode = TextWrappingModes.Normal;
+            instruction.overflowMode = TextOverflowModes.Overflow;
 
             float halfWidth = label.sizeDelta.x * 0.5f;
             float halfHeight = label.sizeDelta.y * 0.5f;
@@ -674,13 +675,36 @@ namespace TowerDefense3D.GameFlow
                 return tutorialRect;
             }
 
+            // The target's body, and only what is actually on screen. This used to encapsulate
+            // every renderer under the target, inactive ones included, which pulled the spotlight
+            // off the thing it was pointing at:
+            //
+            // - Link-slot squares float well above a tower, so a tower that has them - the Sink
+            //   does, the Generator does not - got a spotlight stretched up over empty ground.
+            //   Excluded here the same way the tower excludes them from its own silhouette.
+            // - Badges hung on the target, like the warning sign a tower wears when its chain is
+            //   dead, are sprites rather than body geometry.
+            // - And a renderer that is switched off is not on screen to be pointed at.
+            Transform linkSlotsRoot = ResolveTargetLinkSlotsRoot(target);
             Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
             bool hasBounds = false;
             Bounds bounds = default;
             for (int index = 0; index < renderers.Length; index++)
             {
                 Renderer renderer = renderers[index];
-                if (renderer == null) continue;
+                if (renderer == null
+                    || !renderer.enabled
+                    || !renderer.gameObject.activeInHierarchy
+                    || !(renderer is MeshRenderer || renderer is SkinnedMeshRenderer))
+                {
+                    continue;
+                }
+
+                if (linkSlotsRoot != null && renderer.transform.IsChildOf(linkSlotsRoot))
+                {
+                    continue;
+                }
+
                 if (hasBounds) bounds.Encapsulate(renderer.bounds);
                 else
                 {
@@ -694,6 +718,17 @@ namespace TowerDefense3D.GameFlow
             Vector3 point = camera.WorldToScreenPoint(target.position + Vector3.up);
             float size = Mathf.Clamp(Screen.height * 0.15f, 120f, 220f);
             return new Rect(point.x - size * 0.5f, point.y - size * 0.5f, size, size);
+        }
+
+        /// <summary>
+        /// The squares a tower floats above itself to show its link slots, if the target is a
+        /// tower that has them. Fully qualified rather than imported: this is the one place the
+        /// overlay reaches into the tower package, and naming it in full says so.
+        /// </summary>
+        private static Transform ResolveTargetLinkSlotsRoot(Transform target)
+        {
+            var linkSlots = target.GetComponentInChildren<Towers.TowerLinkSlotsView>(true);
+            return linkSlots != null ? linkSlots.BillboardRoot : null;
         }
 
         private static bool TryProjectBounds(Camera camera, Bounds bounds, out Rect result)
