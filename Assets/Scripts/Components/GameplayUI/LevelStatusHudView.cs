@@ -1,4 +1,5 @@
 using DG.Tweening;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,10 +8,10 @@ namespace TowerDefense3D.GameFlow
     [DisallowMultipleComponent]
     public sealed class LevelStatusHudView : MonoBehaviour, ILevelStatusHudView, IWaveThreeDefeatHudView
     {
-        [SerializeField] private Text goldText;
+        [SerializeField] private TMP_Text goldText;
 
-        [Tooltip("Optional. The frog's bar carries the health by its length, so the numbers are left off unless a design asks for them; wire a Text here and they come back.")]
-        [SerializeField] private Text healthText;
+        [Tooltip("Optional. The frog's bar carries the health by its length, so the numbers are left off unless a design asks for them; wire a label here and they come back.")]
+        [SerializeField] private TMP_Text healthText;
 
         [Tooltip("The green bar. It is a 9-sliced capsule stretched from its left edge, so its length is driven by the rect rather than by Image.fillAmount - a filled image ignores sprite borders and would flatten the rounded end caps.")]
         [SerializeField] private Image healthFill;
@@ -22,11 +23,14 @@ namespace TowerDefense3D.GameFlow
         [SerializeField, Min(0f)] private float healthShakeDuration = 0.38f;
         [SerializeField, Min(0f)] private float healthShakeStrength = 9f;
 
-        [Tooltip("The colour the bar blinks while it drains, so a hit reads as damage taken rather than as a quiet slide.")]
+        [Tooltip("Laid over the health fill and flashed on a hit. It carries its own colour instead of tinting the fill, because tinting cannot make the fill red - the green lives in the sprite and the UI shader multiplies, so a red tint on a green bar only produces a dark, muddy green.")]
+        [SerializeField] private Image healthDamageOverlay;
+
+        [Tooltip("The colour of that overlay. Drawn as itself rather than multiplied into the bar, so red really is red.")]
         [SerializeField] private Color healthDamageFlashColor = new Color(0.93f, 0.21f, 0.21f, 1f);
 
-        [Tooltip("Length of one half of a blink. The blink repeats for as long as the bar is still moving.")]
-        [SerializeField, Min(0f)] private float healthFlashHalfCycleDuration = 0.08f;
+        [Tooltip("How long the bar takes to settle back to its own colour once the drain has finished. The red itself snaps on instantly - a hit is not a thing that eases in.")]
+        [SerializeField, Min(0f)] private float healthFlashFadeBackDuration = 0.22f;
 
         [Tooltip("How long the gold counter takes to run down to a new balance. Zero snaps it.")]
         [SerializeField, Min(0f)] private float goldTweenDuration = 0.35f;
@@ -41,9 +45,18 @@ namespace TowerDefense3D.GameFlow
         [Tooltip("How far the balance swells on a refused purchase, as a fraction of its size.")]
         [SerializeField, Min(0f)] private float goldRefusedPunchScale = 0.35f;
 
+        [Header("Spending")]
+        [Tooltip("The coin beside the balance. Optional - without it only the number reacts to a purchase.")]
+        [SerializeField] private RectTransform goldIcon;
+
+        [Tooltip("How far the coin and the balance swell when gold is spent, as a fraction of their size. Smaller than the refused swell on purpose: a purchase that went through is good news, not an answer to an objection.")]
+        [SerializeField, Min(0f)] private float goldSpentPunchScale = 0.22f;
+
+        [SerializeField, Min(0f)] private float goldSpentPunchDuration = 0.28f;
+
         [Header("Wave 3 Retry")]
         [SerializeField] private RectTransform failurePresentationTarget;
-        [SerializeField] private Text failureMessageText;
+        [SerializeField] private TMP_Text failureMessageText;
         [SerializeField] private Image failureDimmer;
         [SerializeField] private Canvas failurePresentationCanvas;
         [SerializeField] private Canvas failureDimmerCanvas;
@@ -61,7 +74,8 @@ namespace TowerDefense3D.GameFlow
         private Tween goldTween;
         private Tween goldRefusedFlashTween;
         private Tween goldRefusedPunchTween;
-        private Color healthBaseColor;
+        private Tween goldSpentTextPunchTween;
+        private Tween goldSpentIconPunchTween;
         private Color goldBaseColor;
         private int previousHealth;
         private int displayedGold;
@@ -94,7 +108,7 @@ namespace TowerDefense3D.GameFlow
             }
 
             CaptureNormalLayout();
-            healthBaseColor = healthFill.color;
+            HideDamageOverlay();
             if (goldText != null)
             {
                 goldBaseColor = goldText.color;
@@ -116,6 +130,14 @@ namespace TowerDefense3D.GameFlow
         {
             goldTween?.Kill();
 
+            // Only a fall pops. Gold arrives constantly - every enemy that dies pays out - and a
+            // counter that jumped on each of those would be twitching for the whole wave, which
+            // would leave the player nothing to read the one moment they actually spend.
+            if (hasRenderedGold && gold < displayedGold)
+            {
+                PlayGoldSpentPunch();
+            }
+
             if (!hasRenderedGold || goldTweenDuration <= 0f || displayedGold == gold)
             {
                 hasRenderedGold = true;
@@ -136,6 +158,45 @@ namespace TowerDefense3D.GameFlow
         {
             displayedGold = gold;
             goldText.text = gold.ToString("N0");
+        }
+
+        /// <summary>
+        /// Bumps the coin and the balance when gold is spent.
+        /// </summary>
+        /// <remarks>
+        /// Both, not just the number: the counter is already sliding down on its own, and a
+        /// number that is moving anyway does not read as having been acted upon. The coin is the
+        /// still thing beside it, so the coin is what makes the spend land.
+        ///
+        /// Restarted rather than stacked, for the same reason the refusal is: towers get placed
+        /// in quick succession and each purchase should restate itself rather than queue behind
+        /// the last one or leave the coin parked at a half-swollen size.
+        /// </remarks>
+        private void PlayGoldSpentPunch()
+        {
+            if (goldSpentPunchScale <= 0f || goldSpentPunchDuration <= 0f)
+            {
+                return;
+            }
+
+            goldSpentIconPunchTween = RestartPunch(goldSpentIconPunchTween, goldIcon);
+            goldSpentTextPunchTween = RestartPunch(
+                goldSpentTextPunchTween,
+                goldText == null ? null : goldText.rectTransform);
+        }
+
+        private Tween RestartPunch(Tween running, RectTransform target)
+        {
+            running?.Kill();
+            if (target == null)
+            {
+                return null;
+            }
+
+            target.localScale = Vector3.one;
+            return target
+                .DOPunchScale(Vector3.one * goldSpentPunchScale, goldSpentPunchDuration, 8, 0.7f)
+                .SetTarget(this);
         }
 
         public void SetHealthVisible(bool visible)
@@ -228,51 +289,64 @@ namespace TowerDefense3D.GameFlow
         }
 
         /// <summary>
-        /// Blinks the bar red for as long as it is still sliding, so the red belongs to the drain
-        /// the player is watching rather than ending before it.
+        /// Throws the bar red the instant it is hit, holds the red for the whole drain, then
+        /// fades it off.
         /// </summary>
         /// <remarks>
-        /// The half-cycle count is forced even so the yoyo lands back on the authored colour. The
-        /// kill callback restores it regardless, for the case where a second hit cuts a blink short.
+        /// Through an overlay of its own rather than by tinting the fill. Tinting could never
+        /// have worked here: the bar's green lives in its sprite, the fill's own colour is plain
+        /// white, and Unity's UI shader multiplies the two - so a red tint on a green bar yields
+        /// a dark muddy green, which on screen reads as nothing happening at all. That is why
+        /// this beat was invisible however far its numbers were pushed.
+        ///
+        /// The overlay is a child of the fill, so it is exactly as long as the health that is
+        /// left and keeps pace as the bar drains.
+        ///
+        /// The red snaps on rather than easing - a hit does not arrive gradually - and only the
+        /// fade off is tweened, delayed until the bar has finished falling so the colour outlasts
+        /// the movement it belongs to.
+        ///
+        /// Driven through DOTween.To rather than Image.DOFade: the shortcut lives in
+        /// DOTweenModuleUI, which this assembly does not reference, and the rest of this HUD
+        /// already tweens colour the same way.
         /// </remarks>
         private void PlayDamageFlash()
         {
-            if (healthFill == null || healthFlashHalfCycleDuration <= 0f)
+            if (healthDamageOverlay == null)
             {
                 return;
             }
 
             healthFlashTween?.Kill();
-            healthFill.color = healthBaseColor;
+            healthDamageOverlay.color = healthDamageFlashColor;
 
-            int halfCycles = Mathf.Max(
-                2,
-                Mathf.CeilToInt(healthTweenDuration / healthFlashHalfCycleDuration));
-            if (halfCycles % 2 != 0)
+            if (healthFlashFadeBackDuration <= 0f)
             {
-                halfCycles++;
+                HideDamageOverlay();
+                return;
             }
 
-            // Driven through DOTween.To rather than Image.DOColor: the shortcut lives in
-            // DOTweenModuleUI, which this assembly does not reference, and the rest of this HUD
-            // already tweens colour the same way.
+            Color faded = healthDamageFlashColor;
+            faded.a = 0f;
             healthFlashTween = DOTween.To(
-                    () => healthFill.color,
-                    value => healthFill.color = value,
-                    healthDamageFlashColor,
-                    healthFlashHalfCycleDuration)
-                .SetLoops(halfCycles, LoopType.Yoyo)
+                    () => healthDamageOverlay.color,
+                    value => healthDamageOverlay.color = value,
+                    faded,
+                    healthFlashFadeBackDuration)
+                .SetDelay(healthTweenDuration)
                 .SetEase(Ease.InOutSine)
                 .SetTarget(this)
-                .OnKill(RestoreHealthBarColor);
+                .OnKill(HideDamageOverlay);
         }
 
-        private void RestoreHealthBarColor()
+        private void HideDamageOverlay()
         {
             healthFlashTween = null;
-            if (healthFill != null)
+            if (healthDamageOverlay != null)
             {
-                healthFill.color = healthBaseColor;
+                Color hidden = healthDamageFlashColor;
+                hidden.a = 0f;
+                healthDamageOverlay.color = hidden;
             }
         }
 
@@ -431,8 +505,24 @@ namespace TowerDefense3D.GameFlow
             failureMessageTween = sequence;
         }
 
+        /// <summary>
+        /// Puts the HUD back the way it was before the Wave 3 defeat took it over.
+        /// </summary>
+        /// <remarks>
+        /// Guarded on the flag, because the presenter calls this on every refresh for as long as
+        /// no retry is being offered - which is nearly every frame of an ordinary wave. The body
+        /// below clears the health render state, so running it unguarded left
+        /// <see cref="hasRenderedHealth"/> false whenever a hit landed: every drop read as the
+        /// first render of the bar rather than as damage, which snapped the bar instead of
+        /// draining it and swallowed the shake and the red flash entirely.
+        /// </remarks>
         public void HideWaveThreeDefeat()
         {
+            if (!isShowingWaveThreeDefeat)
+            {
+                return;
+            }
+
             isShowingWaveThreeDefeat = false;
             failureMoveTween?.Kill();
             failureHealthTween?.Kill();
