@@ -24,7 +24,6 @@ namespace TowerDefense3D.GameFlow
         private readonly LevelPreparationMusicSystem levelMusicSystem;
 
         private bool hasNextLevel;
-        private bool awardsFullStars;
         private Action requestReplayLevel;
         private Action requestNextLevel;
         private Action requestReturnToLevelMenu;
@@ -90,12 +89,10 @@ namespace TowerDefense3D.GameFlow
             Action requestReplayLevel,
             Action requestNextLevel,
             Action requestReturnToLevelMenu,
-            Action<int> reportLevelCleared,
-            bool awardsFullStars = false)
+            Action<int> reportLevelCleared)
         {
             this.hasNextLevel = hasNextLevel;
             this.reportLevelCleared = reportLevelCleared;
-            this.awardsFullStars = awardsFullStars;
             hasReportedLevelCleared = false;
             hasStartedVictoryEscape = false;
             hasCompletedVictoryEscape = false;
@@ -190,11 +187,9 @@ namespace TowerDefense3D.GameFlow
                 // says so for a run with none; asking it keeps the two in step even if a defeat
                 // ever becomes possible with health to spare.
                 isVictory
-                    ? awardsFullStars
-                        ? LevelStarRating.MaximumStars
-                        : LevelStarRating.FromRemainingHealth(
-                            healthSystem.CurrentHealth,
-                            healthSystem.MaximumHealth)
+                    ? LevelStarRating.FromRemainingHealth(
+                        healthSystem.CurrentHealth,
+                        healthSystem.MaximumHealth)
                     : LevelStarRating.NoStars,
                 healthSystem.CurrentHealth,
                 healthSystem.MaximumHealth,
