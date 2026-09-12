@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
 
 namespace TowerDefense3D.Towers
@@ -6,6 +7,7 @@ namespace TowerDefense3D.Towers
     [DisallowMultipleComponent]
     public sealed class TowerRuntimeView : MonoBehaviour, ITowerRuntimeView
     {
+
         /// <summary>
         /// Stands in for a measured radius on a tower with nothing to measure - no renderers, or
         /// none enabled. Half a cell, so a ring drawn on it is still a ring rather than a point.
@@ -14,6 +16,19 @@ namespace TowerDefense3D.Towers
 
         [Tooltip("Degrees per second the tower turns to face its link. Zero snaps instantly.")]
         [SerializeField, Min(0f)] private float turnSpeedDegreesPerSecond = 540f;
+
+        [Header("Chain state")]
+        [Tooltip("The warning sign shown floating over the tower while it sits outside a working chain. Left inactive in the prefab; this view only ever switches it on and off.")]
+        [SerializeField] private GameObject invalidChainWarning;
+
+        [Tooltip("How long the sign takes to pop in. Zero shows it outright.")]
+        [SerializeField, Min(0f)] private float invalidChainWarningPopDuration = 0.22f;
+
+        [Tooltip("How big the sign is drawn, as a scale applied on top of the sprite's own size - which is its pixel size over its Pixels Per Unit, not one board cell. Given this way rather than as a plain local scale because the tower roots are authored at wildly different scales, so one local scale would come out a different size on every tower; this number does not.")]
+        [SerializeField, Min(0.001f)] private float invalidChainWarningScale = 0.05f;
+
+        [Tooltip("Gap left above the tower before the sign starts, in world units. One board cell is one unit.")]
+        [SerializeField, Min(0f)] private float invalidChainWarningClearance = 0.25f;
 
         private TowerCombatDefinition combatDefinition;
         private Quaternion authoredLocalRotation = Quaternion.identity;
@@ -24,6 +39,10 @@ namespace TowerDefense3D.Towers
         private Vector3 localGroundCentre;
         private float groundRadiusMeters = DefaultGroundRadiusMeters;
         private GameObject tierVisual;
+        private Tween warningPopTween;
+        private bool hasChainState;
+        private bool isInValidChain;
+        private Camera warningBillboardCamera;
 
         public event Action<ITowerRuntimeView> Destroyed;
 
@@ -80,6 +99,142 @@ namespace TowerDefense3D.Towers
 
             authoredLocalRotation = transform.localRotation;
             hasAuthoredRotation = true;
+        }
+
+        /// <summary>
+        /// Hangs a warning sign over the tower while it sits outside a working chain, and takes it
+        /// away the moment the chain starts working.
+        /// </summary>
+        /// <remarks>
+        /// A sign rather than a dim, because dimming says the wrong thing: a tower outside a chain
+        /// is not a quieter version of a working tower, it is a tower that is doing nothing, and
+        /// that deserves something the eye is drawn to rather than something it can miss.
+        ///
+        /// The first answer skips the pop. A tower is placed unlinked, so the sign is already due
+        /// when it arrives, and animating it in would read as a second event just after the build.
+        /// </remarks>
+        public void SetChainValid(bool isInValidChain)
+        {
+            if (hasChainState && this.isInValidChain == isInValidChain)
+            {
+                return;
+            }
+
+            bool snap = !hasChainState;
+            hasChainState = true;
+            this.isInValidChain = isInValidChain;
+
+            if (invalidChainWarning == null)
+            {
+                return;
+            }
+
+            warningPopTween?.Kill();
+            if (isInValidChain)
+            {
+                invalidChainWarning.SetActive(false);
+                return;
+            }
+
+            invalidChainWarning.SetActive(true);
+            Vector3 restScale = ResolveWarningLocalScale();
+            SeatWarningAboveTower();
+            FaceWarningAtCamera();
+
+            if (snap || invalidChainWarningPopDuration <= 0f)
+            {
+                invalidChainWarning.transform.localScale = restScale;
+                return;
+            }
+
+            invalidChainWarning.transform.localScale = restScale * 0.4f;
+            warningPopTween = invalidChainWarning.transform
+                .DOScale(restScale, invalidChainWarningPopDuration)
+                .SetEase(Ease.OutBack)
+                .SetTarget(this);
+        }
+
+        /// <summary>
+        /// Keeps the sign facing the camera, sitting above the tower, and at its intended size.
+        /// </summary>
+        /// <remarks>
+        /// All three are re-applied while the sign is on screen rather than once when it is shown.
+        /// The camera pans and zooms, so a rotation set at show time drifts. And the factory scales
+        /// the tower after it instantiates it, so a size worked out at show time was measured
+        /// against the wrong scale - which is what left the sign several metres across.
+        ///
+        /// The size is left alone while the pop is running, because that tween owns the scale until
+        /// it finishes.
+        /// </remarks>
+        private void LateUpdate()
+        {
+            if (invalidChainWarning == null || !invalidChainWarning.activeSelf)
+            {
+                return;
+            }
+
+            SeatWarningAboveTower();
+            FaceWarningAtCamera();
+
+            bool popping = warningPopTween != null && warningPopTween.IsActive() && warningPopTween.IsPlaying();
+            if (!popping)
+            {
+                invalidChainWarning.transform.localScale = ResolveWarningLocalScale();
+            }
+        }
+
+        /// <summary>
+        /// Lifts the sign clear of the top of whatever model the tower is currently wearing.
+        /// </summary>
+        /// <remarks>
+        /// Hung off <see cref="PresentationAnchor"/> rather than measured here. That anchor is
+        /// already the point just above the tower's silhouette - it is where link lines land - and
+        /// it is derived once when the tower is configured or re-tiered, from bounds taken while
+        /// the renderers are live. Measuring again at show time read garbage on some towers,
+        /// because a renderer's bounds are not dependable the instant it is asked for them.
+        ///
+        /// Following the anchor also means a tier upgrade moves the sign with it, since replacing
+        /// the model re-derives the anchor.
+        /// </remarks>
+        private void SeatWarningAboveTower()
+        {
+            float clearance = invalidChainWarningScale * 0.5f + invalidChainWarningClearance;
+            invalidChainWarning.transform.position = PresentationAnchor + Vector3.up * clearance;
+        }
+
+        /// <summary>
+        /// The local scale that draws the sign at <see cref="invalidChainWarningScale"/> however
+        /// the tower itself is scaled.
+        /// </summary>
+        /// <remarks>
+        /// The tower roots carry their own export scales, some of them very large, so the tower's
+        /// scale has to be divided back out or the sign inherits it - which is what blew one sign
+        /// up to dozens of metres across and parked it far above the board.
+        /// </remarks>
+        private Vector3 ResolveWarningLocalScale()
+        {
+            Vector3 towerScale = transform.lossyScale;
+            return new Vector3(
+                invalidChainWarningScale / Mathf.Max(0.0001f, Mathf.Abs(towerScale.x)),
+                invalidChainWarningScale / Mathf.Max(0.0001f, Mathf.Abs(towerScale.y)),
+                invalidChainWarningScale / Mathf.Max(0.0001f, Mathf.Abs(towerScale.z)));
+        }
+
+        private void FaceWarningAtCamera()
+        {
+            if (warningBillboardCamera == null)
+            {
+                // Null while the level is still building up or already tearing down.
+                warningBillboardCamera = Camera.main;
+                if (warningBillboardCamera == null)
+                {
+                    return;
+                }
+            }
+
+            Transform view = warningBillboardCamera.transform;
+            invalidChainWarning.transform.rotation =
+                Quaternion.LookRotation(view.forward, view.up);
         }
 
         public void Despawn()
@@ -244,6 +399,16 @@ namespace TowerDefense3D.Towers
                     continue;
                 }
 
+                // The dead-chain sign is not part of the tower's silhouette. Counting it would
+                // feed on itself - the sign is seated above these bounds, so each measurement
+                // would push it higher - and it would drag the link anchor and the projectile
+                // origin up with it every time a tower fell out of its chain.
+                if (invalidChainWarning != null
+                    && renderer.transform.IsChildOf(invalidChainWarning.transform))
+                {
+                    continue;
+                }
+
                 if (!hasBounds)
                 {
                     combinedBounds = renderer.bounds;
@@ -291,6 +456,8 @@ namespace TowerDefense3D.Towers
 
         private void OnDestroy()
         {
+            warningPopTween?.Kill();
+            warningPopTween = null;
             Destroyed?.Invoke(this);
         }
     }

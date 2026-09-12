@@ -74,6 +74,18 @@ namespace TowerDefense3D.Towers
         /// </remarks>
         void ReplaceVisual(GameObject visualPrefab);
 
+        /// <summary>
+        /// Says whether the tower is part of a chain that actually works, which is what decides
+        /// whether it is drawn in its own colours or dimmed.
+        /// </summary>
+        /// <remarks>
+        /// A tower outside a working chain does nothing when the wave starts, and the link lines
+        /// alone were a thin way to say so - they are drawn between towers rather than on them,
+        /// and they are taken off screen entirely once a wave is running. Dimming the tower itself
+        /// puts the answer where the player is already looking.
+        /// </remarks>
+        void SetChainValid(bool isInValidChain);
+
         void Configure(TowerCombatDefinition definition);
         void BindNode(TowerNodeId nodeId);
         void ClearNodeBinding();
