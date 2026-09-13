@@ -44,9 +44,14 @@ namespace TowerDefense3D.GameFlow
             }
         }
 
+        /// <summary>
+        /// Leaves the buttons exactly as the prefab authored them, which for a shipping build means
+        /// switched off. The cheat stays wired up so the presenter, the tests and the DI graph are
+        /// unchanged - it just never puts itself on screen. Turn the two objects back on in
+        /// <c>GameplayUI.prefab</c> to use it during development.
+        /// </summary>
         public void Show()
         {
-            gameObject.SetActive(true);
         }
 
         public void Shutdown()

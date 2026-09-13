@@ -71,7 +71,7 @@ namespace TowerDefense3D.GameFlow
                     SetVisible(levelStatus, true);
                     towerHud?.SetTutorialGeneratorPlaced();
                     SetVisible(pauseHud, true);
-                    SetVisible(skipCheat, true);
+                    SetVisible(skipCheat, false);
                     break;
                 case TutorialGameplayUiMode.SinkPlacementOnly:
                     waveHud?.gameObject.SetActive(true);
@@ -95,7 +95,7 @@ namespace TowerDefense3D.GameFlow
                     SetVisible(levelStatus, true);
                     towerHud?.SetTutorialGeneratorAndSinkReady();
                     SetVisible(pauseHud, true);
-                    SetVisible(skipCheat, true);
+                    SetVisible(skipCheat, false);
                     break;
                 case TutorialGameplayUiMode.EnemyDetailOnly:
                     waveHud?.gameObject.SetActive(true);
@@ -136,7 +136,7 @@ namespace TowerDefense3D.GameFlow
                     SetVisible(levelStatus, true);
                     towerHud?.SetTutorialGeneratorSinkAndElementsReady();
                     SetVisible(pauseHud, true);
-                    SetVisible(skipCheat, true);
+                    SetVisible(skipCheat, false);
                     break;
                 case TutorialGameplayUiMode.LevelTwoUpgrade:
                     waveHud?.gameObject.SetActive(true);
@@ -195,7 +195,7 @@ namespace TowerDefense3D.GameFlow
                     SetVisible(levelStatus, true);
                     SetTowerHudVisible(true);
                     SetVisible(pauseHud, true);
-                    SetVisible(skipCheat, true);
+                    SetVisible(skipCheat, false);
                     break;
             }
         }
