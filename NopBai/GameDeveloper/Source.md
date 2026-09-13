@@ -123,8 +123,8 @@ Model sinh bằng Meshy đều có link tới trang model công khai. Nhiều fi
 
 | File | Nguồn |
 | --- | --- |
-| `LobbyMusic.wav` | Chưa xác định — cần bạn bổ sung |
-| `WavePrepare.mp3` | Chưa xác định — cần bạn bổ sung |
+| `LobbyMusic.wav` | https://youtu.be/DmhiMrmnVag?si=YIBRpNOssFJGJdnx |
+| `WavePrepare.mp3` | https://music.youtube.com/watch?v=1d1VIs7YY0A |
 
 ## Hiệu ứng (SFX)
 
