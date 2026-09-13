@@ -25,6 +25,7 @@ MonoBehaviour:
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
+      visualPrefab: {fileID: 0}
     tierTwo:
       cost: 0
       attackIntervalSeconds: 0.75
@@ -37,6 +38,7 @@ MonoBehaviour:
       burnDamagePerTick: 0
       burnTickIntervalSeconds: 0
       burnDurationSeconds: 0
+      visualPrefab: {fileID: 0}
   core:
     stableId: soul_nexus
     displayName: Soul Nexus
@@ -55,7 +57,7 @@ MonoBehaviour:
       sequenceSpacingSeconds: 0
     economy:
       buildCost: 0
-      maxInstancesPerLevel: 1
+      maxInstancesPerLevel: 0
       sellable: 1
   maximumSoul: 50
   soulUsesUniqueDirectHitCount: 1
