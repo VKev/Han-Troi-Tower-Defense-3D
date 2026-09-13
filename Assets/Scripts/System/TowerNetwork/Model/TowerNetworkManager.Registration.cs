@@ -203,17 +203,37 @@ namespace TowerDefense3D.Towers
             return CountTowersOfFamily(family) > 0;
         }
 
-        /// <summary>
-        /// How many towers of that family stand on the board, authored ones included. Read by the
-        /// per-family build limits, which count what is standing now rather than what has ever
-        /// been built, so selling a tower gives its slot back.
-        /// </summary>
+        /// <summary>How many towers of that family stand on the board, authored ones included.</summary>
         public int CountTowersOfFamily(TowerFamily family)
         {
             int count = 0;
             for (int index = 0; index < orderedNodeIds.Count; index++)
             {
                 if (nodes[orderedNodeIds[index]].Spec.Family == family)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// How many towers built from that exact definition stand on the board, authored ones
+        /// included. Read by the per-tower build limit, which counts what is standing now rather
+        /// than what has ever been built, so selling a tower gives its slot back.
+        /// </summary>
+        public int CountTowersOfDefinition(TowerCombatDefinition definition)
+        {
+            if (definition == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int index = 0; index < orderedNodeIds.Count; index++)
+            {
+                if (nodes[orderedNodeIds[index]].Definition == definition)
                 {
                     count++;
                 }

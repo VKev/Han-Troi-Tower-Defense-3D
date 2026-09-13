@@ -241,12 +241,14 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
         }
 
         /// <summary>
-        /// A level gets one hero, and gets it back when the one it has is sold.
+        /// A level gets as many heroes as the hero's own economy profile allows - one - and gets
+        /// the slot back when the one it has is sold.
         /// </summary>
         /// <remarks>
-        /// Stated in terms of what is standing rather than what has been built, which is the
-        /// whole reason selling frees the slot: the player is meant to be able to move the hero,
-        /// just not to field two.
+        /// The cap is read from authored data rather than decided in code, so this asserts the
+        /// data says one before it asserts the rule enforces one. Stated in terms of what is
+        /// standing rather than what has been built, which is the whole reason selling frees the
+        /// slot: the player is meant to be able to move the hero, just not to field two.
         /// </remarks>
         [Test]
         public void Hero_IsLimitedToOnePerLevel_AndTheSlotComesBackWhenItIsSold()
@@ -254,13 +256,17 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
             system.Start();
             Assert.That(towerCatalog.TryGet(TowerFamily.Hero, out TowerCombatDefinition hero), Is.True);
             Assert.That(
-                system.IsFamilyBuildLimitReached(hero),
+                system.GetBuildLimit(hero),
+                Is.EqualTo(1),
+                "The hero is authored as one per level.");
+            Assert.That(
+                system.IsBuildLimitReached(hero),
                 Is.False,
                 "An empty board has room for the hero.");
 
             TowerRuntimeView heroView = RegisterTower(TowerFamily.Hero, Vector3.zero, 1);
 
-            Assert.That(system.IsFamilyBuildLimitReached(hero), Is.True);
+            Assert.That(system.IsBuildLimitReached(hero), Is.True);
             Assert.That(
                 system.BeginTowerPlacementDrag(hero, 2),
                 Is.False,
@@ -271,15 +277,22 @@ namespace TowerDefense3D.GameFlow.Tests.EditMode
                 Is.EqualTo(1000),
                 "A refused drag must not charge for the tower it refused.");
 
-            // Every other family is untouched by the cap.
+            // Every uncapped tower is untouched by the rule, however many of them stand. The
+            // sink is named because its profile used to cap it too, which would have limited a
+            // level to a single Soul Nexus the moment the cap started being enforced.
             Assert.That(towerCatalog.TryGet(TowerFamily.Generator, out TowerCombatDefinition generator), Is.True);
-            Assert.That(system.IsFamilyBuildLimitReached(generator), Is.False);
+            Assert.That(towerCatalog.TryGet(TowerFamily.SoulNexus, out TowerCombatDefinition nexus), Is.True);
+            Assert.That(system.GetBuildLimit(nexus), Is.Zero, "The sink is not capped.");
+            RegisterTower(TowerFamily.SoulNexus, new Vector3(4f, 0f, 0f), 4);
+            RegisterTower(TowerFamily.SoulNexus, new Vector3(8f, 0f, 0f), 5);
+            Assert.That(system.IsBuildLimitReached(nexus), Is.False);
+            Assert.That(system.IsBuildLimitReached(generator), Is.False);
 
             system.Select(heroView);
             Assert.That(system.TrySellSelected(out string sellError), Is.True, sellError);
 
             Assert.That(
-                system.IsFamilyBuildLimitReached(hero),
+                system.IsBuildLimitReached(hero),
                 Is.False,
                 "Selling the hero has to hand its slot back.");
             Assert.That(system.BeginTowerPlacementDrag(hero, 3), Is.True);

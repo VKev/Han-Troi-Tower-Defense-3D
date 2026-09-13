@@ -168,7 +168,7 @@ namespace TowerDefense3D.GameFlow
             for (int index = 0; index < definitions.Count; index++)
             {
                 TowerCombatDefinition definition = definitions[index];
-                if (towerNetworkSystem.IsFamilyBuildLimitReached(definition))
+                if (towerNetworkSystem.IsBuildLimitReached(definition))
                 {
                     maxed.Add(definition);
                 }
@@ -191,7 +191,7 @@ namespace TowerDefense3D.GameFlow
                     continue;
                 }
 
-                if (towerNetworkSystem.IsFamilyBuildLimitReached(definition))
+                if (towerNetworkSystem.IsBuildLimitReached(definition))
                 {
                     unbuildable.Add(definition);
                     continue;

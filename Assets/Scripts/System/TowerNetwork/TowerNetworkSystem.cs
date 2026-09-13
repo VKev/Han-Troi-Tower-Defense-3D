@@ -11,9 +11,6 @@ namespace TowerDefense3D.Towers
     /// </summary>
     public sealed class TowerNetworkSystem : IDisposable
     {
-        /// <summary>Heroes a level may have standing at once. See <see cref="IsFamilyBuildLimitReached"/>.</summary>
-        private const int HeroTowerLimit = 1;
-
         private readonly TowerNetworkManager manager;
         private readonly GridPlacementSystem placementSystem;
         private readonly LevelGoldSystem goldSystem;
@@ -95,21 +92,28 @@ namespace TowerDefense3D.Towers
             && selectedTower.CombatDefinition?.Core?.Economy?.Sellable == true;
 
         /// <summary>
-        /// Whether the board already carries as many towers of this one's family as a level is
-        /// allowed to have at once.
+        /// Whether the board already carries as many of this tower as its economy profile allows
+        /// a level to have standing at once. A cap of zero is no cap.
         /// </summary>
         /// <remarks>
-        /// Only the hero is capped, and at one. It is the one tower that fights by itself instead
-        /// of feeding a chain, so a second one would not be a bigger network - it would just be a
-        /// second champion, and the level is balanced around a single one. The count is of what is
-        /// standing right now, never of what has been built, so selling the hero hands the slot
-        /// back and it can be placed somewhere else.
+        /// The cap is authored per tower in <c>maxInstancesPerLevel</c>, not decided here. Today
+        /// only the hero sets one, at a single copy: it is the one tower that fights by itself
+        /// instead of feeding a chain, so a second would not be a bigger network, just a second
+        /// champion in a level balanced around one.
+        ///
+        /// The count is of what is standing right now, never of what has been built, so selling a
+        /// capped tower hands the slot back and it can be placed somewhere else.
         /// </remarks>
-        public bool IsFamilyBuildLimitReached(TowerCombatDefinition definition)
+        public bool IsBuildLimitReached(TowerCombatDefinition definition)
         {
-            return definition != null
-                && definition.Family == TowerFamily.Hero
-                && manager.CountTowersOfFamily(TowerFamily.Hero) >= HeroTowerLimit;
+            int limit = definition?.Core?.Economy?.MaxInstancesPerLevel ?? 0;
+            return limit > 0 && manager.CountTowersOfDefinition(definition) >= limit;
+        }
+
+        /// <summary>How many of this tower a level may have standing, or zero when uncapped.</summary>
+        public int GetBuildLimit(TowerCombatDefinition definition)
+        {
+            return definition?.Core?.Economy?.MaxInstancesPerLevel ?? 0;
         }
 
         public void SetTutorialPlacementFree(bool isFree)
@@ -347,13 +351,14 @@ namespace TowerDefense3D.Towers
                 return false;
             }
 
-            // Ahead of the price: a hero the level has no room for cannot be bought at any
+            // Ahead of the price: a tower the level has no room for cannot be bought at any
             // amount of gold, so "không đủ vàng" would send the player off to earn gold they
             // already have enough of.
-            if (IsFamilyBuildLimitReached(definition))
+            if (IsBuildLimitReached(definition))
             {
                 ReportFeedback(
-                    $"Mỗi màn chỉ đặt được 1 {definition.Core.DisplayName}. Bán trụ cũ để đặt lại.");
+                    $"Mỗi màn chỉ đặt được {GetBuildLimit(definition)} {definition.Core.DisplayName}. "
+                        + "Bán trụ cũ để đặt lại.");
                 return false;
             }
 
