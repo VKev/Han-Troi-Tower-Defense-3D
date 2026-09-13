@@ -153,3 +153,6 @@ InitTestScene*.unity*
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# Unity Burst debug artifacts from Android builds (Unity marks them DoNotShip)
+*_BurstDebugInformation_DoNotShip/
