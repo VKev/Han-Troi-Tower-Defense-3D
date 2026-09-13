@@ -10649,7 +10649,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8183957a832abc145a093008b8cb64f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TowerDefense3D.Components.Runtime::TowerDefense3D.Mobile.FpsCounterView
-  showOverlay: 1
+  showOverlay: 0
   label: {fileID: 1899277592098769035}
   diagnosticLabel: {fileID: 774071988699977180}
   sampleWindowSeconds: 0.25
