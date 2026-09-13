@@ -67,14 +67,17 @@ Shader "FrogGod/Grass Shadow Cutout"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
-            float4 _BaseMap_TexelSize;
 
+            // Moved inside UnityPerMaterial: a uniform declared outside this buffer
+            // disqualifies the whole shader from the SRP Batcher, even though this value
+            // only varies per material like everything else here.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
                 half _ShadowStrength;
                 half _AlphaCutoff;
                 half _TextureBlur;
+                float4 _BaseMap_TexelSize;
             CBUFFER_END
 
             Varyings Vert(Attributes input)
@@ -183,12 +186,15 @@ Shader "FrogGod/Grass Shadow Cutout"
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
 
+            // Kept identical to the forward pass's buffer (unused here) so the SRP Batcher
+            // still considers the shader compatible — it checks every pass's layout matches.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
                 half _ShadowStrength;
                 half _AlphaCutoff;
                 half _TextureBlur;
+                float4 _BaseMap_TexelSize;
             CBUFFER_END
 
             // Declares Attributes/Varyings and UniversalVertexMeta, which transforms uv0
