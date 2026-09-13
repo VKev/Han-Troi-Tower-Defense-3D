@@ -50,6 +50,9 @@ namespace TowerDefense3D.Enemies
         /// </summary>
         public bool IsStanding { get; internal set; }
 
+        /// <summary>Held in place by a hero strike for as long as the plan says.</summary>
+        public bool IsStunned { get; internal set; }
+
         /// <summary>Which way a standing enemy looks. Meaningless for one that walks.</summary>
         public float FacingYawDegrees { get; internal set; }
 

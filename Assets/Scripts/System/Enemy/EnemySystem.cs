@@ -401,6 +401,7 @@ namespace TowerDefense3D.Enemies
                 frame.ElementRemainingSeconds);
             enemy.RemainingThermalShieldHits = frame.RemainingThermalShieldHits;
             enemy.LiftHeightMeters = frame.LiftHeightMeters;
+            enemy.IsStunned = frame.IsStunned;
 
             if (frame.Removal == PlannedEnemyRemoval.None)
             {
@@ -852,7 +853,8 @@ namespace TowerDefense3D.Enemies
                 enemy.IsSpeedBuffed,
                 enemy.IsStanding,
                 enemy.FacingYawDegrees,
-                enemy.SuppressEntranceEffect);
+                enemy.SuppressEntranceEffect,
+                enemy.IsStunned);
         }
 
         private void PublishEnemyDespawned(EnemySnapshot snapshot)

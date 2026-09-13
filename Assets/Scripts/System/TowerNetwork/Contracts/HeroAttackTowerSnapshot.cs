@@ -14,11 +14,14 @@ namespace TowerDefense3D.Towers
             float prepareDurationSeconds,
             float lungeDurationSeconds,
             float impactHoldDurationSeconds,
-            float returnDurationSeconds)
+            float returnDurationSeconds,
+            float stunDurationSeconds,
+            float stunImmunitySeconds)
         {
             if (!nodeId.IsValid || rangeMeters <= 0f || damage <= 0f || aoeRadiusMeters < 0f
                 || cycleTicks <= 0 || prepareDurationSeconds <= 0f || lungeDurationSeconds < 0f
-                || impactHoldDurationSeconds < 0f || returnDurationSeconds < 0f)
+                || impactHoldDurationSeconds < 0f || returnDurationSeconds < 0f
+                || stunDurationSeconds < 0f || stunImmunitySeconds < 0f)
             {
                 throw new ArgumentOutOfRangeException(nameof(nodeId));
             }
@@ -33,6 +36,8 @@ namespace TowerDefense3D.Towers
             LungeDurationSeconds = lungeDurationSeconds;
             ImpactHoldDurationSeconds = impactHoldDurationSeconds;
             ReturnDurationSeconds = returnDurationSeconds;
+            StunDurationSeconds = stunDurationSeconds;
+            StunImmunitySeconds = stunImmunitySeconds;
         }
 
         public TowerNodeId NodeId { get; }
@@ -45,5 +50,11 @@ namespace TowerDefense3D.Towers
         public float LungeDurationSeconds { get; }
         public float ImpactHoldDurationSeconds { get; }
         public float ReturnDurationSeconds { get; }
+
+        /// <summary>How long an enemy the strike catches is held in place. Zero never stuns.</summary>
+        public float StunDurationSeconds { get; }
+
+        /// <summary>Gap after a stun ends before the same enemy can be stunned again.</summary>
+        public float StunImmunitySeconds { get; }
     }
 }

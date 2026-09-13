@@ -19,7 +19,8 @@ namespace TowerDefense3D.Enemies
             bool isSpeedBuffed = false,
             bool isStanding = false,
             float facingYawDegrees = 0f,
-            bool suppressEntranceEffect = false)
+            bool suppressEntranceEffect = false,
+            bool isStunned = false)
         {
             EnemyId = enemyId;
             Definition = definition;
@@ -36,6 +37,7 @@ namespace TowerDefense3D.Enemies
             IsStanding = isStanding;
             FacingYawDegrees = facingYawDegrees;
             SuppressEntranceEffect = suppressEntranceEffect;
+            IsStunned = isStunned;
         }
 
         public long EnemyId { get; }
@@ -55,6 +57,12 @@ namespace TowerDefense3D.Enemies
         /// The boss that stands on the road. It never advances, so it must not be shown walking.
         /// </summary>
         public bool IsStanding { get; }
+
+        /// <summary>
+        /// Held in place by a hero strike. Like a standing boss it does not advance, so it must
+        /// not be shown walking, but unlike one it goes back to walking when the hold expires.
+        /// </summary>
+        public bool IsStunned { get; }
 
         /// <summary>Which way a standing enemy looks, in degrees of yaw.</summary>
         public float FacingYawDegrees { get; }

@@ -157,8 +157,10 @@ namespace TowerDefense3D.Enemies
             // Kept in step with the enemy's own state rather than latched when it appeared. The
             // boss that stands all level and then walks off on the last wave changes from one to
             // the other without ever being respawned, so a flag set once at activation would
-            // leave it sliding along in its idle pose.
-            SetMoving(!enemy.IsStanding);
+            // leave it sliding along in its idle pose. A stunned enemy is held the same way, for
+            // as long as the hold lasts: it advances no distance, so walking it would read as
+            // marching on the spot.
+            SetMoving(!enemy.IsStanding && !enemy.IsStunned);
             GetDamageFlashView().Render(enemy, Time.deltaTime);
             GetStealthView()?.Render(enemy, Time.deltaTime);
             bool skillCastStarted = enemy.SkillCastVersion != renderedSkillCastVersion;
@@ -243,7 +245,7 @@ namespace TowerDefense3D.Enemies
             // Not every enemy that appears is walking. The standing boss holds its ground for
             // the whole level, and latching the walk animation on at activation had it marching
             // on the spot until the wave it finally moves on.
-            SetMoving(!enemy.IsStanding);
+            SetMoving(!enemy.IsStanding && !enemy.IsStunned);
             ApplyStandingFacing(enemy);
             GetDamageFlashView().Bind(enemy);
             GetElementStatusView().Bind(enemy.ElementState);

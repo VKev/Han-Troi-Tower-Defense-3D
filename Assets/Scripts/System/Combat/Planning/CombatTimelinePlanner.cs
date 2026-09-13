@@ -422,7 +422,7 @@ namespace TowerDefense3D.Enemies
                 float speedBonus = FindStrongestSpeedBonus(enemy, enemies);
                 enemy.IsSpeedBuffed = speedBonus > 0f;
 
-                if (tick < enemy.LiftEndTick)
+                if (tick < enemy.LiftEndTick || tick < enemy.StunEndTick)
                 {
                     continue;
                 }
@@ -551,7 +551,7 @@ namespace TowerDefense3D.Enemies
 
                 if (attack.HasPendingImpact && tick >= attack.ImpactTick)
                 {
-                    ResolveHeroImpact(attack, enemies);
+                    ResolveHeroImpact(attack, enemies, tick);
                     attack.HasPendingImpact = false;
                 }
 
@@ -591,7 +591,8 @@ namespace TowerDefense3D.Enemies
 
         private void ResolveHeroImpact(
             HeroAttackState attack,
-            List<ShadowEnemy> enemies)
+            List<ShadowEnemy> enemies,
+            long tick)
         {
             float radius = attack.Tower.AoeRadiusMeters;
             for (int index = 0; index < enemies.Count; index++)
@@ -604,7 +605,43 @@ namespace TowerDefense3D.Enemies
                 }
 
                 ApplyDamage(enemy, attack.Tower.Damage, isThermalShock: false);
+                ApplyStun(attack.Tower, enemy, tick);
             }
+        }
+
+        /// <summary>
+        /// Holds an enemy the hero's strike caught in place, then makes it immune until the stun
+        /// has worn off and its gap has elapsed.
+        /// </summary>
+        /// <remarks>
+        /// The gap is what keeps the hero from locking a crowd down for good. The stun itself
+        /// stops movement without dealing damage, so a strike landing faster than the stun lasts
+        /// would keep extending it: the enemy would never advance, never leak, and never get
+        /// anywhere the rest of the network could finish it off.
+        ///
+        /// A boss cannot be held at all: it is the fight the level is built around, and one that
+        /// spends it pinned in place is not a fight. A mini-boss is held for half as long as a
+        /// regular enemy, the same half knockback already gives it.
+        ///
+        /// Only the hold is halved. The gap that follows it is not: it exists to stop the hold
+        /// being renewed forever, and that is needed most where the hold is shortest.
+        /// </remarks>
+        private void ApplyStun(HeroAttackTowerSnapshot tower, ShadowEnemy enemy, long tick)
+        {
+            if (tower.StunDurationSeconds <= 0f
+                || enemy.Definition.Rank == EnemyRank.Boss
+                || tick < enemy.StunImmuneUntilTick)
+            {
+                return;
+            }
+
+            float durationSeconds = enemy.Definition.Rank == EnemyRank.MiniBoss
+                ? tower.StunDurationSeconds * 0.5f
+                : tower.StunDurationSeconds;
+
+            enemy.StunEndTick = tick + SecondsToDurationTicks(durationSeconds);
+            enemy.StunImmuneUntilTick =
+                enemy.StunEndTick + SecondsToDurationTicks(tower.StunImmunitySeconds);
         }
 
         private static bool TrySelectLeadingEnemy(
@@ -788,7 +825,7 @@ namespace TowerDefense3D.Enemies
 
             if (payload.Kind == ProjectilePayloadKind.Wind)
             {
-                ApplyPush(enemy, payload.PushDistanceMeters);
+                ApplyPush(enemy, payload.PushDistanceMeters, tick);
             }
 
             ApplySlow(
@@ -1006,8 +1043,16 @@ namespace TowerDefense3D.Enemies
             }
         }
 
-        private void ApplyPush(ShadowEnemy enemy, float distance)
+        private void ApplyPush(ShadowEnemy enemy, float distance, long tick)
         {
+            // Held means held, whichever direction the shove comes from: an enemy the hero has
+            // pinned does not walk forwards, so it must not be blown backwards either. Without
+            // this a stunned crowd would still drift down the road under wind fire.
+            if (tick < enemy.StunEndTick)
+            {
+                return;
+            }
+
             // Knockback spends a budget that refills at a fraction of the enemy's own move
             // speed, so however many pushing towers fire at once they can never drag it
             // backwards faster than it walks forwards.
@@ -1072,7 +1117,8 @@ namespace TowerDefense3D.Enemies
                     CalculateLiftHeight(enemy, tick),
                     enemy.SkillCastVersion,
                     enemy.IsSpeedBuffed,
-                    enemy.Removal));
+                    enemy.Removal,
+                    tick < enemy.StunEndTick));
             }
         }
 
@@ -1294,6 +1340,8 @@ namespace TowerDefense3D.Enemies
             public long LiftEndTick { get; set; }
             public long LiftImmuneUntilTick { get; set; }
             public float LiftPeakHeightMeters { get; set; }
+            public long StunEndTick { get; set; }
+            public long StunImmuneUntilTick { get; set; }
             public float PushBudgetMeters { get; set; }
             public float SlowStrengthFraction { get; set; }
             public long SlowEndTick { get; set; }

@@ -51,7 +51,8 @@ namespace TowerDefense3D.Enemies
             float liftHeightMeters,
             int skillCastVersion,
             bool isSpeedBuffed,
-            PlannedEnemyRemoval removal)
+            PlannedEnemyRemoval removal,
+            bool isStunned = false)
         {
             EnemyId = enemyId;
             PreviousPosition = previousPosition;
@@ -67,6 +68,7 @@ namespace TowerDefense3D.Enemies
             SkillCastVersion = skillCastVersion;
             IsSpeedBuffed = isSpeedBuffed;
             Removal = removal;
+            IsStunned = isStunned;
         }
 
         public long EnemyId { get; }
@@ -84,6 +86,9 @@ namespace TowerDefense3D.Enemies
         public bool IsSpeedBuffed { get; }
         public PlannedEnemyRemoval Removal { get; }
 
+        /// <summary>Held in place by a hero strike this tick, so it stands instead of walking.</summary>
+        public bool IsStunned { get; }
+
         public PlannedEnemyFrame HoldAlive()
         {
             return new PlannedEnemyFrame(
@@ -100,7 +105,8 @@ namespace TowerDefense3D.Enemies
                 LiftHeightMeters,
                 SkillCastVersion,
                 IsSpeedBuffed,
-                PlannedEnemyRemoval.None);
+                PlannedEnemyRemoval.None,
+                IsStunned);
         }
     }
 

@@ -28,6 +28,12 @@ namespace TowerDefense3D.Towers
         [SerializeField, Range(0f, 1f)] private float lungeFractionOfAttackInterval = 5f / 24f;
         [SerializeField, Range(0f, 1f)] private float impactHoldFractionOfAttackInterval = 2f / 24f;
         [SerializeField, Range(0f, 1f)] private float returnFractionOfAttackInterval = 5f / 24f;
+        [Tooltip("How long an enemy caught by the strike is held in place. Zero never stuns.")]
+        [SerializeField, Min(0f)] private float stunDurationSeconds = 2.5f;
+
+        [Tooltip("How long after a stun wears off before the same enemy can be stunned again.")]
+        [SerializeField, Min(0f)] private float stunImmunitySeconds = 1f;
+
         [Tooltip("Level the player has to clear before this hero unlocks. Zero never locks it.")]
         [SerializeField, Min(0)] private int unlockAfterClearingLevel = 7;
 
@@ -42,6 +48,8 @@ namespace TowerDefense3D.Towers
         public float LungeDurationSeconds => Core.Throughput.CycleIntervalSeconds * lungeFractionOfAttackInterval;
         public float ImpactHoldDurationSeconds => Core.Throughput.CycleIntervalSeconds * impactHoldFractionOfAttackInterval;
         public float ReturnDurationSeconds => Core.Throughput.CycleIntervalSeconds * returnFractionOfAttackInterval;
+        public float StunDurationSeconds => stunDurationSeconds;
+        public float StunImmunitySeconds => stunImmunitySeconds;
 
         internal override void CollectSpecificValidationErrors(List<string> errors)
         {
@@ -58,6 +66,14 @@ namespace TowerDefense3D.Towers
             if (prepareDurationSeconds <= 0f)
             {
                 errors.Add("Hero Prepare duration must be greater than zero.");
+            }
+
+            // Without a gap the hero would hold everything it reaches in place for good: a strike
+            // landing before the previous stun expired would simply extend it, and an enemy that
+            // never advances never leaks and never reaches anything that could kill it.
+            if (stunDurationSeconds > 0f && stunImmunitySeconds <= 0f)
+            {
+                errors.Add("Hero Stun Immunity must be greater than zero while Hero Stun Duration is.");
             }
 
             float presentationSeconds = prepareDurationSeconds + LungeDurationSeconds

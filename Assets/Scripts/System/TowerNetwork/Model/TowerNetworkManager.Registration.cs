@@ -189,7 +189,9 @@ namespace TowerDefense3D.Towers
                     hero.PrepareDurationSeconds,
                     hero.LungeDurationSeconds,
                     hero.ImpactHoldDurationSeconds,
-                    hero.ReturnDurationSeconds));
+                    hero.ReturnDurationSeconds,
+                    hero.StunDurationSeconds,
+                    hero.StunImmunitySeconds));
             }
 
             return snapshot;
