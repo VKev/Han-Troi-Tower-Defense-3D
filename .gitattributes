@@ -1,4 +1,4 @@
-# Git LFS is used for exactly one file: the submission APK, which is past GitHub's 100 MB
+# Git LFS is used for exactly one file: the build APK, which is past GitHub's 100 MB
 # per-file limit. Everything else, including the few vendor *.unitypackage installers in
 # Assets/ (~2.6 MB total), stays a normal Git blob.
-NopBai/GameDeveloper/game.apk filter=lfs diff=lfs merge=lfs -text
+game.apk filter=lfs diff=lfs merge=lfs -text
