@@ -11,21 +11,25 @@ order it sits in.
 
 **Wiring a chain** — drag a tower onto the grid, then drag from tower to tower to link them.
 
-<video src="https://github.com/VKev/Han-Troi-Tower-Defense-3D/raw/main/Showcase/Placement.mp4" controls muted width="700"></video>
+![Placing towers and wiring them into a chain](Showcase/Placement.gif)
 
 **The Crab hero** — the one tower that ignores the network and fights on its own, stunning
 whatever it hits. One per level.
 
-<video src="https://github.com/VKev/Han-Troi-Tower-Defense-3D/raw/main/Showcase/Crab.mp4" controls muted width="700"></video>
+![The Crab hero stunning enemies](Showcase/Crab.gif)
 
 **Level 10 boss** — a boss that stands on the road and summons waves at you, then walks into
 the fight itself for the final wave.
 
-<video src="https://github.com/VKev/Han-Troi-Tower-Defense-3D/raw/main/Showcase/BossFight.mp4" controls muted width="700"></video>
+![Level 10 standing boss](Showcase/BossFight.gif)
 
 **HUD** — selecting a tower, upgrading it, selling it, reading the next wave.
 
-<video src="https://github.com/VKev/Han-Troi-Tower-Defense-3D/raw/main/Showcase/UI.mp4" controls muted width="700"></video>
+![Gameplay HUD](Showcase/UI.gif)
+
+<sub>Clips above are silent looping previews. Full-quality MP4s live in
+[`Showcase/`](Showcase) — GitHub only plays video it hosts itself, so repo-hosted MP4s cannot
+be embedded inline.</sub>
 
 ## How it plays
 
@@ -185,19 +189,3 @@ Builds/                            # Ignored local build output
 - Do not place every argument, operand, or assignment fragment on a separate line merely because an expression contains several items.
 - Apply formatting cleanup only to files already touched by the current change; do not create unrelated formatting churn.
 
-## Commit message convention
-
-- Use Conventional Commit prefixes such as `feat:`, `fix:`, `docs:`, `test:`, or `chore:`.
-- Write the subject in Vietnamese and capitalize only its first letter. Do not use Title Case.
-- Keep established technical keywords, feature names, API names, and product terminology in English when translating them would reduce clarity.
-- Keep the subject concise, imperative, and without a trailing period.
-- Keep the commit message as a single-line subject; do not add a body or bullet list.
-- Do not append a `Co-Authored-By` trailer or any other AI-attribution line.
-
-Examples:
-
-```text
-feat: Thêm chức năng mới
-fix: Sửa lỗi tương tác
-docs: Cập nhật tài liệu dự án
-```
