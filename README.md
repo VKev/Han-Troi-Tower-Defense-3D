@@ -1,4 +1,82 @@
-# TowerDefense3D
+# Hạn Trời — Tower Defense 3D
+
+A mobile tower defense game built in Unity 6.3 (URP, Android). Towers do not shoot on their
+own: you **wire them into a chain**, and a projectile travels along that chain, being
+transformed by every tower it passes through before it reaches the sink. The network itself
+is the weapon, so the order and the geometry of your towers are the tactical decision.
+
+## Showcase
+
+| | |
+| --- | --- |
+| [Placement.mp4](Showcase/Placement.mp4) | Placing towers on the grid and wiring a chain |
+| [UI.mp4](Showcase/UI.mp4) | HUD, tower actions, upgrade and sell flow |
+| [Crab.mp4](Showcase/Crab.mp4) | The Crab hero — fights alone, stuns what it hits |
+| [BossFight.mp4](Showcase/BossFight.mp4) | Level 10 standing boss and the final wave |
+
+## Gameplay
+
+- **10 levels**, each a hand-authored board with its own path, wave schedule and camera bounds
+- **Chain rule** — a valid chain runs `Generator → elemental towers → Soul Nexus`. Anything
+  not part of a complete chain simply does not fire
+- **Elements react** — fire, water and wind leave marks on enemies; pairs of marks trigger
+  reactions such as burn, lift and thermal shock
+- **Crab hero** — the one tower that fights by itself, stuns on hit, and is capped at one per level
+- **Stars** — clear a level without losing frog health for 3 stars, above half for 2, below for 1
+
+## Technical summary
+
+Condensed from the full technical specification.
+
+### Architecture
+
+- **Layered** — `Application` (VContainer composition) → `Components` (MonoBehaviour boundary)
+  → `System` (plain C# rules). `System` contains the whole simulation and never references
+  Unity UI, VContainer or the editor. Enforced by **6 assembly definitions**, dependencies acyclic
+- **Single entry point** — one `IAsyncStartable` / `ITickable` dispatches an explicit tick order:
+  input → placement → tower interaction → simulation → HUD → link → projectile → camera
+- **Two DI scopes** — an application scope (20 singletons: save, audio, flow) and a per-level
+  scope (33 scoped systems). Leaving a level disposes the child scope, so no level state leaks
+  into the next one and no `Reset()` has to be maintained by hand
+- **MVP** — 7 presenters read systems, build an immutable state struct, and call `view.Render(state)`.
+  Views never query a system, which keeps every presenter testable with a ~15-line stub
+- **Observer** — 24 `event Action<T>` in the `System` layer; audio, VFX and HUD subscribe instead
+  of being called
+
+### Simulation
+
+- **Fixed tick of 0.05 s** drives waves, enemies, towers and projectiles in one explicit order
+- **Precomputed combat timeline** — the whole wave is simulated ahead of time and replayed, so
+  combat is deterministic, frame-rate independent, and the tutorial can look ahead at events
+  before they happen
+- **Chains are not stored.** The graph keeps one outgoing link per tower; a chain is walked on
+  demand, and only the set of towers currently inside a complete chain is cached
+
+### Data
+
+- **13 ScriptableObject types** hold every rule — levels, towers, enemies, waves, boards,
+  element reactions, sounds, camera gestures. Designers tune numbers without touching code
+- **Assets self-validate at load**, not mid-game: bad data refuses to boot and says why
+- **Crash-safe save** — write to a temp file, read it back, then swap it in with an atomic
+  `File.Replace`. A primary and a backup copy are kept, and a stale `schemaVersion` is rejected
+
+### Graphics and performance
+
+- URP mobile pipeline, Vulkan first, render scale 0.8, real-time shadows off, baked lighting
+- **Two toon shaders on purpose** — objects that need per-object tint use a
+  `UNITY_INSTANCING_BUFFER` variant and GPU instancing; everything else keeps all properties in
+  `CBUFFER UnityPerMaterial` and stays on the SRP Batcher. The two are mutually exclusive
+- **Static batching by default**, with any prop repeating 6+ times in a level pulled out to
+  instancing instead — 151 objects across the 10 levels
+- **3 sprite atlases split by screen** so menu sprites do not sit in RAM during a level
+- Pooling for projectiles, enemies and audio; a shared particle rig for one-shot effects; VFX and
+  shader prewarm at boot so the first use of an effect does not cost a frame spike
+
+Measured on a **Samsung Galaxy A04s** (Exynos 850, Mali-G52, 720×1600) via Android Studio device
+streaming: **~45 FPS** on a light board, **~25–30 FPS** with 9 enemies and overlapping transparent
+VFX. The gap is fill rate, not logic — the simulation cost is precomputed and does not scale with
+effects. Build is a **149.7 MB** universal APK; roughly 31 MB of that is the second ABI, which an
+AAB would drop.
 
 ## Repository layout
 
@@ -12,7 +90,9 @@ TowerDefense3D/
 ├── Builds/              # Ignored local player builds
 ├── Documents/           # Game design, technical specifications, and durable project records
 ├── Packages/            # Unity package manifest and lock file
-└── ProjectSettings/     # Unity project settings
+├── ProjectSettings/     # Unity project settings
+├── Recordings/          # Ignored raw capture footage
+└── Showcase/            # Short demo clips linked from this README
 ```
 
 ## Source layout
